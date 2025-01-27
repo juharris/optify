@@ -1,0 +1,13 @@
+metadata:
+    aliases:
+        - "b"
+    owners: "team-b@company.com"
+options:
+    myConfig:
+        myArray:
+            - "different item 1"
+            - "item 2"
+        myObject:
+            one: 11
+            two: 22
+            three: 3

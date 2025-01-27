@@ -1,0 +1,13 @@
+{
+	"metadata": {
+		"aliases": [ "a" ],
+		"owners": "a-team@company.com"
+	},
+	"options": {
+		"myConfig": {
+			"myArray": [
+				"example item 1"
+			]
+		}
+	}
+}

@@ -1,0 +1,10 @@
+{
+	"options": {
+		"myConfig": {
+			"num": 3,
+			"myArray": [
+				"example item 1"
+			]
+		}
+	}
+}
