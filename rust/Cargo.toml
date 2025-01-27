@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 config = "0.15.6"
 serde_json = "1.0.137"
+walkdir = "2.5.0"

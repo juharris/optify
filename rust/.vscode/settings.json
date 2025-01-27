@@ -1,6 +1,9 @@
 {
-  "files.readonlyInclude": {
-    "**/.cargo/registry/src/**/*.rs": true,
-    "**/lib/rustlib/src/rust/library/**/*.rs": true
-  }
+	"files.readonlyInclude": {
+		"**/.cargo/registry/src/**/*.rs": true,
+		"**/lib/rustlib/src/rust/library/**/*.rs": true
+	},
+	"[rust]": {
+		"editor.formatOnSave": true
+	}
 }
