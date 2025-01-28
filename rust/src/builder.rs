@@ -5,6 +5,8 @@ use walkdir::WalkDir;
 use crate::provider::{OptionsProvider, SourceValue};
 use crate::schema::feature::FeatureConfiguration;
 
+/// ⚠️ Development in progress ⚠️\
+/// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProviderBuilder {
     sources: std::collections::HashMap<String, SourceValue>,
 }

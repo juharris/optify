@@ -7,6 +7,8 @@ use std::collections::HashMap;
 // We won't truly use files at runtime, we're just using fake files that are backed by strings because that's easy to use with the `config` library.
 pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
+/// ⚠️ Development in progress ⚠️\
+/// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
     sources: HashMap<String, SourceValue>,
 }
