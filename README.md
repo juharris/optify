@@ -5,7 +5,7 @@ Simplifies getting the right configuration options for a process using pre-loade
 See [github.com/juharris/dotnet-OptionsProvider](https://github.com/juharris/dotnet-OptionsProvider) for an equivalent library with dependency injection support.
 
 # Ruby
-Coming soon and it will be build using the Rust implementation.
+Coming soon and it will be built using the Rust implementation.
 
 # Rust
 See the [rust](./rust/) folder.
