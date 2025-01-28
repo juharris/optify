@@ -1,0 +1,22 @@
+{
+	"featureNames": [
+		"A",
+		"b"
+	],
+	"options": {
+		"myConfig": {
+			"myArray": [
+				"different item 1",
+				"item 2"
+			],
+			"myObject": {
+				"one": 1,
+				"two": 22,
+				"three": 3,
+				"string": "string"
+			},
+			"root string": "root string same",
+			"root string 2": "override"
+		}
+	}
+}

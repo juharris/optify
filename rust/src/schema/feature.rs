@@ -6,7 +6,14 @@ pub(crate) type ConfigurationOptions = config::Value;
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
+pub(crate) struct OptionsMetadata {
+    // TODO Add more props.
+    pub aliases: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
 pub(crate) struct FeatureConfiguration {
-    // TODO Add `metadata` with custom class.
+    pub metadata: OptionsMetadata,
     pub options: ConfigurationOptions,
 }

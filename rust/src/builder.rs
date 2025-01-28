@@ -2,19 +2,21 @@ use config;
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::provider::{OptionsProvider, SourceValue};
+use crate::provider::{Aliases, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProviderBuilder {
-    sources: std::collections::HashMap<String, SourceValue>,
+    aliases: Aliases,
+    sources: Sources,
 }
 
 impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
-            sources: std::collections::HashMap::new(),
+            aliases: Aliases::new(),
+            sources: Sources::new(),
         }
     }
 
@@ -40,6 +42,7 @@ impl OptionsProviderBuilder {
                 feature_config.options.try_deserialize().unwrap();
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
+            let key = unicase::UniCase::new(key);
             let res = self.sources.insert(key.clone(), source);
             if res.is_some() {
                 return Err(format!(
@@ -48,15 +51,27 @@ impl OptionsProviderBuilder {
                     path.to_string_lossy()
                 ));
             }
-        }
 
-        // TODO Add aliases.
+            // Add aliases.
+            if let Some(aliases) = feature_config.metadata.aliases {
+                for alias in aliases {
+                    let alias = unicase::UniCase::new(alias);
+                    let res = self.aliases.insert(alias.clone(), key.clone());
+                    if res.is_some() {
+                        return Err(format!(
+                            "Duplicate alias found: `{}` for key `{}`",
+                            alias, key
+                        ));
+                    }
+                }
+            }
+        }
 
         return Ok(self);
     }
 
     pub fn build(self) -> OptionsProvider {
-        OptionsProvider::new(self.sources)
+        OptionsProvider::new(self.aliases, self.sources)
     }
 
     fn get_path_key(&self, path: &Path, directory: &Path) -> String {

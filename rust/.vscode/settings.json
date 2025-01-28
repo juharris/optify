@@ -8,5 +8,8 @@
 	},
 	"[rust]": {
 		"editor.formatOnSave": true
-	}
+	},
+	"cSpell.words": [
+		"unicase"
+	]
 }
