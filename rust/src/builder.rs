@@ -19,27 +19,32 @@ impl OptionsProviderBuilder {
     pub fn add_directory(mut self, directory: &Path) -> Result<Self, String> {
         for entry in WalkDir::new(directory) {
             let entry = entry.unwrap();
-            // TODO Skip README.md files.
-            if entry.path().is_file() {
-                let path = entry.path();
-                let file = config::File::from(path);
-                // TODO Find a better way to build a more generic view of the file.
-                // The config library is helpful because it handles many file types.
-                let key = self.get_path_key(path, directory);
-                let config = config::Config::builder().add_source(file).build().unwrap();
-                let c: FeatureConfiguration = config.try_deserialize().unwrap();
-                let options = c.options;
-                let options_as_json: serde_json::Value = options.try_deserialize().unwrap();
-                let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
-                let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-                let res = self.sources.insert(key.clone(), source);
-                if res.is_some() {
-                    return Err(format!(
-                        "Duplicate key found: `{}` for path `{}`",
-                        key,
-                        path.to_string_lossy()
-                    ));
-                }
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
+            if path.extension().and_then(|s| s.to_str()) == Some("md") {
+                continue;
+            }
+
+            let key = self.get_path_key(path, directory);
+            // TODO Optimization: Find a better way to build a more generic view of the file.
+            // The config library is helpful because it handles many file types.
+            let file = config::File::from(path);
+            let config = config::Config::builder().add_source(file).build().unwrap();
+            let feature_config: FeatureConfiguration = config.try_deserialize().unwrap();
+            let options_as_json: serde_json::Value =
+                feature_config.options.try_deserialize().unwrap();
+            let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
+            let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
+            let res = self.sources.insert(key.clone(), source);
+            if res.is_some() {
+                return Err(format!(
+                    "Duplicate key found: `{}` for path `{}`",
+                    key,
+                    path.to_string_lossy()
+                ));
             }
         }
 

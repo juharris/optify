@@ -4,7 +4,7 @@ use std::collections::HashMap;
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
 
-// We won't truly use files, we're just using fake files that are backed by strings because that's easy to use with the `config` library.
+// We won't truly use files at runtime, we're just using fake files that are backed by strings because that's easy to use with the `config` library.
 pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
 pub struct OptionsProvider {
@@ -29,7 +29,7 @@ impl OptionsProvider {
             // TODO Look up an alias.
             let source = match self.sources.get(feature_name) {
                 Some(src) => src,
-                None => return Err(format!("Feature name \"{}\" was not found.", feature_name)),
+                None => return Err(format!("Feature name {:?} was not found.", feature_name)),
             };
             config_builder = config_builder.add_source(source.clone());
         }

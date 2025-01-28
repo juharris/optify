@@ -1,4 +1,8 @@
 {
+	"featureNames": [
+		"feature_A",
+		"feature_B/initial"
+	],
 	"options": {
 		"myConfig": {
 			"myArray": [
@@ -11,7 +15,7 @@
 				"three": 3,
 				"string": "string"
 			},
-			"root string": "rooft string same",
+			"root string": "root string same",
 			"root string 2": "override"
 		}
 	}

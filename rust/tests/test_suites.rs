@@ -8,17 +8,23 @@ fn test_suite(path: &std::path::Path) {
         .unwrap()
         .build();
 
-    // TODO Get names automatically.
-    let features = vec!["feature_A".to_string(), "feature_B/initial".to_string()];
+    // TODO Support multiple expectation files in a folder called "expectations".
     let expected_json: String = fs::read_to_string(path.join("expected.json")).unwrap();
     let expected_json: serde_json::Value = serde_json::from_str(&expected_json).unwrap();
     let options = expected_json.get("options").unwrap().as_object().unwrap();
+    let features = expected_json
+        .get("featureNames")
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
     options.keys().for_each(|key| {
         let expected_value = options.get(key).unwrap();
         let config = provider.get_options(key, &features);
-        if config.is_err() {
-            println!("Error: {:?}", config.err().unwrap());
-            return;
+        if let Err(e) = &config {
+            panic!("Error in {:?} with key: {:?}: {:?}", path, key, e);
         }
         assert_eq!(
             config.unwrap(),
