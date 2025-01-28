@@ -10,3 +10,4 @@ options:
         myObject:
             two: 22
             three: 3
+        "root string 2": "override"
