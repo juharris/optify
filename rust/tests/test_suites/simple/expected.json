@@ -1,11 +1,16 @@
-// FIXME Update
 {
 	"options": {
 		"myConfig": {
-			"num": 3,
 			"myArray": [
-				"example item 1"
-			]
+				"different item 1",
+				"item 2"
+			],
+			"myObject": {
+				"one": 1,
+				"two": 22,
+				"three": 3,
+				"string": "string"
+			}
 		}
 	}
 }

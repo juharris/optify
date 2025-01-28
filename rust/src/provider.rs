@@ -1,10 +1,10 @@
-use config::{self};
+use config::{self, File};
 use std::collections::HashMap;
 
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
 
-pub(crate) type SourceValue = serde_json::Value;
+pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
 pub struct OptionsProvider {
     sources: HashMap<String, SourceValue>,
@@ -21,16 +21,26 @@ impl OptionsProvider {
         feature_names: &Vec<String>,
         // TODO Use a more specific error type.
     ) -> Result<serde_json::Value, String> {
+        // TODO Add caching with option to disable because we will not want to use the cache when calling from other languages because they should use their own caching
+        // in order to avoid possible overhead and conversion.
         let mut config_builder = config::Config::builder();
         for feature_name in feature_names {
-            let source = self.sources.get(feature_name).unwrap();
+            // TODO Look up an alias.
+            let source = match self.sources.get(feature_name) {
+                Some(src) => src,
+                None => return Err(format!("Feature name '{}' not found", feature_name)),
+            };
             // FIXME Get source passed in.
-            config_builder = config_builder.add_source(source);
+            config_builder = config_builder.add_source(source.clone());
         }
         let config = config_builder.build();
+        println!("config: {:?}", config);
 
         match config {
-            Ok(cfg) => Ok(cfg.get(key).unwrap()),
+            Ok(cfg) => match cfg.get(key) {
+                Ok(value) => Ok(value),
+                Err(e) => Err(e.to_string()),
+            },
             Err(e) => Err(e.to_string()),
         }
     }
