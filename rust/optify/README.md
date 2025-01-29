@@ -1,4 +1,8 @@
 # Optify in Rust
+
+[![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
+[![docs.rs](https://img.shields.io/docsrs/optify)](https://docs.rs/optify)
+
 The core implementation of Optify in Rust.
 Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
 
