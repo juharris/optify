@@ -3,5 +3,18 @@ name = "optify_ruby"
 version = "0.1.0"
 edition = "2021"
 
+description = "optify bindings for Ruby"
+homepage = "https://github.com/juharris/optify/tree/main/rust/optify_ruby"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/juharris/optify/tree/main/rust/optify_ruby"
+
+categories = ["config"]
+keywords = ["configuration", "options", "ruby"]
+
+exclude = [
+    "tests/*",
+]
+
 [dependencies]
 magnus = "0.7.1"
