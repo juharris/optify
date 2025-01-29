@@ -8,7 +8,6 @@ fn test_suite(path: &std::path::Path) {
         .unwrap()
         .build();
 
-    // TODO Support multiple expectation files in a folder called "expectations".
     let expectations = fs::read_dir(path.join("expectations")).unwrap();
     expectations.for_each(|entry| {
         let expectation_path = entry.unwrap().path();
