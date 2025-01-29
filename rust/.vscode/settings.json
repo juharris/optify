@@ -1,0 +1,17 @@
+{
+	"files.readonlyInclude": {
+		"**/.cargo/registry/src/**/*.rs": true,
+		"**/lib/rustlib/src/rust/library/**/*.rs": true
+	},
+	"[json]": {
+		"editor.formatOnSave": true
+	},
+	"[rust]": {
+		"editor.formatOnSave": true
+	},
+	"cSpell.words": [
+		"serde",
+		"unicase",
+		"walkdir"
+	]
+}

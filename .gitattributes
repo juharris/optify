@@ -1,0 +1,23 @@
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+.editorconfig text eol=lf
+
+*.json text eol=lf
+*.lock text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Scripts
+*.bash     text eol=lf
+*.sh       text eol=lf
+*.zsh     text eol=lf
+
+# These are explicitly windows files and should use crlf
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
