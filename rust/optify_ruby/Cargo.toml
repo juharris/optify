@@ -1,0 +1,7 @@
+[package]
+name = "optify_ruby"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+magnus = "0.7.1"
