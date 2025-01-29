@@ -65,6 +65,8 @@ impl OptionsProviderBuilder {
                     }
                 }
             }
+
+            // TODO Add `key` as an alias.
         }
 
         return Ok(self);

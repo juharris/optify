@@ -10,4 +10,9 @@ options:
         myObject:
             two: 22
             three: 3
+            deeper:
+                wtv: 3333
+                list:
+                    - 55
+                new: "new value"
         "root string 2": "override"

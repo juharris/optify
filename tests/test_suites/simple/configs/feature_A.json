@@ -15,7 +15,14 @@
 			"myObject": {
 				"one": 1,
 				"two": 2,
-				"string": "string"
+				"string": "string",
+				"deeper": {
+					"wtv": 3,
+					"list": [
+						1,
+						2
+					]
+				}
 			}
 		}
 	}

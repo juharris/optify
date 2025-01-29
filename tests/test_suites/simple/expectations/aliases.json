@@ -1,7 +1,7 @@
 {
 	"featureNames": [
-		"feature_A",
-		"feature_B/initial"
+		"A",
+		"b"
 	],
 	"options": {
 		"myConfig": {
@@ -13,7 +13,14 @@
 				"one": 1,
 				"two": 22,
 				"three": 3,
-				"string": "string"
+				"string": "string",
+				"deeper": {
+					"wtv": 3333,
+					"list": [
+						55
+					],
+					"new": "new value"
+				}
 			},
 			"root string": "root string same",
 			"root string 2": "override"
