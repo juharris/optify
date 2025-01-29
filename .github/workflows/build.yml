@@ -31,7 +31,7 @@ jobs:
       run : cargo fmt -- --check
       working-directory: ./rust/optify
     - name: "[Rust] [optify] Clippy"
-      run: cargo clippy --release -- -D warnings
+      run: cargo clippy --release -p optify --no-deps -- -D warnings --no-deps
       working-directory: ./rust/optify
     - name: "[Rust] [optify] Test"
       run: cargo test --release
