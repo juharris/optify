@@ -27,6 +27,9 @@ jobs:
     - name: "[Rust] [optify] Build"
       run: cargo build --release
       working-directory: ./rust/optify
+    - name: "[Rust] [optify] Lint"
+      run : cargo fmt -- --check
+      working-directory: ./rust/optify
     - name: "[Rust] [optify] Test"
       run: cargo test --release
       working-directory: ./rust/optify
