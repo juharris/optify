@@ -23,6 +23,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
+
     - name: "[Rust] Cache Cargo registry"
       uses: actions/cache@v3
       with:
@@ -47,7 +49,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-build-
 
-    - uses: actions/checkout@v4
     - name: "[Rust] [optify] Build"
       run: cargo build --release
       working-directory: ./rust/optify
