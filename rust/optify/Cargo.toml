@@ -3,6 +3,19 @@ name = "optify"
 version = "0.1.0"
 edition = "2021"
 
+description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights. This library is mainly made to support building implementations for other languages such as Node.js, Python, and Ruby. It is not meant to be consumed directly yet."
+homepage = "https://github.com/juharris/optify/tree/main/rust/optify"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/juharris/optify/tree/main/rust/optify"
+
+categories = ["config"]
+keywords = ["configuration", "options"]
+
+exclude = [
+    "tests/*",
+]
+
 [dependencies]
 config = "0.15.6"
 serde = "1.0.217"
