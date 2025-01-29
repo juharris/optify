@@ -16,4 +16,5 @@ cargo test
 To automatically change code, run:
 ```shell
 cargo fmt
+cargo clippy --fix --allow-dirty --allow-staged
 ```

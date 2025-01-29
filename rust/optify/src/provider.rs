@@ -41,7 +41,7 @@ impl OptionsProvider {
                 None => &feature_name,
             };
 
-            let source = match self.sources.get(&feature_name) {
+            let source = match self.sources.get(feature_name) {
                 Some(src) => src,
                 None => return Err(format!("Feature name {:?} was not found.", feature_name)),
             };

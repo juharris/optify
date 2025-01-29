@@ -12,6 +12,12 @@ pub struct OptionsProviderBuilder {
     sources: Sources,
 }
 
+impl Default for OptionsProviderBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
@@ -69,7 +75,7 @@ impl OptionsProviderBuilder {
             // TODO Add `key` as an alias.
         }
 
-        return Ok(self);
+        Ok(self)
     }
 
     pub fn build(self) -> OptionsProvider {
