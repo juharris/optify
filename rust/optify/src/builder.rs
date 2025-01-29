@@ -18,6 +18,20 @@ impl Default for OptionsProviderBuilder {
     }
 }
 
+fn add_alias(aliases: &mut Aliases, alias: String, key: &String) -> Result<(), String> {
+    let alias = unicase::UniCase::new(alias);
+    let res = aliases.insert(alias.clone(), key.clone());
+    if res.is_some() {
+        return Err(format!(
+            "The alias {:?} for key {:?} is already mapped to {:?}",
+            alias,
+            key,
+            res.unwrap()
+        ));
+    }
+    Ok(())
+}
+
 impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
@@ -48,7 +62,6 @@ impl OptionsProviderBuilder {
                 feature_config.options.try_deserialize().unwrap();
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-            let key = unicase::UniCase::new(key);
             let res = self.sources.insert(key.clone(), source);
             if res.is_some() {
                 return Err(format!(
@@ -58,21 +71,20 @@ impl OptionsProviderBuilder {
                 ));
             }
 
+            match add_alias(&mut self.aliases, key.clone(), &key) {
+                Ok(_) => {}
+                Err(e) => return Err(e),
+            }
+
             // Add aliases.
             if let Some(aliases) = feature_config.metadata.aliases {
                 for alias in aliases {
-                    let alias = unicase::UniCase::new(alias);
-                    let res = self.aliases.insert(alias.clone(), key.clone());
-                    if res.is_some() {
-                        return Err(format!(
-                            "Duplicate alias found: `{}` for key `{}`",
-                            alias, key
-                        ));
+                    match add_alias(&mut self.aliases, alias, &key) {
+                        Ok(_) => {}
+                        Err(e) => return Err(e),
                     }
                 }
             }
-
-            // TODO Add `key` as an alias.
         }
 
         Ok(self)

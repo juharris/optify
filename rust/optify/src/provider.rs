@@ -8,8 +8,8 @@ use std::collections::HashMap;
 pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
 // TODO Simplify types and use a canonical String for the alias value and then look up any given feature name in the alias map first.
-pub(crate) type Aliases = HashMap<unicase::UniCase<String>, unicase::UniCase<String>>;
-pub(crate) type Sources = HashMap<unicase::UniCase<String>, SourceValue>;
+pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
+pub(crate) type Sources = HashMap<String, SourceValue>;
 
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
@@ -36,9 +36,15 @@ impl OptionsProvider {
             let feature_name = unicase::UniCase::new(feature_name.clone());
 
             // Check for an alias.
+            // Canonical feature names are also included in the aliases map.
             let feature_name = match self.aliases.get(&feature_name) {
                 Some(alias) => alias,
-                None => &feature_name,
+                None => {
+                    return Err(format!(
+                        "The given feature {:?} is not known.",
+                        feature_name
+                    ))
+                }
             };
 
             let source = match self.sources.get(feature_name) {

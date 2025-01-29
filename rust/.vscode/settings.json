@@ -10,6 +10,7 @@
 		"editor.formatOnSave": true
 	},
 	"cSpell.words": [
-		"unicase"
+		"unicase",
+		"walkdir"
 	]
 }
