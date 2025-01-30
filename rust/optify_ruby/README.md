@@ -7,22 +7,28 @@
 APIs are not final and will change, for example, interfaces with be used.
 This is just meant to be minimal to get started and help build a Ruby library.
 
+## Setup
+<!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
+Run:
+```shell
+gem build optify.gemspec
+```
+
+## Building
+Run:
+```shell
+rake compile
+```
+
 ## Testing
 
 Run:
 ```shell
-cargo test
 ```
 
 ## Formatting
 To automatically change code, run:
 ```shell
-cargo fmt
-cargo clippy --fix --allow-dirty --allow-staged
 ```
 
 ## Publishing
-```shell
-cargo login
-cargo publish
-```
