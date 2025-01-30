@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 description = "optify bindings for Ruby"
-homepage = "https://github.com/juharris/optify/tree/main/rust/optify_ruby"
+homepage = "https://github.com/juharris/optify/tree/main/ruby"
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/juharris/optify/tree/main/rust/optify_ruby"
+repository = "https://github.com/juharris/optify"
 
 categories = ["config"]
 keywords = ["configuration", "options", "ruby"]
