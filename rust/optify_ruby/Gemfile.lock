@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     optify (0.1.0)
-      rb_sys (~> 0.9.39)
+      rb_sys
 
 GEM
   remote: https://rubygems.org/
