@@ -21,7 +21,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 magnus = "0.7.1"
-# optify = { path = "../optify", version = "0.1.0" }
+# TODO Add `path = "../optify",`
+optify = { version = "0.1.0" }
 #rb-sys = { version = "0.9.109", features = [
 #  "global-allocator",
 #] }
