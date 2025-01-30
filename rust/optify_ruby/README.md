@@ -7,11 +7,13 @@
 APIs are not final and will change, for example, interfaces with be used.
 This is just meant to be minimal to get started and help build a Ruby library.
 
+TODO Maybe this should move up to ../ruby?
+
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
 Run:
 ```shell
-gem build optify.gemspec
+bundle install
 ```
 
 ## Building

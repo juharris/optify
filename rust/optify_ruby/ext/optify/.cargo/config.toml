@@ -6,5 +6,5 @@
 rustflags = ["-C", "link-dead-code=on"]
 
 # We avoid this on windows due to https://github.com/rust-lang/rust/issues/90056
-#[target.'cfg(not(target_family = "windows"))']
-#rustflags = ["-C", "link-dead-code=on"]
+[target.'cfg(not(target_family = "windows"))']
+rustflags = ["-C", "link-dead-code=on"]
