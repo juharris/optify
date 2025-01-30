@@ -1,11 +1,31 @@
-use magnus::{function, Error, Ruby};
+use std::cell::RefCell;
 
-fn distance(a: (f64, f64), b: (f64, f64)) -> f64 {
-    ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt()
+use magnus::{function, method, prelude::*, wrap, Error, Object, Ruby};
+
+use optify::{builder::OptionsProviderBuilder, provider::OptionsProvider};
+
+#[wrap(class = "OptionsProviderBuilder")]
+struct MutOptionsProviderBuilder(RefCell<OptionsProviderBuilder>);
+
+impl MutOptionsProviderBuilder {
+    fn new() -> Self {
+        Self(RefCell::new(OptionsProviderBuilder::new()))
+    }
+
+    fn example(&self) -> i32 {
+        3
+    }
+/*
+    fn build(&self) -> OptionsProvider {
+        self.0.borrow().build()
+    }
+    */
 }
 
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
-    ruby.define_global_function("dddristance", function!(distance, 2));
+    let builder_class = ruby.define_class("OptionsProviderBuilder", ruby.class_object())?;
+    builder_class.define_singleton_method("new", function!(MutOptionsProviderBuilder::new, 0))?;
+    builder_class.define_method("example", method!(MutOptionsProviderBuilder::example, 0))?;
     Ok(())
 }

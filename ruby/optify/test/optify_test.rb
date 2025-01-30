@@ -6,8 +6,9 @@ require_relative "../lib/optify"
 
 class SampleTest < Test::Unit::TestCase
 
-  def test_dddristance
-    assert { dddristance([1, 2], [1+3, 2+4]) == 5 }
+  def test_example
+    builder = OptionsProviderBuilder.new
+    assert_equal(3, builder.example)
   end
 
 end
