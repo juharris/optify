@@ -90,8 +90,8 @@ impl OptionsProviderBuilder {
         Ok(self)
     }
 
-    pub fn build(self) -> OptionsProvider {
-        OptionsProvider::new(self.aliases, self.sources)
+    pub fn build(&self) -> OptionsProvider {
+        OptionsProvider::new(self.aliases.clone(), self.sources.clone())
     }
 
     fn get_path_key(&self, path: &Path, directory: &Path) -> String {
