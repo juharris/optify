@@ -1,2 +1,7 @@
 *.gem
 tmp/
+
+# Ignoring cause we'll build the library for multiple Ruby versions.
+Gemfile.lock
+
+*.bundle

@@ -5,8 +5,8 @@ require "rake/extensiontask"
 
 task default: :test
 
-Rake::ExtensionTask.new("optify") do |c|
-  c.lib_dir = "lib/optify"
+Rake::ExtensionTask.new("optify_ruby") do |c|
+  c.lib_dir = "lib/optify_ruby"
 end
 
 task :dev do

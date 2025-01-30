@@ -11,6 +11,9 @@ TODO Maybe this should move up to ../ruby?
 
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
+
+Use Ruby 3.3+.
+
 Run:
 ```shell
 bundle install

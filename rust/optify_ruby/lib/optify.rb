@@ -1,3 +1,3 @@
 # frozen_string_literal: true
 
-require_relative "optify/optify"
+require_relative "optify_ruby/optify_ruby"
