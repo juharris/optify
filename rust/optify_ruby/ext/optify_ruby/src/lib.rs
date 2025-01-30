@@ -1,7 +1,3 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
 use magnus::{function, Error, Ruby};
 
 fn distance(a: (f64, f64), b: (f64, f64)) -> f64 {
@@ -10,17 +6,6 @@ fn distance(a: (f64, f64), b: (f64, f64)) -> f64 {
 
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
-    ruby.define_global_function("distance", function!(distance, 2));
+    ruby.define_global_function("dddristance", function!(distance, 2));
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 }

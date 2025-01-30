@@ -5,3 +5,6 @@ tmp/
 Gemfile.lock
 
 *.bundle
+
+# Rust
+target/
