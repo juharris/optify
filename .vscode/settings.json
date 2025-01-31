@@ -1,4 +1,5 @@
 {
+	"sorbet.enabled": false,
 	"[json]": {
 		"editor.formatOnSave": true
 	}

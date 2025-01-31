@@ -1,14 +1,16 @@
-name: "Build"
+name: "Test"
 
 on:
   push:
     branches: [ "main" ]
     paths:
+      - "ruby/**"
       - "rust/**"
       - "tests/**"
   pull_request:
     branches: [ "main" ]
     paths:
+      - "ruby/**"
       - "rust/**"
       - "tests/**"
 
@@ -22,9 +24,27 @@ env:
 jobs:
   test:
     name: "Build & Test"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          # Before releasing 1.0.0: - windows-latest
+        # ruby-version:
+        #   - "3.3.1"
+        # rustup-toolchain:
+        #   - "stable"
     steps:
     - uses: actions/checkout@v4
+
+    - name: "Versions"
+      shell: bash
+      run: |
+        ruby --version
+        rustup --version
+
+    # Rust
     - name: "[Rust] [optify] Build"
       run: cargo build --release
       working-directory: ./rust/optify
@@ -37,3 +57,14 @@ jobs:
     - name: "[Rust] [optify] Test"
       run: cargo test --release
       working-directory: ./rust/optify
+
+    # Ruby
+    - name: "[Ruby] Install"
+      run: bundle install
+      working-directory: ./ruby/optify
+    - name: "[Ruby] Lint"
+      run: bundle exec srb tc
+      working-directory: ./ruby/optify
+    - name: "[Ruby] Test"
+      run: bundle exec rake test
+      working-directory: ./ruby/optify
