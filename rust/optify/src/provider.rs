@@ -22,11 +22,11 @@ impl OptionsProvider {
         OptionsProvider { aliases, sources }
     }
 
+    // TODO Use a more specific error type.
     pub fn get_options(
         &self,
         key: &str,
         feature_names: &Vec<String>,
-        // TODO Use a more specific error type.
     ) -> Result<serde_json::Value, String> {
         // TODO Add caching with option to disable because we will not want to use the cache when calling from other languages because they should use their own caching
         // in order to avoid possible overhead and conversion.

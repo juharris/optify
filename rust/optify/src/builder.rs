@@ -7,6 +7,7 @@ use crate::schema::feature::FeatureConfiguration;
 
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
+#[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
     sources: Sources,
