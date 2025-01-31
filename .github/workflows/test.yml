@@ -31,12 +31,16 @@ jobs:
           - ubuntu-latest
           - macos-latest
           # Before releasing 1.0.0: - windows-latest
-        # ruby-version:
-        #   - "3.3.1"
-        # rustup-toolchain:
+        ruby_version:
+          - "3.3.1"
+        # rustup_toolchain:
         #   - "stable"
     steps:
     - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        ruby-version: ${{ matrix.ruby_version }}
 
     - name: "Versions"
       shell: bash
