@@ -31,8 +31,29 @@ rake test
 ```
 
 ## Formatting
-To automatically change code, run:
+To check for issues, run:
 ```shell
+bundle exec srb tc
+```
+
+To automatically change code and address issues, run:
+```shell
+bin/tapioca annotations
+bin/tapioca gem
+bin/tapioca todo
+# Once day:
+# spoom bump --from false --to true
+# spoom bump --from true --to strict
+```
+
+All in one line:
+```shell
+bin/tapioca annotations && bin/tapioca gem && bin/tapioca todo
+```
+
+Verify the changes with:
+```shell
+bundle exec srb tc
 ```
 
 ## Publishing

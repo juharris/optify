@@ -1,0 +1,47 @@
+{
+	"rubyLsp.rubyVersionManager": {
+		"identifier": "chruby"
+	},
+	"rubyLsp.featureFlags": { "tapiocaAddon": true },
+	"search.exclude": {
+		"**/sorbet/rbi": true,
+	},
+	"sorbet.enabled": true,
+	"sorbet.lspConfigs": [
+		{
+			"id": "stable",
+			"name": "Sorbet",
+			"description": "Stable Sorbet Ruby IDE features",
+			"cwd": "${workspaceFolder}",
+			"command": ["bundle", "exec", "srb", "typecheck", "--lsp"]
+		},
+		{
+			"id": "beta",
+			"name": "Sorbet (Beta)",
+			"description": "Beta Sorbet Ruby IDE features",
+			"cwd": "${workspaceFolder}",
+			"command": [
+				"bundle",
+				"exec",
+				"srb",
+				"typecheck",
+				"--lsp",
+				"--enable-all-beta-lsp-features"
+			]
+		},
+		{
+			"id": "experimental",
+			"name": "Sorbet (Experimental)",
+			"description": "Experimental Sorbet Ruby IDE features (warning: crashy, for developers only)",
+			"cwd": "${workspaceFolder}",
+			"command": [
+				"bundle",
+				"exec",
+				"srb",
+				"typecheck",
+				"--lsp",
+				"--enable-all-experimental-lsp-features"
+			]
+		}
+	]
+}

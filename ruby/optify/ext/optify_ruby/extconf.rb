@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: strict
+# typed: false
 
 require "mkmf"
 require "rb_sys/mkmf"

@@ -14,8 +14,8 @@ impl WrappedOptionsProvider {
     }
 }
 
-#[wrap(class = "OptionsProviderBuilder")]
 #[derive(Clone)]
+#[wrap(class = "OptionsProviderBuilder")]
 struct MutOptionsProviderBuilder(RefCell<OptionsProviderBuilder>);
 
 impl MutOptionsProviderBuilder {
