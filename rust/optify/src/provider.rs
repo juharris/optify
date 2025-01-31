@@ -18,8 +18,11 @@ pub struct OptionsProvider {
 }
 
 impl OptionsProvider {
-    pub(crate) fn new(aliases: Aliases, sources: Sources) -> Self {
-        OptionsProvider { aliases, sources }
+    pub(crate) fn new(aliases: &Aliases, sources: &Sources) -> Self {
+        OptionsProvider {
+            aliases: aliases.clone(),
+            sources: sources.clone(),
+        }
     }
 
     // TODO Use a more specific error type.

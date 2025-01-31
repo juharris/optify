@@ -19,9 +19,9 @@ impl Default for OptionsProviderBuilder {
     }
 }
 
-fn add_alias(aliases: &mut Aliases, alias: String, key: &String) -> Result<(), String> {
-    let alias = unicase::UniCase::new(alias);
-    let res = aliases.insert(alias.clone(), key.clone());
+fn add_alias(aliases: &mut Aliases, alias: &String, key: &String) -> Result<(), String> {
+    let uni_case_alias = unicase::UniCase::new(alias.clone());
+    let res = aliases.insert(uni_case_alias, key.clone());
     if res.is_some() {
         return Err(format!(
             "The alias {:?} for key {:?} is already mapped to {:?}",
@@ -41,7 +41,7 @@ impl OptionsProviderBuilder {
         }
     }
 
-    pub fn add_directory(mut self, directory: &Path) -> Result<Self, String> {
+    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
         for entry in WalkDir::new(directory) {
             let entry = entry.unwrap();
             let path = entry.path();
@@ -72,7 +72,7 @@ impl OptionsProviderBuilder {
                 ));
             }
 
-            match add_alias(&mut self.aliases, key.clone(), &key) {
+            match add_alias(&mut self.aliases, &key, &key) {
                 Ok(_) => {}
                 Err(e) => return Err(e),
             }
@@ -80,7 +80,7 @@ impl OptionsProviderBuilder {
             // Add aliases.
             if let Some(aliases) = feature_config.metadata.aliases {
                 for alias in aliases {
-                    match add_alias(&mut self.aliases, alias, &key) {
+                    match add_alias(&mut self.aliases, &alias, &key) {
                         Ok(_) => {}
                         Err(e) => return Err(e),
                     }
@@ -92,7 +92,7 @@ impl OptionsProviderBuilder {
     }
 
     pub fn build(&self) -> OptionsProvider {
-        OptionsProvider::new(self.aliases.clone(), self.sources.clone())
+        OptionsProvider::new(&self.aliases, &self.sources)
     }
 
     fn get_path_key(&self, path: &Path, directory: &Path) -> String {

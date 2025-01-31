@@ -15,6 +15,7 @@ impl WrappedOptionsProvider {
 }
 
 #[wrap(class = "OptionsProviderBuilder")]
+#[derive(Clone)]
 struct MutOptionsProviderBuilder(RefCell<OptionsProviderBuilder>);
 
 impl MutOptionsProviderBuilder {
@@ -22,13 +23,10 @@ impl MutOptionsProviderBuilder {
         Self(RefCell::new(OptionsProviderBuilder::new()))
     }
 
-    // TODO Make fluent and return MutOptionsProviderBuilder.
-    fn add_directory(&self, directory: String) -> Result<(), magnus::Error> {
+    fn add_directory(&self, directory: String) -> Result<MutOptionsProviderBuilder, magnus::Error> {
         let path = std::path::Path::new(&directory);
-        // TODO Try to avoid cloning and to support copying/moving if necessary.
-        let builder = self.0.borrow_mut().clone();
-        self.0.replace(builder.add_directory(path).unwrap());
-        Ok(())
+        self.0.borrow_mut().add_directory(path).unwrap();
+        Ok(self.clone())
     }
 
     fn build(&self) -> WrappedOptionsProvider {

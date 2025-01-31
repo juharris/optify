@@ -13,11 +13,10 @@ class SampleTest < Test::Unit::TestCase
   end
 
   def test_get_options
-    builder = OptionsProviderBuilder.new
     # TODO Generalize running test_suites and use a relative path from this file.
-    # TODO Support a fluent builder.
-    builder.add_directory("../../tests/test_suites/simple/configs")
-    provider = builder.build
+    provider = OptionsProviderBuilder.new
+      .add_directory("../../tests/test_suites/simple/configs")
+      .build
     config = provider.get_options("myConfig", ["A"])
     assert_not_nil(config)
     # TODO `config` should a hash, not a string.
