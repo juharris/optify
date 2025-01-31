@@ -3,7 +3,7 @@ use optify::builder::OptionsProviderBuilder;
 use optify::provider::OptionsProvider;
 use std::cell::RefCell;
 
-#[wrap(class = "OptionsProvider")]
+#[wrap(class = "Optify::RustOptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
 impl WrappedOptionsProvider {
@@ -15,7 +15,7 @@ impl WrappedOptionsProvider {
 }
 
 #[derive(Clone)]
-#[wrap(class = "OptionsProviderBuilder")]
+#[wrap(class = "Optify::RustOptionsProviderBuilder")]
 struct MutOptionsProviderBuilder(RefCell<OptionsProviderBuilder>);
 
 impl MutOptionsProviderBuilder {
@@ -38,12 +38,14 @@ impl MutOptionsProviderBuilder {
 
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
-    let builder_class = ruby.define_class("OptionsProviderBuilder", ruby.class_object())?;
+    let module = ruby.define_module("Optify")?;
+    let builder_class = module.define_class("RustOptionsProviderBuilder", ruby.class_object())?;
+
     builder_class.define_singleton_method("new", function!(MutOptionsProviderBuilder::new, 0))?;
     builder_class.define_method("add_directory", method!(MutOptionsProviderBuilder::add_directory, 1))?;
     builder_class.define_method("build", method!(MutOptionsProviderBuilder::build, 0))?;
 
-    let provider_class = ruby.define_class("OptionsProvider", ruby.class_object())?;
+    let provider_class = module.define_class("RustOptionsProvider", ruby.class_object())?;
     provider_class.define_method("get_options", method!(WrappedOptionsProvider::get_options, 2))?;
     Ok(())
 }

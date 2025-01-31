@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: false
+# typed: true
 
 require 'json'
 require 'test/unit'
@@ -7,14 +7,14 @@ require_relative '../lib/optify'
 
 class BindingsTest < Test::Unit::TestCase
   def test_empty_build
-    builder = OptionsProviderBuilder.new
+    builder = Optify::RustOptionsProviderBuilder.new
     provider = builder.build
     assert_not_nil(provider)
   end
 
   def test_get_options
     # TODO Generalize running test_suites and use a relative path from this file.
-    provider = OptionsProviderBuilder.new
+    provider = Optify::RustOptionsProviderBuilder.new
       .add_directory("../../tests/test_suites/simple/configs")
       .build
     config = provider.get_options("myConfig", ["A"])
