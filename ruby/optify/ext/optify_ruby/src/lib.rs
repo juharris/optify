@@ -8,7 +8,7 @@ struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
 impl WrappedOptionsProvider {
     // These methods cannot accept `str`s because of how magnus works.
-    // TODO Return the JSON object.
+    // TODO Return the JSON object or maybe just keep it as a string so that it can be deserialized easily into a specific immutable class in Ruby, but then change the method name.
     fn get_options(&self, key: String, feature_names: Vec<String>) -> String {
         self.0.borrow().get_options(&key, &feature_names).unwrap().to_string()
     }
