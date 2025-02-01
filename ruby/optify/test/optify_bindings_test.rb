@@ -5,6 +5,7 @@ require 'json'
 require 'test/unit'
 require_relative '../lib/optify'
 
+# Some simple tests to test the Rust bindings directly.
 class OptifyBindingsTest < Test::Unit::TestCase
   def test_empty_build
     builder = OptifyBindings::OptionsProviderBuilder.new
@@ -13,8 +14,7 @@ class OptifyBindingsTest < Test::Unit::TestCase
     true
   end
 
-  def test_get_options
-    # TODO Generalize running test_suites and use a relative path from this file.
+  def test_get_options_json
     provider = OptifyBindings::OptionsProviderBuilder.new
       .add_directory("../../tests/test_suites/simple/configs")
       .build

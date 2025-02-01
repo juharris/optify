@@ -12,7 +12,7 @@ class OptifyTest < Test::Unit::TestCase
     assert_not_nil(provider)
   end
 
-  def test_get_options
+  def test_get_options_json
     # TODO Generalize running test_suites and use a relative path from this file.
     provider = Optify::OptionsProviderBuilder.new
       .add_directory("../../tests/test_suites/simple/configs")
