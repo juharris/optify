@@ -9,7 +9,7 @@ module OptifyBindings
   class OptionsProvider
     extend T::Sig
     sig { params(key: String, feature_names: T::Array[String]).returns(String) }
-    def get_options(key, feature_names)
+    def get_options_json(key, feature_names)
       raise NotImplementedError
     end
   end
