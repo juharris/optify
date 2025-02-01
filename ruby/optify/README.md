@@ -41,7 +41,7 @@ To automatically change code and address issues, run:
 bin/tapioca annotations
 bin/tapioca gem
 bin/tapioca todo
-# Once day:
+# Maybe one day:
 # spoom bump --from false --to true
 # spoom bump --from true --to strict
 ```
