@@ -72,3 +72,5 @@ jobs:
     - name: "[Ruby] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify
+      env:
+        RB_SYS_CARGO_PROFILE: release

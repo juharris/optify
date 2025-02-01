@@ -1,19 +1,27 @@
 # frozen_string_literal: true
+# typed: false
 
 require "rake/testtask"
 require "rake/extensiontask"
 
 task default: :test
 
+# TODO See https://github.com/oxidize-rb/rb-sys/blob/main/gem/README.md for cross-compilation.
 Rake::ExtensionTask.new("optify_ruby") do |c|
   c.lib_dir = "lib/optify_ruby"
 end
 
 task :dev do
+  puts "Setting RB_SYS_CARGO_PROFILE to dev."
   ENV['RB_SYS_CARGO_PROFILE'] = 'dev'
 end
 
 Rake::TestTask.new do |t|
-  t.deps << :dev << :compile
+  if ENV['RB_SYS_CARGO_PROFILE'].nil?
+    t.deps << :dev
+  else
+    puts "RB_SYS_CARGO_PROFILE: #{ENV['RB_SYS_CARGO_PROFILE']}"
+  end
+  t.deps << :compile
   t.test_files = FileList[File.expand_path("test/*_test.rb", __dir__)]
 end

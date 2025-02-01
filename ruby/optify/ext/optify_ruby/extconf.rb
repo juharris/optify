@@ -4,5 +4,7 @@
 require "mkmf"
 require "rb_sys/mkmf"
 
-# TODO See https://github.com/oxidize-rb/rb-sys/blob/main/gem/README.md about configuration and making a release build.
-create_rust_makefile("optify_ruby/optify_ruby")
+create_rust_makefile("optify_ruby/optify_ruby") do |r|
+  r.profile = ENV.fetch("RB_SYS_CARGO_PROFILE", :dev).to_sym
+  puts "RB_SYS_CARGO_PROFILE: #{r.profile}"
+end

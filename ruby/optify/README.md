@@ -23,6 +23,11 @@ Run:
 rake compile
 ```
 
+To make a release build, run:
+```shell
+RB_SYS_CARGO_PROFILE='release' rake compile
+```
+
 ## Testing
 
 Run:
