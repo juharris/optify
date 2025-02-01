@@ -3,7 +3,7 @@ use optify::builder::OptionsProviderBuilder;
 use optify::provider::OptionsProvider;
 use std::cell::RefCell;
 
-#[wrap(class = "OptifyBindings::OptionsProvider")]
+#[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
 impl WrappedOptionsProvider {
@@ -15,7 +15,7 @@ impl WrappedOptionsProvider {
 }
 
 #[derive(Clone)]
-#[wrap(class = "OptifyBindings::OptionsProviderBuilder")]
+#[wrap(class = "Optify::OptionsProviderBuilder")]
 struct WrappedOptionsProviderBuilder(RefCell<OptionsProviderBuilder>);
 
 impl WrappedOptionsProviderBuilder {
@@ -38,7 +38,7 @@ impl WrappedOptionsProviderBuilder {
 
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
-    let module = ruby.define_module("OptifyBindings")?;
+    let module = ruby.define_module("Optify")?;
     let builder_class = module.define_class("OptionsProviderBuilder", ruby.class_object())?;
 
     builder_class.define_singleton_method("new", function!(WrappedOptionsProviderBuilder::new, 0))?;
