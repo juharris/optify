@@ -3,26 +3,27 @@
 
 require 'sorbet-runtime'
 
-# This file helps with type checks for implementations in Rust.
-module Optify
-  class RustOptionsProviderBuilder
-    extend T::Sig
-    sig { params(path: String).returns(RustOptionsProviderBuilder) }
-    def add_directory(path)
-      self
-    end
-
-    sig { returns(Optify::RustOptionsProvider) }
-    def build
-      return RustOptionsProvider.new
-    end
-  end
-
-  class RustOptionsProvider
+# This module exists to help with type checking and code completion.
+# The real implementation is in a Rust library.
+module OptifyBindings
+  class OptionsProvider
     extend T::Sig
     sig { params(key: String, feature_names: T::Array[String]).returns(String) }
     def get_options(key, feature_names)
-      return ""
+      raise NotImplementedError
+    end
+  end
+
+  class OptionsProviderBuilder
+    extend T::Sig
+    sig { params(path: String).returns(OptionsProviderBuilder) }
+    def add_directory(path)
+      raise NotImplementedError
+    end
+
+    sig { returns(OptionsProvider) }
+    def build
+      raise NotImplementedError
     end
   end
 end
