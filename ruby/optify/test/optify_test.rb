@@ -32,7 +32,7 @@ class OptifyTest < Test::Unit::TestCase
         options = provider.get_options(key, features)
         expected_json = expected_value.to_json
         expected_open_struct = JSON.parse(expected_json, object_class: OpenStruct)
-        assert_equal(expected_open_struct, options)
+        assert_equal(expected_open_struct, options, "Options for key \"#{key}\" with features #{features} do not match for test suite at #{expectation_path}")
       end
     end
   end
