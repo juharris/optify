@@ -25,14 +25,14 @@ impl OptionsProvider {
         }
     }
 
-    // TODO Use a more specific error type.
+    // TODO Add another method with caching
+    // with an to disable because we will not want to use the cache when calling from other languages because they should use their own caching
+    // in order to avoid possible overhead and conversion.
     pub fn get_options(
         &self,
         key: &str,
         feature_names: &Vec<String>,
     ) -> Result<serde_json::Value, String> {
-        // TODO Add caching with option to disable because we will not want to use the cache when calling from other languages because they should use their own caching
-        // in order to avoid possible overhead and conversion.
         let mut config_builder = config::Config::builder();
         for feature_name in feature_names {
             let feature_name = unicase::UniCase::new(feature_name.clone());

@@ -1,4 +1,7 @@
 {
+	"search.exclude": {
+		"**/sorbet/rbi": true,
+	},
 	"sorbet.enabled": false,
 	"[json]": {
 		"editor.formatOnSave": true

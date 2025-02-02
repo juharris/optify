@@ -54,8 +54,10 @@ impl OptionsProviderBuilder {
             }
 
             let key = self.get_path_key(path, directory);
-            // TODO Optimization: Find a better way to build a more generic view of the file.
-            // The config library is helpful because it handles many file types.
+            // TODO Optimization: Find a more efficient way to build a more generic view of the file.
+            // The `config` library is helpful because it handles many file types.
+            // It would also be nice to support comments in .json files, even though it is not standard.
+            // The `config` library does support .json5 which supports comments.
             let file = config::File::from(path);
             let config = config::Config::builder().add_source(file).build().unwrap();
             let feature_config: FeatureConfiguration = config.try_deserialize().unwrap();
