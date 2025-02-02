@@ -5,25 +5,44 @@ require 'json'
 require 'test/unit'
 require_relative '../lib/optify'
 
+require 'sorbet-runtime'
+
 class OptifyTest < Test::Unit::TestCase
+  extend T::Sig
+
   def test_empty_build
     builder = Optify::OptionsProviderBuilder.new
     provider = builder.build
     assert_not_nil(provider)
   end
 
-  def test_get_options
-    # TODO Generalize running test_suites and use a relative path from this file.
-    expected = {"myArray"=>["example item 1"], "myObject"=>{"deeper"=>{"list"=>[1, 2], "wtv"=>3}, "one"=>1, "string"=>"string", "two"=>2}, "root string"=>"root string same", "root string 2"=>"gets overridden"}
-    expected_json = expected.to_json
+  sig {params(suite_path: String).void}
+  def run_suite(suite_path)
+    puts "Running test suite: #{suite_path}"
     provider = Optify::OptionsProviderBuilder.new
-      .add_directory("../../tests/test_suites/simple/configs")
+      .add_directory(File.join(suite_path, "configs"))
       .build
-    config_json = provider.get_options_json("myConfig", ["A"])
-    assert_equal(expected_json, config_json)
+    expectations_path = File.join(suite_path, "expectations")
+    Dir.each_child(expectations_path) do |test_case|
+      expectation_path = File.join(expectations_path, test_case)
+      expected_info = JSON.parse(File.read(expectation_path))
+      expected_options = expected_info["options"]
+      features = expected_info["features"]
+      expected_options.each do |key, expected_value|
+        options = provider.get_options(key, features)
+        expected_json = expected_value.to_json
+        expected_open_struct = JSON.parse(expected_json, object_class: OpenStruct)
+        assert_equal(expected_open_struct, options)
+      end
+    end
+  end
 
-    config = provider.get_options("myConfig", ["A"])
-    expected_open_struct = JSON.parse(expected_json, object_class: OpenStruct)
-    assert_equal(expected_open_struct, config)
+  def test_suites
+    test_suites_dir = "../../tests/test_suites"
+    Dir.each_child(test_suites_dir) do |suite|
+      suite_path = File.join(test_suites_dir, suite)
+      next unless File.directory?(suite_path)
+      run_suite(suite_path)
+    end
   end
 end
