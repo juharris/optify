@@ -3,11 +3,19 @@ VERSION = "0.1.0"
 Gem::Specification.new do |spec|
   spec.name = "optify"
   spec.version = VERSION
-  spec.summary = "Configure your Ruby project."
+  spec.summary = "Configure your Ruby project using JSON and YAML files that can be combined at runtime."
+  spec.description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files to manage options for experiments or flights."
   spec.homepage = "https://github.com/juharris/optify"
   spec.license = "MIT"
 
   spec.authors = ["Justin D. Harris"]
+
+  # Cross-compilation
+  # Copied from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/rust_reverse.gemspec.
+  spec.files = Dir["lib/**/*.rb", "ext/**/*.{rs,toml,lock,rb}"]
+  spec.bindir = "exe"
+  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
+  spec.require_paths = ["lib"]
 
   spec.extensions = ["ext/optify_ruby/extconf.rb"]
 

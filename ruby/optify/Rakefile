@@ -3,12 +3,21 @@
 
 require "rake/testtask"
 require "rake/extensiontask"
+require "rb_sys/toolchain_info"
 
 task default: :test
 
 # TODO See https://github.com/oxidize-rb/rb-sys/blob/main/gem/README.md for cross-compilation.
-Rake::ExtensionTask.new("optify_ruby") do |c|
-  c.lib_dir = "lib/optify_ruby"
+Rake::ExtensionTask.new("optify_ruby") do |ext|
+  ext.lib_dir = "lib/optify_ruby"
+  ext.source_pattern = "*.{rs,toml,lock,rb}"
+  if ENV['RB_SYS_CROSS_COMPILE'] == 'true'
+    # FIXME Get cross-compilation working.
+    # See https://github.com/oxidize-rb/actions/blob/main/cross-gem/readme.md
+    ext.cross_compile = true
+    ext.cross_platform = RbSys::ToolchainInfo.supported_ruby_platforms
+  end
+  ext.config_script = "extconf.rb"
 end
 
 task :dev do
