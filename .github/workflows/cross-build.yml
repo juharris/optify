@@ -31,6 +31,7 @@ jobs:
         ruby_platform:
         # Add more as needed.
         # More versions in https://raw.githubusercontent.com/oxidize-rb/rb-sys/main/data/derived/github-actions-matrix.json
+        - aarch64-linux
         - arm64-darwin
         - x86_64-linux
         ruby_version:
@@ -68,10 +69,11 @@ jobs:
         ruby --version
         rustup --version
 
-    # A full build it probably not needed, but this helps ensure that /home/runner/.cargo/registry is created.
+    # Initialize some Rust resources
+    # such as ensuring that /home/runner/.cargo/registry is created.
     # Otherwise, we get "docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /home/runner/.cargo/registry."
     - name: "[Rust] Build"
-      run: cargo build --release
+      run: cargo check --release
       working-directory: ./rust/optify
 
     # Documentation: https://github.com/oxidize-rb/actions/blob/main/cross-gem
