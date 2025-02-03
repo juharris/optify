@@ -41,10 +41,12 @@ jobs:
     - uses: oxidize-rb/actions/setup-ruby-and-rust@main
       with:
         ruby-version: ${{ matrix.ruby_version }}
-        bundler-cache: false
+        bundler-cache: true
         cargo-cache: true
+        cache-save-always: false
         cargo-vendor: true
         cache-version: v0-${{ matrix.ruby_platform }}
+        working-directory: ./rust/optify
 
     - name: "Versions"
       shell: bash
