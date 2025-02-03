@@ -1,32 +1,44 @@
 # frozen_string_literal: true
 # typed: false
 
+require "rb_sys/extensiontask"
 require "rake/testtask"
-require "rake/extensiontask"
-# require "rb_sys/toolchain_info"
 
+# Had these but probably don't need them anymore.
+# require "bundler/gem_tasks"
+# require "rake/extensiontask"
 puts "rake top_level_tasks: #{Rake.application.top_level_tasks}"
 
 task default: :test
 
 spec = Gem::Specification.load("optify.gemspec")
 
-# TODO See https://github.com/oxidize-rb/rb-sys/blob/main/gem/README.md for cross-compilation.
-Rake::ExtensionTask.new("optify_ruby", spec) do |ext|
+# See https://github.com/oxidize-rb/rb-sys/blob/main/gem/README.md for cross-compilation.
+
+# Try to get cross-compilation working with `rb-sys`.
+# `RbSys::ExtensionTask` is a replacement for `Rake::ExtensionTask` and it might add the `native` tasks.
+# Doesn't work because the Cargo.toml file is not in the root.
+RbSys::ExtensionTask.new("optify_ruby", spec) do |ext|
   ext.lib_dir = "lib/optify_ruby"
-  ext.source_pattern = "*.{rs,toml,lock,rb}"
   if ENV['RB_SYS_CROSS_COMPILE'] == 'true'
+    puts "Cross-compiling."
     # FIXME Get cross-compilation working.
     # See https://github.com/oxidize-rb/actions/blob/main/cross-gem/readme.md
     # Add more as needed.
     ext.cross_compile = true
+    # It's not clear what this list is supposed to do.
+    # It's from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/Rakefile#L19
     ext.cross_platform = [
       "arm64-darwin",
       "x86_64-darwin",
       "x86_64-linux",
     ]
   end
-  ext.config_script = "extconf.rb"
+
+  # Saw this at https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/Rakefile#L20
+  # but seems like it's not needed and it doesn't even point to the right place because it doesn't have the full path: ext/optify_ruby/extconf.rb
+  # Is it supposed to be relative?
+  # ext.config_script = "extconf.rb"
 end
 
 task :dev do
