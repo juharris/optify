@@ -1,7 +1,4 @@
 {
-	"rubyLsp.rubyVersionManager": {
-		"identifier": "chruby"
-	},
 	"rubyLsp.featureFlags": { "tapiocaAddon": true },
 	"search.exclude": {
 		"**/sorbet/rbi": true,
