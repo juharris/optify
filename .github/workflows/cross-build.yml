@@ -53,12 +53,15 @@ jobs:
         bundler-cache: true
         ruby-version: ${{ matrix.ruby_version }}
 
-
     - name: "Versions"
       shell: bash
       run: |
         ruby --version
         rustup --version
+
+    - name: "[Rust] Build"
+      run: cargo build --release
+      working-directory: ./rust/optify
 
     - uses: oxidize-rb/actions/cross-gem@main
       id: cross-gem
