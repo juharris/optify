@@ -29,15 +29,16 @@ jobs:
       fail-fast: false
       matrix:
         ruby_platform:
-        - x86_64-linux
-        # TODO Add once we confirm it works.
+          # TODO Add once we confirm it works.
+        # - x86_64-linux
         # - x86_64-darwin
-        # - arm64-darwin
+        - arm64-darwin
         # TODO As more as needed.
         ruby_version:
         - "3.3.1"
     steps:
     - uses: actions/checkout@v4
+
     - uses: oxidize-rb/actions/setup-ruby-and-rust@main
       with:
         ruby-version: ${{ matrix.ruby_version }}
