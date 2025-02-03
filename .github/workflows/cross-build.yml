@@ -29,9 +29,10 @@ jobs:
         ruby_platform:
         # TODO Add more as needed.
         # More versions in https://raw.githubusercontent.com/oxidize-rb/rb-sys/main/data/derived/github-actions-matrix.json
-        - x86_64-linux
-        # - x86_64-darwin
         - arm64-darwin
+        # Temp disable while WIP.
+        # - x86_64-linux
+        # - x86_64-darwin
         ruby_version:
         - "3.3"
     steps:
@@ -91,4 +92,6 @@ jobs:
     - name: "[Ruby] Show gem path"
       shell: bash
       run: |
-        echo "Gem path: ${{ steps.cross-gem.outputs.gem-path }}"
+        set -ex
+        gem_path="${{ steps.cross-gem.outputs.gem-path }}"
+        ls -lh "${gem_path}"
