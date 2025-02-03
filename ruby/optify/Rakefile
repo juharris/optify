@@ -3,7 +3,7 @@
 
 require "rake/testtask"
 require "rake/extensiontask"
-require "rb_sys/toolchain_info"
+# require "rb_sys/toolchain_info"
 
 task default: :test
 
@@ -19,7 +19,7 @@ Rake::ExtensionTask.new("optify_ruby") do |ext|
     ext.cross_platform = [
       "arm64-darwin",
       "x86_64-darwin",
-      # "x86_64-linux",
+      "x86_64-linux",
     ]
   end
   ext.config_script = "extconf.rb"
