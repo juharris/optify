@@ -67,10 +67,11 @@ jobs:
         ruby --version
         rustup --version
 
-    # Maybe not needed.
-    # - name: "[Rust] Build"
-    #   run: cargo build --release
-    #   working-directory: ./rust/optify
+    # A full build it probably not needed, but this helps ensure that /home/runner/.cargo/registry is created.
+    # Otherwise, we get "docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /home/runner/.cargo/registry."
+    - name: "[Rust] Build"
+      run: cargo build --release
+      working-directory: ./rust/optify
 
     # Documentation: https://github.com/oxidize-rb/actions/blob/main/cross-gem
     # Outputs: gem-path
