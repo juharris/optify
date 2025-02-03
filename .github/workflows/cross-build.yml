@@ -39,15 +39,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: oxidize-rb/actions/setup-ruby-and-rust@main
+    # - uses: oxidize-rb/actions/setup-ruby-and-rust@main
+    #   with:
+    #     ruby-version: ${{ matrix.ruby_version }}
+    #     bundler-cache: true
+    #     cargo-cache: true
+    #     cache-save-always: false
+    #     cargo-vendor: true
+    #     cache-version: v0-${{ matrix.ruby_platform }}
+    #     working-directory: ./rust/optify
+    - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby_version }}
         bundler-cache: true
-        cargo-cache: true
-        cache-save-always: false
-        cargo-vendor: true
-        cache-version: v0-${{ matrix.ruby_platform }}
-        working-directory: ./rust/optify
+        ruby-version: ${{ matrix.ruby_version }}
+
 
     - name: "Versions"
       shell: bash
