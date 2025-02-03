@@ -15,21 +15,18 @@ task default: :test
 
 spec = Gem::Specification.load("optify.gemspec")
 
+# For cross-compilation working with `rb-sys`.
 # See https://github.com/oxidize-rb/rb-sys/blob/main/gem/README.md for cross-compilation.
-
-# Try to get cross-compilation working with `rb-sys`.
 # `RbSys::ExtensionTask` is a replacement for `Rake::ExtensionTask` and it might add the `native` tasks.
-# Doesn't work because the Cargo.toml file is not in the root.
 RbSys::ExtensionTask.new("optify_ruby", spec) do |ext|
   ext.lib_dir = "lib/optify_ruby"
   if ENV['RB_SYS_CROSS_COMPILE'] == 'true'
     puts "Cross-compiling."
-    # FIXME Get cross-compilation working.
     # See https://github.com/oxidize-rb/actions/blob/main/cross-gem/readme.md
-    # Add more as needed.
     ext.cross_compile = true
     # It's not clear what this list is supposed to do.
     # It's from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/Rakefile#L19
+    # Add more as needed.
     ext.cross_platform = [
       "arm64-darwin",
       "x86_64-darwin",
