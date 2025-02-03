@@ -1,6 +1,5 @@
 {
 	"features": [
-		"A",
 		"b"
 	],
 	"options": {
@@ -10,10 +9,8 @@
 				"item 2"
 			],
 			"myObject": {
-				"one": 1,
 				"two": 22,
 				"three": 3,
-				"string": "string",
 				"deeper": {
 					"wtv": 3333,
 					"list": [
@@ -22,7 +19,6 @@
 					"new": "new value"
 				}
 			},
-			"root string": "root string same",
 			"root string 2": "override"
 		}
 	}

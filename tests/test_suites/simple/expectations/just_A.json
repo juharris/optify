@@ -1,0 +1,26 @@
+{
+	"features": [
+		"A"
+	],
+	"options": {
+		"myConfig": {
+			"root string": "root string same",
+			"root string 2": "gets overridden",
+			"myArray": [
+				"example item 1"
+			],
+			"myObject": {
+				"one": 1,
+				"two": 2,
+				"string": "string",
+				"deeper": {
+					"wtv": 3,
+					"list": [
+						1,
+						2
+					]
+				}
+			}
+		}
+	}
+}

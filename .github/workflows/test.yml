@@ -1,0 +1,75 @@
+name: "Test"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "ruby/**"
+      - "rust/**"
+      - "tests/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "ruby/**"
+      - "rust/**"
+      - "tests/**"
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RB_SYS_CARGO_PROFILE: release
+  RB_SYS_CROSS_COMPILE: true
+
+jobs:
+  test:
+    name: "Build & Test"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        ruby_version:
+          - "3.3.1"
+        # rustup_toolchain:
+        #   - "stable"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
+      name: "[Ruby] Setup"
+      with:
+        bundler-cache: true
+        ruby-version: ${{ matrix.ruby_version }}
+
+    - name: "Versions"
+      shell: bash
+      run: |
+        ruby --version
+        rustup --version
+
+    # Rust
+    - name: "[Rust] [optify] Build"
+      run: cargo build --release
+      working-directory: ./rust/optify
+    - name: "[Rust] [optify] Lint"
+      run : cargo fmt -- --check
+      working-directory: ./rust/optify
+    - name: "[Rust] [optify] Clippy"
+      run: cargo clippy --release -p optify --no-deps -- -D warnings --no-deps
+      working-directory: ./rust/optify
+    - name: "[Rust] [optify] Test"
+      run: cargo test --release
+      working-directory: ./rust/optify
+
+    # Ruby
+    - name: "[Ruby] Install"
+      run: bundle install
+      working-directory: ./ruby/optify
+    - name: "[Ruby] Lint"
+      run: bundle exec srb tc
+      working-directory: ./ruby/optify
+    - name: "[Ruby] Test"
+      run: bundle exec rake test
+      working-directory: ./ruby/optify

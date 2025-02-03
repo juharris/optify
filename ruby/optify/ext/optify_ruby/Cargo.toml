@@ -1,0 +1,25 @@
+[package]
+name = "optify_ruby"
+version = "0.2.0"
+edition = "2021"
+
+description = "optify bindings for Ruby"
+homepage = "https://github.com/juharris/optify/tree/main/ruby"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/juharris/optify"
+
+categories = ["config"]
+keywords = ["configuration", "options", "ruby"]
+
+exclude = [
+    "tests/*",
+]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+magnus = "0.7.1"
+optify = { path = "../../../../rust/optify", version = "0.2.0" }
+rb-sys = { version = "*", default-features = false, features = ["ruby-static"] }

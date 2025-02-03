@@ -2,14 +2,9 @@
 
 use serde::Deserialize;
 
-pub(crate) type ConfigurationOptions = config::Value;
+use super::metadata::OptionsMetadata;
 
-#[derive(Debug, Deserialize)]
-#[allow(unused)]
-pub(crate) struct OptionsMetadata {
-    // TODO Add more props.
-    pub aliases: Option<Vec<String>>,
-}
+pub(crate) type ConfigurationOptions = config::Value;
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
