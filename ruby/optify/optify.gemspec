@@ -1,7 +1,7 @@
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 Gem::Specification.new do |spec|
-  spec.name = "optify"
+  spec.name = "optify-config"
   spec.version = VERSION
   spec.summary = "Configure your Ruby project using JSON and YAML files that can be combined at runtime."
   spec.description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files to manage options for experiments or flights."
@@ -9,6 +9,11 @@ Gem::Specification.new do |spec|
   spec.license = "MIT"
 
   spec.authors = ["Justin D. Harris"]
+
+  spec.metadata = {
+    'source_code_uri' => 'https://github.com/juharris/optify',
+    'bug_tracker_uri' => 'https://github.com/juharris/optify/issues',
+  }
 
   # Cross-compilation
   # Copied from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/rust_reverse.gemspec.

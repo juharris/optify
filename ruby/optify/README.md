@@ -1,4 +1,5 @@
 # Optify Rust Bindings for Ruby
+[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 
 ⚠️ Development in progress ⚠️\
 APIs are not final and will change, for example, interfaces with be used.
@@ -62,3 +63,15 @@ bundle exec srb tc
 ```
 
 ## Publishing
+A GitHub Action is setup to publish the gem as needed.
+To publish manually, run the following with the correct version and architecture:
+```shell
+rake native gem
+gem push pkg/optify-<version>-<architecture>.gem
+```
+
+To see credentials to get the API key to update a GitHub Action, run:
+For Mac:
+```shell
+cat ~/.local/share/gem/credentials
+```

@@ -89,9 +89,14 @@ jobs:
         # ruby-versions: "3.3,3.4"
         working-directory: ./ruby/optify
 
-    - name: "[Ruby] Show gem path"
+    - name: "[Ruby] Publish"
+      # TODO Uncomment after testing.
+      # if: github.ref == 'refs/heads/main'
       shell: bash
       run: |
         set -ex
         gem_path="${{ steps.cross-gem.outputs.gem-path }}"
         ls -lh "${gem_path}"
+        gem push "${gem_path}"
+      env:
+        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
