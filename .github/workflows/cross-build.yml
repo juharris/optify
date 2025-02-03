@@ -35,9 +35,14 @@ jobs:
         - arm64-darwin
         # TODO As more as needed.
         ruby_version:
-        - "3.3.1"
+        - "3.3"
     steps:
     - uses: actions/checkout@v4
+
+    - name: "Remove .ruby-version"
+      shell: bash
+      run: |
+        rm ruby/optify/.ruby-version
 
     # - uses: oxidize-rb/actions/setup-ruby-and-rust@main
     #   with:
@@ -68,5 +73,7 @@ jobs:
       with:
         cache-save-always: false
         platform: ${{ matrix.ruby_platform }}
-        ruby-versions: "3.3.1"
+        ruby-versions: "3.3"
+        # When we're ready:
+        # ruby-versions: "3.3,3.4"
         working-directory: ./ruby/optify
