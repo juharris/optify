@@ -6,13 +6,11 @@ on:
     paths:
       - "ruby/**"
       - "rust/**"
-      - "tests/**"
   pull_request:
     branches: [ "main" ]
     paths:
       - "ruby/**"
       - "rust/**"
-      - "tests/**"
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
@@ -29,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         ruby_platform:
-        # TODO Add once we confirm it works as needed.
+        # TODO Add more as needed.
         # More versions in https://raw.githubusercontent.com/oxidize-rb/rb-sys/main/data/derived/github-actions-matrix.json
         - x86_64-linux
         # - x86_64-darwin
@@ -39,11 +37,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: "Remove .ruby-version"
+    # This is file is mainly for local development and to help Sorbet.
+    # It should not be needed for the build as we'll set a specific version of Ruby.
+    - name: "rm .ruby-version"
       shell: bash
       run: |
-        rm ruby/optify/.ruby-version
+        rm .ruby-version
+      working-directory: ./ruby/optify
 
+    # Should not be needed because we'll use Rust in a Docker container.
     # - uses: oxidize-rb/actions/setup-ruby-and-rust@main
     #   with:
     #     ruby-version: ${{ matrix.ruby_version }}
@@ -54,6 +56,7 @@ jobs:
     #     cache-version: v0-${{ matrix.ruby_platform }}
     #     working-directory: ./rust/optify
     - uses: ruby/setup-ruby@v1
+      name: "[Ruby] Setup"
       with:
         bundler-cache: true
         ruby-version: ${{ matrix.ruby_version }}
@@ -64,12 +67,16 @@ jobs:
         ruby --version
         rustup --version
 
-    - name: "[Rust] Build"
-      run: cargo build --release
-      working-directory: ./rust/optify
+    # Maybe not needed.
+    # - name: "[Rust] Build"
+    #   run: cargo build --release
+    #   working-directory: ./rust/optify
 
+    # Documentation: https://github.com/oxidize-rb/actions/blob/main/cross-gem
+    # Outputs: gem-path
     - uses: oxidize-rb/actions/cross-gem@main
       id: cross-gem
+      name: "[Ruby] Cross-Build"
       with:
         cache-save-always: false
         platform: ${{ matrix.ruby_platform }}
@@ -79,3 +86,8 @@ jobs:
         # When we're ready:
         # ruby-versions: "3.3,3.4"
         working-directory: ./ruby/optify
+
+    - name: "[Ruby] Show gem path"
+      shell: bash
+      run: |
+        echo "Gem path: ${{ steps.cross-gem.outputs.gem-path }}"

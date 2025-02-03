@@ -1,2 +1,3 @@
+# Required when cross-compiling to help CI find the correct Cargo.toml.
 [workspace]
 members = ["ext/optify_ruby"]
