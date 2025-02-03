@@ -9,12 +9,23 @@ Core Features:
 * Supports clear file names and **aliases** for feature names.
 * **Caching**: (coming soon)
 
-# .NET
-See [github.com/juharris/dotnet-OptionsProvider](https://github.com/juharris/dotnet-OptionsProvider) for an equivalent library with dependency injection support.
+# Merging Configuration Files
+When merging configurations for features, objects are merged with the last feature taking precedence.
+Key values, including lists are overwritten.
 
-# Ruby
-Coming soon and it will be built using the Rust implementation.
+More details and examples to come soon.
+For now, the details for the .NET implementation are good enough, except that the .NET implementation merges lists, while the implementations in this repository overwrite lists.
 
-# Rust
-See the [rust](./rust/) folder.
-Not intended to be used for other Rust projects as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
+# Language Support
+
+## .NET
+See [github.com/juharris/dotnet-OptionsProvider](https://github.com/juharris/dotnet-OptionsProvider) for a similar library with dependency injection support.
+Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
+
+## Ruby
+See the [ruby/optify](./ruby/optify/) folder.
+Built using the Rust implementation.
+
+## Rust
+See the [rust/optify](./rust/optify/) folder.
+Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.

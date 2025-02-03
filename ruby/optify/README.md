@@ -26,6 +26,8 @@ provider = Optify::OptionsProviderBuilder.new
 config = provider.get_options("myConfig", ['feature1', 'feature2'])
 ```
 
+See the [root README.md](../../README.md) for details about how configuration files for features are loaded and combined at runtime to build the configuration.
+
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
 
