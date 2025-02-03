@@ -69,7 +69,8 @@ jobs:
         ruby --version
         rustup --version
 
-    # A full build is probably not needed, but this helps ensure that /home/runner/.cargo/registry is created.
+    # Initialize some Rust resources
+    # such as ensuring that /home/runner/.cargo/registry is created.
     # Otherwise, we get "docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /home/runner/.cargo/registry."
     - name: "[Rust] Build"
       run: cargo check --release
