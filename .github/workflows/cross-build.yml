@@ -29,11 +29,11 @@ jobs:
       fail-fast: false
       matrix:
         ruby_platform:
-          # TODO Add once we confirm it works.
-        # - x86_64-linux
+        # TODO Add once we confirm it works as needed.
+        # More versions in https://raw.githubusercontent.com/oxidize-rb/rb-sys/main/data/derived/github-actions-matrix.json
+        - x86_64-linux
         # - x86_64-darwin
         - arm64-darwin
-        # TODO As more as needed.
         ruby_version:
         - "3.3"
     steps:
@@ -74,6 +74,8 @@ jobs:
         cache-save-always: false
         platform: ${{ matrix.ruby_platform }}
         ruby-versions: "3.3"
+        # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
+        # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
         # When we're ready:
         # ruby-versions: "3.3,3.4"
         working-directory: ./ruby/optify
