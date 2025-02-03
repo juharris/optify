@@ -14,8 +14,13 @@ Rake::ExtensionTask.new("optify_ruby") do |ext|
   if ENV['RB_SYS_CROSS_COMPILE'] == 'true'
     # FIXME Get cross-compilation working.
     # See https://github.com/oxidize-rb/actions/blob/main/cross-gem/readme.md
+    # Add more as needed.
     ext.cross_compile = true
-    ext.cross_platform = RbSys::ToolchainInfo.supported_ruby_platforms
+    ext.cross_platform = [
+      "arm64-darwin",
+      "x86_64-darwin",
+      "x86_64-linux",
+    ]
   end
   ext.config_script = "extconf.rb"
 end

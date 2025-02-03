@@ -1,0 +1,58 @@
+name: "Build"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "ruby/**"
+      - "rust/**"
+      - "tests/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "ruby/**"
+      - "rust/**"
+      - "tests/**"
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RB_SYS_CARGO_PROFILE: release
+
+jobs:
+  test:
+    name: "Build"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby_platform:
+        - x86_64-linux
+        # TODO Add once we confirm it works.
+        # - x86_64-darwin
+        # - arm64-darwin
+        # TODO As more as needed.
+        ruby_version:
+        - "3.3.1"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        ruby-version: ${{ matrix.ruby_version }}
+
+    - name: "Versions"
+      shell: bash
+      run: |
+        ruby --version
+        rustup --version
+
+    - uses: oxidize-rb/actions/cross-gem@main
+      id: cross-gem
+      with:
+        cache-save-always: false
+        platform: ${{ matrix.ruby_platform }}
+        ruby-versions: "3.3.1"
+        working-directory: ./ruby/optify

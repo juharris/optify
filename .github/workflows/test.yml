@@ -14,12 +14,13 @@ on:
       - "rust/**"
       - "tests/**"
 
-
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
+  RB_SYS_CARGO_PROFILE: release
+  RB_SYS_CROSS_COMPILE: true
 
 jobs:
   test:
@@ -30,7 +31,6 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          # Before releasing 1.0.0: - windows-latest
         ruby_version:
           - "3.3.1"
         # rustup_toolchain:
@@ -72,5 +72,3 @@ jobs:
     - name: "[Ruby] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify
-      env:
-        RB_SYS_CARGO_PROFILE: release
