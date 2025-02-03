@@ -1,6 +1,9 @@
 # Optify
 Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
 
+[![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
+[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+
 See [tests](./tests/) for examples and tests for different implementations of this format for managing options.
 
 Core Features:
@@ -23,9 +26,13 @@ See [github.com/juharris/dotnet-OptionsProvider](https://github.com/juharris/dot
 Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
 
 ## Ruby
+[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+
 See the [ruby/optify](./ruby/optify/) folder.
 Built using the Rust implementation.
 
 ## Rust
+[![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
+
 See the [rust/optify](./rust/optify/) folder.
 Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
