@@ -5,6 +5,27 @@
 APIs are not final and will change, for example, interfaces with be used.
 This is just meant to be minimal to get started and help build a Ruby library.
 
+## Usage
+
+The gem is called `optify-config`, but we would like to call it just `optify`, but that name was taken by a gem that has not been updated since 2012.
+So we use the name `optify-config` to avoid conflicts, but the require statement is `optify` and the namespace is `Optify`.
+
+```shell
+gem install optify-config
+```
+
+```ruby
+require 'optify'
+
+# Create a new OptionsProviderBuilder
+provider = Optify::OptionsProviderBuilder.new
+    .add_directory('configs')
+    .build
+
+# Get the configuration for "myConfig" when the features "feature1" and "feature2" are enabled
+config = provider.get_options("myConfig", ['feature1', 'feature2'])
+```
+
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
 
