@@ -1,4 +1,4 @@
-name: "Build"
+name: "Cross-Build"
 
 on:
   push:
@@ -38,10 +38,13 @@ jobs:
         - "3.3.1"
     steps:
     - uses: actions/checkout@v4
-    - uses: ruby/setup-ruby@v1
+    - uses: oxidize-rb/actions/setup-ruby-and-rust@main
       with:
-        bundler-cache: true
         ruby-version: ${{ matrix.ruby_version }}
+        bundler-cache: false
+        cargo-cache: true
+        cargo-vendor: true
+        cache-version: v0-${{ matrix.ruby_platform }}
 
     - name: "Versions"
       shell: bash
