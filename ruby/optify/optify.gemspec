@@ -1,4 +1,4 @@
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 Gem::Specification.new do |spec|
   spec.name = "optify-config"
@@ -11,13 +11,15 @@ Gem::Specification.new do |spec|
   spec.authors = ["Justin D. Harris"]
 
   spec.metadata = {
-    'source_code_uri' => 'https://github.com/juharris/optify',
     'bug_tracker_uri' => 'https://github.com/juharris/optify/issues',
+    # Not needed because it's the same as the source_code_uri
+    # 'homepage_uri' => 'https://github.com/juharris/optify',
+    'source_code_uri' => 'https://github.com/juharris/optify',
   }
 
   # Cross-compilation
   # Copied from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/rust_reverse.gemspec.
-  spec.files = Dir["lib/**/*.rb", "ext/**/*.{rs,toml,lock,rb}"]
+  spec.files = Dir["lib/**/*.rb", "ext/**/*.{rs,toml,lock,rb}", "rbi/*"]
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
@@ -27,12 +29,12 @@ Gem::Specification.new do |spec|
   # needed until rubygems supports Rust support is out of beta
   spec.add_dependency "rb_sys" , "~> 0.9.109"
 
-  spec.add_dependency "sorbet-runtime"
+  spec.add_dependency "sorbet-runtime", "~> 0.5.11796"
 
   spec.add_development_dependency "rake-compiler", "~> 1.2.9"
-  spec.add_development_dependency "sorbet"
-  spec.add_development_dependency "tapioca"
+  spec.add_development_dependency "sorbet", "~> 0.5.11796"
+  spec.add_development_dependency "tapioca", "~> 0.16.8"
 
   # Tests
-  spec.add_development_dependency "test-unit"
+  spec.add_development_dependency "test-unit", "~> 3.6.7"
 end
