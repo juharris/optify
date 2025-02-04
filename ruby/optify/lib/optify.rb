@@ -9,3 +9,9 @@ require_relative "optify_ruby/implementation"
 # This yields some warnings, but we should redeclare the methods in Ruby to help with type checking anyway.
 # Warnings about redefining methods are normal and can be ignored because the implementations in Ruby are not implemented and only exist to help with type checking.
 require_relative "optify_ruby/optify_ruby"
+
+# Redefine the module to try to help with typechecking.
+
+# Tools for working with configurations declared in files.
+module Optify
+end

@@ -1,4 +1,4 @@
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 Gem::Specification.new do |spec|
   spec.name = "optify-config"
@@ -11,8 +11,9 @@ Gem::Specification.new do |spec|
   spec.authors = ["Justin D. Harris"]
 
   spec.metadata = {
-    'source_code_uri' => 'https://github.com/juharris/optify',
     'bug_tracker_uri' => 'https://github.com/juharris/optify/issues',
+    'homepage_uri' => 'https://github.com/juharris/optify',
+    'source_code_uri' => 'https://github.com/juharris/optify',
   }
 
   # Cross-compilation
