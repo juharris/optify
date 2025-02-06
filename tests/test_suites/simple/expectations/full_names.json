@@ -22,8 +22,8 @@
 					"new": "new value"
 				}
 			},
-			"root string": "root string same",
-			"root string 2": "override"
+			"rootString": "root string same",
+			"rootString2": "override"
 		}
 	}
 }

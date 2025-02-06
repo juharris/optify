@@ -19,7 +19,7 @@
 					"new": "new value"
 				}
 			},
-			"root string 2": "override"
+			"rootString2": "override"
 		}
 	}
 }

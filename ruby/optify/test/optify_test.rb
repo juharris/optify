@@ -4,6 +4,7 @@
 require 'json'
 require 'test/unit'
 require_relative '../lib/optify'
+require_relative './my_config'
 
 require 'sorbet-runtime'
 
@@ -44,5 +45,15 @@ class OptifyTest < Test::Unit::TestCase
       next unless File.directory?(suite_path)
       run_suite(suite_path)
     end
+  end
+
+  def test_custom_config_class
+    value = "hello"
+    m = MyConfig.from_hash({ "rootString" => value, :myObject => { "two" => 2 } })
+    assert_equal(value, m.rootString)
+    assert_raises(NoMethodError) do
+      m.rootString = "wtv"
+    end
+    assert_equal(2, m.myObject.two)
   end
 end
