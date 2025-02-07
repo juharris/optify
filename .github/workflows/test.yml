@@ -43,7 +43,7 @@ jobs:
       with:
         bundler-cache: true
         ruby-version: ${{ matrix.ruby_version }}
-        working-directory: ./ruby/optify
+        # Don't put the working-directory here because we don't want to install the Ruby project yet.
 
     - name: "Versions"
       shell: bash

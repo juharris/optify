@@ -31,8 +31,6 @@ Gem::Specification.new do |spec|
 
   spec.extensions = ['ext/optify_ruby/extconf.rb']
 
-  spec.add_dependency 'ruby', '~> 3.4.1'
-
   # needed until rubygems supports Rust support is out of beta
   spec.add_dependency 'rb_sys', '~> 0.9.109'
 
