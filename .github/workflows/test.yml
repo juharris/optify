@@ -29,14 +29,13 @@ jobs:
     name: "Build & Test"
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: true
       matrix:
         os:
           - ubuntu-latest
           - macos-latest
         ruby_version:
-          - "3.3.1"
-        # rustup_toolchain:
-        #   - "stable"
+        - "3.4.1"
     steps:
     - uses: actions/checkout@v4
     - uses: ruby/setup-ruby@v1
@@ -44,6 +43,7 @@ jobs:
       with:
         bundler-cache: true
         ruby-version: ${{ matrix.ruby_version }}
+        # Don't put the working-directory here because we don't want to install the Ruby project yet.
 
     - name: "Versions"
       shell: bash
