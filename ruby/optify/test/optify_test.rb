@@ -54,7 +54,7 @@ class OptifyTest < Test::Unit::TestCase
     m = MyConfig.from_hash(hash)
     assert_equal(value, m.rootString)
     assert_raises(NoMethodError) do
-      m.rootString = "wtv"
+      T.unsafe(m).rootString = "wtv"
     end
     assert_equal(2, m.myObject.two)
     assert_equal(222, m.myObjects[0]&.two)

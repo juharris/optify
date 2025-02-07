@@ -42,10 +42,10 @@ module Optify
     def get_options(key, feature_names, config_class)
       options_json = get_options_json(key, feature_names)
       h = JSON.parse(options_json, object_class: Hash)
-      # TODO Try to get type checking working and/or ignore the error.
-      T.cast(config_class.from_hash(h), T.type_parameter(:Config))
-      # TODO Throw a more clear error.
-      # raise NotImplementedError
+      if !config_class.respond_to?(:from_hash)
+        raise NotImplementedError.new("The provided config class does not respond to `from_hash`.")
+      end
+      T.unsafe(config_class).from_hash(h)
     end
   end
 
