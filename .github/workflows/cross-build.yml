@@ -35,7 +35,7 @@ jobs:
         - arm64-darwin
         - x86_64-linux
         ruby_version:
-        - "3.4"
+        - "3.4.1"
     steps:
     - uses: actions/checkout@v4
 
@@ -52,6 +52,7 @@ jobs:
       with:
         bundler-cache: true
         ruby-version: ${{ matrix.ruby_version }}
+        working-directory: ./ruby/optify
 
     - name: "Versions"
       shell: bash
