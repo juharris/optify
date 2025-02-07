@@ -34,6 +34,8 @@ jobs:
         - aarch64-linux
         - arm64-darwin
         - x86_64-linux
+        ruby_version:
+        - "3.4"
     steps:
     - uses: actions/checkout@v4
 
@@ -49,7 +51,7 @@ jobs:
       name: "[Ruby] Setup"
       with:
         bundler-cache: true
-        working-directory: ./ruby/optify
+        ruby-version: ${{ matrix.ruby_version }}
 
     - name: "Versions"
       shell: bash
@@ -72,7 +74,7 @@ jobs:
       with:
         cache-save-always: false
         platform: ${{ matrix.ruby_platform }}
-        # ruby-versions: "3.4"
+        ruby-versions: "3.4"
         # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
         # When we're ready:

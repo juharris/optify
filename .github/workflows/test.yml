@@ -34,15 +34,15 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-        # rustup_toolchain:
-        #   - "stable"
+        ruby_version:
+        - "3.4"
     steps:
     - uses: actions/checkout@v4
     - uses: ruby/setup-ruby@v1
       name: "[Ruby] Setup"
       with:
         bundler-cache: true
-        working-directory: ./ruby/optify
+        ruby-version: ${{ matrix.ruby_version }}
 
     - name: "Versions"
       shell: bash
