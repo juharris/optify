@@ -20,12 +20,12 @@ class BaseConfig
       case value
       when Array
         inner_type = T::Utils.signature_for_method(self.instance_method(key)).return_type.type.raw_type
-        if inner_type.methods.include?(:from_hash)
+        if inner_type.respond_to?(:from_hash)
           value = value.map { |v| inner_type.from_hash(v) }
         end
       when Hash
         type_for_key = T::Utils.signature_for_method(self.instance_method(key)).return_type.raw_type
-        if type_for_key.methods.include?(:from_hash)
+        if type_for_key.respond_to?(:from_hash)
           value = type_for_key.from_hash(value)
         end
       end
