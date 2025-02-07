@@ -30,9 +30,10 @@ class OptifyTest < Test::Unit::TestCase
       expected_options = expected_info["options"]
       features = expected_info["features"]
       expected_options.each do |key, expected_value|
-        options = provider.get_options(key, features)
+        expected_json = provider.get_options_json(key, features)
+        options = JSON.parse(expected_json, object_class: Hash)
         expected_json = expected_value.to_json
-        expected_open_struct = JSON.parse(expected_json, object_class: OpenStruct)
+        expected_open_struct = JSON.parse(expected_json, object_class: Hash)
         assert_equal(expected_open_struct, options, "Options for key \"#{key}\" with features #{features} do not match for test suite at #{expectation_path}")
       end
     end
@@ -49,12 +50,23 @@ class OptifyTest < Test::Unit::TestCase
 
   def test_custom_config_class
     value = "hello"
-    m = MyConfig.from_hash({ "rootString" => value, :myObject => { "two" => 2 }, "myObjects" => [{"two": 222}] })
+    hash = { "rootString" => value, :myObject => { "two" => 2 }, "myObjects" => [{"two": 222}] }
+    m = MyConfig.from_hash(hash)
     assert_equal(value, m.rootString)
     assert_raises(NoMethodError) do
       m.rootString = "wtv"
     end
     assert_equal(2, m.myObject.two)
-    assert_equal(222, m.myObjects[0].two)
+    assert_equal(222, m.myObjects[0]&.two)
+  end
+
+  def test_custom_config_class2
+    builder = Optify::OptionsProviderBuilder.new
+      .add_directory("../../tests/test_suites/simple/configs")
+    provider = builder.build
+    config = provider.get_options("myConfig", ["A"], MyConfig)
+    assert_equal("root string same", config.rootString)
+    assert_equal(["example item 1"], config.myArray)
+    assert_equal(2, config.myObject.two)
   end
 end

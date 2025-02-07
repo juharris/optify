@@ -27,11 +27,25 @@ module Optify
     #
     # @param key [String] the key to fetch options for.
     # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @return [OpenStruct] the options.
-    sig { params(key: String, feature_names: T::Array[String]).returns(OpenStruct) }
-    def get_options(key, feature_names)
+    # @param config_class [ConfigType] The class of the configuration to return.
+    # @return [ConfigType] The options.
+    sig {
+      type_parameters(:Config)
+      .params(
+        key: String,
+        feature_names: T::Array[String],
+        config_class: T::Class[T.type_parameter(:Config)]
+        # config_class: T.class_of(FromHashable)
+      )
+      .returns(T.type_parameter(:Config))
+    }
+    def get_options(key, feature_names, config_class)
       options_json = get_options_json(key, feature_names)
-      JSON.parse(options_json, object_class: OpenStruct)
+      h = JSON.parse(options_json, object_class: Hash)
+      # TODO Try to get type checking working and/or ignore the error.
+      T.cast(config_class.from_hash(h), T.type_parameter(:Config))
+      # TODO Throw a more clear error.
+      # raise NotImplementedError
     end
   end
 
