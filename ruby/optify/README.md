@@ -10,10 +10,37 @@ This is just meant to be minimal to get started and help build a Ruby library.
 The gem is called `optify-config`, but we would like to call it just `optify`, but that name was taken by a gem that has not been updated since 2012.
 So we use the name `optify-config` to avoid conflicts, but the require statement is `optify` and the namespace is `Optify`.
 
+Set up your configuration files as explained in the [root README.md](../../README.md).
+
 ```shell
 gem install optify-config
 ```
 
+Define your immutable configuration classes:
+```ruby
+require 'optify'
+
+class MyObject < Optify::BaseConfig
+  sig { returns(Integer) }
+  attr_reader :number
+
+  sig { returns(String) }
+  attr_reader :string
+end
+
+class MyConfig < Optify::BaseConfig
+  sig { returns(String) }
+  attr_reader :name
+
+  sig { returns(MyObject) }
+  attr_reader :object
+
+  sig { returns(T::Array[MyObject]) }
+  attr_reader :objects
+end
+```
+
+Use a provider:
 ```ruby
 require 'optify'
 
@@ -23,10 +50,12 @@ provider = Optify::OptionsProviderBuilder.new
     .build
 
 # Get the configuration for "myConfig" when the features "feature1" and "feature2" are enabled
-config = provider.get_options("myConfig", ['feature1', 'feature2'])
-```
+config = provider.get_options("myConfig", ['feature1', 'feature2'], MyConfig)
 
-See the [root README.md](../../README.md) for details about how configuration files for features are loaded and combined at runtime to build the configuration.
+# Use the config
+puts config.name
+puts config.object.number
+```
 
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->

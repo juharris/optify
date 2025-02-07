@@ -1,9 +1,6 @@
 # typed: true
 # frozen_string_literal: true
 
-require 'sorbet-runtime'
-require 'tapioca'
-
 class MyObject < Optify::BaseConfig
   sig { returns(Integer) }
   attr_reader :one
