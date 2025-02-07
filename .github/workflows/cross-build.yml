@@ -26,7 +26,7 @@ jobs:
     name: "Build"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         ruby_platform:
         # Add more as needed.
@@ -49,6 +49,7 @@ jobs:
       name: "[Ruby] Setup"
       with:
         bundler-cache: true
+        working-directory: ./ruby/optify
 
     - name: "Versions"
       shell: bash
