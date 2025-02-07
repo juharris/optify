@@ -4,7 +4,7 @@
 require 'sorbet-runtime'
 require 'tapioca'
 
-class MyObject < Optify::FromHashable
+class MyObject < Optify::BaseConfig
   private
 
   attr_writer :one, :two, :string, :deeper
@@ -25,7 +25,7 @@ class MyObject < Optify::FromHashable
 end
 
 # A custom configuration for testing.
-class MyConfig < Optify::FromHashable
+class MyConfig < Optify::BaseConfig
   private
 
   attr_writer :rootString, :myArray, :myObject, :myObjects, :deeper # rubocop:disable Naming/MethodName

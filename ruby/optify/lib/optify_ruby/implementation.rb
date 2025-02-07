@@ -28,6 +28,7 @@ module Optify
     # @param key [String] the key to fetch options for.
     # @param feature_names [Array<String>] The enabled feature names to use to build the options.
     # @param config_class [ConfigType] The class of the configuration to return.
+    # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
     # @return [ConfigType] The options.
     sig do
       type_parameters(:Config)

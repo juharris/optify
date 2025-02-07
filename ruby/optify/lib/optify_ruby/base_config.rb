@@ -11,8 +11,10 @@ module Optify
   # This class is a work in progress with minimal error handling
   # and doesn't handle certain cases such as nilable types yet.
   # It may be moved to another gem in the future.
-  class FromHashable
+  class BaseConfig
     extend T::Sig
+    extend T::Helpers
+    abstract!
 
     # Create a new instance of the class from a hash.
     #
