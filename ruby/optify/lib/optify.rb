@@ -9,3 +9,5 @@ require_relative 'optify_ruby/implementation'
 # Warnings about redefining methods are normal and can be ignored
 # because the implementations in Ruby are not implemented and only exist to help with type checking.
 require_relative 'optify_ruby/optify_ruby'
+
+require_relative 'optify_ruby/from_hashable'
