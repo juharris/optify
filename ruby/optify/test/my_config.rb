@@ -5,12 +5,6 @@ require 'sorbet-runtime'
 require 'tapioca'
 
 class MyObject < Optify::BaseConfig
-  private
-
-  attr_writer :one, :two, :string, :deeper
-
-  public
-
   sig { returns(Integer) }
   attr_reader :one
 
@@ -26,12 +20,6 @@ end
 
 # A custom configuration for testing.
 class MyConfig < Optify::BaseConfig
-  private
-
-  attr_writer :rootString, :myArray, :myObject, :myObjects, :deeper # rubocop:disable Naming/MethodName
-
-  public
-
   sig { returns(String) }
   attr_reader :rootString # rubocop:disable Naming/MethodName
 

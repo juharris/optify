@@ -1,5 +1,6 @@
 # Optify
-Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
+Simplifies getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
+Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
 [![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
@@ -18,6 +19,17 @@ Key values, including lists are overwritten.
 
 More details and examples to come soon.
 For now, the details for the .NET implementation are good enough, except that the .NET implementation merges lists, while the implementations in this repository overwrite lists.
+
+# File Formats
+| Format | Good For | Caveats |
+| --- | --- | --- |
+| JSON  | **Long files** where built in parentheses checking is important because multiple people may edit the same file. This should normally be avoided by making smaller more granular files that are combined at runtime by giving each as a feature. | **No comments** because comments are not part of the JSON standard. Comments can be given as properties: `"_comment": "blah blah"`. Multiline strings or strings with escaping are head to read. |
+| YAML | Short and simple files that are not edited often. Good support for strings with newlines. | Getting the indentation wrong can mean that properties are ignored. |
+| JSON5 | Good mix of features from JSON and YAML. | Your IDE may require an extension to help with validation. |
+
+Other types are supported as the [config](https://crates.io/crates/config) Rust crate is used to back this project, but those other types are not as well-known and not as nice for working with deep objects so they are not recommended.
+In most cases, JSON should be preferred to help with some basic static structural validation at load time.
+Standard JSON validation will easily catch issues such as a bad merge conflict resolution, whereas it is easy to have valid YAML, but would not work as expected at runtime because of incorrect indentation.
 
 # Language Support
 
