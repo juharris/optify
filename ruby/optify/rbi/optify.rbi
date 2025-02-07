@@ -8,14 +8,14 @@ module Optify
     #
     # @param key [String] the key to fetch options for.
     # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @return [OpenStruct] the options.
+    # @param config_class [ConfigType] The class of the configuration to return.
+    # @return [ConfigType] The options.
     sig {
       type_parameters(:Config)
       .params(
         key: String,
         feature_names: T::Array[String],
         config_class: T::Class[T.type_parameter(:Config)]
-        # config_class: T.class_of(FromHashable)
       )
       .returns(T.type_parameter(:Config))
     }
