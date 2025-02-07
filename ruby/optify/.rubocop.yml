@@ -1,0 +1,14 @@
+AllCops:
+  TargetRubyVersion: 3.3
+  # We'll enable them as needed.
+  # Don't want to accept any new ones without reviewing them.
+  NewCops: disable
+
+Metrics/AbcSize:
+  Max: 25
+
+Metrics/CyclomaticComplexity:
+  Max: 20
+
+Metrics/MethodLength:
+  Max: 20

@@ -1,40 +1,45 @@
-VERSION = "0.2.2"
+# frozen_string_literal: true
+
+VERSION = '0.3.0'
 
 Gem::Specification.new do |spec|
-  spec.name = "optify-config"
+  spec.name = 'optify-config'
   spec.version = VERSION
-  spec.summary = "Configure your Ruby project using JSON and YAML files that can be combined at runtime."
-  spec.description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files to manage options for experiments or flights."
-  spec.homepage = "https://github.com/juharris/optify"
-  spec.license = "MIT"
+  spec.summary = 'Configure your Ruby project using JSON and YAML files that can be combined at runtime.'
+  spec.description = "Simplifies getting the right configuration options for a process using pre-loaded configurations
+  from files to manage options for experiments or flights."
+  spec.homepage = 'https://github.com/juharris/optify'
+  spec.license = 'MIT'
 
-  spec.authors = ["Justin D. Harris"]
+  spec.authors = ['Justin D. Harris']
+
+  spec.required_ruby_version = '>= 3.3'
 
   spec.metadata = {
     'bug_tracker_uri' => 'https://github.com/juharris/optify/issues',
     # Not needed because it's the same as the source_code_uri
     # 'homepage_uri' => 'https://github.com/juharris/optify',
-    'source_code_uri' => 'https://github.com/juharris/optify',
+    'source_code_uri' => 'https://github.com/juharris/optify'
   }
 
   # Cross-compilation
   # Copied from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/rust_reverse.gemspec.
-  spec.files = Dir["lib/**/*.rb", "ext/**/*.{rs,toml,lock,rb}", "rbi/*"]
-  spec.bindir = "exe"
+  spec.files = Dir['lib/**/*.rb', 'ext/**/*.{rs,toml,lock,rb}', 'rbi/*']
+  spec.bindir = 'exe'
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
-  spec.require_paths = ["lib"]
+  spec.require_paths = ['lib']
 
-  spec.extensions = ["ext/optify_ruby/extconf.rb"]
+  spec.extensions = ['ext/optify_ruby/extconf.rb']
 
   # needed until rubygems supports Rust support is out of beta
-  spec.add_dependency "rb_sys" , "~> 0.9.109"
+  spec.add_dependency 'rb_sys', '~> 0.9.109'
 
-  spec.add_dependency "sorbet-runtime", "~> 0.5.11796"
+  spec.add_dependency 'sorbet-runtime', '~> 0.5.11796'
 
-  spec.add_development_dependency "rake-compiler", "~> 1.2.9"
-  spec.add_development_dependency "sorbet", "~> 0.5.11796"
-  spec.add_development_dependency "tapioca", "~> 0.16.8"
+  spec.add_development_dependency 'rake-compiler', '~> 1.2.9'
+  spec.add_development_dependency 'sorbet', '~> 0.5.11796'
+  spec.add_development_dependency 'tapioca', '~> 0.16.8'
 
   # Tests
-  spec.add_development_dependency "test-unit", "~> 3.6.7"
+  spec.add_development_dependency 'test-unit', '~> 3.6.7'
 end

@@ -70,7 +70,9 @@ jobs:
       run: bundle install
       working-directory: ./ruby/optify
     - name: "[Ruby] Lint"
-      run: bundle exec srb tc
+      run: |
+        bundle exec srb tc
+        bundle exec rubocop
       working-directory: ./ruby/optify
     - name: "[Ruby] Test"
       run: bundle exec rake test

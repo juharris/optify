@@ -27,11 +27,26 @@ module Optify
     #
     # @param key [String] the key to fetch options for.
     # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @return [OpenStruct] the options.
-    sig { params(key: String, feature_names: T::Array[String]).returns(OpenStruct) }
-    def get_options(key, feature_names)
+    # @param config_class [ConfigType] The class of the configuration to return.
+    # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
+    # @return [ConfigType] The options.
+    sig do
+      type_parameters(:Config)
+        .params(
+          key: String,
+          feature_names: T::Array[String],
+          config_class: T::Class[T.type_parameter(:Config)]
+        )
+        .returns(T.type_parameter(:Config))
+    end
+    def get_options(key, feature_names, config_class)
       options_json = get_options_json(key, feature_names)
-      JSON.parse(options_json, object_class: OpenStruct)
+      h = JSON.parse(options_json, object_class: Hash)
+      unless config_class.respond_to?(:from_hash)
+        raise NotImplementedError, 'The provided config class does not implement to `from_hash`.'
+      end
+
+      T.unsafe(config_class).from_hash(h)
     end
   end
 

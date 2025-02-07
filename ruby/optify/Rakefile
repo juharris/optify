@@ -1,47 +1,49 @@
 # frozen_string_literal: true
 # typed: false
 
-require "rb_sys/extensiontask"
-require "rake/testtask"
+require 'rb_sys/extensiontask'
+require 'rake/testtask'
 
 # Had these but probably don't need them anymore.
 # require "bundler/gem_tasks"
 # require "rake/extensiontask"
 puts "rake top_level_tasks: #{Rake.application.top_level_tasks}"
 
-puts "When loading Optify bindings, warnings about redefining methods are normal and can be ignored because the implementations in Ruby are not implemented and only exist to help with type checking."
+puts "When loading Optify bindings, warnings about redefining methods are normal
+ and can be ignored because the implementations in Ruby are not implemented and only exist to help with type checking."
 
 task default: :test
 
-spec = Gem::Specification.load("optify.gemspec")
+spec = Gem::Specification.load('optify.gemspec')
 
 # For cross-compilation working with `rb-sys`.
 # See https://github.com/oxidize-rb/rb-sys/blob/main/gem/README.md for cross-compilation.
 # `RbSys::ExtensionTask` is a replacement for `Rake::ExtensionTask` and it might add the `native` tasks.
-RbSys::ExtensionTask.new("optify_ruby", spec) do |ext|
-  ext.lib_dir = "lib/optify_ruby"
+RbSys::ExtensionTask.new('optify_ruby', spec) do |ext|
+  ext.lib_dir = 'lib/optify_ruby'
   if ENV['RB_SYS_CROSS_COMPILE'] == 'true'
-    puts "Cross-compiling."
+    puts 'Cross-compiling.'
     # See https://github.com/oxidize-rb/actions/blob/main/cross-gem/readme.md
     ext.cross_compile = true
     # It's not clear what this list is supposed to do.
     # It's from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/Rakefile#L19
     # Add more as needed.
-    ext.cross_platform = [
-      "arm64-darwin",
-      "x86_64-darwin",
-      "x86_64-linux",
+    ext.cross_platform = %w[
+      arm64-darwin
+      x86_64-darwin
+      x86_64-linux
     ]
   end
 
   # Saw this at https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/Rakefile#L20
-  # but seems like it's not needed and it doesn't even point to the right place because it doesn't have the full path: ext/optify_ruby/extconf.rb
+  # but seems like it's not needed and it doesn't even point to the right place
+  # because it doesn't have the full path: ext/optify_ruby/extconf.rb
   # Is it supposed to be relative?
   # ext.config_script = "extconf.rb"
 end
 
 task :dev do
-  puts "Setting RB_SYS_CARGO_PROFILE to dev."
+  puts 'Setting RB_SYS_CARGO_PROFILE to dev.'
   ENV['RB_SYS_CARGO_PROFILE'] = 'dev'
 end
 
@@ -52,5 +54,5 @@ Rake::TestTask.new do |t|
     puts "RB_SYS_CARGO_PROFILE: #{ENV['RB_SYS_CARGO_PROFILE']}"
   end
   t.deps << :compile
-  t.test_files = FileList[File.expand_path("test/*_test.rb", __dir__)]
+  t.test_files = FileList[File.expand_path('test/*_test.rb', __dir__)]
 end

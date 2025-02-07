@@ -7,8 +7,8 @@
 	},
 	"options": {
 		"myConfig": {
-			"root string": "root string same",
-			"root string 2": "gets overridden",
+			"rootString": "root string same",
+			"rootString2": "gets overridden",
 			"myArray": [
 				"example item 1"
 			],
