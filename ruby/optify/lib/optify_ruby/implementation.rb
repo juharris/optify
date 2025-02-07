@@ -29,22 +29,23 @@ module Optify
     # @param feature_names [Array<String>] The enabled feature names to use to build the options.
     # @param config_class [ConfigType] The class of the configuration to return.
     # @return [ConfigType] The options.
-    sig {
+    sig do
       type_parameters(:Config)
-      .params(
-        key: String,
-        feature_names: T::Array[String],
-        config_class: T::Class[T.type_parameter(:Config)]
-        # config_class: T.class_of(FromHashable)
-      )
-      .returns(T.type_parameter(:Config))
-    }
+        .params(
+          key: String,
+          feature_names: T::Array[String],
+          config_class: T::Class[T.type_parameter(:Config)]
+          # config_class: T.class_of(FromHashable)
+        )
+        .returns(T.type_parameter(:Config))
+    end
     def get_options(key, feature_names, config_class)
       options_json = get_options_json(key, feature_names)
       h = JSON.parse(options_json, object_class: Hash)
-      if !config_class.respond_to?(:from_hash)
-        raise NotImplementedError.new("The provided config class does not respond to `from_hash`.")
+      unless config_class.respond_to?(:from_hash)
+        raise NotImplementedError, 'The provided config class does not implement to `from_hash`.'
       end
+
       T.unsafe(config_class).from_hash(h)
     end
   end

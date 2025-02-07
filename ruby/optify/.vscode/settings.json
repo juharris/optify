@@ -1,7 +1,11 @@
 {
+	"cSpell.words": [
+		"chruby",
+		"rubocop"
+	],
 	"rubyLsp.featureFlags": { "tapiocaAddon": true },
 	"search.exclude": {
-		"**/sorbet/rbi": true,
+		"**/sorbet/rbi": true
 	},
 	"sorbet.enabled": true,
 	"sorbet.lspConfigs": [
