@@ -36,7 +36,6 @@ module Optify
           key: String,
           feature_names: T::Array[String],
           config_class: T::Class[T.type_parameter(:Config)]
-          # config_class: T.class_of(FromHashable)
         )
         .returns(T.type_parameter(:Config))
     end
