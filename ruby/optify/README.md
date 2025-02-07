@@ -60,9 +60,9 @@ puts config.object.number
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
 
-Use Ruby 3.3+., for example, run:
+Use Ruby 3.4+., for example, run:
 ```shell
-chruby 3.3.1
+chruby 3.4.1
 ```
 
 Run:

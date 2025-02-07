@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-config'
@@ -30,6 +30,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.extensions = ['ext/optify_ruby/extconf.rb']
+
+  spec.add_dependency 'ruby', '~> 3.4'
 
   # needed until rubygems supports Rust support is out of beta
   spec.add_dependency 'rb_sys', '~> 0.9.109'

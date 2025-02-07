@@ -33,8 +33,6 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-        ruby_version:
-          - "3.3.1"
         # rustup_toolchain:
         #   - "stable"
     steps:
@@ -43,7 +41,6 @@ jobs:
       name: "[Ruby] Setup"
       with:
         bundler-cache: true
-        ruby-version: ${{ matrix.ruby_version }}
 
     - name: "Versions"
       shell: bash

@@ -34,8 +34,6 @@ jobs:
         - aarch64-linux
         - arm64-darwin
         - x86_64-linux
-        ruby_version:
-        - "3.3"
     steps:
     - uses: actions/checkout@v4
 
@@ -47,21 +45,10 @@ jobs:
         rm .ruby-version
       working-directory: ./ruby/optify
 
-    # Should not be needed because we'll use Rust in a Docker container.
-    # - uses: oxidize-rb/actions/setup-ruby-and-rust@main
-    #   with:
-    #     ruby-version: ${{ matrix.ruby_version }}
-    #     bundler-cache: true
-    #     cargo-cache: true
-    #     cache-save-always: false
-    #     cargo-vendor: true
-    #     cache-version: v0-${{ matrix.ruby_platform }}
-    #     working-directory: ./rust/optify
     - uses: ruby/setup-ruby@v1
       name: "[Ruby] Setup"
       with:
         bundler-cache: true
-        ruby-version: ${{ matrix.ruby_version }}
 
     - name: "Versions"
       shell: bash
@@ -84,7 +71,7 @@ jobs:
       with:
         cache-save-always: false
         platform: ${{ matrix.ruby_platform }}
-        ruby-versions: "3.3"
+        # ruby-versions: "3.4"
         # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
         # When we're ready:
