@@ -49,11 +49,12 @@ class OptifyTest < Test::Unit::TestCase
 
   def test_custom_config_class
     value = "hello"
-    m = MyConfig.from_hash({ "rootString" => value, :myObject => { "two" => 2 } })
+    m = MyConfig.from_hash({ "rootString" => value, :myObject => { "two" => 2 }, "myObjects" => [{"two": 222}] })
     assert_equal(value, m.rootString)
     assert_raises(NoMethodError) do
       m.rootString = "wtv"
     end
     assert_equal(2, m.myObject.two)
+    assert_equal(222, m.myObjects[0].two)
   end
 end

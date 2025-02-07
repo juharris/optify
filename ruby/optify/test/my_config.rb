@@ -10,27 +10,26 @@ require 'tapioca'
 class BaseConfig
   extend T::Sig
 
-  # FIXME Return type is not correct.
-  sig {params(hash: T::Hash[T.untyped, T.untyped]).returns(T.self_type)}
+  # FIXME Get the return type correct. It's tricky with inheritance.
+  sig {params(hash: T::Hash[T.untyped, T.untyped]).returns(T.untyped)}
   def self.from_hash(hash)
-    # When using `< T::Struct` for immutable properties.
     result = self.new
 
-    # When using attr_writer and attr_reader.
     hash.each do |key, value|
-      # TODO Recurse from_hash if needed for hashes and within arrays.
-      # Get the type of the value.
-      # If it is a hash, call from_hash on it.
-      type_of_value = value.class
-      # type_for_key = MyConfig.member_types[key.to_sym]
-      # class_for_value = MyConfig.
-      type_of_key = T::Utils.signature_for_method(self.instance_method(key)).return_type
-      p "key: #{key}, type_of_key: #{type_of_key}, type_of_value: #{type_of_value}"
-      if type_of_value == Hash && type_of_key.respond_to?(:from_hash)
-        puts "making value from hash"
-        value = type_of_key.from_hash(value)
+      # TODO Might need some error handling here.
+      case value
+      when Array
+        inner_type = T::Utils.signature_for_method(self.instance_method(key)).return_type.type.raw_type
+        if inner_type.methods.include?(:from_hash)
+          value = value.map { |v| inner_type.from_hash(v) }
+        end
+      when Hash
+        type_for_key = T::Utils.signature_for_method(self.instance_method(key)).return_type.raw_type
+        if type_for_key.methods.include?(:from_hash)
+          value = type_for_key.from_hash(value)
+        end
       end
-      # TODO Handle arrays.
+
       result.instance_variable_set("@#{key}", value)
     end
     result
@@ -53,7 +52,7 @@ end
 class MyConfig < BaseConfig
   extend T::Sig
   private
-  attr_writer :rootString, :myArray, :myObject
+  attr_writer :rootString, :myArray, :myObject, :myObjects
   public
   sig {returns(String)}
   attr_reader :rootString
@@ -61,4 +60,6 @@ class MyConfig < BaseConfig
   attr_reader :myArray
   sig {returns(MyObject)}
   attr_reader :myObject
+  sig {returns(T::Array[MyObject])}
+  attr_reader :myObjects
 end
