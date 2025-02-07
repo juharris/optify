@@ -1,8 +1,25 @@
 # frozen_string_literal: true
-# typed: strict
+# typed: strong
 
 # Tools for working with configurations declared in files.
 module Optify
+  # A base class for classes from configuration files.
+  # Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`
+  # because they will have an implementation of `from_hash` that works recursively.
+  # This class is a work in progress with minimal error handling
+  # and doesn't handle certain cases such as nilable types yet.
+  # It may be moved to another gem in the future.
+  class BaseConfig
+    abstract!
+
+    # Create a new instance of the class from a hash.
+    #
+    # @param hash [Hash] The hash to create the instance from.
+    # @return The new instance.
+    sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
+    def self.from_hash(hash); end
+  end
+
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
     # Fetches options based on the provided key and feature names.
