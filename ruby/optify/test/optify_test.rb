@@ -71,6 +71,5 @@ class OptifyTest < Test::Unit::TestCase
 
     assert_not_same(config_a, config_b)
     assert_same(config_b, config_b2)
-    # TODO: Make sure they're the same when aliases are used too.
   end
 end

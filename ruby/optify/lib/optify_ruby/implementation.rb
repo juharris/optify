@@ -10,6 +10,8 @@ require_relative './base_config'
 
 # Tools for working with configurations declared in files.
 module Optify
+  # Options for caching.
+  # Only enabling or disabling caching is supported for now.
   class CacheOptions < BaseConfig
   end
 
@@ -34,7 +36,7 @@ module Optify
     # @param feature_names [Array<String>] The enabled feature names to use to build the options.
     # @param config_class [ConfigType] The class of the configuration to return.
     # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
-    # @param cache_options TODO
+    # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
     # @return [ConfigType] The options.
     sig do
       type_parameters(:Config)
@@ -75,7 +77,10 @@ module Optify
         .returns(T.type_parameter(:Config))
     end
     def get_options_with_cache(key, feature_names, config_class, _cache_options)
-      # TODO: Handle aliases. It will be extra work because the mapping is only visible in Rust for now
+      # Cache directly in Ruby instead of Rust because:
+      # * Avoid any possible conversion overhead.
+      # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
+      # TODO: Handle aliases. Right now, they are only visible in Rust
       # and we don't want the cache in Rust because we won't to avoid any conversion overhead.
       @cache ||= T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
       cache_key = [key, feature_names, config_class]

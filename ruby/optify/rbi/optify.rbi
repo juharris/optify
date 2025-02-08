@@ -20,6 +20,8 @@ module Optify
     def self.from_hash(hash); end
   end
 
+  # Options for caching.
+  # Only enabling or disabling caching is supported for now.
   class CacheOptions < BaseConfig
   end
 
