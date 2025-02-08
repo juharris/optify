@@ -20,6 +20,9 @@ module Optify
     def self.from_hash(hash); end
   end
 
+  class CacheOptions < BaseConfig
+  end
+
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
     # Fetches options based on the provided key and feature names.
@@ -34,11 +37,12 @@ module Optify
         .params(
           key: String,
           feature_names: T::Array[String],
-          config_class: T::Class[T.type_parameter(:Config)]
-        )
-        .returns(T.type_parameter(:Config))
-    end
-    def get_options(key, feature_names, config_class); end
+          config_class: T::Class[T.type_parameter(:Config)],
+          cache_options: T.nilable(CacheOptions)
+          )
+          .returns(T.type_parameter(:Config))
+      end
+      def get_options(key, feature_names, config_class, cache_options = nil); end
 
     # Fetches options in JSON format based on the provided key and feature names.
     #

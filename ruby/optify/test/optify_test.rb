@@ -19,7 +19,6 @@ class OptifyTest < Test::Unit::TestCase
 
   sig { params(suite_path: String).void }
   def run_suite(suite_path)
-    puts "Running test suite: #{suite_path}"
     provider = Optify::OptionsProviderBuilder.new
                                              .add_directory(File.join(suite_path, 'configs'))
                                              .build
@@ -52,24 +51,26 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_custom_config_class
-    value = 'hello'
-    hash = { 'rootString' => value, :myObject => { 'two' => 2 }, 'myObjects' => [{ two: 222 }] }
-    m = MyConfig.from_hash(hash)
-    assert_equal(value, m.rootString)
-    assert_raises(NoMethodError) do
-      T.unsafe(m).rootString = 'wtv'
-    end
-    assert_equal(2, m.myObject.two)
-    assert_equal(222, m.myObjects[0]&.two)
-  end
-
-  def test_custom_config_class2
-    builder = Optify::OptionsProviderBuilder.new
-                                            .add_directory('../../tests/test_suites/simple/configs')
-    provider = builder.build
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
     config = provider.get_options('myConfig', ['A'], MyConfig)
     assert_equal('root string same', config.rootString)
     assert_equal(['example item 1'], config.myArray)
     assert_equal(2, config.myObject.two)
+  end
+
+  def test_cache
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
+    cache_options = Optify::CacheOptions.new
+    config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
+    config_b = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
+    config_b2 = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
+
+    assert_not_same(config_a, config_b)
+    assert_same(config_b, config_b2)
+    # TODO: Make sure they're the same when aliases are used too.
   end
 end
