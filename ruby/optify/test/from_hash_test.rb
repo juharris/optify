@@ -1,16 +1,11 @@
 # frozen_string_literal: true
 # typed: true
 
-require 'json'
 require 'test/unit'
 require_relative '../lib/optify'
 require_relative 'my_config'
 
-require 'sorbet-runtime'
-
 class FromHashTest < Test::Unit::TestCase
-  extend T::Sig
-
   def test_from_hash
     value = 'hello'
     hash = { 'rootString' => value, :myObject => { 'two' => 2 }, 'myObjects' => [{ two: 222 }] }
