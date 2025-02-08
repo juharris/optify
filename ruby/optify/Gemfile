@@ -4,6 +4,4 @@ source 'https://rubygems.org'
 
 gemspec
 
-ruby '~> 3.4.1'
-
 gem 'rubocop', '~> 1.71.2', require: false

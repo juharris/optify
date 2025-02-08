@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-VERSION = '0.3.1'
+VERSION = '0.4.0'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-config'
@@ -13,7 +13,8 @@ Gem::Specification.new do |spec|
 
   spec.authors = ['Justin D. Harris']
 
-  spec.required_ruby_version = '>= 3.3'
+  # Only certain versions are supported by Magnus: https://github.com/matsadler/magnus.
+  spec.required_ruby_version = '>= 3.0'
 
   spec.metadata = {
     'bug_tracker_uri' => 'https://github.com/juharris/optify/issues',

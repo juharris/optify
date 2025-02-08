@@ -1,6 +1,7 @@
 {
 	"cSpell.words": [
 		"chruby",
+		"Magnus",
 		"rubocop"
 	],
 	"rubyLsp.featureFlags": { "tapiocaAddon": true },

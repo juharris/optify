@@ -43,7 +43,9 @@ module Optify
       options_json = get_options_json(key, feature_names)
       h = JSON.parse(options_json, object_class: Hash)
       unless config_class.respond_to?(:from_hash)
-        raise NotImplementedError, 'The provided config class does not implement to `from_hash`.'
+        raise NotImplementedError,
+              "The provided config class must implement `from_hash` as a class method
+            in order to be converted."
       end
 
       T.unsafe(config_class).from_hash(h)
