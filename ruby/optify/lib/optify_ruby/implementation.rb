@@ -2,7 +2,6 @@
 # typed: strict
 
 require 'json'
-require 'ostruct'
 
 require 'sorbet-runtime'
 
