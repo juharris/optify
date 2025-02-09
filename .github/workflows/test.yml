@@ -52,14 +52,13 @@ jobs:
       working-directory: ./rust/optify
 
     # Ruby
+    # setup-ruby also runs `bundle install`.
+    # It uses the Ruby version from .ruby-version.
     - uses: ruby/setup-ruby@v1
       name: "[Ruby] Setup"
       with:
         bundler-cache: true
         working-directory: ./ruby/optify
-    - name: "[Ruby] Install"
-      run: bundle install
-      working-directory: ./ruby/optify
     - name: "[Ruby] Lint"
       run: |
         bundle exec srb tc
