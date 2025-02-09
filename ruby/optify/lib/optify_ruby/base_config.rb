@@ -18,6 +18,7 @@ module Optify
 
     # Create a new instance of the class from a hash.
     #
+    # This is a class method that so that it can set members with private setters.
     # @param hash [Hash] The hash to create the instance from.
     # @return The new instance.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
