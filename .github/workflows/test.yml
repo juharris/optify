@@ -34,22 +34,8 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-        ruby_version:
-        - "3.4.1"
     steps:
     - uses: actions/checkout@v4
-    - uses: ruby/setup-ruby@v1
-      name: "[Ruby] Setup"
-      with:
-        bundler-cache: true
-        ruby-version: ${{ matrix.ruby_version }}
-        # Don't put the working-directory here because we don't want to install the Ruby project yet.
-
-    - name: "Versions"
-      shell: bash
-      run: |
-        ruby --version
-        rustup --version
 
     # Rust
     - name: "[Rust] [optify] Build"
@@ -66,6 +52,11 @@ jobs:
       working-directory: ./rust/optify
 
     # Ruby
+    - uses: ruby/setup-ruby@v1
+      name: "[Ruby] Setup"
+      with:
+        bundler-cache: true
+        working-directory: ./ruby/optify
     - name: "[Ruby] Install"
       run: bundle install
       working-directory: ./ruby/optify

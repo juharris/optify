@@ -91,7 +91,8 @@ jobs:
         platform: ${{ matrix.ruby_platform }}
         # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
-        ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
+        # ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
+        ruby-versions: ">=3.0"
         working-directory: ./ruby/optify
 
     - name: "[Ruby] Publish"
