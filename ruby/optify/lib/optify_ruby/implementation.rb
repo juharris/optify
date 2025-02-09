@@ -87,6 +87,7 @@ module Optify
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
       result = get_options(key, feature_names, config_class)
+      T.unsafe(result).freeze if T.unsafe(result).respond_to?(:freeze)
 
       @cache[cache_key] = result
     end

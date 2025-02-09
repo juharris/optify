@@ -14,7 +14,7 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T::Hash[String, Integer]) }
   attr_reader :hash
 
-  sig { returns(T::Hash[String, TestObject]) }
+  sig { returns(T::Hash[Symbol, TestObject]) }
   attr_reader :hash_with_object
 
   sig { returns(T::Hash[String, T::Hash[String, TestObject]]) }
@@ -44,14 +44,14 @@ class FromHashTest < Test::Unit::TestCase
   end
 
   def test_from_hash_with_hash
-    hash = { hash: { 'key' => 2 } }
+    hash = { hash: { key: 2 } }
     m = TestConfig.from_hash(hash)
-    assert_equal({ 'key' => 2 }, m.hash)
+    assert_equal({ key: 2 }, m.hash)
 
-    hash = { hash_with_object: { 'key' => { 'num': 3 } } }
+    hash = { hash_with_object: { key: { num: 3 } } }
     m = TestConfig.from_hash(hash)
-    assert_instance_of(TestObject, m.hash_with_object['key'])
-    assert_equal(3, m.hash_with_object['key']&.num)
+    assert_instance_of(TestObject, m.hash_with_object[:key])
+    assert_equal(3, m.hash_with_object[:key]&.num)
 
     hash = { hash_of_hash_with_object: { 'key' => { 'key2' => { 'num': 4 } } } }
     m = TestConfig.from_hash(hash)
