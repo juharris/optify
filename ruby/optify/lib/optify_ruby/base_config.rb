@@ -35,8 +35,8 @@ module Optify
         when Hash
           sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
           if sig_return_type.respond_to?(:raw_type)
-            type_for_key = sig_return_type.raw_type
-            value = type_for_key.from_hash(value) if type_for_key.respond_to?(:from_hash)
+            type_for_value = sig_return_type.raw_type
+            value = type_for_value.from_hash(value) if type_for_value.respond_to?(:from_hash)
           end
         end
 

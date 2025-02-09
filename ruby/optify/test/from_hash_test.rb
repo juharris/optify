@@ -5,8 +5,30 @@ require 'test/unit'
 require_relative '../lib/optify'
 require_relative 'my_config'
 
+class TestObject < Optify::BaseConfig
+  sig { returns(Integer) }
+  attr_reader :num
+end
+
+class TestConfig < Optify::BaseConfig
+  sig { returns(T::Hash[String, Integer]) }
+  attr_reader :hash
+
+  sig { returns(T::Hash[String, TestObject]) }
+  attr_reader :hash_with_object
+
+  sig { returns(T::Array[TestObject]) }
+  attr_reader :objects
+
+  sig { returns(T::Array[T.nilable(TestObject)]) }
+  attr_reader :nilable_objects
+
+  sig { returns(T.nilable(TestObject)) }
+  attr_reader :nilable_object
+end
+
 class FromHashTest < Test::Unit::TestCase
-  def test_from_hash
+  def test_from_hash_deep
     value = 'hello'
     hash = { 'rootString' => value, :myObject => { 'two' => 2 }, 'myObjects' => [{ two: 222 }] }
     m = MyConfig.from_hash(hash)
@@ -16,5 +38,17 @@ class FromHashTest < Test::Unit::TestCase
     end
     assert_equal(2, m.myObject.two)
     assert_equal(222, m.myObjects[0]&.two)
+  end
+
+  def test_from_hash_with_hash
+    hash = { hash: { 'key' => 2 } }
+    m = TestConfig.from_hash(hash)
+    assert_equal({ 'key' => 2 }, m.hash)
+
+    hash = { hash_with_object: { 'key' => { 'num': 3 } } }
+    m = TestConfig.from_hash(hash)
+    assert_equal(3, m.hash_with_object['key']&.num)
+
+    # TODO: Add tests for the other cases with nilable.
   end
 end
