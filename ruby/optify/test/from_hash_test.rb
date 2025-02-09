@@ -17,6 +17,9 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T::Hash[String, TestObject]) }
   attr_reader :hash_with_object
 
+  sig { returns(T::Hash[String, T::Hash[String, TestObject]]) }
+  attr_reader :hash_of_hash_with_object
+
   sig { returns(T::Array[TestObject]) }
   attr_reader :objects
 
@@ -47,7 +50,13 @@ class FromHashTest < Test::Unit::TestCase
 
     hash = { hash_with_object: { 'key' => { 'num': 3 } } }
     m = TestConfig.from_hash(hash)
+    assert_instance_of(TestObject, m.hash_with_object['key'])
     assert_equal(3, m.hash_with_object['key']&.num)
+
+    hash = { hash_of_hash_with_object: { 'key' => { 'key2' => { 'num': 4 } } } }
+    m = TestConfig.from_hash(hash)
+    assert_instance_of(TestObject, T.must(m.hash_of_hash_with_object['key'])['key2'])
+    assert_equal(4, T.must(m.hash_of_hash_with_object['key'])['key2']&.num)
 
     # TODO: Add tests for the other cases with nilable.
   end
