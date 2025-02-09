@@ -24,22 +24,22 @@ env:
 jobs:
   # Following example from https://github.com/oxidize-rb/actions/blob/main/cross-gem
   # Hopefully this builds the gem for multiple Ruby versions.
-  ci-data:
-    runs-on: ubuntu-latest
-    outputs:
-      result: ${{ steps.fetch.outputs.result }}
-    steps:
-      - uses: oxidize-rb/actions/fetch-ci-data@v1
-        id: fetch
-        with:
-          # Can see versions using `curl https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json`
-          # We don't need the latest bleeding edge.
-          stable-ruby-versions: |
-            exclude: [head]
+  # ci-data:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     result: ${{ steps.fetch.outputs.result }}
+  #   steps:
+  #     - uses: oxidize-rb/actions/fetch-ci-data@v1
+  #       id: fetch
+  #       with:
+  #         # Can see versions using `curl https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json`
+  #         # We don't need the latest bleeding edge.
+  #         stable-ruby-versions: |
+  #           exclude: [head]
   cross-gem:
     name: "Build"
     runs-on: ubuntu-latest
-    needs: ci-data
+    # needs: ci-data
     strategy:
       fail-fast: true
       matrix:
