@@ -120,8 +120,15 @@ bundle exec srb tc
 A GitHub Action is setup to publish the gem as needed.
 To publish manually, run the following with the correct version and architecture:
 ```shell
-rake native gem
+RB_SYS_CARGO_PROFILE='release' RB_SYS_CROSS_COMPILE=true rake native gem
 gem push pkg/optify-<version>-<architecture>.gem
+```
+
+To check metadata for the gem file:
+```shell
+tar -xf pkg/optify-<version>-<architecture>.gem
+gzip -d metadata.gz
+less metadata
 ```
 
 To see credentials to get the API key to update a GitHub Action, run:

@@ -4,10 +4,8 @@
 require 'rb_sys/extensiontask'
 require 'rake/testtask'
 
-# Had these but probably don't need them anymore.
-# require "bundler/gem_tasks"
-# require "rake/extensiontask"
-puts "rake top_level_tasks: #{Rake.application.top_level_tasks}"
+# To help debug:
+# puts "rake top_level_tasks: #{Rake.application.top_level_tasks}"
 
 puts "When loading Optify bindings, warnings about redefining methods are normal
  and can be ignored because the implementations in Ruby are not implemented and only exist to help with type checking."
