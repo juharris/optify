@@ -24,6 +24,7 @@ env:
 jobs:
   # Following example from https://github.com/oxidize-rb/actions/blob/main/cross-gem
   # Hopefully this builds the gem for multiple Ruby versions.
+  # Maybe it's not needed if `>=3.0` below works and rubygems shows ">3.0".
   # ci-data:
   #   runs-on: ubuntu-latest
   #   outputs:
@@ -68,12 +69,6 @@ jobs:
         ruby-version: "3.4.1"
         # Don't put the working-directory here because we don't want to install the Ruby project in this context.
 
-    - name: "Versions"
-      shell: bash
-      run: |
-        ruby --version
-        rustup --version
-
     # Initialize some Rust resources
     # such as ensuring that /home/runner/.cargo/registry is created.
     # Otherwise, we get "docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /home/runner/.cargo/registry."
@@ -84,7 +79,7 @@ jobs:
     # Documentation: https://github.com/oxidize-rb/actions/blob/main/cross-gem
     # Outputs: gem-path
     - uses: oxidize-rb/actions/cross-gem@main
-      id: cross-gem
+      id: cross-build
       name: "[Ruby] Cross-Build"
       with:
         cache-save-always: false
