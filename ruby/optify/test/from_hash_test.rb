@@ -8,11 +8,17 @@ require_relative 'my_config'
 class TestObject < Optify::BaseConfig
   sig { returns(Integer) }
   attr_reader :num
+
+  sig { returns(T.nilable(Integer)) }
+  attr_reader :nilable_num
 end
 
 class TestConfig < Optify::BaseConfig
   sig { returns(T::Hash[String, Integer]) }
   attr_reader :hash
+
+  sig { returns(T.nilable(TestObject)) }
+  attr_reader :nilable_object
 
   sig { returns(T::Hash[Symbol, TestObject]) }
   attr_reader :hash_with_object
@@ -23,11 +29,11 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T::Array[TestObject]) }
   attr_reader :objects
 
+  sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
+  attr_reader :nilable_hashes_of_objects
+
   sig { returns(T::Array[T.nilable(TestObject)]) }
   attr_reader :nilable_objects
-
-  sig { returns(T.nilable(TestObject)) }
-  attr_reader :nilable_object
 end
 
 class FromHashTest < Test::Unit::TestCase
@@ -41,6 +47,22 @@ class FromHashTest < Test::Unit::TestCase
     end
     assert_equal(2, m.myObject.two)
     assert_equal(222, m.myObjects[0]&.two)
+  end
+
+  def test_num
+    hash = { num: 33 }
+    m = TestObject.from_hash(hash)
+    assert_equal(33, m.num)
+  end
+
+  def test_nilable_num
+    hash = { nilable_num: nil }
+    m = TestObject.from_hash(hash)
+    assert_nil(m.nilable_num)
+
+    hash = { nilable_num: 44 }
+    m = TestObject.from_hash(hash)
+    assert_equal(44, m.nilable_num)
   end
 
   def test_from_hash_with_hash
@@ -57,7 +79,26 @@ class FromHashTest < Test::Unit::TestCase
     m = TestConfig.from_hash(hash)
     assert_instance_of(TestObject, T.must(m.hash_of_hash_with_object['key'])[:key2])
     assert_equal(4, T.must(m.hash_of_hash_with_object['key'])[:key2]&.num)
+  end
 
-    # TODO: Add tests for the other cases with nilable.
+  def test_array_objects
+    hash = { objects: [{ num: 5 }, { 'num' => 4 }] }
+    m = TestConfig.from_hash(hash)
+    assert_equal(2, m.objects.size)
+    assert_instance_of(TestObject, m.objects[0])
+    assert_instance_of(TestObject, m.objects[1])
+    assert_equal(5, m.objects[0]&.num)
+    assert_equal(4, m.objects[1]&.num)
+  end
+
+  def test_array_nilable_objects
+    hash = { nilable_objects: [nil, { num: 42 }, nil, { "nilable_num": nil }, { "nilable_num": 44 }] }
+    m = TestConfig.from_hash(hash)
+    assert_equal(5, m.objects.size)
+    assert_nil(m.nilable_objects[0])
+    assert_instance_of(TestObject, m.nilable_objects[1])
+    assert_nil(m.nilable_objects[2])
+    assert_nil(m.nilable_objects[3]&.nilable_num)
+    assert_equal(44, m.nilable_objects[4]&.nilable_num)
   end
 end

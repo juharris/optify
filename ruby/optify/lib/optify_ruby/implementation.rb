@@ -79,7 +79,7 @@ module Optify
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
-      # TODO: Handle aliases. Right now, they are only visible in Rust
+      # TODO: Consider aliases when caching. Right now, they are only visible in Rust
       # and we don't want the cache in Rust because we won't to avoid any conversion overhead.
       @cache ||= T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
       cache_key = [key, feature_names, config_class]

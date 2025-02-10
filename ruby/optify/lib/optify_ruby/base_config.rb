@@ -26,22 +26,26 @@ module Optify
       result = new
 
       hash.each do |key, value|
-        # TODO: Might need some error handling here, but it should be fine if type signatures are used.
-        # TODO Handle nilable types.
-        case value
-        when Array
-          sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
-          inner_type = sig_return_type.type.raw_type
-          # TODO: Handle when the inner type is a hash and call convert_hash.
-          value = value.map { |v| inner_type.from_hash(v) } if inner_type.respond_to?(:from_hash)
-        when Hash
-          sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
-          value = _convert_hash(value, sig_return_type)
-        end
-
+        sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
+        value = _convert_value(value, sig_return_type)
         result.instance_variable_set("@#{key}", value)
       end
       result
+    end
+
+    sig { params(value: T.untyped, type: T.untyped).returns(T.untyped) }
+    def self._convert_value(value, type)
+      case value
+      when Array
+        inner_type = type.type.raw_type
+        value = value.map { |v| inner_type.from_hash(v) } if inner_type.respond_to?(:from_hash)
+        # TODO: Call _convert_value for each element of the array.
+        # value = value.map { |v| _convert_value(v, inner_type) }
+      when Hash
+        value = _convert_hash(value, type)
+      end
+
+      value
     end
 
     sig do
@@ -75,6 +79,6 @@ module Optify
       hash
     end
 
-    private_class_method :_convert_hash
+    private_class_method :_convert_hash, :_convert_value
   end
 end
