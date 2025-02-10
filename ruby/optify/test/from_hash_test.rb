@@ -20,6 +20,9 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T.nilable(TestObject)) }
   attr_reader :nilable_object
 
+  sig { returns(T.nilable(T::Hash[String, Integer])) }
+  attr_reader :nilable_hash
+
   sig { returns(T::Hash[Symbol, TestObject]) }
   attr_reader :hash_with_object
 
@@ -28,6 +31,9 @@ class TestConfig < Optify::BaseConfig
 
   sig { returns(T::Array[TestObject]) }
   attr_reader :objects
+
+  sig { returns(T::Array[T::Hash[Symbol, TestObject]]) }
+  attr_reader :hashes
 
   sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
   attr_reader :nilable_hashes_of_objects
@@ -94,11 +100,34 @@ class FromHashTest < Test::Unit::TestCase
   def test_array_nilable_objects
     hash = { nilable_objects: [nil, { num: 42 }, nil, { "nilable_num": nil }, { "nilable_num": 44 }] }
     m = TestConfig.from_hash(hash)
-    assert_equal(5, m.objects.size)
+    assert_equal(5, m.nilable_objects.size)
     assert_nil(m.nilable_objects[0])
     assert_instance_of(TestObject, m.nilable_objects[1])
     assert_nil(m.nilable_objects[2])
     assert_nil(m.nilable_objects[3]&.nilable_num)
     assert_equal(44, m.nilable_objects[4]&.nilable_num)
+  end
+
+  def TODOtest_hashes # rubocop:disable Metrics/AbcSize
+    hash = { hashes: [{ key: { num: 6 } }, { key2: { 'num' => 7 } }] }
+    m = TestConfig.from_hash(hash)
+    assert_equal(2, m.hashes.size)
+    assert_instance_of(Hash, m.hashes[0])
+    assert_instance_of(Hash, m.hashes[1])
+    assert_instance_of(TestObject, T.must(m.hashes[0])[:key])
+    assert_instance_of(TestObject, T.must(m.hashes[1])[:key2])
+    assert_equal(6, m.hashes[0]&.fetch(:key)&.num)
+    assert_equal(7, m.hashes[1]&.fetch(:key2)&.num)
+  end
+
+  def test_nilable_hash
+    hash = { nilable_hash: nil }
+    m = TestConfig.from_hash(hash)
+    assert_nil(m.nilable_hash)
+
+    hash = { nilable_hash: { key: 72 } }
+    m = TestConfig.from_hash(hash)
+    assert_instance_of(Hash, m.nilable_hash)
+    assert_equal({ key: 72 }, m.nilable_hash)
   end
 end

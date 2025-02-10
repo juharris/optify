@@ -1,6 +1,8 @@
 # typed: true
 # frozen_string_literal: true
 
+require_relative '../lib/optify_ruby/base_config'
+
 class MyObject < Optify::BaseConfig
   sig { returns(Integer) }
   attr_reader :one

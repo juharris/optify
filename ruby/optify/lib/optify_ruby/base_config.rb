@@ -37,12 +37,28 @@ module Optify
     def self._convert_value(value, type)
       case value
       when Array
-        inner_type = type.type.raw_type
-        value = value.map { |v| inner_type.from_hash(v) } if inner_type.respond_to?(:from_hash)
-        # TODO: Call _convert_value for each element of the array.
-        # value = value.map { |v| _convert_value(v, inner_type) }
+        # Handle nilable array.
+        if type.type.respond_to?(:unwrap_nilable)
+          type = type.type.unwrap_nilable
+          return value.map { |v| _convert_value(v, type) }
+        end
+        # Handle array of 1 type.
+        # inner_type = type.type.raw_type
+        if type.type.respond_to?(:raw_type)
+          inner_type = type.type.raw_type
+          return value.map { |v| inner_type.from_hash(v) } if inner_type.respond_to?(:from_hash)
+
+          return value.map { |v| _convert_value(v, inner_type) }
+        end
+        # value
       when Hash
-        value = _convert_hash(value, type)
+        # return _convert_hash(value, type.type.raw_type) if type.type.respond_to?(:raw_type)
+
+        # if type.type.respond_to?(:unwrap_nilable)
+        #   type = type.type.unwrap_nilable
+        #   return _convert_hash(value, type)
+        # end
+        return _convert_hash(value, type)
       end
 
       value
