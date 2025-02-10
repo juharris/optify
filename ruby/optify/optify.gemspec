@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-VERSION = '0.4.1'
+VERSION = '0.4.2'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-config'
@@ -14,6 +14,9 @@ Gem::Specification.new do |spec|
   spec.authors = ['Justin D. Harris']
 
   # Only certain versions are supported by Magnus: https://github.com/matsadler/magnus.
+  # Despite what this says, rubygems does not respect it.
+  # Probably because of how we build a cross-compiled gem in CI.
+  # See notes in cross-build.yml.
   spec.required_ruby_version = '>= 3.0'
 
   spec.metadata = {
