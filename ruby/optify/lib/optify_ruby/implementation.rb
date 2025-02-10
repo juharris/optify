@@ -50,15 +50,16 @@ module Optify
     def get_options(key, feature_names, config_class, cache_options = nil)
       return get_options_with_cache(key, feature_names, config_class, cache_options) if cache_options
 
-      options_json = get_options_json(key, feature_names)
-      h = JSON.parse(options_json, object_class: Hash)
       unless config_class.respond_to?(:from_hash)
         raise NotImplementedError,
               "The provided config class must implement `from_hash` as a class method
-            in order to be converted."
+              in order to be converted.
+              Recommended: extend `Optify::BaseConfig`."
       end
 
-      T.unsafe(config_class).from_hash(h)
+      options_json = get_options_json(key, feature_names)
+      hash = JSON.parse(options_json)
+      T.unsafe(config_class).from_hash(hash)
     end
 
     private

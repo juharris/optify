@@ -37,14 +37,17 @@ module Optify
     def self._convert_value(value, type)
       case value
       when Array
-        # Handle nilable array.
-        if type.type.respond_to?(:unwrap_nilable)
-          type = type.type.unwrap_nilable
-          return value.map { |v| _convert_value(v, type) }
-        end
-        # Handle array of 1 type.
-        return value.map { |v| _convert_value(v, type.type) }
+        type = if type.type.respond_to?(:unwrap_nilable)
+                 # Handle nilable array.
+                 type.type.unwrap_nilable
+               else
+                 # Handle array of 1 type.
+                 type.type
+               end
+        return value.map { |v| _convert_value(v, type) }
       when Hash
+        # Handle nilable hash.
+        type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
         return _convert_hash(value, type)
       end
 
@@ -59,7 +62,7 @@ module Optify
     end
     def self._convert_hash(hash, type) # rubocop:disable Metrics/PerceivedComplexity
       if type.respond_to?(:raw_type)
-        # When there is an object for the hash.
+        # There is an object for the hash.
         type_for_hash = type.raw_type
         return type_for_hash.from_hash(hash) if type_for_hash.respond_to?(:from_hash)
       elsif type.instance_of?(T::Types::TypedHash)
@@ -80,7 +83,6 @@ module Optify
 
       # Fallback to doing nothing.
       # This can happen if there are is no type information for a key in the hash.
-      # raise TypeError, "Help debug with falling back: #{type}\n   hash: #{hash}"
       hash
     end
 

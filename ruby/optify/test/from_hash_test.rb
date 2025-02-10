@@ -46,50 +46,6 @@ class TestConfig < Optify::BaseConfig
 end
 
 class FromHashTest < Test::Unit::TestCase
-  def test_from_hash_deep
-    value = 'hello'
-    hash = { 'rootString' => value, :myObject => { 'two' => 2 }, 'myObjects' => [{ two: 222 }] }
-    m = MyConfig.from_hash(hash)
-    assert_equal(value, m.rootString)
-    assert_raises(NoMethodError) do
-      T.unsafe(m).rootString = 'wtv'
-    end
-    assert_equal(2, m.myObject.two)
-    assert_equal(222, m.myObjects[0]&.two)
-  end
-
-  def test_num
-    hash = { num: 33 }
-    m = TestObject.from_hash(hash)
-    assert_equal(33, m.num)
-  end
-
-  def test_nilable_num
-    hash = { nilable_num: nil }
-    m = TestObject.from_hash(hash)
-    assert_nil(m.nilable_num)
-
-    hash = { nilable_num: 44 }
-    m = TestObject.from_hash(hash)
-    assert_equal(44, m.nilable_num)
-  end
-
-  def test_from_hash_with_hash
-    hash = { hash: { key: 2 } }
-    m = TestConfig.from_hash(hash)
-    assert_equal({ key: 2 }, m.hash)
-
-    hash = { hash_with_object: { key: { num: 3 } } }
-    m = TestConfig.from_hash(hash)
-    assert_instance_of(TestObject, m.hash_with_object[:key])
-    assert_equal(3, m.hash_with_object[:key]&.num)
-
-    hash = { hash_of_hash_with_object: { 'key' => { key2: { 'num': 4 } } } }
-    m = TestConfig.from_hash(hash)
-    assert_instance_of(TestObject, T.must(m.hash_of_hash_with_object['key'])[:key2])
-    assert_equal(4, T.must(m.hash_of_hash_with_object['key'])[:key2]&.num)
-  end
-
   def test_array_objects
     hash = { objects: [{ num: 5 }, { 'num' => 4 }] }
     m = TestConfig.from_hash(hash)
@@ -111,6 +67,34 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(44, m.nilable_objects[4]&.nilable_num)
   end
 
+  def test_from_hash_deep
+    value = 'hello'
+    hash = { 'rootString' => value, :myObject => { 'two' => 2 }, 'myObjects' => [{ two: 222 }] }
+    m = MyConfig.from_hash(hash)
+    assert_equal(value, m.rootString)
+    assert_raises(NoMethodError) do
+      T.unsafe(m).rootString = 'wtv'
+    end
+    assert_equal(2, m.myObject.two)
+    assert_equal(222, m.myObjects[0]&.two)
+  end
+
+  def test_from_hash_with_hash
+    hash = { hash: { key: 2 } }
+    m = TestConfig.from_hash(hash)
+    assert_equal({ key: 2 }, m.hash)
+
+    hash = { hash_with_object: { key: { num: 3 } } }
+    m = TestConfig.from_hash(hash)
+    assert_instance_of(TestObject, m.hash_with_object[:key])
+    assert_equal(3, m.hash_with_object[:key]&.num)
+
+    hash = { hash_of_hash_with_object: { 'key' => { key2: { 'num': 4 } } } }
+    m = TestConfig.from_hash(hash)
+    assert_instance_of(TestObject, T.must(m.hash_of_hash_with_object['key'])[:key2])
+    assert_equal(4, T.must(m.hash_of_hash_with_object['key'])[:key2]&.num)
+  end
+
   def test_hashes # rubocop:disable Metrics/AbcSize
     hash = { hashes: [{ key: { num: 6 } }, { key2: { 'num' => 7 } }] }
     m = TestConfig.from_hash(hash)
@@ -121,6 +105,16 @@ class FromHashTest < Test::Unit::TestCase
     assert_instance_of(TestObject, T.must(m.hashes[1])[:key2])
     assert_equal(6, m.hashes[0]&.fetch(:key)&.num)
     assert_equal(7, m.hashes[1]&.fetch(:key2)&.num)
+  end
+
+  def test_nilable_num
+    hash = { nilable_num: nil }
+    m = TestObject.from_hash(hash)
+    assert_nil(m.nilable_num)
+
+    hash = { nilable_num: 44 }
+    m = TestObject.from_hash(hash)
+    assert_equal(44, m.nilable_num)
   end
 
   def test_nilable_hash
@@ -134,15 +128,22 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal({ key: 72 }, m.nilable_hash)
   end
 
-  def TODOtest_nilable_hash_with_object
+  def test_nilable_hash_with_object
     hash = { nilable_hash_with_object: nil }
-    m = TestConfig.from_hash(hash)
-    assert_nil(m.nilable_hash_with_object)
+    c = TestConfig.from_hash(hash)
+    assert_nil(c.nilable_hash_with_object)
 
-    hash = { nilable_hash_with_object: { key: { num: 8 } } }
-    m = TestConfig.from_hash(hash)
-    assert_instance_of(Hash, m.nilable_hash_with_object)
-    assert_instance_of(TestObject, m.nilable_hash_with_object&.fetch('key'))
-    assert_equal(8, m.nilable_hash_with_object&.fetch('key')&.num)
+    hash = { "nilable_hash_with_object": { 'key' => { num: 8 } } }
+    c = TestConfig.from_hash(hash)
+    assert_instance_of(Hash, c.nilable_hash_with_object)
+    obj = T.must(c.nilable_hash_with_object)['key']
+    assert_instance_of(TestObject, obj)
+    assert_equal(8, T.must(obj).num)
+  end
+
+  def test_num
+    hash = { num: 33 }
+    m = TestObject.from_hash(hash)
+    assert_equal(33, m.num)
   end
 end
