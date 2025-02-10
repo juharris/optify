@@ -1,12 +1,17 @@
 # typed: true
 # frozen_string_literal: true
 
+require_relative '../lib/optify_ruby/base_config'
+
 class MyObject < Optify::BaseConfig
   sig { returns(Integer) }
   attr_reader :one
 
   sig { returns(Integer) }
   attr_reader :two
+
+  sig { returns(T.nilable(Integer)) }
+  attr_reader :three
 
   sig { returns(String) }
   attr_reader :string
@@ -19,6 +24,9 @@ end
 class MyConfig < Optify::BaseConfig
   sig { returns(String) }
   attr_reader :rootString # rubocop:disable Naming/MethodName
+
+  sig { returns(T.nilable(String)) }
+  attr_reader :rootString2 # rubocop:disable Naming/MethodName
 
   sig { returns(T::Array[String]) }
   attr_reader :myArray # rubocop:disable Naming/MethodName

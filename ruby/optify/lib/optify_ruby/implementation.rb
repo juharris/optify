@@ -50,15 +50,16 @@ module Optify
     def get_options(key, feature_names, config_class, cache_options = nil)
       return get_options_with_cache(key, feature_names, config_class, cache_options) if cache_options
 
-      options_json = get_options_json(key, feature_names)
-      h = JSON.parse(options_json, object_class: Hash)
       unless config_class.respond_to?(:from_hash)
         raise NotImplementedError,
               "The provided config class must implement `from_hash` as a class method
-            in order to be converted."
+              in order to be converted.
+              Recommended: extend `Optify::BaseConfig`."
       end
 
-      T.unsafe(config_class).from_hash(h)
+      options_json = get_options_json(key, feature_names)
+      hash = JSON.parse(options_json)
+      T.unsafe(config_class).from_hash(hash)
     end
 
     private
@@ -79,7 +80,7 @@ module Optify
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
-      # TODO: Handle aliases. Right now, they are only visible in Rust
+      # TODO: Consider aliases when caching. Right now, they are only visible in Rust
       # and we don't want the cache in Rust because we won't to avoid any conversion overhead.
       @cache ||= T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
       cache_key = [key, feature_names, config_class]
@@ -87,6 +88,7 @@ module Optify
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
       result = get_options(key, feature_names, config_class)
+      T.unsafe(result).freeze if T.unsafe(result).respond_to?(:freeze)
 
       @cache[cache_key] = result
     end

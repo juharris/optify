@@ -18,6 +18,7 @@ module Optify
 
     # Create a new instance of the class from a hash.
     #
+    # This is a class method that so that it can set members with private setters.
     # @param hash [Hash] The hash to create the instance from.
     # @return The new instance.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
@@ -25,24 +26,66 @@ module Optify
       result = new
 
       hash.each do |key, value|
-        # TODO: Might need some error handling here, but it should be fine if type signatures are used.
-        # TODO Handle nilable types.
-        case value
-        when Array
-          sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
-          inner_type = sig_return_type.type.raw_type
-          value = value.map { |v| inner_type.from_hash(v) } if inner_type.respond_to?(:from_hash)
-        when Hash
-          sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
-          if sig_return_type.respond_to?(:raw_type)
-            type_for_key = sig_return_type.raw_type
-            value = type_for_key.from_hash(value) if type_for_key.respond_to?(:from_hash)
-          end
-        end
-
+        sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
+        value = _convert_value(value, sig_return_type)
         result.instance_variable_set("@#{key}", value)
       end
       result
     end
+
+    sig { params(value: T.untyped, type: T.untyped).returns(T.untyped) }
+    def self._convert_value(value, type)
+      case value
+      when Array
+        type = if type.type.respond_to?(:unwrap_nilable)
+                 # Handle nilable array.
+                 type.type.unwrap_nilable
+               else
+                 # Handle array of 1 type.
+                 type.type
+               end
+        return value.map { |v| _convert_value(v, type) }
+      when Hash
+        # Handle nilable hash.
+        type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
+        return _convert_hash(value, type)
+      end
+
+      value
+    end
+
+    sig do
+      params(
+        hash: T::Hash[T.untyped, T.untyped],
+        type: T.untyped
+      ).returns(T.untyped)
+    end
+    def self._convert_hash(hash, type) # rubocop:disable Metrics/PerceivedComplexity
+      if type.respond_to?(:raw_type)
+        # There is an object for the hash.
+        type_for_hash = type.raw_type
+        return type_for_hash.from_hash(hash) if type_for_hash.respond_to?(:from_hash)
+      elsif type.instance_of?(T::Types::TypedHash)
+        # The hash should be a hash, but the values might be objects to convert.
+        type_for_values = type.values
+
+        if type_for_values.respond_to?(:raw_type)
+          raw_type_for_values = type_for_values.raw_type
+          if raw_type_for_values.respond_to?(:from_hash)
+            # Use proper types.
+            return hash.transform_values { |v| raw_type_for_values.from_hash(v) }
+          end
+        end
+
+        # The values are not recognized objects.
+        return hash.transform_values { |v| _convert_value(v, type_for_values) }
+      end
+
+      # Fallback to doing nothing.
+      # This can happen if there are is no type information for a key in the hash.
+      hash
+    end
+
+    private_class_method :_convert_hash, :_convert_value
   end
 end
