@@ -43,21 +43,8 @@ module Optify
           return value.map { |v| _convert_value(v, type) }
         end
         # Handle array of 1 type.
-        # inner_type = type.type.raw_type
-        if type.type.respond_to?(:raw_type)
-          inner_type = type.type.raw_type
-          return value.map { |v| inner_type.from_hash(v) } if inner_type.respond_to?(:from_hash)
-
-          return value.map { |v| _convert_value(v, inner_type) }
-        end
-        # value
+        return value.map { |v| _convert_value(v, type.type) }
       when Hash
-        # return _convert_hash(value, type.type.raw_type) if type.type.respond_to?(:raw_type)
-
-        # if type.type.respond_to?(:unwrap_nilable)
-        #   type = type.type.unwrap_nilable
-        #   return _convert_hash(value, type)
-        # end
         return _convert_hash(value, type)
       end
 
@@ -85,13 +72,15 @@ module Optify
             # Use proper types.
             return hash.transform_values { |v| raw_type_for_values.from_hash(v) }
           end
-        elsif type_for_values.instance_of?(T::Types::TypedHash)
-          # Recurse
-          return hash.transform_values { |v| _convert_hash(v, type_for_values) }
         end
+
+        # The values are not recognized objects.
+        return hash.transform_values { |v| _convert_value(v, type_for_values) }
       end
 
       # Fallback to doing nothing.
+      # This can happen if there are is no type information for a key in the hash.
+      # raise TypeError, "Help debug with falling back: #{type}\n   hash: #{hash}"
       hash
     end
 
