@@ -86,14 +86,13 @@ jobs:
         # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
         # If we want to go back to specific supported versions, we can use the following:
-        # ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
+        ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
         # Tried doing this, but it said ">= 3.0, < 3.1.dev" on rubygems.
-        # Maybe try ">=3.0, < 4" or something like that?
-        ruby-versions: ">=3.0, < 4"
+        # Tried ">=3.0, < 4", but RubyGems said: ">= 3.0, < 3.1.dev"
         working-directory: ./ruby/optify
 
     - name: "[Ruby] Publish"
-      # if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main'
       shell: bash
       # It probably just fails if the gem is already published.
       # We don't want to only be lenient for the `gem push`, but we would still want to clearly see that an issue happened during the run.
