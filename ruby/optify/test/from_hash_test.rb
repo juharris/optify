@@ -80,10 +80,14 @@ class FromHashTest < Test::Unit::TestCase
   end
 
   def test_from_hash_with_hash
-    hash = { hash: { key: 2 } }
+    hash = { hash: { 'key' => 2 } }
     m = TestConfig.from_hash(hash)
-    assert_equal({ key: 2 }, m.hash)
+    assert_equal({ 'key' => 2 }, m.hash)
+    assert(m.hash.frozen?)
+    assert_equal(2, m.hash['key'])
+  end
 
+  def test_from_hash_for_hash_with_object
     hash = { hash_with_object: { key: { num: 3 } } }
     m = TestConfig.from_hash(hash)
     o = m.hash_with_object[:key]
