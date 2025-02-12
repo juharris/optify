@@ -16,7 +16,7 @@ module Optify
     extend T::Helpers
     abstract!
 
-    # Create a new instance of the class from a hash.
+    # Create a new immutable instance of the class from a hash.
     #
     # This is a class method that so that it can set members with private setters.
     # @param hash [Hash] The hash to create the instance from.
@@ -30,7 +30,8 @@ module Optify
         value = _convert_value(value, sig_return_type)
         result.instance_variable_set("@#{key}", value)
       end
-      result
+
+      T.unsafe(result).freeze if T.unsafe(result).respond_to?(:freeze)
     end
 
     sig { params(value: T.untyped, type: T.untyped).returns(T.untyped) }
@@ -44,11 +45,11 @@ module Optify
                  # Handle array of 1 type.
                  type.type
                end
-        return value.map { |v| _convert_value(v, type) }
+        return value.map { |v| _convert_value(v, type) }.freeze
       when Hash
         # Handle nilable hash.
         type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
-        return _convert_hash(value, type)
+        return _convert_hash(value, type).freeze
       end
 
       value
