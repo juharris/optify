@@ -17,7 +17,7 @@ Core Features:
 * **Caching**: Configurations for a key and enabled features are cached to avoid rebuild objects.
   Caching is only implemented in Ruby for now.
 * Files are only read once when the `OptionsProvider` is built.
-  This should be done when your application starts to ensure that files are only read once and issues are checked early.
+  This should be done when your application starts to ensure that files are only read once and issues are found early.
 
 # Merging Configuration Files
 When merging configurations for features, objects are merged with the last feature taking precedence.

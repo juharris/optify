@@ -30,9 +30,9 @@ impl OptionsProvider {
     //
     // @param feature_name The name of an alias or a feature.
     // @return The canonical feature name.
-    pub fn get_canonical_feature_name(&self, feature_name: &String) -> Result<&String, String> {
+    pub fn get_canonical_feature_name(&self, feature_name: &str) -> Result<&String, String> {
         // Canonical feature names are also included as keys in the aliases map.
-        let feature_name = unicase::UniCase::new(feature_name.clone());
+        let feature_name = unicase::UniCase::new(feature_name.to_owned());
         match self.aliases.get(&feature_name) {
             Some(canonical_name) => Ok(canonical_name),
             None => Err(format!(
@@ -51,13 +51,11 @@ impl OptionsProvider {
         feature_names: &Vec<String>,
     ) -> Result<serde_json::Value, String> {
         let mut config_builder = config::Config::builder();
+        // TODO Add a way to skip conversion because it's not needed in cases like when we already translated in Ruby before looking in the cache.
         for feature_name in feature_names {
             // Check for an alias.
             // Canonical feature names are also included as keys in the aliases map.
-            let canonical_feature_name = match self.get_canonical_feature_name(feature_name) {
-                Ok(name) => name,
-                Err(e) => return Err(e),
-            };
+            let canonical_feature_name = self.get_canonical_feature_name(feature_name)?;
 
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
