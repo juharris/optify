@@ -2,7 +2,8 @@
 	"cSpell.words": [
 		"chruby",
 		"Magnus",
-		"rubocop"
+		"rubocop",
+		"unicase"
 	],
 	"rubyLsp.featureFlags": { "tapiocaAddon": true },
 	"search.exclude": {

@@ -17,6 +17,10 @@ pub struct OptionsProvider {
     sources: Sources,
 }
 
+pub struct GetOptionsPreferences {
+    skip_canonical_feature_name_conversion: bool,
+}
+
 impl OptionsProvider {
     pub(crate) fn new(aliases: &Aliases, sources: &Sources) -> Self {
         OptionsProvider {
@@ -42,20 +46,37 @@ impl OptionsProvider {
         }
     }
 
-    // TODO Add another method with caching
-    // with an to disable because we will not want to use the cache when calling from other languages because they should use their own caching
-    // in order to avoid possible overhead and conversion.
     pub fn get_options(
         &self,
         key: &str,
         feature_names: &Vec<String>,
     ) -> Result<serde_json::Value, String> {
+        self.get_option_with_preferences(key, feature_names, &None)
+    }
+
+    // TODO Add another method with caching
+    // with an to disable because we will not want to use the cache when calling from other languages because they should use their own caching
+    // in order to avoid possible overhead and conversion.
+    pub fn get_option_with_preferences(
+        &self,
+        key: &str,
+        feature_names: &Vec<String>,
+        preferences: &Option<GetOptionsPreferences>,
+    ) -> Result<serde_json::Value, String> {
         let mut config_builder = config::Config::builder();
         // TODO Add a way to skip conversion because it's not needed in cases like when we already translated in Ruby before looking in the cache.
+        let mut skip_canonical_feature_name_conversion = false;
+        if let Some(_preferences) = preferences {
+            skip_canonical_feature_name_conversion =
+                _preferences.skip_canonical_feature_name_conversion;
+        }
         for feature_name in feature_names {
             // Check for an alias.
             // Canonical feature names are also included as keys in the aliases map.
-            let canonical_feature_name = self.get_canonical_feature_name(feature_name)?;
+            let mut canonical_feature_name = feature_name;
+            if !skip_canonical_feature_name_conversion {
+                canonical_feature_name = self.get_canonical_feature_name(feature_name)?;
+            }
 
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,

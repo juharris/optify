@@ -7,12 +7,12 @@ use std::cell::RefCell;
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
 impl WrappedOptionsProvider {
+    // These methods cannot accept `str`s because of how magnus works.
+    // Return the JSON as a string so that it can be deserialized easily into a specific immutable class in Ruby.
     fn get_canonical_feature_name(&self, feature_name: String) -> String {
         self.0.borrow().get_canonical_feature_name(&feature_name).unwrap().to_owned()
     }
 
-    // These methods cannot accept `str`s because of how magnus works.
-    // Return the JSON as a string so that it can be deserialized easily into a specific immutable class in Ruby.
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
         self.0.borrow().get_options(&key, &feature_names).unwrap().to_string()
     }
@@ -34,9 +34,7 @@ impl WrappedOptionsProviderBuilder {
     }
 
     fn build(&self) -> WrappedOptionsProvider {
-        let builder = self.0.borrow();
-        let provider = builder.build();
-        WrappedOptionsProvider(RefCell::new(provider))
+        WrappedOptionsProvider(RefCell::new(self.0.borrow().build()))
     }
 }
 
