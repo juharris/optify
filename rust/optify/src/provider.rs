@@ -25,6 +25,18 @@ impl OptionsProvider {
         }
     }
 
+    pub fn get_canonical_feature_name(&self, feature_name: &String) -> Result<&String, String> {
+        // Canonical feature names are also included as keys in the aliases map.
+        let feature_name = unicase::UniCase::new(feature_name.clone());
+        match self.aliases.get(&feature_name) {
+            Some(canonical_name) => Ok(canonical_name),
+            None => Err(format!(
+                "The given feature {:?} was not found.",
+                feature_name
+            )),
+        }
+    }
+
     // TODO Add another method with caching
     // with an to disable because we will not want to use the cache when calling from other languages because they should use their own caching
     // in order to avoid possible overhead and conversion.
@@ -35,23 +47,24 @@ impl OptionsProvider {
     ) -> Result<serde_json::Value, String> {
         let mut config_builder = config::Config::builder();
         for feature_name in feature_names {
-            let feature_name = unicase::UniCase::new(feature_name.clone());
-
             // Check for an alias.
-            // Canonical feature names are also included in the aliases map.
-            let feature_name = match self.aliases.get(&feature_name) {
-                Some(alias) => alias,
-                None => {
-                    return Err(format!(
-                        "The given feature {:?} is not known.",
-                        feature_name
-                    ))
-                }
+            // Canonical feature names are also included as keys in the aliases map.
+            let canonical_feature_name = match self.get_canonical_feature_name(feature_name) {
+                Ok(name) => name,
+                Err(e) => return Err(e),
             };
 
-            let source = match self.sources.get(feature_name) {
+            let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
-                None => return Err(format!("Feature name {:?} was not found.", feature_name)),
+                // Should not happen.
+                // All canonical feature names are included as keys in the sources map.
+                // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
+                None => {
+                    return Err(format!(
+                        "Feature name {:?} was not found.",
+                        canonical_feature_name
+                    ))
+                }
             };
             config_builder = config_builder.add_source(source.clone());
         }
