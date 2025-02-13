@@ -51,6 +51,14 @@ module Optify
       T.unsafe(config_class).from_hash(hash)
     end
 
+    # (Optional) Eagerly initializes the cache.
+    # @return [OptionsProvider] `self`.
+    sig { returns(OptionsProvider) }
+    def init
+      @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
+      self
+    end
+
     private
 
     NOT_FOUND_IN_CACHE_SENTINEL = Object.new
@@ -80,13 +88,6 @@ module Optify
       result = get_options(key, feature_names, config_class)
 
       T.must(@cache)[cache_key] = result
-    end
-
-    # (Optional) Eagerly initializes the cache.
-    sig { void }
-    def init
-      @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
-      nil
     end
   end
 end

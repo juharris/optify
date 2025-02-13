@@ -65,7 +65,8 @@ module Optify
     def get_options_json(key, feature_names); end
 
     # (Optional) Eagerly initializes the cache.
-    sig { void }
+    # @return [OptionsProvider] `self`.
+    sig { returns(OptionsProvider) }
     def init; end
   end
 

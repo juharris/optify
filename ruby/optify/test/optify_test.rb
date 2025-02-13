@@ -64,6 +64,7 @@ class OptifyTest < Test::Unit::TestCase
     provider = Optify::OptionsProviderBuilder.new
                                              .add_directory('../../tests/test_suites/simple/configs')
                                              .build
+                                             .init
     cache_options = Optify::CacheOptions.new
     config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
     config_b = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
