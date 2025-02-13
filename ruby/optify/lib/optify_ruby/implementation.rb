@@ -69,16 +69,24 @@ module Optify
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
-      # TODO: Consider aliases when caching. Right now, they are only visible in Rust
-      # and we don't want the cache in Rust because we won't to avoid any conversion overhead.
-      @cache ||= T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
+      init unless @cache
+      feature_names = feature_names.map do |feature_name|
+        get_canonical_feature_name(feature_name)
+      end
       cache_key = [key, feature_names, config_class]
-      result = @cache.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
+      result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
       result = get_options(key, feature_names, config_class)
 
-      @cache[cache_key] = result
+      T.must(@cache)[cache_key] = result
+    end
+
+    # (Optional) Eagerly initializes the cache.
+    sig { void }
+    def init
+      @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
+      nil
     end
   end
 end

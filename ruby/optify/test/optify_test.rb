@@ -68,8 +68,11 @@ class OptifyTest < Test::Unit::TestCase
     config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
     config_b = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
     config_b2 = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
-
+    config_b3 = provider.get_options('myConfig', ['b'], MyConfig, cache_options)
+    config_b4 = provider.get_options('myConfig', ['featUre_B/iNITial'], MyConfig, cache_options)
     assert_not_same(config_a, config_b)
     assert_same(config_b, config_b2)
+    assert_same(config_b, config_b3)
+    assert_same(config_b, config_b4)
   end
 end

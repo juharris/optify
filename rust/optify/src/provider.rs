@@ -25,6 +25,11 @@ impl OptionsProvider {
         }
     }
 
+    // Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+    // Canonical feature names map to themselves.
+    //
+    // @param feature_name The name of an alias or a feature.
+    // @return The canonical feature name.
     pub fn get_canonical_feature_name(&self, feature_name: &String) -> Result<&String, String> {
         // Canonical feature names are also included as keys in the aliases map.
         let feature_name = unicase::UniCase::new(feature_name.clone());
