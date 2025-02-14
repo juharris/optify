@@ -14,7 +14,7 @@ Core Features:
   Features are intended to be combined to build the final configuration.
 * **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
 * Supports clear file names and **aliases** for feature names.
-* **Caching**: Configurations for a key and enabled features are cached to avoid rebuild objects.
+* **Caching**: Configurations for a key and enabled features are cached to avoid rebuilding objects.
   Caching is only implemented in Ruby for now.
 * Files are only read once when the `OptionsProvider` is built.
   This should be done when your application starts to ensure that files are only read once and issues are found early.
@@ -23,8 +23,97 @@ Core Features:
 When merging configurations for features, objects are merged with the last feature taking precedence.
 Key values, including lists are overwritten.
 
-More details and examples to come soon.
-For now, the details for the .NET implementation are good enough, except that the .NET implementation merges lists, while the implementations in this repository overwrite lists.
+As explained below, the .NET version works a little differently that the versions in this repository which are backed by the Rust implementation.
+
+## Example
+Suppose you have a class that you want to use to configure your logic at runtime:
+```csharp
+class MyConfiguration
+{
+    string[]? myArray
+    MyObject? myObject
+}
+```
+
+Now you want to start experimenting with different values deep within `MyConfiguration`.
+
+Create a **new** folder for configurations files, for this example, we'll call it `Configurations` and add some files to it.
+All `*.json`, `*.yaml`, and `*.yml` files in `Configurations` and any of its subdirectories will be loaded into memory.
+Markdown files (ending in `.md`) are ignored.
+
+Create `Configurations/feature_A.json`:
+```json
+{
+    "metadata": {
+        "aliases": [ "A" ],
+        "owners": "a-team@company.com"
+    },
+    "options": {
+        "myConfig": {
+            "myArray": [
+                "example item 1"
+            ],
+            "myObject": {
+                "one": 1,
+                "two": 2
+            }
+        }
+    }
+}
+```
+
+Create `Configurations/feature_B/initial.yaml`:
+```yaml
+metadata:
+    aliases:
+        - "B"
+    owners: "team-b@company.com"
+options:
+    myConfig:
+        myArray:
+            - "different item 1"
+            - "item 2"
+        myObject:
+            one: 11
+            three: 33
+```
+
+You'll load the `Configurations` folder using an `OptionsProviderBuild` and then get an `OptionsProvider` from that builder.
+How that works depend on the language you are using.
+See below for links to implementations in different languages.
+
+The result of using features: `["A", "B"]` will be:
+```json
+{
+  // "myArray" from B overrides "myArray" from A.
+  "myArray": [
+    "different item 1",
+    "item 2"
+  ],
+  // Values in "myObject" in B override values in "myObject" in A.
+  "myObject": {
+    "one": 11,
+    "two": 2,
+    "three": 3
+  }
+}
+```
+
+The result of using features: `["B", "A"]` will be:
+```json
+{
+  // "myArray" from A overrides "myArray" from B.
+  "myArray": [
+    "example item 1"
+  ],
+  // Values in "myObject" in A override values in "myObject" in B.
+  "myObject": {
+    "one": 1,
+    "two": 2,
+    "three": 3
+  }
+}
+```
 
 # File Formats
 | Format | Good For | Caveats |
