@@ -59,7 +59,16 @@ impl OptionsProviderBuilder {
             // The `config` library does support .json5 which supports comments.
             let file = config::File::from(path);
             let config = config::Config::builder().add_source(file).build().unwrap();
-            let feature_config: FeatureConfiguration = config.try_deserialize().unwrap();
+            let feature_config: FeatureConfiguration = match config.try_deserialize() {
+                Ok(v) => v,
+                Err(e) => {
+                    return Err(format!(
+                        "Error deserializing feature configuration from file {:?}: {:?}",
+                        path.to_string_lossy(),
+                        e
+                    ))
+                }
+            };
             let options_as_json: serde_json::Value =
                 feature_config.options.try_deserialize().unwrap();
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
@@ -97,14 +106,14 @@ impl OptionsProviderBuilder {
         Ok(self)
     }
 
-    pub fn build(&self) -> OptionsProvider {
+    pub fn build(&self) -> Result<OptionsProvider, String> {
         // TODO Validate imports.
         // Gather errors.
         // All imports must be canonical feature names for clarity and to help navigate to the right file.
         // If any are aliases, then show a nice error message to say what to change it to.
 
         // TODO Extend imports so that we don't need to traverse at runtime.
-        OptionsProvider::new(&self.aliases, &self.sources)
+        Ok(OptionsProvider::new(&self.aliases, &self.sources))
     }
 
     fn get_canonical_feature_name(&self, path: &Path, directory: &Path) -> String {
