@@ -9,7 +9,7 @@ Configurations for different experiments or feature flags are mergeable to suppo
 This project helps code scale better and be easier to maintain.
 We should determine the right configuration for a request or process when it starts by passing the enabled features to an `OptionsProvider`.
 The returned options would be used throughout the request or process to change business logic.
-Supporting deep configurations with my types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus help code scale and be more maintainable as explained in [this article][cond-blog].
+Supporting deep configurations with many types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus help code scale and be more maintainable as explained in [this article][cond-blog].
 
 It's fine to use systems that support enabled/disabled feature flags, but we'll inevitably need to support more sophisticated configurations.
 This project facilitates using deep configurations to be the backing for simple feature flags, thus keeping API contracts clean and facilitating the refactoring of code that uses the configurations.

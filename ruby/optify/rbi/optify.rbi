@@ -29,9 +29,9 @@ module Optify
   # Preferences when getting options.
   class GetOptionsPreferences
     sig { params(value: T::Boolean).returns(GetOptionsPreferences) }
-    def skip_canonical_feature_name_conversion=(value); end
+    def skip_feature_name_conversion=(value); end
     sig { returns(T::Boolean) }
-    def skip_canonical_feature_name_conversion; end
+    def skip_feature_name_conversion; end
   end
 
   # Provides configurations based on keys and enabled feature names.

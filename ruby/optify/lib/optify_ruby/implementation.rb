@@ -89,7 +89,7 @@ module Optify
         get_canonical_feature_name(feature_name)
       end
       preferences ||= GetOptionsPreferences.new
-      preferences.skip_canonical_feature_name_conversion = true
+      preferences.skip_feature_name_conversion = true
 
       cache_key = [key, feature_names, config_class]
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)

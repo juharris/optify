@@ -11,7 +11,7 @@ pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
 pub struct GetOptionsPreferences {
-    pub skip_canonical_feature_name_conversion: bool,
+    pub skip_feature_name_conversion: bool,
 }
 
 /// ⚠️ Development in progress ⚠️\
@@ -65,16 +65,15 @@ impl OptionsProvider {
     ) -> Result<serde_json::Value, String> {
         let mut config_builder = config::Config::builder();
         // TODO Add a way to skip conversion because it's not needed in cases like when we already translated in Ruby before looking in the cache.
-        let mut skip_canonical_feature_name_conversion = false;
+        let mut skip_feature_name_conversion = false;
         if let Some(_preferences) = preferences {
-            skip_canonical_feature_name_conversion =
-                _preferences.skip_canonical_feature_name_conversion;
+            skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
         }
         for feature_name in feature_names {
             // Check for an alias.
             // Canonical feature names are also included as keys in the aliases map.
             let mut canonical_feature_name = feature_name;
-            if !skip_canonical_feature_name_conversion {
+            if !skip_feature_name_conversion {
                 canonical_feature_name = self.get_canonical_feature_name(feature_name)?;
             }
 
