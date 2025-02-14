@@ -6,7 +6,16 @@ Configurations for different experiments or feature flags are mergeable to suppo
 [![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 
-See [tests](./tests/) for examples and tests for different implementations of this format for managing options.
+This project helps code scale better and be easier to maintain.
+We should determine the right configuration for a request or process when it starts by passing the enabled features to an `OptionsProvider`.
+The returned options would be used throughout the request or process to change business logic.
+Supporting deep configurations with my types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus help code scale and be more maintainable as explained in [this article][cond-blog].
+
+It's fine to use systems that support enabled/disabled feature flags, but we'll inevitably need to support more sophisticated configurations.
+This project facilitates using deep configurations to be the backing for simple feature flags, thus keeping API contracts clean and facilitating the refactoring of code that uses the configurations.
+Allowing clients to know about and pass in deep configurations for specific components is hard to maintain and makes it difficult to change the structure of the configurations.
+
+See [tests](./tests/) for examples and tests for different variations of this paradigm for managing options.
 
 Core Features:
 * **Each *feature flag* can be represented by a JSON or YAML file** which contains options to override default configuration values when processing feature names or experiment names in a request.
@@ -148,3 +157,5 @@ Built using the Rust implementation.
 See the [rust/optify](./rust/optify/) folder.
 Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
 The API may change slightly until version 1.0 is released.
+
+[cond-blog]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
