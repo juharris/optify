@@ -1,0 +1,11 @@
+{
+	"features": [
+		"super"
+	],
+	"options": {
+		"myConfig": {
+			"key1": "value",
+			"key2": "value2"
+		}
+	}
+}

@@ -1,0 +1,9 @@
+metadata:
+    owners: su
+imports:
+    - base1
+    - base2
+options:
+    myConfig:
+        key1: "new value"
+        super_key: "super value"
