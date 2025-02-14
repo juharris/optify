@@ -64,7 +64,6 @@ impl OptionsProvider {
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
         let mut config_builder = config::Config::builder();
-        // TODO Add a way to skip conversion because it's not needed in cases like when we already translated in Ruby before looking in the cache.
         let mut skip_feature_name_conversion = false;
         if let Some(_preferences) = preferences {
             skip_feature_name_conversion = _preferences.skip_feature_name_conversion;

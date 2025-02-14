@@ -88,13 +88,13 @@ module Optify
       feature_names = feature_names.map do |feature_name|
         get_canonical_feature_name(feature_name)
       end
-      preferences ||= GetOptionsPreferences.new
-      preferences.skip_feature_name_conversion = true
 
       cache_key = [key, feature_names, config_class]
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
+      preferences ||= GetOptionsPreferences.new
+      preferences.skip_feature_name_conversion = true
       result = get_options(key, feature_names, config_class, nil, preferences)
 
       T.must(@cache)[cache_key] = result

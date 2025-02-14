@@ -75,5 +75,11 @@ class OptifyTest < Test::Unit::TestCase
     assert_same(config_b, config_b2)
     assert_same(config_b, config_b3)
     assert_same(config_b, config_b4)
+
+    config_a_b = provider.get_options('myConfig', %w[A B], MyConfig, cache_options)
+    config_b_a = provider.get_options('myConfig', %w[B A], MyConfig, cache_options)
+    assert_not_same(config_a_b, config_b_a)
+    config_a_b2 = provider.get_options('myConfig', ['A', 'featUre_B/iNITial'], MyConfig, cache_options)
+    assert_same(config_a_b, config_a_b2)
   end
 end
