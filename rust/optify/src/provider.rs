@@ -10,6 +10,10 @@ pub(crate) type SourceValue = config::File<config::FileSourceString, config::Fil
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
+pub struct GetOptionsPreferences {
+    pub skip_feature_name_conversion: bool,
+}
+
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
@@ -25,33 +29,64 @@ impl OptionsProvider {
         }
     }
 
-    // TODO Add another method with caching
-    // with an to disable because we will not want to use the cache when calling from other languages because they should use their own caching
-    // in order to avoid possible overhead and conversion.
+    // Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+    // Canonical feature names map to themselves.
+    //
+    // @param feature_name The name of an alias or a feature.
+    // @return The canonical feature name.
+    pub fn get_canonical_feature_name(&self, feature_name: &str) -> Result<&String, String> {
+        // Canonical feature names are also included as keys in the aliases map.
+        let feature_name = unicase::UniCase::new(feature_name.to_owned());
+        match self.aliases.get(&feature_name) {
+            Some(canonical_name) => Ok(canonical_name),
+            None => Err(format!(
+                "The given feature {:?} was not found.",
+                feature_name
+            )),
+        }
+    }
+
     pub fn get_options(
         &self,
         key: &str,
         feature_names: &Vec<String>,
     ) -> Result<serde_json::Value, String> {
-        let mut config_builder = config::Config::builder();
-        for feature_name in feature_names {
-            let feature_name = unicase::UniCase::new(feature_name.clone());
+        self.get_option_with_preferences(key, feature_names, &None)
+    }
 
+    // TODO Add another method with caching
+    // with an to disable because we will not want to use the cache when calling from other languages because they should use their own caching
+    // in order to avoid possible overhead and conversion.
+    pub fn get_option_with_preferences(
+        &self,
+        key: &str,
+        feature_names: &Vec<String>,
+        preferences: &Option<GetOptionsPreferences>,
+    ) -> Result<serde_json::Value, String> {
+        let mut config_builder = config::Config::builder();
+        let mut skip_feature_name_conversion = false;
+        if let Some(_preferences) = preferences {
+            skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
+        }
+        for feature_name in feature_names {
             // Check for an alias.
-            // Canonical feature names are also included in the aliases map.
-            let feature_name = match self.aliases.get(&feature_name) {
-                Some(alias) => alias,
+            // Canonical feature names are also included as keys in the aliases map.
+            let mut canonical_feature_name = feature_name;
+            if !skip_feature_name_conversion {
+                canonical_feature_name = self.get_canonical_feature_name(feature_name)?;
+            }
+
+            let source = match self.sources.get(canonical_feature_name) {
+                Some(src) => src,
+                // Should not happen.
+                // All canonical feature names are included as keys in the sources map.
+                // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                 None => {
                     return Err(format!(
-                        "The given feature {:?} is not known.",
-                        feature_name
+                        "Feature name {:?} was not found.",
+                        canonical_feature_name
                     ))
                 }
-            };
-
-            let source = match self.sources.get(feature_name) {
-                Some(src) => src,
-                None => return Err(format!("Feature name {:?} was not found.", feature_name)),
             };
             config_builder = config_builder.add_source(source.clone());
         }

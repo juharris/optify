@@ -53,7 +53,6 @@ impl OptionsProviderBuilder {
                 continue;
             }
 
-            let key = self.get_path_key(path, directory);
             // TODO Optimization: Find a more efficient way to build a more generic view of the file.
             // The `config` library is helpful because it handles many file types.
             // It would also be nice to support comments in .json files, even though it is not standard.
@@ -65,16 +64,21 @@ impl OptionsProviderBuilder {
                 feature_config.options.try_deserialize().unwrap();
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-            let res = self.sources.insert(key.clone(), source);
+            let canonical_feature_name = self.get_canonical_feature_name(path, directory);
+            let res = self.sources.insert(canonical_feature_name.clone(), source);
             if res.is_some() {
                 return Err(format!(
                     "Duplicate key found: `{}` for path `{}`",
-                    key,
+                    canonical_feature_name,
                     path.to_string_lossy()
                 ));
             }
 
-            match add_alias(&mut self.aliases, &key, &key) {
+            match add_alias(
+                &mut self.aliases,
+                &canonical_feature_name,
+                &canonical_feature_name,
+            ) {
                 Ok(_) => {}
                 Err(e) => return Err(e),
             }
@@ -82,7 +86,7 @@ impl OptionsProviderBuilder {
             // Add aliases.
             if let Some(aliases) = feature_config.metadata.aliases {
                 for alias in aliases {
-                    match add_alias(&mut self.aliases, &alias, &key) {
+                    match add_alias(&mut self.aliases, &alias, &canonical_feature_name) {
                         Ok(_) => {}
                         Err(e) => return Err(e),
                     }
@@ -97,7 +101,7 @@ impl OptionsProviderBuilder {
         OptionsProvider::new(&self.aliases, &self.sources)
     }
 
-    fn get_path_key(&self, path: &Path, directory: &Path) -> String {
+    fn get_canonical_feature_name(&self, path: &Path, directory: &Path) -> String {
         path.strip_prefix(directory)
             .unwrap()
             .with_extension("")
