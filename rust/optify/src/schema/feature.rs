@@ -9,6 +9,8 @@ pub(crate) type ConfigurationOptions = config::Value;
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub(crate) struct FeatureConfiguration {
+    // TODO Think of a good name, maybe change it.
+    pub imports: Option<Vec<String>>,
     pub metadata: OptionsMetadata,
     pub options: ConfigurationOptions,
 }

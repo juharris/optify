@@ -98,6 +98,12 @@ impl OptionsProviderBuilder {
     }
 
     pub fn build(&self) -> OptionsProvider {
+        // TODO Validate imports.
+        // Gather errors.
+        // All imports must be canonical feature names for clarity and to help navigate to the right file.
+        // If any are aliases, then show a nice error message to say what to change it to.
+
+        // TODO Extend imports so that we don't need to traverse at runtime.
         OptionsProvider::new(&self.aliases, &self.sources)
     }
 
