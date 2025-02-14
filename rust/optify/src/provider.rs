@@ -10,15 +10,15 @@ pub(crate) type SourceValue = config::File<config::FileSourceString, config::Fil
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
+pub struct GetOptionsPreferences {
+    pub skip_canonical_feature_name_conversion: bool,
+}
+
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
     aliases: Aliases,
     sources: Sources,
-}
-
-pub struct GetOptionsPreferences {
-    skip_canonical_feature_name_conversion: bool,
 }
 
 impl OptionsProvider {

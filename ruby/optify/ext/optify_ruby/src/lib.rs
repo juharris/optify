@@ -1,7 +1,27 @@
 use magnus::{function, method, prelude::*, wrap, Error, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::provider::OptionsProvider;
+use optify::provider::GetOptionsPreferences;
 use std::cell::RefCell;
+
+#[wrap (class = "Optify::GetOptionsPreferences")]
+struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
+
+impl MutGetOptionsPreferences {
+    fn new() -> Self {
+        Self(RefCell::new(GetOptionsPreferences {
+            skip_canonical_feature_name_conversion: false,
+        }))
+    }
+
+    fn set_skip_canonical_feature_name_conversion(&self, value: bool) {
+        self.0.borrow_mut().skip_canonical_feature_name_conversion = value;
+    }
+
+    fn skip_canonical_feature_name_conversion(&self) -> bool {
+        self.0.borrow().skip_canonical_feature_name_conversion
+    }
+}
 
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
@@ -15,6 +35,15 @@ impl WrappedOptionsProvider {
 
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
         self.0.borrow().get_options(&key, &feature_names).unwrap().to_string()
+    }
+
+    fn get_options_json_with_preferences(
+        &self,
+         key: String, feature_names: Vec<String>, preferences: &MutGetOptionsPreferences) -> String {
+            let _preferences = Some(optify::provider::GetOptionsPreferences {
+                skip_canonical_feature_name_conversion: preferences.skip_canonical_feature_name_conversion(),
+            });
+        self.0.borrow().get_option_with_preferences(&key, &feature_names, &_preferences).unwrap().to_string()
     }
 }
 
@@ -50,5 +79,13 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     let provider_class = module.define_class("OptionsProvider", ruby.class_object())?;
     provider_class.define_method("get_canonical_feature_name", method!(WrappedOptionsProvider::get_canonical_feature_name, 1))?;
     provider_class.define_method("get_options_json", method!(WrappedOptionsProvider::get_options_json, 2))?;
+    provider_class.define_method("get_options_json_with_preferences", method!(WrappedOptionsProvider::get_options_json_with_preferences, 3))?;
+
+    let get_options_preferences_class = module.define_class("GetOptionsPreferences", ruby.class_object())?;
+    get_options_preferences_class.define_singleton_method("new", function!(MutGetOptionsPreferences::new, 0))?;
+    get_options_preferences_class.define_method("skip_canonical_feature_name_conversion=", method!(MutGetOptionsPreferences::set_skip_canonical_feature_name_conversion, 1))?;
+    get_options_preferences_class.define_method("skip_canonical_feature_name_conversion", method!(MutGetOptionsPreferences::skip_canonical_feature_name_conversion, 0))?;
+
+
     Ok(())
 }
