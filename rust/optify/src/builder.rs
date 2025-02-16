@@ -1,4 +1,5 @@
 use config;
+use std::collections::HashMap;
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -10,6 +11,7 @@ use crate::schema::feature::FeatureConfiguration;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    imports: HashMap<String, Vec<String>>,
     sources: Sources,
 }
 
@@ -37,6 +39,7 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
+            imports: HashMap::new(),
             sources: Sources::new(),
         }
     }
@@ -74,6 +77,13 @@ impl OptionsProviderBuilder {
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
             let canonical_feature_name = self.get_canonical_feature_name(path, directory);
+
+            match feature_config.imports {
+                None => {}
+                Some(imports) => {
+                    self.imports.insert(canonical_feature_name.clone(), imports);
+                }
+            }
             let res = self.sources.insert(canonical_feature_name.clone(), source);
             if res.is_some() {
                 return Err(format!(

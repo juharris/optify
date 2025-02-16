@@ -5,7 +5,7 @@
 	"options": {
 		"myConfig": {
 			"key1": "value",
-			"key2":"parent1 value"
+			"key2":"from base2"
 		}
 	}
 }
