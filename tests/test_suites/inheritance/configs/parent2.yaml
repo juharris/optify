@@ -1,6 +1,5 @@
 metadata:
-    owners: su
+    owners: p2
 imports:
-    - base1
     - base2
 options:

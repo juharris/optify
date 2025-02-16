@@ -1,6 +1,6 @@
 metadata:
     owners: su
 imports:
-    - base1
-    - base2
+    - parent1
+    - parent2
 options:

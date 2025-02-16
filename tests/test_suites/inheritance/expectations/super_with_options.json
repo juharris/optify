@@ -5,7 +5,7 @@
 	"options": {
 		"myConfig": {
 			"key1": "new value",
-			"key2": "value2",
+			"key2": "from base2",
 			"super_key": "super value"
 		}
 	}

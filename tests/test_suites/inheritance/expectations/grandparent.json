@@ -1,11 +1,11 @@
 {
 	"features": [
-		"super"
+		"grandparent"
 	],
 	"options": {
 		"myConfig": {
 			"key1": "value",
-			"key2": "from base2"
+			"key2":"parent1 value"
 		}
 	}
 }
