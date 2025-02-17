@@ -107,7 +107,7 @@ impl OptionsProviderBuilder {
                 .is_some()
             {
                 return Err(format!(
-                    "Error when loading '{}'. The canonical feature name for the file, '{canonical_feature_name}', was already added.",
+                    "Error when loading '{}'. The canonical feature name for the file, '{canonical_feature_name}', was already added. It may be an alias for another feature.",
                     path.to_string_lossy()
                 ));
             }
@@ -170,7 +170,7 @@ impl OptionsProviderBuilder {
         resolved_imports: &mut HashSet<String>,
         features_in_resolution_path: &mut HashSet<String>,
     ) -> Result<(), String> {
-        // Build each feature so that we don't need to traverse imports when configurations are requested.
+        // Build each feature so that we don't need to traverse imports for each feature when configurations are requested from the provider.
         let mut config_builder = config::Config::builder();
         for import in imports_for_feature {
             // Validate imports.
