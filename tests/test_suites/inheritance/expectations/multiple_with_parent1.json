@@ -1,0 +1,22 @@
+{
+	"features": [
+		"super",
+		"grandparent",
+		"feature_C",
+		"parent1"
+	],
+	"options": {
+		"myConfig": {
+			"key1": "value",
+			"key2": "parent1 value",
+			"myArray": [
+				"feature B item 1"
+			],
+			"myObject": {
+				"one": 11,
+				"two": 2,
+				"three": 3
+			}
+		}
+	}
+}
