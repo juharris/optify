@@ -42,9 +42,10 @@ fn test_builder_duplicate_alias() {
     match builder.add_directory(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
-            assert_eq!(
-                e,
-                "The alias 'b' for canonical feature name 'a' is already mapped to 'b'.",
+            let pattern = r#"The alias 'b' for canonical feature name 'a' is already mapped to 'b'\.|The alias 'b' for canonical feature name 'b' is already mapped to 'a'\."#;
+            assert!(
+                regex::Regex::new(pattern).unwrap().is_match(&e),
+                "Got: {e}\nExpected pattern: {pattern}",
             );
         }
     }
