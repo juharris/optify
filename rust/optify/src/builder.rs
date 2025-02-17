@@ -135,13 +135,13 @@ impl OptionsProviderBuilder {
         let mut resolved_imports: HashSet<String> = HashSet::new();
         // Clone to avoid borrowing issues.
         // TODO Try to optimize to avoid cloning.
-        // Maybe don't make `resolved_imports` a member of the struct.
+        // Maybe don't make the `resolve_imports` method a member.
         let imports_clone = self.imports.clone();
         for (canonical_feature_name, imports) in &imports_clone {
-            let mut features_in_resolution_path: HashSet<String> =
-                HashSet::from([canonical_feature_name.clone()]);
             if resolved_imports.insert(canonical_feature_name.clone()) {
                 // Check for infinite loops by starting a path here.
+                let mut features_in_resolution_path: HashSet<String> =
+                    HashSet::from([canonical_feature_name.clone()]);
                 self.resolve_imports(
                     canonical_feature_name,
                     imports,
