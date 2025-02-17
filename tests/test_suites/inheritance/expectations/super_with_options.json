@@ -1,0 +1,12 @@
+{
+	"features": [
+		"super_with_options"
+	],
+	"options": {
+		"myConfig": {
+			"key1": "new value",
+			"key2": "from base2",
+			"super_key": "super value"
+		}
+	}
+}

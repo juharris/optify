@@ -1,6 +1,6 @@
 [package]
 name = "optify"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights. This library is mainly made to support building implementations for other languages such as Node.js, Python, and Ruby. It is not meant to be consumed directly yet."
@@ -23,3 +23,6 @@ serde_derive = "1.0.217"
 serde_json = "1.0.137"
 unicase = "2.8.1"
 walkdir = "2.5.0"
+
+[dev-dependencies]
+regex = "1.11.1"

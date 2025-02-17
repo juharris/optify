@@ -1,0 +1,4 @@
+metadata:
+    owners: p2
+imports:
+    - base2

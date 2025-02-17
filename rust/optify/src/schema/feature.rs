@@ -9,6 +9,7 @@ pub(crate) type ConfigurationOptions = config::Value;
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub(crate) struct FeatureConfiguration {
-    pub metadata: OptionsMetadata,
-    pub options: ConfigurationOptions,
+    pub imports: Option<Vec<String>>,
+    pub metadata: Option<OptionsMetadata>,
+    pub options: Option<ConfigurationOptions>,
 }

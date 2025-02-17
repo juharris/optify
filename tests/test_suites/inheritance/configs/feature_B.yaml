@@ -1,0 +1,7 @@
+options:
+    myConfig:
+        myArray:
+            - "feature B item 1"
+        myObject:
+            one: 11
+            three: 33

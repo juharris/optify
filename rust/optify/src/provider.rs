@@ -55,7 +55,7 @@ impl OptionsProvider {
     }
 
     // TODO Add another method with caching
-    // with an to disable because we will not want to use the cache when calling from other languages because they should use their own caching
+    // with an option to disable because we will not want to use the cache when calling from other languages because they should use their own caching
     // in order to avoid possible overhead and conversion.
     pub fn get_option_with_preferences(
         &self,

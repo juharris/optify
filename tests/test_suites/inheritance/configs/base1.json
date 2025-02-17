@@ -1,0 +1,10 @@
+{
+	"metadata": {
+		"owners": "a-team@company.com"
+	},
+	"options": {
+		"myConfig": {
+			"key1": "value"
+		}
+	}
+}
