@@ -63,7 +63,7 @@ impl WrappedOptionsProviderBuilder {
     }
 
     fn build(&self) -> WrappedOptionsProvider {
-        WrappedOptionsProvider(RefCell::new(self.0.borrow().build()))
+        WrappedOptionsProvider(RefCell::new(self.0.borrow_mut().build().unwrap()))
     }
 }
 

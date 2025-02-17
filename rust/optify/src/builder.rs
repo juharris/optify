@@ -83,11 +83,16 @@ impl OptionsProviderBuilder {
                 }
             };
 
-            // TODO Maybe use `?` instead of `unwrap`?
             let options_as_json_str = match feature_config.options {
                 None => "{}".to_owned(),
                 Some(options) => {
-                    let options_as_json: serde_json::Value = options.try_deserialize().unwrap();
+                    let options_as_json: serde_json::Value =
+                        options.try_deserialize().map_err(|e| {
+                            format!(
+                                "Error deserializing feature configuration for '{:?}': {e}",
+                                path.to_string_lossy()
+                            )
+                        })?;
                     serde_json::to_string(&options_as_json).unwrap()
                 }
             };
@@ -103,8 +108,7 @@ impl OptionsProviderBuilder {
             let res = self.sources.insert(canonical_feature_name.clone(), source);
             if res.is_some() {
                 return Err(format!(
-                    "Duplicate key found: `{}` for path `{}`",
-                    canonical_feature_name,
+                    "Error when loading '{}'. The canonical feature name '{canonical_feature_name}' was already added.",
                     path.to_string_lossy()
                 ));
             }

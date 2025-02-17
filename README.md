@@ -27,6 +27,8 @@ Core Features:
   Caching is only implemented in Ruby for now.
 * Files are only read once when the `OptionsProvider` is built.
   This should be done when your application starts to ensure that files are only read once and issues are found early.
+* **Inheritance**: Features can import or depend on other features.
+  This keeps your list of enabled features smaller at runtime and allows you to group related configurations while keeping most files small, focused, and like granular building blocks.
 
 # Merging Configuration Files
 When merging configurations for features, objects are merged with the last feature taking precedence.
@@ -134,6 +136,9 @@ The result of using features: `["B", "A"]` will be:
 Other types are supported as the [config](https://crates.io/crates/config) Rust crate is used to back this project, but those other types are not as well-known and not as nice for working with deep objects so they are not recommended.
 In most cases, JSON should be preferred to help with some basic static structural validation at load time.
 Standard JSON validation will easily catch issues such as a bad merge conflict resolution, whereas it is easy to have valid YAML, but would not work as expected at runtime because of incorrect indentation.
+
+# Inheritance
+TODO
 
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.
