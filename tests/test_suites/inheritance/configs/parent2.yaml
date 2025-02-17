@@ -2,4 +2,4 @@ metadata:
     owners: p2
 imports:
     - base2
-options:
+options: {}

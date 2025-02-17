@@ -125,11 +125,16 @@ impl OptionsProviderBuilder {
         Ok(self)
     }
 
-    pub fn build(&self) -> Result<OptionsProvider, String> {
+    pub fn build(&mut self) -> Result<OptionsProvider, String> {
         let mut resolved_imports: HashSet<String> = HashSet::new();
-        for (canonical_feature_name, imports) in &self.imports {
+        // Clone to avoid borrowing issues.
+        // TODO Try to optimize to avoid cloning.
+        // Maybe don't make `resolved_imports` a member of the struct.
+        let imports_clone = self.imports.clone();
+        for (canonical_feature_name, imports) in &imports_clone {
             if resolved_imports.insert(canonical_feature_name.clone()) {
-                self.resolve_imports(canonical_feature_name, imports, &mut resolved_imports);
+                // TODO Check for infinite loops by starting a path here.
+                self.resolve_imports(canonical_feature_name, &imports, &mut resolved_imports)?;
             }
         }
 
@@ -146,12 +151,11 @@ impl OptionsProviderBuilder {
     }
 
     fn resolve_imports(
-        &self,
-        canonical_feature_name: &str,
-        imports_for_feature: &[String],
+        &mut self,
+        canonical_feature_name: &String,
+        imports_for_feature: &Vec<String>,
         resolved_imports: &mut HashSet<String>,
     ) -> Result<(), String> {
-        // TODO Validate imports.
         // Gather errors.
         // All imports must be canonical feature names for clarity and to help navigate to the right file.
         // If any are aliases, then show a nice error message to say what to change it to.
@@ -159,32 +163,46 @@ impl OptionsProviderBuilder {
         // Build each import so that we don't need to traverse at runtime.
         let mut config_builder = config::Config::builder();
         for import in imports_for_feature {
+            // TODO Validate imports.
             // Make sure it's a canonical feature name by checking if it's in `self.sources`.
-            let mut source = self.sources.get(import).unwrap().clone();
+            let mut source = self.sources.get(import).unwrap();
             if resolved_imports.insert(import.clone()) {
-                match self.imports.get(import) {
-                    None => {}
-                    Some(imports_for_import) => {
-                        self.resolve_imports(import, imports_for_import, resolved_imports);
+                if let Some(imports_for_import) = self.imports.get(import) {
+                    if let Err(e) =
+                        self.resolve_imports(import, &imports_for_import.clone(), resolved_imports)
+                    {
+                        return Err(e);
                     }
                 }
 
                 // Get the source again because it may have been updated after resolving imports.
-                let mut source = self.sources.get(import).unwrap().clone();
+                source = self.sources.get(import).unwrap();
             }
 
-            config_builder = config_builder.add_source(source);
+            config_builder = config_builder.add_source(source.clone());
         }
 
-        let new_config = config_builder.build();
-        match new_config {
-            Ok(cfg) => {
-                let key = canonical_feature_name.to_owned();
-                // FIXME Convert to something that can be inserted as a source.
-                let res = self.sources.insert(key, cfg);
-                if res.is_some() {
-                    panic!("Duplicate key found: `{}`", key);
-                }
+        let source = self.sources.get(canonical_feature_name).unwrap();
+        config_builder = config_builder.add_source(source.clone());
+
+        match config_builder.build() {
+            Ok(new_config) => {
+                // Convert to something that can be inserted as a source.
+                let options_as_config_value: config::Value = match new_config.try_deserialize() {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Error deserializing feature configuration for {:?}: {:?}",
+                            canonical_feature_name, e
+                        ))
+                    }
+                };
+                let options_as_json: serde_json::Value =
+                    options_as_config_value.try_deserialize().unwrap();
+                let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
+                let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
+                self.sources
+                    .insert(canonical_feature_name.to_owned(), source);
             }
             Err(e) => {
                 return Err(format!(

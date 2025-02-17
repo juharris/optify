@@ -3,11 +3,9 @@ use std::fs;
 use optify::builder::OptionsProviderBuilder;
 
 fn test_suite(path: &std::path::Path) {
-    let provider = OptionsProviderBuilder::new()
-        .add_directory(&path.join("configs"))
-        .unwrap()
-        .build()
-        .unwrap();
+    let mut builder = OptionsProviderBuilder::new();
+    builder.add_directory(&path.join("configs")).unwrap();
+    let provider = builder.build().unwrap();
 
     let expectations = fs::read_dir(path.join("expectations")).unwrap();
     expectations.for_each(|expectation_entry| {
