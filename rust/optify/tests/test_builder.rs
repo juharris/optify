@@ -8,7 +8,7 @@ fn test_builder_circular_imports() {
     match builder.build() {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
-            // Just use a big regex instead of slowing down the builder to keep ordered maps or sets.
+            // Just use a big regex instead of being consistent slowing down the builder to keep ordered maps or sets.
             let pattern = r#"Error when resolving imports for 'a': Cycle detected with import 'b'. The features in the path \(not in order\): \{"a", "b"}|Error when resolving imports for 'a': Cycle detected with import 'b'. The features in the path \(not in order\): \{"b", "a"}|Error when resolving imports for 'b': Cycle detected with import 'a'. The features in the path \(not in order\): \{"a", "b"}|Error when resolving imports for 'b': Cycle detected with import 'a'. The features in the path \(not in order\): \{"b", "a"}"#;
             assert!(
                 regex::Regex::new(pattern).unwrap().is_match(&e),

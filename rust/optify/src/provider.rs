@@ -63,11 +63,11 @@ impl OptionsProvider {
         feature_names: &Vec<String>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
+        let mut config_builder = config::Config::builder();
         let mut skip_feature_name_conversion = false;
         if let Some(_preferences) = preferences {
             skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
         }
-        let mut config_builder = config::Config::builder();
         for feature_name in feature_names {
             // Check for an alias.
             // Canonical feature names are also included as keys in the aliases map.

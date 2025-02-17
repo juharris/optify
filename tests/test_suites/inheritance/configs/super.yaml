@@ -3,4 +3,3 @@ metadata:
 imports:
     - base1
     - base2
-options: {}

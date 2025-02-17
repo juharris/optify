@@ -3,4 +3,3 @@ metadata:
 imports:
     - parent1
     - parent2
-options: {}
