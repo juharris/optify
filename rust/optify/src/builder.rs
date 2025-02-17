@@ -21,15 +21,15 @@ impl Default for OptionsProviderBuilder {
     }
 }
 
-fn add_alias(aliases: &mut Aliases, alias: &String, key: &String) -> Result<(), String> {
+fn add_alias(
+    aliases: &mut Aliases,
+    alias: &String,
+    canonical_feature_name: &String,
+) -> Result<(), String> {
     let uni_case_alias = unicase::UniCase::new(alias.clone());
-    let res = aliases.insert(uni_case_alias, key.clone());
-    if res.is_some() {
+    if let Some(res) = aliases.insert(uni_case_alias, canonical_feature_name.clone()) {
         return Err(format!(
-            "The alias {:?} for key {:?} is already mapped to {:?}",
-            alias,
-            key,
-            res.unwrap()
+            "The alias '{alias}' for canonical feature name '{canonical_feature_name}' is already mapped to '{res}'."
         ));
     }
     Ok(())
@@ -65,9 +65,8 @@ impl OptionsProviderBuilder {
                 Ok(conf) => conf,
                 Err(e) => {
                     return Err(format!(
-                        "Error reading file {:?}: {:?}",
+                        "Error loading file '{}': {e}",
                         path.to_string_lossy(),
-                        e
                     ))
                 }
             };
@@ -76,9 +75,8 @@ impl OptionsProviderBuilder {
                 Ok(v) => v,
                 Err(e) => {
                     return Err(format!(
-                        "Error deserializing feature configuration from file {:?}: {:?}",
+                        "Error deserializing configuration for file '{}': {e}",
                         path.to_string_lossy(),
-                        e
                     ))
                 }
             };
@@ -89,7 +87,7 @@ impl OptionsProviderBuilder {
                     let options_as_json: serde_json::Value =
                         options.try_deserialize().map_err(|e| {
                             format!(
-                                "Error deserializing feature configuration for '{:?}': {e}",
+                                "Error deserializing options for '{:?}': {e}",
                                 path.to_string_lossy()
                             )
                         })?;
@@ -99,37 +97,32 @@ impl OptionsProviderBuilder {
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
             let canonical_feature_name = self.get_canonical_feature_name(path, directory);
 
-            match feature_config.imports {
-                None => {}
-                Some(imports) => {
-                    self.imports.insert(canonical_feature_name.clone(), imports);
-                }
+            if let Some(imports) = feature_config.imports {
+                self.imports.insert(canonical_feature_name.clone(), imports);
             }
-            let res = self.sources.insert(canonical_feature_name.clone(), source);
-            if res.is_some() {
+
+            if self
+                .sources
+                .insert(canonical_feature_name.clone(), source)
+                .is_some()
+            {
                 return Err(format!(
-                    "Error when loading '{}'. The canonical feature name '{canonical_feature_name}' was already added.",
+                    "Error when loading '{}'. The canonical feature name for the file, '{canonical_feature_name}', was already added.",
                     path.to_string_lossy()
                 ));
             }
 
-            match add_alias(
+            add_alias(
                 &mut self.aliases,
                 &canonical_feature_name,
                 &canonical_feature_name,
-            ) {
-                Ok(_) => {}
-                Err(e) => return Err(e),
-            }
+            )?;
 
             // Add aliases.
             if let Some(metadata) = feature_config.metadata {
                 if let Some(aliases) = metadata.aliases {
                     for alias in aliases {
-                        match add_alias(&mut self.aliases, &alias, &canonical_feature_name) {
-                            Ok(_) => {}
-                            Err(e) => return Err(e),
-                        }
+                        add_alias(&mut self.aliases, &alias, &canonical_feature_name)?;
                     }
                 }
             }

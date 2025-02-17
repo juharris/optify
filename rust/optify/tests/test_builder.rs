@@ -34,3 +34,33 @@ fn test_builder_cycle_in_imports() {
         }
     }
 }
+
+#[test]
+fn test_builder_duplicate_alias() {
+    let path = std::path::Path::new("tests/duplicate_alias");
+    let mut builder = OptionsProviderBuilder::new();
+    match builder.add_directory(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert_eq!(
+                e,
+                "The alias 'b' for canonical feature name 'a' is already mapped to 'b'.",
+            );
+        }
+    }
+}
+
+#[test]
+fn test_builder_used_canonical_alias() {
+    let path = std::path::Path::new("tests/used_canonical_name");
+    let mut builder = OptionsProviderBuilder::new();
+    match builder.add_directory(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert_eq!(
+                e,
+                "The alias 'a' for canonical feature name 'a' is already mapped to 'a'.",
+            );
+        }
+    }
+}
