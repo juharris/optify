@@ -1,5 +1,5 @@
 use config;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -61,8 +61,17 @@ impl OptionsProviderBuilder {
             // It would also be nice to support comments in .json files, even though it is not standard.
             // The `config` library does support .json5 which supports comments.
             let file = config::File::from(path);
-            let config = config::Config::builder().add_source(file).build().unwrap();
-            let feature_config: FeatureConfiguration = match config.try_deserialize() {
+            let config_for_path = match config::Config::builder().add_source(file).build() {
+                Ok(conf) => conf,
+                Err(e) => {
+                    return Err(format!(
+                        "Error reading file {:?}: {:?}",
+                        path.to_string_lossy(),
+                        e
+                    ))
+                }
+            };
+            let feature_config: FeatureConfiguration = match config_for_path.try_deserialize() {
                 Ok(v) => v,
                 Err(e) => {
                     return Err(format!(
@@ -117,12 +126,13 @@ impl OptionsProviderBuilder {
     }
 
     pub fn build(&self) -> Result<OptionsProvider, String> {
-        // TODO Validate imports.
-        // Gather errors.
-        // All imports must be canonical feature names for clarity and to help navigate to the right file.
-        // If any are aliases, then show a nice error message to say what to change it to.
+        let mut resolved_imports: HashSet<String> = HashSet::new();
+        for (canonical_feature_name, imports) in &self.imports {
+            if resolved_imports.insert(canonical_feature_name.clone()) {
+                self.resolve_imports(canonical_feature_name, imports, &mut resolved_imports);
+            }
+        }
 
-        // TODO Extend imports so that we don't need to traverse at runtime.
         Ok(OptionsProvider::new(&self.aliases, &self.sources))
     }
 
@@ -133,5 +143,57 @@ impl OptionsProviderBuilder {
             .to_str()
             .unwrap()
             .to_owned()
+    }
+
+    fn resolve_imports(
+        &self,
+        canonical_feature_name: &str,
+        imports_for_feature: &[String],
+        resolved_imports: &mut HashSet<String>,
+    ) -> Result<(), String> {
+        // TODO Validate imports.
+        // Gather errors.
+        // All imports must be canonical feature names for clarity and to help navigate to the right file.
+        // If any are aliases, then show a nice error message to say what to change it to.
+
+        // Build each import so that we don't need to traverse at runtime.
+        let mut config_builder = config::Config::builder();
+        for import in imports_for_feature {
+            // Make sure it's a canonical feature name by checking if it's in `self.sources`.
+            let mut source = self.sources.get(import).unwrap().clone();
+            if resolved_imports.insert(import.clone()) {
+                match self.imports.get(import) {
+                    None => {}
+                    Some(imports_for_import) => {
+                        self.resolve_imports(import, imports_for_import, resolved_imports);
+                    }
+                }
+
+                // Get the source again because it may have been updated after resolving imports.
+                let mut source = self.sources.get(import).unwrap().clone();
+            }
+
+            config_builder = config_builder.add_source(source);
+        }
+
+        let new_config = config_builder.build();
+        match new_config {
+            Ok(cfg) => {
+                let key = canonical_feature_name.to_owned();
+                // FIXME Convert to something that can be inserted as a source.
+                let res = self.sources.insert(key, cfg);
+                if res.is_some() {
+                    panic!("Duplicate key found: `{}`", key);
+                }
+            }
+            Err(e) => {
+                return Err(format!(
+                    "Error building configuration for feature {:?}: {:?}",
+                    canonical_feature_name, e
+                ))
+            }
+        }
+
+        Ok(())
     }
 }
