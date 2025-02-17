@@ -28,7 +28,7 @@ Core Features:
 * Files are only read once when the `OptionsProvider` is built.
   This should be done when your application starts to ensure that files are only read once and issues are found early.
 * **Inheritance**: Features can import or depend on other features.
-  This keeps your list of enabled features smaller at runtime and allows you to group related configurations while keeping most files small, focused, and like granular building blocks.
+  This keeps your list of enabled features smaller at runtime by allowing you to group related configurations while keeping most files small, focused, and like granular building blocks.
 
 # Merging Configuration Files
 When merging configurations for features, objects are merged with the last feature taking precedence.
@@ -138,7 +138,80 @@ In most cases, JSON should be preferred to help with some basic static structura
 Standard JSON validation will easily catch issues such as a bad merge conflict resolution, whereas it is easy to have valid YAML, but would not work as expected at runtime because of incorrect indentation.
 
 # Inheritance
-TODO
+Feature files can list ordered dependencies to declare other files to eagerly import.
+
+This allows grouping related configurations while keeping most files small, focused, and like granular building blocks.
+This also helps keep lists of enabled features smaller at runtime for typical feature that are used together.
+
+Imports are resolved at build time, when `OptionsProviderBuilder::build` is called so that getting to right configuration from an `OptionsProvider` is as fast as possible, but sacrificing some extra memory overhead to store redundant options in each parent.
+
+Each import must be a canonical feature name, i.e., derived from path to a file in order to keep dependencies clear and to help with navigating through files.
+
+For example, if we have:
+
+`Configurations/feature_A.json`:
+```json
+{
+    "options": {
+        "myConfig": {
+            "myArray": [
+                "example item 1",
+                "example item 2"
+            ],
+            "myObject": {
+                "one": 1,
+                "two": 2
+            }
+        }
+    }
+}
+```
+
+`Configurations/feature_B.yaml`:
+```yaml
+options:
+    myConfig:
+        myArray:
+            - "feature B item 1"
+        myObject:
+            one: 11
+            three: 33
+```
+
+And `Configurations/feature_C.yaml`:
+```yaml
+imports:
+    - "feature_A"
+    - "feature_B"
+options:
+    myConfig:
+        myObject:
+            three: 3
+```
+
+The resulting options for `feature_C` will be as if we included the features in the order `["feature_A", "feature_B", "feature_C"]`:
+```json
+{
+    "myConfig":{
+        // The values from feature_B as feature_B is listed after feature_A so it overrides it.
+        "myArray": [
+            "feature B item 1"
+        ],
+        // Applying feature_A, then feature_B, then feature_C.
+        "myObject": {
+            "one": 11,
+            "two": 2,
+            "three": 3
+        }
+    }
+}
+```
+
+There is no limit on the depth for imports; imports can import other features that import other features.
+
+Circular imports are not allowed and will result in an error at build time.
+
+See [tests](./tests/) more examples.
 
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.

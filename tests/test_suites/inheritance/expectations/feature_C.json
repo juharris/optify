@@ -1,0 +1,17 @@
+{
+	"features": [
+		"feature_C"
+	],
+	"options": {
+		"myConfig": {
+			"myArray": [
+				"feature B item 1"
+			],
+			"myObject": {
+				"one": 11,
+				"two": 2,
+				"three": 3
+			}
+		}
+	}
+}

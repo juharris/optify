@@ -1,0 +1,7 @@
+imports:
+    - "feature_A"
+    - "feature_B"
+options:
+    myConfig:
+        myObject:
+            three: 3
