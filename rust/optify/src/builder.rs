@@ -6,12 +6,14 @@ use walkdir::WalkDir;
 use crate::provider::{Aliases, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 
+type Imports = HashMap<String, Vec<String>>;
+
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
-    imports: HashMap<String, Vec<String>>,
+    imports: Imports,
     sources: Sources,
 }
 
@@ -32,6 +34,107 @@ fn add_alias(
             "The alias '{alias}' for canonical feature name '{canonical_feature_name}' is already mapped to '{res}'."
         ));
     }
+    Ok(())
+}
+
+fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
+    path.strip_prefix(directory)
+        .unwrap()
+        .with_extension("")
+        .to_str()
+        .unwrap()
+        .to_owned()
+}
+
+fn resolve_imports(
+    canonical_feature_name: &str,
+    imports_for_feature: &[String],
+    resolved_imports: &mut HashSet<String>,
+    features_in_resolution_path: &mut HashSet<String>,
+    aliases: &Aliases,
+    all_imports: &Imports,
+    sources: &mut Sources,
+) -> Result<(), String> {
+    // Build full configuration for the feature so that we don't need to traverse imports for the feature when configurations are requested from the provider.
+    let mut config_builder = config::Config::builder();
+    for import in imports_for_feature {
+        // Validate imports.
+        if !features_in_resolution_path.insert(import.clone()) {
+            // The import is already in the path, so there is a cycle.
+            return Err(format!(
+                    "Error when resolving imports for '{canonical_feature_name}': Cycle detected with import '{import}'. The features in the path (not in order): {features_in_resolution_path:?}"
+                ));
+        }
+        // Get the source so that we can build the configuration.
+        // Getting the source also ensures the import is a canonical feature name.
+        let mut source = match sources.get(import) {
+                Some(s) => s,
+                // The import is not a canonical feature name.
+                None => match aliases.get(&unicase::UniCase::new(import.clone())) {
+                    Some(canonical_name_for_import) => {
+                        return Err(format!(
+                            "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name. Use '{canonical_name_for_import}' instead of '{import}' in order to keep dependencies clear and to help with navigating through files."
+                        ))
+                    }
+                    None => {
+                        return Err(format!(
+                            "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name and not a recognized alias. Use a canonical feature name in order to keep dependencies clear and to help with navigating through files."
+                        ))
+                    }
+                },
+            };
+        if resolved_imports.insert(import.clone()) {
+            if let Some(imports_for_import) = all_imports.get(import) {
+                let mut _features_in_resolution_path = features_in_resolution_path.clone();
+                _features_in_resolution_path.insert(import.clone());
+                resolve_imports(
+                    import,
+                    &imports_for_import.clone(),
+                    resolved_imports,
+                    &mut _features_in_resolution_path,
+                    aliases,
+                    all_imports,
+                    sources,
+                )?
+            }
+
+            // Get the source again because it may have been updated after resolving imports.
+            source = sources.get(import).unwrap();
+        }
+
+        config_builder = config_builder.add_source(source.clone());
+    }
+
+    // Include the current feature's configuration last to override any imports.
+    let source = sources.get(canonical_feature_name).unwrap();
+    config_builder = config_builder.add_source(source.clone());
+
+    // We have the configuration, build it and store it.
+    match config_builder.build() {
+        Ok(new_config) => {
+            // Convert to something that can be inserted as a source.
+            let options_as_config_value: config::Value = match new_config.try_deserialize() {
+                Ok(v) => v,
+                Err(e) => {
+                    return Err(format!(
+                    "Error deserializing feature configuration for '{canonical_feature_name}': {e}"
+                ))
+                }
+            };
+            let options_as_json: serde_json::Value =
+                options_as_config_value.try_deserialize().unwrap();
+            let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
+            let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
+            sources.insert(canonical_feature_name.to_owned(), source);
+        }
+        Err(e) => {
+            return Err(format!(
+                "Error building configuration for feature {:?}: {:?}",
+                canonical_feature_name, e
+            ))
+        }
+    }
+
     Ok(())
 }
 
@@ -95,11 +198,7 @@ impl OptionsProviderBuilder {
                 }
             };
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-            let canonical_feature_name = self.get_canonical_feature_name(path, directory);
-
-            if let Some(imports) = feature_config.imports {
-                self.imports.insert(canonical_feature_name.clone(), imports);
-            }
+            let canonical_feature_name = get_canonical_feature_name(path, directory);
 
             if self
                 .sources
@@ -110,6 +209,10 @@ impl OptionsProviderBuilder {
                     "Error when loading '{}'. The canonical feature name for the file, '{canonical_feature_name}', was already added. It may be an alias for another feature.",
                     path.to_string_lossy()
                 ));
+            }
+
+            if let Some(imports) = feature_config.imports {
+                self.imports.insert(canonical_feature_name.clone(), imports);
             }
 
             add_alias(
@@ -133,118 +236,23 @@ impl OptionsProviderBuilder {
 
     pub fn build(&mut self) -> Result<OptionsProvider, String> {
         let mut resolved_imports: HashSet<String> = HashSet::new();
-        // Clone to avoid borrowing issues.
-        // TODO Try to optimize to avoid cloning.
-        // Maybe don't make the `resolve_imports` method a member.
-        let imports_clone = self.imports.clone();
-        for (canonical_feature_name, imports) in &imports_clone {
+        for (canonical_feature_name, imports_for_feature) in &self.imports {
             if resolved_imports.insert(canonical_feature_name.clone()) {
                 // Check for infinite loops by starting a path here.
                 let mut features_in_resolution_path: HashSet<String> =
                     HashSet::from([canonical_feature_name.clone()]);
-                self.resolve_imports(
+                resolve_imports(
                     canonical_feature_name,
-                    imports,
+                    imports_for_feature,
                     &mut resolved_imports,
                     &mut features_in_resolution_path,
+                    &self.aliases,
+                    &self.imports,
+                    &mut self.sources,
                 )?;
             }
         }
 
         Ok(OptionsProvider::new(&self.aliases, &self.sources))
-    }
-
-    fn get_canonical_feature_name(&self, path: &Path, directory: &Path) -> String {
-        path.strip_prefix(directory)
-            .unwrap()
-            .with_extension("")
-            .to_str()
-            .unwrap()
-            .to_owned()
-    }
-
-    fn resolve_imports(
-        &mut self,
-        canonical_feature_name: &str,
-        imports_for_feature: &[String],
-        resolved_imports: &mut HashSet<String>,
-        features_in_resolution_path: &mut HashSet<String>,
-    ) -> Result<(), String> {
-        // Build each feature so that we don't need to traverse imports for each feature when configurations are requested from the provider.
-        let mut config_builder = config::Config::builder();
-        for import in imports_for_feature {
-            // Validate imports.
-            if !features_in_resolution_path.insert(import.clone()) {
-                // The import is already in the path, so there is a cycle.
-                return Err(format!(
-                    "Error when resolving imports for '{canonical_feature_name}': Cycle detected with import '{import}'. The features in the path (not in order): {features_in_resolution_path:?}"
-                ));
-            }
-            // Get the source so that we can build the configuration.
-            // Getting the source also ensures the import is a canonical feature name.
-            let mut source = match self.sources.get(import) {
-                Some(s) => s,
-                // The import is not a canonical feature name.
-                None => match self.aliases.get(&unicase::UniCase::new(import.clone())) {
-                    Some(canonical_name_for_import) => {
-                        return Err(format!(
-                            "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name. Use '{canonical_name_for_import}' instead of '{import}' in order to keep dependencies clear and to help with navigating through files."
-                        ))
-                    }
-                    None => {
-                        return Err(format!(
-                            "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name and not a recognized alias. Use a canonical feature name in order to keep dependencies clear and to help with navigating through files."
-                        ))
-                    }
-                },
-            };
-            if resolved_imports.insert(import.clone()) {
-                if let Some(imports_for_import) = self.imports.get(import) {
-                    let mut _features_in_resolution_path = features_in_resolution_path.clone();
-                    _features_in_resolution_path.insert(import.clone());
-                    self.resolve_imports(
-                        import,
-                        &imports_for_import.clone(),
-                        resolved_imports,
-                        &mut _features_in_resolution_path,
-                    )?
-                }
-
-                // Get the source again because it may have been updated after resolving imports.
-                source = self.sources.get(import).unwrap();
-            }
-
-            config_builder = config_builder.add_source(source.clone());
-        }
-
-        // Include the current feature's configuration last to override any imports.
-        let source = self.sources.get(canonical_feature_name).unwrap();
-        config_builder = config_builder.add_source(source.clone());
-
-        match config_builder.build() {
-            Ok(new_config) => {
-                // Convert to something that can be inserted as a source.
-                let options_as_config_value: config::Value = match new_config.try_deserialize() {
-                    Ok(v) => v,
-                    Err(e) => {
-                        return Err(format!("Error deserializing feature configuration for '{canonical_feature_name}': {e}"))
-                    }
-                };
-                let options_as_json: serde_json::Value =
-                    options_as_config_value.try_deserialize().unwrap();
-                let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
-                let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-                self.sources
-                    .insert(canonical_feature_name.to_owned(), source);
-            }
-            Err(e) => {
-                return Err(format!(
-                    "Error building configuration for feature {:?}: {:?}",
-                    canonical_feature_name, e
-                ))
-            }
-        }
-
-        Ok(())
     }
 }
