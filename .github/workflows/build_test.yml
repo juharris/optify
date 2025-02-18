@@ -53,6 +53,9 @@ jobs:
     - name: "[Rust] Publish"
       if: github.ref == 'refs/heads/main'
       shell: bash
+      # It probably just fails if the crate is already published.
+      # We want to only be lenient for the `cargo publish`, but we would still want to clearly see that an issue happened during the run.
+      continue-on-error: true
       run: |
         cargo login
         cargo publish
