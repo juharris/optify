@@ -43,6 +43,9 @@ Team members that are not familiar with the details of the business logic or lan
 This enables more team members to be involved in experimentation without worrying about the details of the implementation.
 A typical example of this in programming is how SQL tells the database the desired output and structure, but is usually agnostic about how to execute a query and what data structures or optimizations can be used to implement the search.
 
+This also makes many changes easier to make and review because we don't have to scrutinize specific code as much.
+For example, many changes will be less intimidating to make and review because they're just adding or modifying a YAML file instead of changing Ruby files or adding custom conditional logic.
+
 # Merging Configuration Files
 When merging configurations for features, objects are merged with the last feature taking precedence.
 Key values, including lists are overwritten.
