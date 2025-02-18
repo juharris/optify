@@ -8,10 +8,29 @@ Configurations for different experiments or feature flags are mergeable to suppo
 
 > The configuration should declare **what** to do, but **not how** to do it.
 
-This project helps code scale better and be easier to maintain.
+This project helps improve the scalability and maintainability of code.
 We should determine the right configuration for a request or process when it starts by passing the enabled features to an `OptionsProvider`.
 The returned options would be used throughout the request or process to change business logic.
-Supporting deep configurations with many types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus improve the scalability of our code and make it easier to maintain our code as explained in [this article][cond-blog].
+Supporting deep configurations with many types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus improve the scalability of our code and make it easier to maintain our code as explained in [this article][cond-article].
+
+Instead of working with feature flags:
+```Python
+if Settings.is_feature_A_enabled:
+    handle_A(params)
+elif Settings.is_feature_B_enabled:
+    handle_B(params)
+elif Settings.is_feature_C_enabled:
+    handle_C(params)
+else:
+    raise FeatureError
+```
+
+You can ensure your code effortlessly scales to new scenarios working with a list of enabled features:
+```Python
+handler_options = provider.get_options('handler', features)
+handler = handlers[handler_options.handler_name]
+handler.handle(params)
+```
 
 It's fine to use systems that support enabled/disabled feature flags, but we'll inevitably need to support more sophisticated configurations than on/off or `true`/`false`.
 This project facilitates using deep configurations to be the backing for simple feature flags, thus keeping API contracts clean and facilitating the refactoring of code that uses the configurations.
@@ -157,7 +176,7 @@ Having clear documentation for classes and properties helps developers understan
 Summary: **no guidance** because it's a case by case decision.
 
 In theory, every property should be nullable because it's possible to use a combination of features that omits a property or sets that property to `null`.
-Remember, any combination of feature files is permitted.
+Remember, any combination of features is permitted.
 In practice, we don't have to worry about `null`s much if we make our files properly and use the configuration in the right places.
 If someone sends a request that uses a strange combination of features, then it's up to them to understand the consequences and test appropriately.
 "Garbage in; garbage out".
@@ -274,5 +293,5 @@ See the [rust/optify](./rust/optify/) folder.
 Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
 The API may change slightly until version 1.0 is released.
 
-[cond-blog]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
+[cond-article]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
 [dotnet-OptionsProvider]: https://github.com/juharris/dotnet-OptionsProvider
