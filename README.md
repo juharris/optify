@@ -1,17 +1,38 @@
 # Optify
-Simplifies getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
+Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
 Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
-![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)
+[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)](https://www.nuget.org/packages/OptionsProvider)
 [![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 
-This project helps code scale better and be easier to maintain.
+> The configuration should declare **what** to do, but **not how** to do it.
+
+This project helps improve the scalability and maintainability of code.
 We should determine the right configuration for a request or process when it starts by passing the enabled features to an `OptionsProvider`.
 The returned options would be used throughout the request or process to change business logic.
-Supporting deep configurations with many types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus help code scale and be more maintainable as explained in [this article][cond-blog].
+Supporting deep configurations with many types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus improve the scalability of our code and make it easier to maintain our code as explained in [this article][cond-article].
 
-It's fine to use systems that support enabled/disabled feature flags, but we'll inevitably need to support more sophisticated configurations.
+Instead of working with feature flags:
+```Python
+if Settings.is_feature_A_enabled:
+    handle_A(params)
+elif Settings.is_feature_B_enabled:
+    handle_B(params)
+elif Settings.is_feature_C_enabled:
+    handle_C(params)
+else:
+    raise FeatureError
+```
+
+You can ensure your code effortlessly scales to new scenarios working with a list of enabled features:
+```Python
+handler_options = provider.get_options('handler', features)
+handler = handlers[handler_options.handler_name]
+handler.handle(params)
+```
+
+It's fine to use systems that support enabled/disabled feature flags, but we'll inevitably need to support more sophisticated configurations than on/off or `true`/`false`.
 This project facilitates using deep configurations to be the backing for simple feature flags, thus keeping API contracts clean and facilitating the refactoring of code that uses the configurations.
 Allowing clients to know about and pass in deep configurations for specific components is hard to maintain and makes it difficult to change the structure of the configurations.
 
@@ -29,6 +50,20 @@ Core Features:
   This should be done when your application starts to ensure that files are only read once and issues are found early.
 * **Inheritance**: Features can import or depend on other features.
   This keeps your list of enabled features smaller at runtime by allowing you to group related configurations while keeping most files small, focused, and like granular building blocks.
+
+# Ethos
+The main idea behind Optify is **configuration driven development**.
+
+> The configuration should declare **what** to do, but **not how** to do it.
+
+Engineers are responsible for writing robust business logic in code to interpret the configuration and execute the desired behavior.
+With clear configurations, it's easy to change or refactor the implementation of the business logic because the configuration declares the desired behavior.
+Team members that are not familiar with the details of the business logic or language of the code - such as perhaps, new team members, managers, the product team, data scientists, etc. - can focus on working with and understanding configuration files instead of diving deep into the code which involves understand that particular programming language.
+This enables more team members to be involved in experimentation without worrying about the details of the implementation.
+A typical example of this in programming is how SQL tells the database the desired output and structure, but is usually agnostic about how to execute a query and what data structures or optimizations can be used to implement the search.
+
+This also makes many changes easier to make and review because we don't have to scrutinize specific code as much.
+For example, many changes will be less intimidating to make and review because they're just adding or modifying a YAML file instead of changing Ruby files or adding custom conditional logic.
 
 # Merging Configuration Files
 When merging configurations for features, objects are merged with the last feature taking precedence.
@@ -126,6 +161,28 @@ The result of using features: `["B", "A"]` will be:
 }
 ```
 
+# Configuration Classes
+There are several aspects to consider when defining the classes that are used to represent the built configuration of combined features.
+
+## Immutability
+Classes should be reusable without side effects.
+Classes will often be shared and passed around throughout your codebase.
+In particular, configuration classes can be cached, so they can be shared across requests.
+
+## Documentation
+Having clear documentation for classes and properties helps developers understand how to use the class and its properties when reading the codebase and writing business logic.
+
+## Nullability
+Summary: **no guidance** because it's a case by case decision.
+
+In theory, every property should be nullable because it's possible to use a combination of features that omits a property or sets that property to `null`.
+Remember, any combination of features is permitted.
+In practice, we don't have to worry about `null`s much if we make our files properly and use the configuration in the right places.
+If someone sends a request that uses a strange combination of features, then it's up to them to understand the consequences and test appropriately.
+"Garbage in; garbage out".
+
+Eventually we can facilitate validation after a configuration is built.
+
 # File Formats
 | Format | Good For | Caveats |
 | --- | --- | --- |
@@ -218,9 +275,9 @@ This repository is mainly for the Rust implementation and that implementation th
 Below are implementations for a few languages.
 
 ## .NET
-![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)
+[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)](https://www.nuget.org/packages/OptionsProvider)
 
-See [github.com/juharris/dotnet-OptionsProvider](https://github.com/juharris/dotnet-OptionsProvider) for a similar library with dependency injection support.
+See [github.com/juharris/dotnet-OptionsProvider][dotnet-OptionsProvider] for a similar library with dependency injection support.
 Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
 
 ## Ruby
@@ -236,4 +293,5 @@ See the [rust/optify](./rust/optify/) folder.
 Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
 The API may change slightly until version 1.0 is released.
 
-[cond-blog]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
+[cond-article]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
+[dotnet-OptionsProvider]: https://github.com/juharris/dotnet-OptionsProvider
