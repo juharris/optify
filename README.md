@@ -2,7 +2,7 @@
 Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
 Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
-[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)][dotnet-OptionsProvider]
+[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)](https://www.nuget.org/packages/OptionsProvider)
 [![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 
@@ -275,7 +275,7 @@ This repository is mainly for the Rust implementation and that implementation th
 Below are implementations for a few languages.
 
 ## .NET
-[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)][dotnet-OptionsProvider]
+[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)](https://www.nuget.org/packages/OptionsProvider)
 
 See [github.com/juharris/dotnet-OptionsProvider][dotnet-OptionsProvider] for a similar library with dependency injection support.
 Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
