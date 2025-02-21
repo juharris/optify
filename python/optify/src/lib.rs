@@ -35,6 +35,11 @@ impl PyOptionsProvider{
 
 #[pymethods]
 impl PyOptionsProviderBuilder{
+    #[new]
+    fn new() -> Self {
+        Self(OptionsProviderBuilder::new())
+    }
+
     fn add_directory(&mut self, directory: &str) -> Self {
         let path = std::path::Path::new(&directory);
         self.0.add_directory(path).unwrap();

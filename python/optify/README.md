@@ -15,3 +15,9 @@ pyenv activate optify-dev
 ```shell
 maturin develop
 ```
+
+### Tests
+
+```shell
+pytest
+```
