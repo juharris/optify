@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-VERSION = '0.6.0'
+VERSION = '0.6.1'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-config'
@@ -28,7 +28,7 @@ Gem::Specification.new do |spec|
 
   # Cross-compilation
   # Copied from https://github.com/oxidize-rb/rb-sys/blob/main/examples/rust_reverse/rust_reverse.gemspec.
-  spec.files = Dir['lib/**/*.rb', 'ext/**/*.{rs,toml,lock,rb}', 'rbi/*']
+  spec.files = Dir['lib/**/*.rb', 'ext/**/*.{rs,toml,lock,rb}', 'rbi/*', 'sig/*']
   spec.bindir = 'exe'
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
@@ -38,11 +38,12 @@ Gem::Specification.new do |spec|
   # needed until rubygems supports Rust support is out of beta
   spec.add_dependency 'rb_sys', '~> 0.9.109'
 
-  spec.add_dependency 'sorbet-runtime', '~> 0.5.11796'
+  spec.add_dependency 'sorbet-runtime', '~> 0.5.11851'
 
   spec.add_development_dependency 'rake-compiler', '~> 1.2.9'
-  spec.add_development_dependency 'sorbet', '~> 0.5.11796'
-  spec.add_development_dependency 'tapioca', '~> 0.16.8'
+  spec.add_development_dependency 'rbs', '~> 3.8.1'
+  spec.add_development_dependency 'sorbet', '~> 0.5.11851'
+  spec.add_development_dependency 'tapioca', '~> 0.16.11'
 
   # Tests
   spec.add_development_dependency 'test-unit', '~> 3.6.7'

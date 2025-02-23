@@ -19,9 +19,9 @@ module Optify
     # Create a new immutable instance of the class from a hash.
     #
     # This is a class method that so that it can set members with private setters.
-    # @param hash [Hash] The hash to create the instance from.
+    # @param hash The hash to create the instance from.
     # @return The new instance.
-    sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
+    #: (Hash[untyped, untyped] hash) -> instance
     def self.from_hash(hash)
       result = new
 
@@ -34,7 +34,7 @@ module Optify
       T.unsafe(result).freeze if T.unsafe(result).respond_to?(:freeze)
     end
 
-    sig { params(value: T.untyped, type: T.untyped).returns(T.untyped) }
+    #: (untyped value, untyped type) -> untyped
     def self._convert_value(value, type)
       case value
       when Array
@@ -55,12 +55,7 @@ module Optify
       value
     end
 
-    sig do
-      params(
-        hash: T::Hash[T.untyped, T.untyped],
-        type: T.untyped
-      ).returns(T.untyped)
-    end
+    #: (Hash[untyped, untyped] hash, untyped type) -> untyped
     def self._convert_hash(hash, type) # rubocop:disable Metrics/PerceivedComplexity
       if type.respond_to?(:raw_type)
         # There is an object for the hash.

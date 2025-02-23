@@ -20,24 +20,14 @@ module Optify
 
     # Fetches options based on the provided key and feature names.
     #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @param config_class [ConfigType] The class of the configuration to return.
+    # @param key The key to fetch options for.
+    # @param feature_names The enabled feature names to use to build the options.
+    # @param config_class The class of the configuration to return.
     # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
-    # @param cache_options [CacheOptions] Set this if caching is desired. Only very simple caching is supported for now.
-    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
-    # @return [ConfigType] The options.
-    sig do
-      type_parameters(:Config)
-        .params(
-          key: String,
-          feature_names: T::Array[String],
-          config_class: T::Class[T.type_parameter(:Config)],
-          cache_options: T.nilable(CacheOptions),
-          preferences: T.nilable(Optify::GetOptionsPreferences)
-        )
-        .returns(T.type_parameter(:Config))
-    end
+    # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
+    # @param preferences The preferences to use when getting options.
+    # @return The options.
+    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
     def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil)
       return get_options_with_cache(key, feature_names, config_class, cache_options, preferences) if cache_options
 
@@ -59,7 +49,7 @@ module Optify
 
     # (Optional) Eagerly initializes the cache.
     # @return [OptionsProvider] `self`.
-    sig { returns(OptionsProvider) }
+    #: -> OptionsProvider
     def init
       @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
       self
@@ -69,17 +59,7 @@ module Optify
 
     NOT_FOUND_IN_CACHE_SENTINEL = Object.new
 
-    sig do
-      type_parameters(:Config)
-        .params(
-          key: String,
-          feature_names: T::Array[String],
-          config_class: T::Class[T.type_parameter(:Config)],
-          _cache_options: CacheOptions,
-          preferences: T.nilable(Optify::GetOptionsPreferences)
-        )
-        .returns(T.type_parameter(:Config))
-    end
+    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, Optify::CacheOptions _cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
     def get_options_with_cache(key, feature_names, config_class, _cache_options, preferences = nil)
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.

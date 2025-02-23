@@ -3,6 +3,14 @@ AllCops:
   # Don't want to accept any new ones without reviewing them.
   NewCops: disable
 
+# Disable for RBS in comments.
+Layout/LeadingCommentSpace:
+  Enabled: false
+
+# Need to allow long lines for RBS in comments because it doesn't support line breaks yet.
+Layout/LineLength:
+  Max: 180
+
 Metrics/AbcSize:
   Max: 25
 
