@@ -15,7 +15,7 @@ module Optify
     # Create a new instance of the class from a hash.
     #
     # This is a class method that so that it can set members with private setters.
-    # @param hash [Hash] The hash to create the instance from.
+    # @param hash The hash to create the instance from.
     # @return The new instance.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
     def self.from_hash(hash); end
@@ -46,13 +46,13 @@ module Optify
 
     # Fetches options based on the provided key and feature names.
     #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @param config_class [ConfigType] The class of the configuration to return.
+    # @param key The key to fetch options for.
+    # @param feature_names The enabled feature names to use to build the options.
+    # @param config_class The class of the configuration to return.
     # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
-    # @param cache_options [CacheOptions] Set this if caching is desired. Only very simple caching is supported for now.
-    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
-    # @return [ConfigType] The options.
+    # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
+    # @param preferences The preferences to use when getting options.
+    # @return The options.
     sig do
       type_parameters(:Config)
         .params(

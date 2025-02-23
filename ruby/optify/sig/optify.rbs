@@ -1,0 +1,67 @@
+# Tools for working with configurations declared in files.
+module Optify
+end
+
+# A base class for classes from configuration files.
+# Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`
+# because they will have an implementation of `from_hash` that works recursively.
+# This class is a work in progress with minimal error handling
+# and doesn't handle certain cases such as nilable types yet.
+# It may be moved to another gem in the future.
+class Optify::BaseConfig
+  # Create a new instance of the class from a hash.
+  #
+  # This is a class method that so that it can set members with private setters.
+  # @param hash The hash to create the instance from.
+  # @return The new instance.
+  def self.from_hash: (::Hash[untyped, untyped] hash) -> instance
+end
+
+# Options for caching.
+# Only enabling or disabling caching is supported for now.
+class Optify::CacheOptions < BaseConfig
+end
+
+# Preferences when getting options.
+class Optify::GetOptionsPreferences
+  def skip_feature_name_conversion=: (bool value) -> GetOptionsPreferences
+
+  def skip_feature_name_conversion: () -> bool
+end
+
+# Provides configurations based on keys and enabled feature names.
+class Optify::OptionsProvider
+  # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+  # Canonical feature names map to themselves.
+  #
+  # @param feature_name The name of an alias or a feature.
+  # @return The canonical feature name.
+  def get_canonical_feature_name: (String feature_name) -> String
+
+  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+
+  # Fetches options in JSON format based on the provided key and feature names.
+  #
+  # @param key [String] the key to fetch options for.
+  # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+  # @return [String] the options in JSON.
+  def get_options_json: (String key, ::Array[String] feature_names) -> String
+
+  def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
+  # (Optional) Eagerly initializes the cache.
+  # @return [OptionsProvider] `self`.
+  def init: () -> OptionsProvider
+end
+
+# A builder for creating an `OptionsProvider` instance.
+class Optify::OptionsProviderBuilder
+  # Adds a directory to the builder.
+  #
+  # @param path [String] The path of the directory to add.
+  # @return [OptionsProviderBuilder] `self`.
+  def add_directory: (String path) -> OptionsProviderBuilder
+
+  # @return [OptionsProvider] A newly built `OptionsProvider`.
+  def build: () -> OptionsProvider
+end

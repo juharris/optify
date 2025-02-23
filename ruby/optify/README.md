@@ -116,6 +116,19 @@ Verify the changes with:
 bundle exec srb tc
 ```
 
+## Typing
+To automatically convert Sorbet style to RBS:
+```shell
+bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
+```
+
+To generate the RBS file:
+```shell
+bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
+```
+
+See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
+
 ## Publishing
 A GitHub Action is setup to publish the gem as needed.
 To publish manually, run the following with the correct version and architecture:
