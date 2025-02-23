@@ -17,7 +17,7 @@ class OptifyTest < Test::Unit::TestCase
     assert_not_nil(provider)
   end
 
-  sig { params(suite_path: String).void }
+  #: (String suite_path) -> void
   def run_suite(suite_path)
     provider = Optify::OptionsProviderBuilder.new
                                              .add_directory(File.join(suite_path, 'configs'))
