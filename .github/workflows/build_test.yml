@@ -72,11 +72,14 @@ jobs:
         bundler-cache: true
         working-directory: ./ruby/optify
     - name: "[Ruby] Lint"
+      shell: bash
       run: |
+        set -ex
         bundle exec srb tc
         bundle exec rubocop
 
         # Ensure that the RBS file is up-to-date.
+        mkdir -p tmp
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
         diff -u sig/optify.rbs tmp/optify.rbs~
       working-directory: ./ruby/optify
