@@ -78,7 +78,7 @@ jobs:
 
         # Ensure that the RBS file is up-to-date.
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
-        diff -u sig/optify.rbs sig/optify.rbs~
+        diff -u sig/optify.rbs tmp/optify.rbs~
       working-directory: ./ruby/optify
     - name: "[Ruby] Test"
       run: bundle exec rake test
