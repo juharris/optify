@@ -57,8 +57,7 @@ jobs:
       # We want to only be lenient for the `cargo publish`, but we would still want to clearly see that an issue happened during the run.
       continue-on-error: true
       run: |
-        cargo login
-        cargo publish
+        cargo publish --token ${CARGO_REGISTRY_TOKEN}
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       working-directory: ./rust/optify
