@@ -38,9 +38,6 @@ impl PyOptionsProviderBuilder{
 
 #[pymodule(name="optify")]
 mod optify_python {
-    // Probably not needed.
-    // use super::*;
-
     #[pymodule_export]
     use super::PyOptionsProviderBuilder;
 
