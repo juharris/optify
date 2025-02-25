@@ -17,8 +17,24 @@ classifiers = [
 ]
 dynamic = ["version"]
 
+[tool.poetry]
+name = "optify"
+version = "0.1.0"
+description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files to manage options for experiments or flights."
+authors = ["Justin D. Harris"]
+maintainers = ["Justin D. Harris"]
+readme = "README.md"
+packages = [{ include = "*", from = "src" }]
+
 [license]
 name = "MIT"
+
+[tool.poetry.dependencies]
+maturin = "^1.8.2"
+python = "^3.11"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.3.4"
 
 [project.optional-dependencies]
 dev = ["pytest"]
