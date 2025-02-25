@@ -1,5 +1,9 @@
 # Optify Rust Bindings for Python
 
+⚠️ Development in progress ⚠️\
+APIs are not final and will change, for example, interfaces with be used.
+This is just meant to be minimal to get started and help build a Python library.
+
 ## Development
 
 ### Setup
