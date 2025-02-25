@@ -1,6 +1,11 @@
 [build-system]
+# For Python bindings:
 requires = ["maturin>=1.8,<2.0"]
 build-backend = "maturin"
+
+[package]
+name = "optify"
+version = "0.1.0"
 
 [project]
 name = "optify"
@@ -11,6 +16,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+
+[license]
+name = "MIT"
 
 [project.optional-dependencies]
 dev = ["pytest"]

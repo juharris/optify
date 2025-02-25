@@ -1,5 +1,7 @@
 import os
 import json
+from pathlib import Path
+
 from optify import OptionsProviderBuilder
 
 def test_empty_build():
@@ -8,9 +10,9 @@ def test_empty_build():
     assert provider is not None
 
 def run_suite(suite_path: str) -> None:
-    builder = OptionsProviderBuilder()
-    builder.add_directory(os.path.join(suite_path, 'configs'))
-    provider = builder.build()
+    provider = OptionsProviderBuilder() \
+        .add_directory(os.path.join(suite_path, 'configs')) \
+        .build()
     expectations_path = os.path.join(suite_path, 'expectations')
     for test_case in os.listdir(expectations_path):
         expectation_path = os.path.join(expectations_path, test_case)
@@ -27,7 +29,7 @@ def run_suite(suite_path: str) -> None:
             )
 
 def test_suites():
-    test_suites_dir = os.path.join(os.path.dirname(__file__), '../../../tests/test_suites')
+    test_suites_dir = (Path(__file__) / '../../../../tests/test_suites').resolve()
     for suite in os.listdir(test_suites_dir):
         suite_path = os.path.join(test_suites_dir, suite)
         if os.path.isdir(suite_path):
