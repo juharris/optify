@@ -8,6 +8,8 @@
 pyenv virtualenv optify-dev
 pyenv local optify-dev
 pyenv activate optify-dev
+
+pip install -e '.[dev]'
 ```
 
 ### Build
