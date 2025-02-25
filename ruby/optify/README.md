@@ -126,7 +126,7 @@ To automatically convert Sorbet style to RBS:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
 
-<!-- 
+<!--
 When we support RBS style signatures in comments:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib test
  -->
