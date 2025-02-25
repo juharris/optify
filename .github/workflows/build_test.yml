@@ -96,7 +96,7 @@ jobs:
         working-directory: ./python/optify
     - name: "[Python] Build"
       shell: bash
-      run: pip install -e .[test]
+      run: pip install -e .[dev]
       working-directory: ./python/optify
     - name: "[Python] Test"
       shell: bash
