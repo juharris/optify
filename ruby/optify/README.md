@@ -40,6 +40,8 @@ class MyConfig < Optify::BaseConfig
 end
 ```
 
+> Note that RBS style comments instead of Sorbet `sig`s are not supported yet.
+
 Use a provider:
 ```ruby
 require 'optify'
@@ -56,6 +58,8 @@ config = provider.get_options("myConfig", ['feature1', 'feature2'], MyConfig)
 puts config.name
 puts config.object.number
 ```
+
+See [optify_test.rb](test/optify_test.rb) for more examples.
 
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
@@ -121,6 +125,11 @@ To automatically convert Sorbet style to RBS:
 ```shell
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
+
+<!-- 
+When we support RBS style signatures in comments:
+bundle exec spoom srb sigs translate --from=rbi --to=rbs lib test
+ -->
 
 To generate the RBS file:
 ```shell
