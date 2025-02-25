@@ -65,6 +65,12 @@ A typical example of this in programming is how SQL tells the database the desir
 This also makes many changes easier to make and review because we don't have to scrutinize specific code as much.
 For example, many changes will be less intimidating to make and review because they're just adding or modifying a YAML file instead of changing Ruby files or adding custom conditional logic.
 
+This project encourages using **features backed by configurations in files with your source code** because that's the most clear way for developers to see what values are supported for different configurable options.
+The .NET version of this library happens to support configurations in the cloud because it uses standard .NET interfaces for configuration providers,
+but this is not the main focus of these projects because configurations in the cloud are hard to maintain and easy to break in a backwards incompatible way.
+Configurations in the cloud are fine for temporary experiments, but make the daily development experience less stable and unclear because it's not obvious what values are possible for different options which make refactoring difficult.
+The main point is to keep the configurations private and internal to your codebase while feature flags names are part of your external API.
+
 # Merging Configuration Files
 When merging configurations for features, objects are merged with the last feature taking precedence.
 Key values, including lists are overwritten.
