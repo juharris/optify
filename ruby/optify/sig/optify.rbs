@@ -38,6 +38,11 @@ class Optify::OptionsProvider
   # @return The canonical feature name.
   def get_canonical_feature_name: (String feature_name) -> String
 
+  # @return All of the canonical feature names.
+  def features: () -> ::Array[String]
+
+  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
   def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
 
   # Fetches options in JSON format based on the provided key and feature names.
