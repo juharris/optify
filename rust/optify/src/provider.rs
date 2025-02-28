@@ -101,7 +101,9 @@ impl OptionsProvider {
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
-        if let Some(_cache_options) = cache_options { return Err("Caching is not supported yet.".to_owned()) };
+        if let Some(_cache_options) = cache_options {
+            return Err("Caching is not supported yet.".to_owned());
+        };
         let mut config_builder = config::Config::builder();
         let mut skip_feature_name_conversion = false;
         if let Some(_preferences) = preferences {
