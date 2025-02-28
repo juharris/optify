@@ -24,8 +24,7 @@ cargo test
 ## Formatting
 To automatically change code, run:
 ```shell
-cargo fmt
-cargo clippy --fix --allow-dirty --allow-staged
+cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 ```
 
 ## Publishing

@@ -66,7 +66,7 @@ impl OptionsProvider {
     }
 
     pub fn get_features(&self) -> Vec<String> {
-        return self.sources.keys().map(|s| s.to_owned()).collect();
+        self.sources.keys().map(|s| s.to_owned()).collect()
     }
 
     pub fn get_options(
@@ -101,10 +101,7 @@ impl OptionsProvider {
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
-        match cache_options {
-            Some(_cache_options) => return Err("Caching is not supported yet.".to_owned()),
-            None => {}
-        };
+        if let Some(_cache_options) = cache_options { return Err("Caching is not supported yet.".to_owned()) };
         let mut config_builder = config::Config::builder();
         let mut skip_feature_name_conversion = false;
         if let Some(_preferences) = preferences {
