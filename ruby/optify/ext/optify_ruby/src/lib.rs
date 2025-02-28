@@ -4,7 +4,6 @@ use optify::provider::OptionsProvider;
 use optify::provider::GetOptionsPreferences;
 use std::cell::RefCell;
 
-
 #[wrap(class = "Optify::GetOptionsPreferences")]
 struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 

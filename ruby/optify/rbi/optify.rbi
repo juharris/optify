@@ -36,14 +36,6 @@ module Optify
 
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
-    # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
-    # Canonical feature names map to themselves.
-    #
-    # @param feature_name The name of an alias or a feature.
-    # @return The canonical feature name.
-    sig { params(feature_name: String).returns(String) }
-    def get_canonical_feature_name(feature_name); end
-
     # @return All of the canonical feature names.
     sig { returns(T::Array[String]) }
     def features; end
@@ -54,6 +46,14 @@ module Optify
         .returns(String)
     end
     def get_all_options_json(feature_names, preferences); end
+
+    # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+    # Canonical feature names map to themselves.
+    #
+    # @param feature_name The name of an alias or a feature.
+    # @return The canonical feature name.
+    sig { params(feature_name: String).returns(String) }
+    def get_canonical_feature_name(feature_name); end
 
     # Fetches options based on the provided key and feature names.
     #
