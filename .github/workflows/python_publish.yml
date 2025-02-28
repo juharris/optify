@@ -34,9 +34,8 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
-          # TODO: Uncomment before merging.
-          # - runner: ubuntu-22.04
-          #   target: aarch64
+          - runner: ubuntu-22.04
+            target: aarch64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -58,7 +57,6 @@ jobs:
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
-    if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
         platform:
@@ -124,11 +122,9 @@ jobs:
           path: python/optify/dist
 
   release:
-    name: Release
+    name: "Publish Release"
     runs-on: ubuntu-latest
-    # TODO: Uncomment before merging.
-    # needs: [linux, windows, macos, sdist]
-    needs: [linux, macos, sdist]
+    needs: [linux, windows, macos, sdist]
     permissions:
       # Use to sign the release artifacts
       id-token: write
@@ -144,8 +140,7 @@ jobs:
         with:
           subject-path: 'wheels-*/*'
       - name: "Publish to PyPI"
-        # TODO: Uncomment before merging.
-        # if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' }}
         uses: PyO3/maturin-action@v1
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
