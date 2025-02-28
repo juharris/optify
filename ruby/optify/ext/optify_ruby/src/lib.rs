@@ -34,7 +34,7 @@ impl WrappedOptionsProvider {
     }
 
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
-        self.0.borrow().get_options(&key, &feature_names).unwrap().to_string()
+        self.0.borrow().get_options_with_preferences(&key, &feature_names, &None, &None).unwrap().to_string()
     }
 
     fn get_options_json_with_preferences(
@@ -43,7 +43,7 @@ impl WrappedOptionsProvider {
             let _preferences = Some(optify::provider::GetOptionsPreferences {
                 skip_feature_name_conversion: preferences.skip_feature_name_conversion(),
             });
-        self.0.borrow().get_option_with_preferences(&key, &feature_names, &_preferences).unwrap().to_string()
+        self.0.borrow().get_options_with_preferences(&key, &feature_names, &None, &_preferences).unwrap().to_string()
     }
 }
 
