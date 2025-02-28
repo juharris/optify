@@ -1,3 +1,24 @@
+[project]
+name = "optify"
+authors = [
+    { name="Justin D. Harris" }
+]
+description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files to manage options for experiments or flights."
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/juharris/optify"
+Issues = "https://github.com/juharris/optify/issues"
+
 [build-system]
 # For Python bindings:
 requires = ["maturin>=1.8,<2.0"]
@@ -6,16 +27,6 @@ build-backend = "maturin"
 [package]
 name = "optify"
 version = "0.1.0"
-
-[project]
-name = "optify"
-requires-python = ">=3.8"
-classifiers = [
-    "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
-]
-dynamic = ["version"]
 
 [tool.poetry]
 name = "optify"
