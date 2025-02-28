@@ -27,3 +27,6 @@ maturin develop
 ```shell
 pytest
 ```
+
+# Publishing
+A GitHub Action will automatically publish new versions: https://github.com/juharris/optify/actions/workflows/python_publish.yml
