@@ -40,16 +40,16 @@ jobs:
     - uses: actions/checkout@v4
 
     # Rust
-    - name: "[Rust] [optify] Build"
+    - name: "[Rust] Build"
       run: cargo build --release
       working-directory: ./rust/optify
-    - name: "[Rust] [optify] Lint"
+    - name: "[Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./rust/optify
-    - name: "[Rust] [optify] Clippy"
-      run: cargo clippy --release -p optify --no-deps -- -D warnings --no-deps
+    - name: "[Rust] Clippy"
+      run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./rust/optify
-    - name: "[Rust] [optify] Test"
+    - name: "[Rust] Test"
       run: cargo test --release
       working-directory: ./rust/optify
     - name: "[Rust] Publish"
@@ -84,6 +84,12 @@ jobs:
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
         diff -u sig/optify.rbs tmp/optify.rbs~
       working-directory: ./ruby/optify
+    - name: "[Ruby][Rust] Lint"
+      run : cargo fmt -- --check
+      working-directory: ./ruby/optify
+    - name: "[Ruby][Rust] Clippy"
+      run: cargo clippy --release --no-deps -- -D warnings --no-deps
+      working-directory: ./ruby/optify
     - name: "[Ruby] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify
@@ -97,6 +103,12 @@ jobs:
     - name: "[Python] Build"
       shell: bash
       run: pip install -e .[dev]
+      working-directory: ./python/optify
+    - name: "[Python][Rust] Lint"
+      run : cargo fmt -- --check
+      working-directory: ./python/optify
+    - name: "[Python][Rust] Clippy"
+      run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./python/optify
     - name: "[Python] Test"
       shell: bash

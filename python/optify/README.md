@@ -33,6 +33,12 @@ maturin develop
 pytest
 ```
 
+### Formatting
+To automatically change the Rust code, run:
+```shell
+cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
+```
+
 # Publishing
 A GitHub Action will automatically publish new versions: https://github.com/juharris/optify/actions/workflows/python_publish.yml
 
