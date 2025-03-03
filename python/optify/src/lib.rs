@@ -11,14 +11,21 @@ struct PyOptionsProviderBuilder(OptionsProviderBuilder);
 struct PyOptionsProvider(OptionsProvider);
 
 #[pymethods]
-impl PyOptionsProvider{
+impl PyOptionsProvider {
+    fn features(&self) -> Vec<String> {
+        self.0.get_features()
+    }
+
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> String {
-        self.0.get_options(&key, &feature_names).unwrap().to_string()
+        self.0
+            .get_options(key, &feature_names)
+            .unwrap()
+            .to_string()
     }
 }
 
 #[pymethods]
-impl PyOptionsProviderBuilder{
+impl PyOptionsProviderBuilder {
     #[new]
     fn new() -> Self {
         Self(OptionsProviderBuilder::new())
@@ -36,7 +43,7 @@ impl PyOptionsProviderBuilder{
     }
 }
 
-#[pymodule(name="optify")]
+#[pymodule(name = "optify")]
 mod optify_python {
     #[pymodule_export]
     use super::PyOptionsProviderBuilder;
