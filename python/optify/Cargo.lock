@@ -287,7 +287,7 @@ checksum = "945462a4b81e43c4e3ba96bd7b49d834c6f61198356aa858733bc4acf3cbe62e"
 
 [[package]]
 name = "optify"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "config",
  "serde",
@@ -299,7 +299,7 @@ dependencies = [
 
 [[package]]
 name = "optify-python"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "optify",
  "pyo3",

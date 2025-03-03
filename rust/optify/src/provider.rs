@@ -14,6 +14,8 @@ pub struct GetOptionsPreferences {
     pub skip_feature_name_conversion: bool,
 }
 
+pub struct CacheOptions {}
+
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
@@ -26,6 +28,23 @@ impl OptionsProvider {
         OptionsProvider {
             aliases: aliases.clone(),
             sources: sources.clone(),
+        }
+    }
+
+    pub fn get_all_options(
+        &self,
+        feature_names: &Vec<String>,
+        cache_options: &Option<CacheOptions>,
+        preferences: &Option<GetOptionsPreferences>,
+    ) -> Result<serde_json::Value, String> {
+        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+
+        match config {
+            Ok(cfg) => match cfg.try_deserialize() {
+                Ok(value) => Ok(value),
+                Err(e) => Err(e.to_string()),
+            },
+            Err(e) => Err(e.to_string()),
         }
     }
 
@@ -46,23 +65,45 @@ impl OptionsProvider {
         }
     }
 
+    pub fn get_features(&self) -> Vec<String> {
+        self.sources.keys().map(|s| s.to_owned()).collect()
+    }
+
     pub fn get_options(
         &self,
         key: &str,
         feature_names: &Vec<String>,
     ) -> Result<serde_json::Value, String> {
-        self.get_option_with_preferences(key, feature_names, &None)
+        self.get_options_with_preferences(key, feature_names, &None, &None)
     }
 
-    // TODO Add another method with caching
-    // with an option to disable because we will not want to use the cache when calling from other languages because they should use their own caching
-    // in order to avoid possible overhead and conversion.
-    pub fn get_option_with_preferences(
+    pub fn get_options_with_preferences(
         &self,
         key: &str,
         feature_names: &Vec<String>,
+        cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
+        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+
+        match config {
+            Ok(cfg) => match cfg.get(key) {
+                Ok(value) => Ok(value),
+                Err(e) => Err(e.to_string()),
+            },
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    fn _get_entire_config(
+        &self,
+        feature_names: &Vec<String>,
+        cache_options: &Option<CacheOptions>,
+        preferences: &Option<GetOptionsPreferences>,
+    ) -> Result<Result<config::Config, config::ConfigError>, String> {
+        if let Some(_cache_options) = cache_options {
+            return Err("Caching is not supported yet.".to_owned());
+        };
         let mut config_builder = config::Config::builder();
         let mut skip_feature_name_conversion = false;
         if let Some(_preferences) = preferences {
@@ -90,14 +131,6 @@ impl OptionsProvider {
             };
             config_builder = config_builder.add_source(source.clone());
         }
-        let config = config_builder.build();
-
-        match config {
-            Ok(cfg) => match cfg.get(key) {
-                Ok(value) => Ok(value),
-                Err(e) => Err(e.to_string()),
-            },
-            Err(e) => Err(e.to_string()),
-        }
+        Ok(config_builder.build())
     }
 }

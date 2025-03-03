@@ -127,7 +127,7 @@ bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
 
 <!--
-When we support RBS style signatures in comments:
+When RBS supports checks at runtime and then we can support RBS style signatures in comments for configuration objects:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib test
  -->
 

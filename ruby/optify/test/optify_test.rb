@@ -40,6 +40,18 @@ class OptifyTest < Test::Unit::TestCase
     end
   end
 
+  def test_get_all_options
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
+    features = ['a']
+    all_opts = provider.get_all_options_json(features, Optify::GetOptionsPreferences.new)
+    key = 'myConfig'
+    opts = provider.get_options_json(key, features)
+    expected = { key => JSON.parse(opts) }
+    assert_equal(expected, JSON.parse(all_opts))
+  end
+
   def test_suites
     test_suites_dir = '../../tests/test_suites'
     Dir.each_child(test_suites_dir) do |suite|
@@ -48,16 +60,6 @@ class OptifyTest < Test::Unit::TestCase
 
       run_suite(suite_path)
     end
-  end
-
-  def test_custom_config_class
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory('../../tests/test_suites/simple/configs')
-                                             .build
-    config = provider.get_options('myConfig', ['A'], MyConfig)
-    assert_equal('root string same', config.rootString)
-    assert_equal(['example item 1'], config.myArray)
-    assert_equal(2, config.myObject.two)
   end
 
   def test_cache
@@ -81,5 +83,24 @@ class OptifyTest < Test::Unit::TestCase
     assert_not_same(config_a_b, config_b_a)
     config_a_b2 = provider.get_options('myConfig', ['A', 'featUre_B/iNITial'], MyConfig, cache_options)
     assert_same(config_a_b, config_a_b2)
+  end
+
+  def test_custom_config_class
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
+    config = provider.get_options('myConfig', ['A'], MyConfig)
+    assert_equal('root string same', config.rootString)
+    assert_equal(['example item 1'], config.myArray)
+    assert_equal(2, config.myObject.two)
+  end
+
+  def test_features
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
+    all_features = provider.features
+    all_features.sort!
+    assert_equal(['A_with_comments', 'feature_A', 'feature_B/initial'], all_features)
   end
 end
