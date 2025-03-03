@@ -17,10 +17,7 @@ impl PyOptionsProvider {
     }
 
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> String {
-        self.0
-            .get_options(key, &feature_names)
-            .unwrap()
-            .to_string()
+        self.0.get_options(key, &feature_names).unwrap().to_string()
     }
 }
 

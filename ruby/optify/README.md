@@ -138,6 +138,12 @@ bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
 
 See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
 
+## Formatting
+To automatically change the Rust code, run:
+```shell
+cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
+```
+
 ## Publishing
 A GitHub Action is setup to publish the gem as needed.
 To publish manually, run the following with the correct version and architecture:
