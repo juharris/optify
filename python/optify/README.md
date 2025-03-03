@@ -9,6 +9,9 @@ This is just meant to be minimal to get started and help build a Python library.
 
 See the [homepage] for details.
 
+## Usage
+See the [tests directory](./tests/) for examples.
+
 ## Development
 
 ### Setup
