@@ -5,6 +5,7 @@ use walkdir::WalkDir;
 
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
+use crate::schema::metadata::OptionsMetadata;
 
 type Imports = HashMap<String, Vec<String>>;
 
@@ -259,6 +260,10 @@ impl OptionsProviderBuilder {
             }
         }
 
-        Ok(OptionsProvider::new(&self.aliases, &self.sources))
+        Ok(OptionsProvider::new(
+            &self.aliases,
+            &self.features,
+            &self.sources,
+        ))
     }
 }
