@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::provider::{Aliases, OptionsProvider, Sources};
+use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 
 type Imports = HashMap<String, Vec<String>>;
@@ -13,6 +13,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    features: Features,
     imports: Imports,
     sources: Sources,
 }
@@ -142,6 +143,7 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
+            features: Features::new(),
             imports: HashMap::new(),
             sources: Sources::new(),
         }
@@ -229,6 +231,10 @@ impl OptionsProviderBuilder {
                     }
                 }
             }
+
+            // FIXME Need to handle copy or clone for metadata.
+            self.features
+                .insert(canonical_feature_name.clone(), feature_config.metadata);
         }
 
         Ok(self)

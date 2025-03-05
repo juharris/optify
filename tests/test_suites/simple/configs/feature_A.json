@@ -3,6 +3,7 @@
 		"aliases": [
 			"a"
 		],
+		"details": "The file is for testing.",
 		"owners": "a-team@company.com"
 	},
 	"options": {
