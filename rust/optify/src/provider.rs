@@ -74,6 +74,10 @@ impl OptionsProvider {
         self.sources.keys().map(|s| s.to_owned()).collect()
     }
 
+    pub fn get_features_with_metadata(&self) -> Features {
+        self.features.clone()
+    }
+
     pub fn get_options(
         &self,
         key: &str,

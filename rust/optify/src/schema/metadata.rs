@@ -17,7 +17,7 @@ pub struct OptionsMetadata {
     /// This is a good place for documentation that should be available to the application.
     /// Comments that are not parsed are still great to have in files, when supported,
     /// but some comments are useful to have here because they can be accessed programmatically.
-    // pub details: Option<config::Value>,
+    pub details: Option<config::Value>,
 
     /// The name of the group of options.
     ///
