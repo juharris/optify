@@ -5,7 +5,6 @@ use walkdir::WalkDir;
 
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
-use crate::schema::metadata::OptionsMetadata;
 
 type Imports = HashMap<String, Vec<String>>;
 
@@ -31,7 +30,7 @@ fn add_alias(
     canonical_feature_name: &String,
 ) -> Result<(), String> {
     let uni_case_alias = unicase::UniCase::new(alias.clone());
-    if let Some(res) = aliases.insert(uni_case_alias, canonical_feature_name.clone()) {
+    if let Some(ref res) = aliases.insert(uni_case_alias, canonical_feature_name.clone()) {
         return Err(format!(
             "The alias '{alias}' for canonical feature name '{canonical_feature_name}' is already mapped to '{res}'."
         ));
@@ -91,7 +90,7 @@ fn resolve_imports(
                 _features_in_resolution_path.insert(import.clone());
                 resolve_imports(
                     import,
-                    &imports_for_import.clone(),
+                    imports_for_import,
                     resolved_imports,
                     &mut _features_in_resolution_path,
                     aliases,
@@ -225,17 +224,16 @@ impl OptionsProviderBuilder {
             )?;
 
             // Add aliases.
-            if let Some(metadata) = feature_config.metadata {
-                if let Some(aliases) = metadata.aliases {
+            if let Some(ref metadata) = feature_config.metadata {
+                if let Some(ref aliases) = metadata.aliases {
                     for alias in aliases {
                         add_alias(&mut self.aliases, &alias, &canonical_feature_name)?;
                     }
                 }
-            }
 
-            // FIXME Need to handle copy or clone for metadata.
-            self.features
-                .insert(canonical_feature_name.clone(), feature_config.metadata);
+                self.features
+                    .insert(canonical_feature_name.clone(), metadata.clone());
+            }
         }
 
         Ok(self)

@@ -10,7 +10,7 @@ use crate::schema::metadata::OptionsMetadata;
 pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
-pub(crate) type Features = HashMap<String, Option<OptionsMetadata>>;
+pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
 pub struct GetOptionsPreferences {
