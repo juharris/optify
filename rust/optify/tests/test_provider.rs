@@ -50,7 +50,14 @@ fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
 
     let key = provider.get_canonical_feature_name("a")?;
     let a_metadata = &metadata[key];
+    let expected_aliases: Vec<String> = vec!["a".to_owned()];
+    assert_eq!(expected_aliases, a_metadata.aliases.clone().unwrap());
+    assert_eq!(
+        "The file is for testing.",
+        a_metadata.details.as_ref().unwrap().to_string()
+    );
     assert_eq!("feature_A", a_metadata.name.as_ref().unwrap());
+    assert_eq!("a-team@company.com", a_metadata.owners.as_ref().unwrap());
 
     Ok(())
 }
