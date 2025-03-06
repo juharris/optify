@@ -39,8 +39,18 @@ fn test_provider_get_features() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_provider_get_all_metadata() -> Result<(), Box<dyn std::error::Error>> {
+fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
-    //TODO
+    let mut features = provider.get_features();
+    features.sort_unstable();
+    let metadata = provider.get_features_with_metadata();
+    let mut metadata_keys: Vec<String> = metadata.keys().cloned().collect();
+    metadata_keys.sort_unstable();
+    assert_eq!(metadata_keys, features);
+
+    let key = provider.get_canonical_feature_name("a")?;
+    let a_metadata = &metadata[key];
+    assert_eq!("feature_A", a_metadata.name.as_ref().unwrap());
+
     Ok(())
 }

@@ -31,3 +31,19 @@ pub struct OptionsMetadata {
     /// For example, emails separated by ";".
     pub owners: Option<String>,
 }
+
+impl OptionsMetadata {
+    pub fn new(
+        aliases: Option<Vec<String>>,
+        details: Option<config::Value>,
+        name: Option<String>,
+        owners: Option<String>,
+    ) -> Self {
+        Self {
+            aliases,
+            details,
+            name,
+            owners,
+        }
+    }
+}

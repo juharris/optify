@@ -5,6 +5,7 @@ use walkdir::WalkDir;
 
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
+use crate::schema::metadata::OptionsMetadata;
 
 type Imports = HashMap<String, Vec<String>>;
 
@@ -223,17 +224,26 @@ impl OptionsProviderBuilder {
                 &canonical_feature_name,
             )?;
 
+            // Handle metadata.
             // Add aliases.
-            if let Some(ref metadata) = feature_config.metadata {
-                if let Some(ref aliases) = metadata.aliases {
-                    for alias in aliases {
-                        add_alias(&mut self.aliases, &alias, &canonical_feature_name)?;
+            // Ensure name is set.
+            let metadata = match feature_config.metadata {
+                Some(mut metadata) => {
+                    if let Some(ref aliases) = metadata.aliases {
+                        for alias in aliases {
+                            add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
+                        }
                     }
+                    metadata.name = Some(canonical_feature_name.clone());
+                    metadata
                 }
+                None => {
+                    OptionsMetadata::new(None, None, None, Some(canonical_feature_name.clone()))
+                }
+            };
 
-                self.features
-                    .insert(canonical_feature_name.clone(), metadata.clone());
-            }
+            self.features
+                .insert(canonical_feature_name.clone(), metadata.clone());
         }
 
         Ok(self)
