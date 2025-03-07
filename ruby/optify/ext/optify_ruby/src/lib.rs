@@ -1,4 +1,6 @@
-use magnus::{function, method, prelude::*, wrap, Error, Object, Ruby};
+use magnus::{
+    function, method, prelude::*, wrap, DataTypeFunctions, Error, Object, Ruby, TypedData,
+};
 use optify::builder::OptionsProviderBuilder;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
@@ -28,11 +30,33 @@ impl MutGetOptionsPreferences {
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
-type RubyOptionsMetadata = HashMap<String, HashMap<String, String>>;
+#[derive(DataTypeFunctions, TypedData)]
+#[magnus(class = "Optify::OptionsMetadata", size, free_immediately)]
+struct RubyOptionsMetadata {
+    #[allow(dead_code)]
+    aliases: Option<Vec<String>>,
+    #[allow(dead_code)]
+    details: Option<String>,
+    #[allow(dead_code)]
+    name: String,
+    #[allow(dead_code)]
+    owners: Option<String>,
+}
+
+#[derive(DataTypeFunctions, TypedData)]
+#[magnus(class = "Optify::FeaturesWithMetadata", size, free_immediately)]
+struct RubyFeaturesWithMetadata {
+    #[allow(dead_code)]
+    features: HashMap<String, RubyOptionsMetadata>,
+}
 
 fn convert_metadata(metadata: &OptionsMetadata) -> RubyOptionsMetadata {
-    
-    HashMap::new()
+    RubyOptionsMetadata {
+        aliases: metadata.aliases.clone(),
+        details: metadata.details.as_ref().map(|d| d.to_string()),
+        name: metadata.name.clone().unwrap(),
+        owners: metadata.owners.clone(),
+    }
 }
 
 impl WrappedOptionsProvider {
@@ -61,22 +85,22 @@ impl WrappedOptionsProvider {
     }
 
     fn get_feature_metadata(&self, canonical_feature_name: String) -> Option<RubyOptionsMetadata> {
-        self
-            .0
+        self.0
             .borrow()
-            .get_feature_metadata(&canonical_feature_name).map(convert_metadata)
+            .get_feature_metadata(&canonical_feature_name)
+            .map(convert_metadata)
     }
 
     fn get_features(&self) -> Vec<String> {
         self.0.borrow().get_features()
     }
 
-    fn get_features_with_metadata(&self) -> HashMap<String, RubyOptionsMetadata> {
-        let mut result = HashMap::new();
+    fn get_features_with_metadata(&self) -> RubyFeaturesWithMetadata {
+        let mut features = HashMap::new();
         for (key, value) in self.0.borrow().get_features_with_metadata() {
-            result.insert(key.to_string(), convert_metadata(value));
+            features.insert(key.to_string(), convert_metadata(value));
         }
-        result
+        RubyFeaturesWithMetadata { features }
     }
 
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
