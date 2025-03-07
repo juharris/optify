@@ -70,12 +70,16 @@ impl OptionsProvider {
         }
     }
 
+    pub fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata> {
+        self.features.get(canonical_feature_name)
+    }
+
     pub fn get_features(&self) -> Vec<String> {
         self.sources.keys().map(|s| s.to_owned()).collect()
     }
 
-    pub fn get_features_with_metadata(&self) -> Features {
-        self.features.clone()
+    pub fn get_features_with_metadata(&self) -> &Features {
+        &self.features
     }
 
     pub fn get_options(

@@ -2,7 +2,9 @@ use magnus::{function, method, prelude::*, wrap, Error, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
+use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 #[wrap(class = "Optify::GetOptionsPreferences")]
 struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
@@ -25,6 +27,13 @@ impl MutGetOptionsPreferences {
 
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
+
+type RubyOptionsMetadata = HashMap<String, HashMap<String, String>>;
+
+fn convert_metadata(metadata: &OptionsMetadata) -> RubyOptionsMetadata {
+    
+    HashMap::new()
+}
 
 impl WrappedOptionsProvider {
     // These methods cannot accept `str`s because of how magnus works.
@@ -51,8 +60,23 @@ impl WrappedOptionsProvider {
             .to_owned()
     }
 
+    fn get_feature_metadata(&self, canonical_feature_name: String) -> Option<RubyOptionsMetadata> {
+        self
+            .0
+            .borrow()
+            .get_feature_metadata(&canonical_feature_name).map(convert_metadata)
+    }
+
     fn get_features(&self) -> Vec<String> {
         self.0.borrow().get_features()
+    }
+
+    fn get_features_with_metadata(&self) -> HashMap<String, RubyOptionsMetadata> {
+        let mut result = HashMap::new();
+        for (key, value) in self.0.borrow().get_features_with_metadata() {
+            result.insert(key.to_string(), convert_metadata(value));
+        }
+        result
     }
 
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
@@ -110,6 +134,7 @@ impl WrappedOptionsProviderBuilder {
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
     let module = ruby.define_module("Optify")?;
+
     let builder_class = module.define_class("OptionsProviderBuilder", ruby.class_object())?;
 
     builder_class
@@ -130,6 +155,14 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
     )?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
+    provider_class.define_method(
+        "get_feature_metadata",
+        method!(WrappedOptionsProvider::get_feature_metadata, 1),
+    )?;
+    provider_class.define_method(
+        "features_with_metadata",
+        method!(WrappedOptionsProvider::get_features_with_metadata, 0),
+    )?;
     provider_class.define_method(
         "get_options_json",
         method!(WrappedOptionsProvider::get_options_json, 2),
