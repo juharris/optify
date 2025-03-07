@@ -84,7 +84,10 @@ impl WrappedOptionsProvider {
             .to_owned()
     }
 
-    fn get_feature_metadata(&self, canonical_feature_name: String) -> Option<RubyOptionsMetadata> {
+    fn get_feature_metadata_with_json_details(
+        &self,
+        canonical_feature_name: String,
+    ) -> Option<RubyOptionsMetadata> {
         self.0
             .borrow()
             .get_feature_metadata(&canonical_feature_name)
@@ -95,7 +98,7 @@ impl WrappedOptionsProvider {
         self.0.borrow().get_features()
     }
 
-    fn get_features_with_metadata(&self) -> RubyFeaturesWithMetadata {
+    fn get_features_with_metadata_with_json_details(&self) -> RubyFeaturesWithMetadata {
         let mut features = HashMap::new();
         for (key, value) in self.0.borrow().get_features_with_metadata() {
             features.insert(key.to_string(), convert_metadata(value));
@@ -179,13 +182,19 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
     )?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
-    provider_class.define_method(
-        "get_feature_metadata",
-        method!(WrappedOptionsProvider::get_feature_metadata, 1),
+    provider_class.define_private_method(
+        "get_feature_metadata_with_json_details",
+        method!(
+            WrappedOptionsProvider::get_feature_metadata_with_json_details,
+            1
+        ),
     )?;
-    provider_class.define_method(
-        "features_with_metadata",
-        method!(WrappedOptionsProvider::get_features_with_metadata, 0),
+    provider_class.define_private_method(
+        "features_with_metadata_with_json_details",
+        method!(
+            WrappedOptionsProvider::get_features_with_metadata_with_json_details,
+            0
+        ),
     )?;
     provider_class.define_method(
         "get_options_json",
