@@ -1,16 +1,10 @@
 # frozen_string_literal: true
 # typed: true
 
-require 'json'
 require 'test/unit'
 require_relative '../lib/optify'
-require_relative 'my_config'
-
-require 'sorbet-runtime'
 
 class OptifyTest < Test::Unit::TestCase
-  extend T::Sig
-
   def test_features_with_metadata
     provider = Optify::OptionsProviderBuilder.new
                                              .add_directory('../../tests/test_suites/simple/configs')
