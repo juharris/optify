@@ -14,9 +14,55 @@ module Optify
   class CacheOptions < BaseConfig
   end
 
+  # Information about a feature.
+  class OptionsMetadata < BaseConfig
+    sig { returns(T.nilable(T::Array[String])) }
+    attr_reader :aliases
+
+    sig { returns(T.untyped) }
+    attr_reader :details
+
+    sig { returns(String) }
+    attr_reader :name
+
+    sig { returns(T.nilable(String)) }
+    attr_reader :owners
+
+    private
+
+    # To please Sorbet.
+    sig { params(name: String).void }
+    def initialize(name)
+      super()
+      @aliases = T.let(nil, T.nilable(T::Array[String]))
+      @details = T.let(nil, T.untyped)
+      @name = T.let(name, String)
+      @owners = T.let(nil, T.nilable(String))
+    end
+  end
+
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
     extend T::Sig
+
+    sig { returns(T::Hash[String, OptionsMetadata]) }
+    def features_with_metadata
+      return @features_with_metadata if @features_with_metadata
+
+      result = JSON.parse(features_with_metadata_json)
+      result.each do |key, value|
+        result[key] = OptionsMetadata.from_hash(value)
+      end
+      result.freeze
+
+      @features_with_metadata = T.let(result, T.nilable(T::Hash[String, OptionsMetadata]))
+      result
+    end
+
+    sig { params(canonical_feature_name: String).returns(T.nilable(Optify::OptionsMetadata)) }
+    def get_feature_metadata(canonical_feature_name)
+      features_with_metadata[canonical_feature_name]
+    end
 
     # Fetches options based on the provided key and feature names.
     #

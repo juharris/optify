@@ -52,10 +52,8 @@ fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
     let a_metadata = &metadata[key];
     let expected_aliases: Vec<String> = vec!["a".to_owned()];
     assert_eq!(expected_aliases, a_metadata.aliases.clone().unwrap());
-    assert_eq!(
-        "The file is for testing.",
-        a_metadata.details.as_ref().unwrap().to_string()
-    );
+    let details = a_metadata.details.as_ref().unwrap();
+    assert_eq!(serde_json::json!("The file is for testing."), *details);
     assert_eq!("feature_A", a_metadata.name.as_ref().unwrap());
     assert_eq!("a-team@company.com", a_metadata.owners.as_ref().unwrap());
 

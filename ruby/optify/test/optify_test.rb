@@ -103,4 +103,16 @@ class OptifyTest < Test::Unit::TestCase
     all_features.sort!
     assert_equal(['A_with_comments', 'feature_A', 'feature_B/initial'], all_features)
   end
+
+  def test_features_with_metadata
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
+    metadata = provider.get_feature_metadata('feature_A')
+    assert_not_nil(metadata)
+    assert_equal('feature_A', metadata&.name)
+    assert_equal(['a'], metadata&.aliases)
+    assert_equal('The file is for testing.', metadata&.details)
+    assert_equal('a-team@company.com', metadata&.owners)
+  end
 end

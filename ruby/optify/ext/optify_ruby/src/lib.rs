@@ -1,6 +1,4 @@
-use magnus::{
-    function, method, prelude::*, wrap, DataTypeFunctions, Error, Object, Ruby, TypedData,
-};
+use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
@@ -30,33 +28,8 @@ impl MutGetOptionsPreferences {
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
-#[derive(DataTypeFunctions, TypedData)]
-#[magnus(class = "Optify::OptionsMetadata", size, free_immediately)]
-struct RubyOptionsMetadata {
-    #[allow(dead_code)]
-    aliases: Option<Vec<String>>,
-    #[allow(dead_code)]
-    details: Option<String>,
-    #[allow(dead_code)]
-    name: String,
-    #[allow(dead_code)]
-    owners: Option<String>,
-}
-
-#[derive(DataTypeFunctions, TypedData)]
-#[magnus(class = "Optify::FeaturesWithMetadata", size, free_immediately)]
-struct RubyFeaturesWithMetadata {
-    #[allow(dead_code)]
-    features: HashMap<String, RubyOptionsMetadata>,
-}
-
-fn convert_metadata(metadata: &OptionsMetadata) -> RubyOptionsMetadata {
-    RubyOptionsMetadata {
-        aliases: metadata.aliases.clone(),
-        details: metadata.details.as_ref().map(|d| d.to_string()),
-        name: metadata.name.clone().unwrap(),
-        owners: metadata.owners.clone(),
-    }
+fn convert_metadata(metadata: &OptionsMetadata) -> String {
+    serde_json::to_string(metadata).unwrap()
 }
 
 impl WrappedOptionsProvider {
@@ -84,10 +57,7 @@ impl WrappedOptionsProvider {
             .to_owned()
     }
 
-    fn get_feature_metadata_with_json_details(
-        &self,
-        canonical_feature_name: String,
-    ) -> Option<RubyOptionsMetadata> {
+    fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
         self.0
             .borrow()
             .get_feature_metadata(&canonical_feature_name)
@@ -98,12 +68,13 @@ impl WrappedOptionsProvider {
         self.0.borrow().get_features()
     }
 
-    fn get_features_with_metadata_with_json_details(&self) -> RubyFeaturesWithMetadata {
+    fn get_features_with_metadata_json(&self) -> String {
         let mut features = HashMap::new();
         for (key, value) in self.0.borrow().get_features_with_metadata() {
-            features.insert(key.to_string(), convert_metadata(value));
+            // TODO: Try to avoid cloning.
+            features.insert(key.to_string(), value.clone());
         }
-        RubyFeaturesWithMetadata { features }
+        serde_json::to_string(&features).unwrap()
     }
 
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
@@ -159,7 +130,7 @@ impl WrappedOptionsProviderBuilder {
 }
 
 #[magnus::init]
-fn init(ruby: &Ruby) -> Result<(), Error> {
+fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let module = ruby.define_module("Optify")?;
 
     let builder_class = module.define_class("OptionsProviderBuilder", ruby.class_object())?;
@@ -182,19 +153,15 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
     )?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
+
+    // Private methods for internal use.
     provider_class.define_private_method(
-        "get_feature_metadata_with_json_details",
-        method!(
-            WrappedOptionsProvider::get_feature_metadata_with_json_details,
-            1
-        ),
+        "features_with_metadata_json",
+        method!(WrappedOptionsProvider::get_features_with_metadata_json, 0),
     )?;
     provider_class.define_private_method(
-        "features_with_metadata_with_json_details",
-        method!(
-            WrappedOptionsProvider::get_features_with_metadata_with_json_details,
-            0
-        ),
+        "get_feature_metadata_json",
+        method!(WrappedOptionsProvider::get_feature_metadata_json, 1),
     )?;
     provider_class.define_method(
         "get_options_json",

@@ -1,9 +1,11 @@
 // Similar to https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsMetadata.cs
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+type Details = serde_json::Value;
 
 /// Information about a group of options.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[allow(unused)]
 pub struct OptionsMetadata {
     // TODO Add more props.
@@ -17,7 +19,7 @@ pub struct OptionsMetadata {
     /// This is a good place for documentation that should be available to the application.
     /// Comments that are not parsed are still great to have in files, when supported,
     /// but some comments are useful to have here because they can be accessed programmatically.
-    pub details: Option<config::Value>,
+    pub details: Option<Details>,
 
     /// The name of the group of options.
     ///
@@ -35,7 +37,7 @@ pub struct OptionsMetadata {
 impl OptionsMetadata {
     pub fn new(
         aliases: Option<Vec<String>>,
-        details: Option<config::Value>,
+        details: Option<Details>,
         name: Option<String>,
         owners: Option<String>,
     ) -> Self {

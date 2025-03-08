@@ -27,24 +27,18 @@ module Optify
   end
 
   # Information about a feature.
-  class OptionsMetadata
+  class OptionsMetadata < BaseConfig
     sig { returns(T.nilable(T::Array[String])) }
-    def aliases; end
+    attr_reader :aliases
 
     sig { returns(T.untyped) }
-    def details; end
+    attr_reader :details
 
     sig { returns(String) }
-    def name; end
+    attr_reader :name
 
     sig { returns(T.nilable(String)) }
-    def owners; end
-  end
-
-  # Features with associated metadata.
-  class FeaturesWithMetadata
-    sig { returns(T::Hash[String, OptionsMetadata]) }
-    def features; end
+    attr_reader :owners
   end
 
   # Preferences when getting options.
@@ -62,7 +56,7 @@ module Optify
     def features; end
 
     # @return All of the keys and values for the the features.
-    sig { returns(FeaturesWithMetadata) }
+    sig { returns(T::Hash[String, OptionsMetadata]) }
     def features_with_metadata; end
 
     # @return All of the keys and values for the the features.
@@ -134,11 +128,12 @@ module Optify
     private
 
     # @return The metadata for the feature.
-    sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
-    def get_feature_metadata_with_json_details(canonical_feature_name); end
+    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
+    def get_feature_metadata_json(canonical_feature_name); end
+
     # @return All of the keys and values for the the features.
-    sig { returns(FeaturesWithMetadata) }
-    def features_with_metadata_with_json_details; end
+    sig { returns(String) }
+    def features_with_metadata_json; end
   end
 
   # A builder for creating an `OptionsProvider` instance.
