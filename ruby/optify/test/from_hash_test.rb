@@ -103,7 +103,7 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(4, o&.num)
   end
 
-  def test_hashes # rubocop:disable Metrics/AbcSize
+  def test_hashes
     hash = { hashes: [{ key: { num: 6 } }, { key2: { 'num' => 7 } }] }
     m = TestConfig.from_hash(hash)
     assert_equal(2, m.hashes.size)
