@@ -28,5 +28,12 @@ class OptifyTest < Test::Unit::TestCase
     assert_equal(['b'], b_metadata&.aliases)
     assert_equal({ 'description' => 'This is a description of the feature.' }, b_metadata&.details)
     assert_equal('team-b@company.com', b_metadata&.owners)
+
+    all_metadata = provider.features_with_metadata
+    assert_equal(3, all_metadata.size)
+    assert_equal(a_metadata&.aliases, all_metadata['feature_A']&.aliases)
+    assert_equal(a_metadata&.name, all_metadata['feature_A']&.name)
+    assert_equal(b_metadata&.aliases, all_metadata['feature_B/initial']&.aliases)
+    assert_equal(b_metadata&.name, all_metadata['feature_B/initial']&.name)
   end
 end

@@ -35,7 +35,10 @@ module Optify
 
     #: (String canonical_feature_name) -> Optify::OptionsMetadata?
     def get_feature_metadata(canonical_feature_name)
-      features_with_metadata[canonical_feature_name]
+      metadata_json = get_feature_metadata_json(canonical_feature_name)
+      return nil if metadata_json.nil?
+
+      OptionsMetadata.from_hash(JSON.parse(metadata_json))
     end
 
     # Fetches options based on the provided key and feature names.

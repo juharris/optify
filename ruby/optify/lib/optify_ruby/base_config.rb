@@ -25,8 +25,6 @@ module Optify
     def self.from_hash(hash)
       result = new
 
-      # FIXME: Need to handle `T.nilable(T::Array[String])`
-
       hash.each do |key, value|
         sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
         value = _convert_value(value, sig_return_type)
