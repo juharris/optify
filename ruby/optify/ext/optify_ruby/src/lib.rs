@@ -4,7 +4,6 @@ use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
-use std::collections::HashMap;
 
 #[wrap(class = "Optify::GetOptionsPreferences")]
 struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
@@ -68,15 +67,12 @@ impl WrappedOptionsProvider {
         self.0.borrow().get_features()
     }
 
+    // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
     fn get_features_with_metadata_json(&self) -> String {
-        let mut features = HashMap::new();
-        for (key, value) in self.0.borrow().get_features_with_metadata() {
-            // TODO: Try to avoid cloning.
-            features.insert(key.to_string(), value.clone());
-        }
-        serde_json::to_string(&features).unwrap()
+        serde_json::to_string(self.0.borrow().get_features_with_metadata()).unwrap()
     }
 
+    // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
         self.0
             .borrow()

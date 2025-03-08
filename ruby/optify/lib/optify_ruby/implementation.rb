@@ -6,6 +6,7 @@ require 'json'
 require 'sorbet-runtime'
 
 require_relative './base_config'
+require_relative './options_metadata'
 
 # Tools for working with configurations declared in files.
 module Optify
@@ -14,38 +15,11 @@ module Optify
   class CacheOptions < BaseConfig
   end
 
-  # Information about a feature.
-  class OptionsMetadata < BaseConfig
-    sig { returns(T.nilable(T::Array[String])) }
-    attr_reader :aliases
-
-    sig { returns(T.untyped) }
-    attr_reader :details
-
-    sig { returns(String) }
-    attr_reader :name
-
-    sig { returns(T.nilable(String)) }
-    attr_reader :owners
-
-    private
-
-    # To please Sorbet.
-    sig { params(name: String).void }
-    def initialize(name)
-      super()
-      @aliases = T.let(nil, T.nilable(T::Array[String]))
-      @details = T.let(nil, T.untyped)
-      @name = T.let(name, String)
-      @owners = T.let(nil, T.nilable(String))
-    end
-  end
-
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
     extend T::Sig
 
-    sig { returns(T::Hash[String, OptionsMetadata]) }
+    #: -> Hash[String, OptionsMetadata]
     def features_with_metadata
       return @features_with_metadata if @features_with_metadata
 
@@ -59,7 +33,7 @@ module Optify
       result
     end
 
-    sig { params(canonical_feature_name: String).returns(T.nilable(Optify::OptionsMetadata)) }
+    #: (String canonical_feature_name) -> Optify::OptionsMetadata?
     def get_feature_metadata(canonical_feature_name)
       features_with_metadata[canonical_feature_name]
     end

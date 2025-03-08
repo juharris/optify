@@ -23,7 +23,7 @@ class Optify::CacheOptions < BaseConfig
 end
 
 # Information about a feature.
-class Optify::OptionsMetadata
+class Optify::OptionsMetadata < BaseConfig
   def aliases: () -> ::Array[String]?
 
   def details: () -> untyped
@@ -31,11 +31,6 @@ class Optify::OptionsMetadata
   def name: () -> String
 
   def owners: () -> String?
-end
-
-# Features with associated metadata.
-class Optify::FeaturesWithMetadata
-  def features: () -> ::Hash[String, OptionsMetadata]
 end
 
 # Preferences when getting options.
@@ -51,7 +46,7 @@ class Optify::OptionsProvider
   def features: () -> ::Array[String]
 
   # @return All of the keys and values for the the features.
-  def features_with_metadata: () -> FeaturesWithMetadata
+  def features_with_metadata: () -> ::Hash[String, OptionsMetadata]
 
   def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
@@ -81,10 +76,10 @@ class Optify::OptionsProvider
   def init: () -> OptionsProvider
 
   # @return The metadata for the feature.
-  def get_feature_metadata_with_json_details: (String canonical_feature_name) -> OptionsMetadata?
+  def get_feature_metadata_json: (String canonical_feature_name) -> String?
 
   # @return All of the keys and values for the the features.
-  def features_with_metadata_with_json_details: () -> FeaturesWithMetadata
+  def features_with_metadata_json: () -> String
 end
 
 # A builder for creating an `OptionsProvider` instance.

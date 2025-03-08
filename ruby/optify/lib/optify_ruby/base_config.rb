@@ -40,16 +40,12 @@ module Optify
     def self._convert_value(value, type)
       case value
       when Array
-        type = if type.type.respond_to?(:unwrap_nilable)
-                 # Handle nilable array.
-                 type.type.unwrap_nilable
-               else
-                 # Handle array of 1 type.
-                 type.type
-               end
-        return value.map { |v| _convert_value(v, type) }.freeze
+        # Handle `T.nilable(T::Array[...])`
+        type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
+        inner_type = type.type
+        return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
-        # Handle nilable hash.
+        # Handle `T.nilable(T::Hash[...])`
         type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
         return _convert_hash(value, type).freeze
       end

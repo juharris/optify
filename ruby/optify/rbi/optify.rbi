@@ -29,16 +29,16 @@ module Optify
   # Information about a feature.
   class OptionsMetadata < BaseConfig
     sig { returns(T.nilable(T::Array[String])) }
-    attr_reader :aliases
+    def aliases; end
 
     sig { returns(T.untyped) }
-    attr_reader :details
+    def details; end
 
     sig { returns(String) }
-    attr_reader :name
+    def name; end
 
     sig { returns(T.nilable(String)) }
-    attr_reader :owners
+    def owners; end
   end
 
   # Preferences when getting options.
