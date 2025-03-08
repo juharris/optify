@@ -126,6 +126,10 @@ To automatically convert Sorbet style to RBS:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
 
+Note that classes that inherit from `Optify:BaseConfig` such as `OptionsMetadata` need Sorbet signature for `from_hash` to work.
+So some classes will need Sorbet signatures.
+When it is possible to convert an RBS signature, then this library will try to support it.
+
 <!--
 When RBS supports checks at runtime and then we can support RBS style signatures in comments for configuration objects:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib test

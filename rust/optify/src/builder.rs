@@ -3,8 +3,9 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::provider::{Aliases, OptionsProvider, Sources};
+use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
+use crate::schema::metadata::OptionsMetadata;
 
 type Imports = HashMap<String, Vec<String>>;
 
@@ -13,6 +14,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    features: Features,
     imports: Imports,
     sources: Sources,
 }
@@ -29,7 +31,7 @@ fn add_alias(
     canonical_feature_name: &String,
 ) -> Result<(), String> {
     let uni_case_alias = unicase::UniCase::new(alias.clone());
-    if let Some(res) = aliases.insert(uni_case_alias, canonical_feature_name.clone()) {
+    if let Some(ref res) = aliases.insert(uni_case_alias, canonical_feature_name.clone()) {
         return Err(format!(
             "The alias '{alias}' for canonical feature name '{canonical_feature_name}' is already mapped to '{res}'."
         ));
@@ -89,7 +91,7 @@ fn resolve_imports(
                 _features_in_resolution_path.insert(import.clone());
                 resolve_imports(
                     import,
-                    &imports_for_import.clone(),
+                    imports_for_import,
                     resolved_imports,
                     &mut _features_in_resolution_path,
                     aliases,
@@ -142,6 +144,7 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
+            features: Features::new(),
             imports: HashMap::new(),
             sources: Sources::new(),
         }
@@ -221,14 +224,26 @@ impl OptionsProviderBuilder {
                 &canonical_feature_name,
             )?;
 
+            // Handle metadata.
             // Add aliases.
-            if let Some(metadata) = feature_config.metadata {
-                if let Some(aliases) = metadata.aliases {
-                    for alias in aliases {
-                        add_alias(&mut self.aliases, &alias, &canonical_feature_name)?;
+            // Ensure name is set.
+            let metadata = match feature_config.metadata {
+                Some(mut metadata) => {
+                    if let Some(ref aliases) = metadata.aliases {
+                        for alias in aliases {
+                            add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
+                        }
                     }
+                    metadata.name = Some(canonical_feature_name.clone());
+                    metadata
                 }
-            }
+                None => {
+                    OptionsMetadata::new(None, None, None, Some(canonical_feature_name.clone()))
+                }
+            };
+
+            self.features
+                .insert(canonical_feature_name.clone(), metadata.clone());
         }
 
         Ok(self)
@@ -253,6 +268,10 @@ impl OptionsProviderBuilder {
             }
         }
 
-        Ok(OptionsProvider::new(&self.aliases, &self.sources))
+        Ok(OptionsProvider::new(
+            &self.aliases,
+            &self.features,
+            &self.sources,
+        ))
     }
 }

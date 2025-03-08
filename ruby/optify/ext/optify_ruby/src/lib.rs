@@ -1,7 +1,8 @@
-use magnus::{function, method, prelude::*, wrap, Error, Object, Ruby};
+use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
+use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 
 #[wrap(class = "Optify::GetOptionsPreferences")]
@@ -25,6 +26,10 @@ impl MutGetOptionsPreferences {
 
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
+
+fn convert_metadata(metadata: &OptionsMetadata) -> String {
+    serde_json::to_string(metadata).unwrap()
+}
 
 impl WrappedOptionsProvider {
     // These methods cannot accept `str`s because of how magnus works.
@@ -51,10 +56,23 @@ impl WrappedOptionsProvider {
             .to_owned()
     }
 
+    fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
+        self.0
+            .borrow()
+            .get_feature_metadata(&canonical_feature_name)
+            .map(convert_metadata)
+    }
+
     fn get_features(&self) -> Vec<String> {
         self.0.borrow().get_features()
     }
 
+    // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
+    fn get_features_with_metadata_json(&self) -> String {
+        serde_json::to_string(self.0.borrow().get_features_with_metadata()).unwrap()
+    }
+
+    // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
         self.0
             .borrow()
@@ -108,8 +126,9 @@ impl WrappedOptionsProviderBuilder {
 }
 
 #[magnus::init]
-fn init(ruby: &Ruby) -> Result<(), Error> {
+fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let module = ruby.define_module("Optify")?;
+
     let builder_class = module.define_class("OptionsProviderBuilder", ruby.class_object())?;
 
     builder_class
@@ -130,6 +149,16 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
     )?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
+
+    // Private methods for internal use.
+    provider_class.define_private_method(
+        "features_with_metadata_json",
+        method!(WrappedOptionsProvider::get_features_with_metadata_json, 0),
+    )?;
+    provider_class.define_private_method(
+        "get_feature_metadata_json",
+        method!(WrappedOptionsProvider::get_feature_metadata_json, 1),
+    )?;
     provider_class.define_method(
         "get_options_json",
         method!(WrappedOptionsProvider::get_options_json, 2),

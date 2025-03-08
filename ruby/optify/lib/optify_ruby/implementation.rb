@@ -6,6 +6,7 @@ require 'json'
 require 'sorbet-runtime'
 
 require_relative './base_config'
+require_relative './options_metadata'
 
 # Tools for working with configurations declared in files.
 module Optify
@@ -17,6 +18,28 @@ module Optify
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
     extend T::Sig
+
+    #: -> Hash[String, OptionsMetadata]
+    def features_with_metadata
+      return @features_with_metadata if @features_with_metadata
+
+      result = JSON.parse(features_with_metadata_json)
+      result.each do |key, value|
+        result[key] = OptionsMetadata.from_hash(value)
+      end
+      result.freeze
+
+      @features_with_metadata = T.let(result, T.nilable(T::Hash[String, OptionsMetadata]))
+      result
+    end
+
+    #: (String canonical_feature_name) -> Optify::OptionsMetadata?
+    def get_feature_metadata(canonical_feature_name)
+      metadata_json = get_feature_metadata_json(canonical_feature_name)
+      return nil if metadata_json.nil?
+
+      OptionsMetadata.from_hash(JSON.parse(metadata_json))
+    end
 
     # Fetches options based on the provided key and feature names.
     #

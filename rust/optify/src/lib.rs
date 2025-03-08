@@ -1,3 +1,3 @@
 pub mod builder;
 pub mod provider;
-pub(crate) mod schema;
+pub mod schema;

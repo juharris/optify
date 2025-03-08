@@ -22,6 +22,17 @@ end
 class Optify::CacheOptions < BaseConfig
 end
 
+# Information about a feature.
+class Optify::OptionsMetadata < BaseConfig
+  def aliases: () -> ::Array[String]?
+
+  def details: () -> untyped
+
+  def name: () -> String
+
+  def owners: () -> String?
+end
+
 # Preferences when getting options.
 class Optify::GetOptionsPreferences
   def skip_feature_name_conversion=: (bool value) -> GetOptionsPreferences
@@ -34,6 +45,9 @@ class Optify::OptionsProvider
   # @return All of the canonical feature names.
   def features: () -> ::Array[String]
 
+  # @return All of the keys and values for the the features.
+  def features_with_metadata: () -> ::Hash[String, OptionsMetadata]
+
   def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
   # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
@@ -42,6 +56,9 @@ class Optify::OptionsProvider
   # @param feature_name The name of an alias or a feature.
   # @return The canonical feature name.
   def get_canonical_feature_name: (String feature_name) -> String
+
+  # @return The metadata for the feature.
+  def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
 
   def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
 
@@ -57,6 +74,12 @@ class Optify::OptionsProvider
   # (Optional) Eagerly initializes the cache.
   # @return [OptionsProvider] `self`.
   def init: () -> OptionsProvider
+
+  # @return The metadata for the feature.
+  def get_feature_metadata_json: (String canonical_feature_name) -> String?
+
+  # @return All of the keys and values for the the features.
+  def features_with_metadata_json: () -> String
 end
 
 # A builder for creating an `OptionsProvider` instance.

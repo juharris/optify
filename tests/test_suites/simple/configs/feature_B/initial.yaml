@@ -3,6 +3,8 @@ metadata:
     aliases:
         - "b"
     owners: "team-b@company.com"
+    details:
+        description: "This is a description of the feature."
 options:
     myConfig:
         myArray:

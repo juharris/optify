@@ -6,7 +6,7 @@ use super::metadata::OptionsMetadata;
 
 pub(crate) type ConfigurationOptions = config::Value;
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[allow(unused)]
 pub(crate) struct FeatureConfiguration {
     pub imports: Option<Vec<String>>,

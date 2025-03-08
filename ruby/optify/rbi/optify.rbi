@@ -26,6 +26,21 @@ module Optify
   class CacheOptions < BaseConfig
   end
 
+  # Information about a feature.
+  class OptionsMetadata < BaseConfig
+    sig { returns(T.nilable(T::Array[String])) }
+    def aliases; end
+
+    sig { returns(T.untyped) }
+    def details; end
+
+    sig { returns(String) }
+    def name; end
+
+    sig { returns(T.nilable(String)) }
+    def owners; end
+  end
+
   # Preferences when getting options.
   class GetOptionsPreferences
     sig { params(value: T::Boolean).returns(GetOptionsPreferences) }
@@ -41,6 +56,10 @@ module Optify
     def features; end
 
     # @return All of the keys and values for the the features.
+    sig { returns(T::Hash[String, OptionsMetadata]) }
+    def features_with_metadata; end
+
+    # @return All of the keys and values for the the features.
     sig do
       params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
         .returns(String)
@@ -54,6 +73,10 @@ module Optify
     # @return The canonical feature name.
     sig { params(feature_name: String).returns(String) }
     def get_canonical_feature_name(feature_name); end
+
+    # @return The metadata for the feature.
+    sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
+    def get_feature_metadata(canonical_feature_name); end
 
     # Fetches options based on the provided key and feature names.
     #
@@ -101,6 +124,16 @@ module Optify
     # @return [OptionsProvider] `self`.
     sig { returns(OptionsProvider) }
     def init; end
+
+    private
+
+    # @return The metadata for the feature.
+    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
+    def get_feature_metadata_json(canonical_feature_name); end
+
+    # @return All of the keys and values for the the features.
+    sig { returns(String) }
+    def features_with_metadata_json; end
   end
 
   # A builder for creating an `OptionsProvider` instance.

@@ -1,6 +1,8 @@
 use config::{self};
 use std::collections::HashMap;
 
+use crate::schema::metadata::OptionsMetadata;
+
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
 
@@ -8,6 +10,7 @@ use std::collections::HashMap;
 pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
+pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
 pub struct GetOptionsPreferences {
@@ -20,13 +23,15 @@ pub struct CacheOptions {}
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
     aliases: Aliases,
+    features: Features,
     sources: Sources,
 }
 
 impl OptionsProvider {
-    pub(crate) fn new(aliases: &Aliases, sources: &Sources) -> Self {
+    pub(crate) fn new(aliases: &Aliases, features: &Features, sources: &Sources) -> Self {
         OptionsProvider {
             aliases: aliases.clone(),
+            features: features.clone(),
             sources: sources.clone(),
         }
     }
@@ -65,8 +70,16 @@ impl OptionsProvider {
         }
     }
 
+    pub fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata> {
+        self.features.get(canonical_feature_name)
+    }
+
     pub fn get_features(&self) -> Vec<String> {
         self.sources.keys().map(|s| s.to_owned()).collect()
+    }
+
+    pub fn get_features_with_metadata(&self) -> &Features {
+        &self.features
     }
 
     pub fn get_options(

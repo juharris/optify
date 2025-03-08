@@ -45,5 +45,14 @@
 				"--enable-all-experimental-lsp-features"
 			]
 		}
-	]
+	],
+	"[json]": {
+		"editor.formatOnSave": true
+	},
+	"[rust]": {
+		"editor.formatOnSave": true
+	},
+	"[ruby]": {
+		"editor.formatOnSave": true
+	}
 }
