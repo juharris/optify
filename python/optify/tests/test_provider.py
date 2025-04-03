@@ -20,4 +20,4 @@ def test_features():
     except:
         # Can't get pyo3_runtime.PanicException because can't import it and catching `Exception` doesn't work either.
         e = sys.exc_info()[1]
-        assert str(e) == "Failed to get options: \"configuration property \\\"key\\\" not found\""
+        assert str(e) == "key and feature names should be valid: \"configuration property \\\"key\\\" not found\""
