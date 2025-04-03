@@ -111,7 +111,7 @@ fn resolve_imports(
     let source = sources.get(canonical_feature_name).unwrap();
     config_builder = config_builder.add_source(source.clone());
 
-    // We have the configuration, build it and store it.
+    // Build the configuration and store it.
     match config_builder.build() {
         Ok(new_config) => {
             // Convert to something that can be inserted as a source.
@@ -123,8 +123,9 @@ fn resolve_imports(
                 ))
                 }
             };
-            let options_as_json: serde_json::Value =
-                options_as_config_value.try_deserialize().unwrap();
+            let options_as_json: serde_json::Value = options_as_config_value
+                .try_deserialize()
+                .expect("Error deserializing the configuration as JSON.");
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
             sources.insert(canonical_feature_name.to_owned(), source);
