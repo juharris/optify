@@ -44,7 +44,7 @@ impl WrappedOptionsProvider {
             .0
             .borrow()
             .get_all_options(&feature_names, &None, &_preferences)
-            .unwrap()
+            .expect("Failed to get all options")
             .to_string())
     }
 
@@ -77,7 +77,7 @@ impl WrappedOptionsProvider {
         self.0
             .borrow()
             .get_options_with_preferences(&key, &feature_names, &None, &None)
-            .unwrap()
+            .expect("Failed to get options")
             .to_string()
     }
 
@@ -91,7 +91,7 @@ impl WrappedOptionsProvider {
         self.0
             .borrow()
             .get_options_with_preferences(&key, &feature_names, &None, &_preferences)
-            .unwrap()
+            .expect("Failed to get options with preferences")
             .to_string()
     }
 }
@@ -116,12 +116,20 @@ impl WrappedOptionsProviderBuilder {
         directory: String,
     ) -> Result<WrappedOptionsProviderBuilder, magnus::Error> {
         let path = std::path::Path::new(&directory);
-        self.0.borrow_mut().add_directory(path).unwrap();
+        self.0
+            .borrow_mut()
+            .add_directory(path)
+            .expect("Failed to add the directory");
         Ok(self.clone())
     }
 
     fn build(&self) -> WrappedOptionsProvider {
-        WrappedOptionsProvider(RefCell::new(self.0.borrow_mut().build().unwrap()))
+        WrappedOptionsProvider(RefCell::new(
+            self.0
+                .borrow_mut()
+                .build()
+                .expect("Failed to build the OptionsProvider"),
+        ))
     }
 }
 

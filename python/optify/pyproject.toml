@@ -26,11 +26,11 @@ build-backend = "maturin"
 
 [package]
 name = "optify"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry]
 name = "optify"
-version = "0.1.1"
+version = "0.1.2"
 description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files to manage options for experiments or flights."
 authors = ["Justin D. Harris"]
 maintainers = ["Justin D. Harris"]

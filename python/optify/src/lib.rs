@@ -17,7 +17,10 @@ impl PyOptionsProvider {
     }
 
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> String {
-        self.0.get_options(key, &feature_names).unwrap().to_string()
+        self.0
+            .get_options(key, &feature_names)
+            .expect("Failed to get options")
+            .to_string()
     }
 }
 
@@ -30,13 +33,19 @@ impl PyOptionsProviderBuilder {
 
     fn add_directory(&mut self, directory: &str) -> Self {
         let path = std::path::Path::new(&directory);
-        self.0.add_directory(path).unwrap();
+        self.0
+            .add_directory(path)
+            .expect("Failed to add the directory");
         // TODO Try to avoid cloning
         Self(self.0.clone())
     }
 
     fn build(&mut self) -> PyOptionsProvider {
-        PyOptionsProvider(self.0.build().unwrap())
+        PyOptionsProvider(
+            self.0
+                .build()
+                .expect("Failed to build the options provider"),
+        )
     }
 }
 
