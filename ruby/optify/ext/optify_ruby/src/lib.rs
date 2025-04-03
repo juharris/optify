@@ -44,7 +44,7 @@ impl WrappedOptionsProvider {
             .0
             .borrow()
             .get_all_options(&feature_names, &None, &_preferences)
-            .expect("Failed to get all options")
+            .expect("features and preferences should be valid")
             .to_string())
     }
 
@@ -77,7 +77,7 @@ impl WrappedOptionsProvider {
         self.0
             .borrow()
             .get_options_with_preferences(&key, &feature_names, &None, &None)
-            .expect("Failed to get options")
+            .expect("key and feature names should be valid")
             .to_string()
     }
 
@@ -91,7 +91,7 @@ impl WrappedOptionsProvider {
         self.0
             .borrow()
             .get_options_with_preferences(&key, &feature_names, &None, &_preferences)
-            .expect("Failed to get options with preferences")
+            .expect("key, feature names, and preferences should be valid")
             .to_string()
     }
 }
@@ -119,7 +119,7 @@ impl WrappedOptionsProviderBuilder {
         self.0
             .borrow_mut()
             .add_directory(path)
-            .expect("Failed to add the directory");
+            .expect("directory contents should be valid");
         Ok(self.clone())
     }
 
@@ -128,7 +128,7 @@ impl WrappedOptionsProviderBuilder {
             self.0
                 .borrow_mut()
                 .build()
-                .expect("Failed to build the OptionsProvider"),
+                .expect("OptionsProvider should be built successfully"),
         ))
     }
 }

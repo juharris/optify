@@ -125,7 +125,7 @@ fn resolve_imports(
             };
             let options_as_json: serde_json::Value = options_as_config_value
                 .try_deserialize()
-                .expect("Error deserializing the configuration as JSON.");
+                .expect("configuration should be deserializable to JSON");
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
             sources.insert(canonical_feature_name.to_owned(), source);
