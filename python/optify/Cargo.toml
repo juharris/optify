@@ -1,6 +1,6 @@
 [package]
 name = "optify-python"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 
 description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights. This library is mainly made to support building implementations for other languages such as Node.js, Python, and Ruby. It is not meant to be consumed directly yet."
@@ -14,5 +14,5 @@ name = "optify"
 crate-type = ["cdylib"]
 
 [dependencies]
-optify = { path = "../../rust/optify", version = "0.6.1" }
+optify = { path = "../../rust/optify", version = "0.6.2" }
 pyo3 = "0.24.1"
