@@ -142,12 +142,13 @@ fn resolve_imports(
     Ok(())
 }
 
-type LoadingResult = (
-    String,
-    config::File<config::FileSourceString, config::FileFormat>,
-    Option<Vec<String>>,
-    OptionsMetadata,
-);
+/// The result of loading a feature configuration file.
+struct LoadingResult {
+    canonical_feature_name: String,
+    source: config::File<config::FileSourceString, config::FileFormat>,
+    imports: Option<Vec<String>>,
+    metadata: OptionsMetadata,
+}
 
 impl OptionsProviderBuilder {
     pub fn new() -> Self {
@@ -159,89 +160,93 @@ impl OptionsProviderBuilder {
         }
     }
 
-    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
-        // Process entries in parallel and collect results
-        let loading_results: Vec<Result<LoadingResult, String>> = WalkDir::new(directory)
-            .into_iter()
-            .par_bridge()
-            .filter_map(|entry| {
-                let entry = entry.unwrap();
-                let path = entry.path();
-                if !path.is_file() {
-                    return None;
-                }
-                // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
-                if path.extension().and_then(|s| s.to_str()) == Some("md") {
-                    return None;
-                }
+    fn process_entry(
+        entry: Result<walkdir::DirEntry, walkdir::Error>,
+        directory: &Path,
+    ) -> Option<Result<LoadingResult, String>> {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(err) => return Some(Err(format!("Error walking directory: {}", err))),
+        };
+        let path = entry.path();
+        if !path.is_file() {
+            return None;
+        }
+        // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
+        if path.extension().and_then(|s| s.to_str()) == Some("md") {
+            return None;
+        }
 
-                // TODO Optimization: Find a more efficient way to build a more generic view of the file.
-                // The `config` library is helpful because it handles many file types.
-                // It would also be nice to support comments in .json files, even though it is not standard.
-                // The `config` library does support .json5 which supports comments.
-                let file = config::File::from(path);
-                let config_for_path = match config::Config::builder().add_source(file).build() {
-                    Ok(conf) => conf,
-                    Err(e) => {
-                        return Some(Err(format!(
-                            "Error loading file '{}': {e}",
-                            path.to_string_lossy(),
-                        )))
-                    }
-                };
-
-                let feature_config: FeatureConfiguration = match config_for_path.try_deserialize() {
-                    Ok(v) => v,
-                    Err(e) => {
-                        return Some(Err(format!(
-                            "Error deserializing configuration for file '{}': {e}",
-                            path.to_string_lossy(),
-                        )))
-                    }
-                };
-
-                let options_as_json_str = match feature_config.options {
-                    None => "{}".to_owned(),
-                    Some(options) => match options.try_deserialize::<serde_json::Value>() {
-                        Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
-                        Err(e) => {
-                            return Some(Err(format!(
-                                "Error deserializing options for '{:?}': {e}",
-                                path.to_string_lossy()
-                            )))
-                        }
-                    },
-                };
-                let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-                let canonical_feature_name = get_canonical_feature_name(path, directory);
-
-                // Ensure the name is set in the metadata.
-                let metadata = match feature_config.metadata {
-                    Some(mut metadata) => {
-                        metadata.name = Some(canonical_feature_name.clone());
-                        metadata
-                    }
-                    None => {
-                        OptionsMetadata::new(None, None, None, Some(canonical_feature_name.clone()))
-                    }
-                };
-
-                Some(Ok((
-                    canonical_feature_name,
-                    source,
-                    feature_config.imports,
-                    metadata,
+        // TODO Optimization: Find a more efficient way to build a more generic view of the file.
+        // The `config` library is helpful because it handles many file types.
+        // It would also be nice to support comments in .json files, even though it is not standard.
+        // The `config` library does support .json5 which supports comments.
+        let file = config::File::from(path);
+        let config_for_path = match config::Config::builder().add_source(file).build() {
+            Ok(conf) => conf,
+            Err(e) => {
+                return Some(Err(format!(
+                    "Error loading file '{}': {e}",
+                    path.to_string_lossy(),
                 )))
-            })
-            .collect();
+            }
+        };
 
-        // Process results sequentially to maintain builder state.
+        let feature_config: FeatureConfiguration = match config_for_path.try_deserialize() {
+            Ok(v) => v,
+            Err(e) => {
+                return Some(Err(format!(
+                    "Error deserializing configuration for file '{}': {e}",
+                    path.to_string_lossy(),
+                )))
+            }
+        };
+
+        let options_as_json_str = match feature_config.options {
+            None => "{}".to_owned(),
+            Some(options) => match options.try_deserialize::<serde_json::Value>() {
+                Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
+                Err(e) => {
+                    return Some(Err(format!(
+                        "Error deserializing options for '{:?}': {e}",
+                        path.to_string_lossy()
+                    )))
+                }
+            },
+        };
+        let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
+        let canonical_feature_name = get_canonical_feature_name(path, directory);
+
+        // Ensure the name is set in the metadata.
+        let metadata = match feature_config.metadata {
+            Some(mut metadata) => {
+                metadata.name = Some(canonical_feature_name.clone());
+                metadata
+            }
+            None => OptionsMetadata::new(None, None, None, Some(canonical_feature_name.clone())),
+        };
+
+        Some(Ok(LoadingResult {
+            canonical_feature_name,
+            source,
+            imports: feature_config.imports,
+            metadata,
+        }))
+    }
+
+    fn process_results(
+        &mut self,
+        loading_results: Vec<Result<LoadingResult, String>>,
+    ) -> Result<&Self, String> {
         for loading_result in loading_results {
-            let (canonical_feature_name, source, imports, metadata) = loading_result?;
+            let result = loading_result?;
+            let canonical_feature_name = result.canonical_feature_name;
+            let imports = result.imports;
+            let metadata = result.metadata;
 
             if self
                 .sources
-                .insert(canonical_feature_name.clone(), source)
+                .insert(canonical_feature_name.clone(), result.source)
                 .is_some()
             {
                 return Err(format!(
@@ -269,6 +274,31 @@ impl OptionsProviderBuilder {
         }
 
         Ok(self)
+    }
+
+    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+        self.add_directory_with_parallel(directory, true)
+    }
+
+    pub fn add_directory_with_parallel(
+        &mut self,
+        directory: &Path,
+        use_parallel: bool,
+    ) -> Result<&Self, String> {
+        let walker = WalkDir::new(directory).into_iter();
+
+        let loading_results = if use_parallel {
+            walker
+                .par_bridge()
+                .filter_map(|entry| Self::process_entry(entry, directory))
+                .collect()
+        } else {
+            walker
+                .filter_map(|entry| Self::process_entry(entry, directory))
+                .collect()
+        };
+
+        self.process_results(loading_results)
     }
 
     pub fn build(&mut self) -> Result<OptionsProvider, String> {
