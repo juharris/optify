@@ -1,4 +1,5 @@
 use config;
+use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use walkdir::WalkDir;
@@ -141,6 +142,13 @@ fn resolve_imports(
     Ok(())
 }
 
+type LoadingResult = (
+    String,
+    config::File<config::FileSourceString, config::FileFormat>,
+    Option<Vec<String>>,
+    OptionsMetadata,
+);
+
 impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
@@ -152,57 +160,84 @@ impl OptionsProviderBuilder {
     }
 
     pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
-        for entry in WalkDir::new(directory) {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if !path.is_file() {
-                continue;
-            }
-            // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
-            if path.extension().and_then(|s| s.to_str()) == Some("md") {
-                continue;
-            }
-
-            // TODO Optimization: Find a more efficient way to build a more generic view of the file.
-            // The `config` library is helpful because it handles many file types.
-            // It would also be nice to support comments in .json files, even though it is not standard.
-            // The `config` library does support .json5 which supports comments.
-            let file = config::File::from(path);
-            let config_for_path = match config::Config::builder().add_source(file).build() {
-                Ok(conf) => conf,
-                Err(e) => {
-                    return Err(format!(
-                        "Error loading file '{}': {e}",
-                        path.to_string_lossy(),
-                    ))
+        // Process entries in parallel and collect results
+        let loading_results: Vec<Result<LoadingResult, String>> = WalkDir::new(directory)
+            .into_iter()
+            .par_bridge()
+            .filter_map(|entry| {
+                let entry = entry.unwrap();
+                let path = entry.path();
+                if !path.is_file() {
+                    return None;
                 }
-            };
-
-            let feature_config: FeatureConfiguration = match config_for_path.try_deserialize() {
-                Ok(v) => v,
-                Err(e) => {
-                    return Err(format!(
-                        "Error deserializing configuration for file '{}': {e}",
-                        path.to_string_lossy(),
-                    ))
+                // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
+                if path.extension().and_then(|s| s.to_str()) == Some("md") {
+                    return None;
                 }
-            };
 
-            let options_as_json_str = match feature_config.options {
-                None => "{}".to_owned(),
-                Some(options) => {
-                    let options_as_json: serde_json::Value =
-                        options.try_deserialize().map_err(|e| {
-                            format!(
+                // TODO Optimization: Find a more efficient way to build a more generic view of the file.
+                // The `config` library is helpful because it handles many file types.
+                // It would also be nice to support comments in .json files, even though it is not standard.
+                // The `config` library does support .json5 which supports comments.
+                let file = config::File::from(path);
+                let config_for_path = match config::Config::builder().add_source(file).build() {
+                    Ok(conf) => conf,
+                    Err(e) => {
+                        return Some(Err(format!(
+                            "Error loading file '{}': {e}",
+                            path.to_string_lossy(),
+                        )))
+                    }
+                };
+
+                let feature_config: FeatureConfiguration = match config_for_path.try_deserialize() {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Some(Err(format!(
+                            "Error deserializing configuration for file '{}': {e}",
+                            path.to_string_lossy(),
+                        )))
+                    }
+                };
+
+                let options_as_json_str = match feature_config.options {
+                    None => "{}".to_owned(),
+                    Some(options) => match options.try_deserialize::<serde_json::Value>() {
+                        Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
+                        Err(e) => {
+                            return Some(Err(format!(
                                 "Error deserializing options for '{:?}': {e}",
                                 path.to_string_lossy()
-                            )
-                        })?;
-                    serde_json::to_string(&options_as_json).unwrap()
-                }
-            };
-            let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-            let canonical_feature_name = get_canonical_feature_name(path, directory);
+                            )))
+                        }
+                    },
+                };
+                let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
+                let canonical_feature_name = get_canonical_feature_name(path, directory);
+
+                // Ensure the name is set in the metadata.
+                let metadata = match feature_config.metadata {
+                    Some(mut metadata) => {
+                        metadata.name = Some(canonical_feature_name.clone());
+                        metadata
+                    }
+                    None => {
+                        OptionsMetadata::new(None, None, None, Some(canonical_feature_name.clone()))
+                    }
+                };
+
+                Some(Ok((
+                    canonical_feature_name,
+                    source,
+                    feature_config.imports,
+                    metadata,
+                )))
+            })
+            .collect();
+
+        // Process results sequentially to maintain builder state.
+        for loading_result in loading_results {
+            let (canonical_feature_name, source, imports, metadata) = loading_result?;
 
             if self
                 .sources
@@ -210,12 +245,11 @@ impl OptionsProviderBuilder {
                 .is_some()
             {
                 return Err(format!(
-                    "Error when loading '{}'. The canonical feature name for the file, '{canonical_feature_name}', was already added. It may be an alias for another feature.",
-                    path.to_string_lossy()
+                    "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
                 ));
             }
 
-            if let Some(imports) = feature_config.imports {
+            if let Some(imports) = imports {
                 self.imports.insert(canonical_feature_name.clone(), imports);
             }
 
@@ -225,26 +259,13 @@ impl OptionsProviderBuilder {
                 &canonical_feature_name,
             )?;
 
-            // Handle metadata.
-            // Add aliases.
-            // Ensure name is set.
-            let metadata = match feature_config.metadata {
-                Some(mut metadata) => {
-                    if let Some(ref aliases) = metadata.aliases {
-                        for alias in aliases {
-                            add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
-                        }
-                    }
-                    metadata.name = Some(canonical_feature_name.clone());
-                    metadata
+            if let Some(ref aliases) = metadata.aliases {
+                for alias in aliases {
+                    add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
                 }
-                None => {
-                    OptionsMetadata::new(None, None, None, Some(canonical_feature_name.clone()))
-                }
-            };
+            }
 
-            self.features
-                .insert(canonical_feature_name.clone(), metadata.clone());
+            self.features.insert(canonical_feature_name, metadata);
         }
 
         Ok(self)
