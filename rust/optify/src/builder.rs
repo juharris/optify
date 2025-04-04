@@ -173,7 +173,7 @@ impl OptionsProviderBuilder {
             return None;
         }
         // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
-        if path.extension().and_then(|s| s.to_str()) == Some("md") {
+        if path.extension().filter(|e| *e == "md").is_some() {
             return None;
         }
 
