@@ -1,8 +1,8 @@
 use config;
+use jwalk::WalkDir;
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use walkdir::WalkDir;
 
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
@@ -161,7 +161,7 @@ impl OptionsProviderBuilder {
     }
 
     fn process_entry(
-        entry: Result<walkdir::DirEntry, walkdir::Error>,
+        entry: Result<jwalk::DirEntry<((), ())>, jwalk::Error>,
         directory: &Path,
     ) -> Option<Result<LoadingResult, String>> {
         let entry = match entry {
@@ -181,7 +181,7 @@ impl OptionsProviderBuilder {
         // The `config` library is helpful because it handles many file types.
         // It would also be nice to support comments in .json files, even though it is not standard.
         // The `config` library does support .json5 which supports comments.
-        let file = config::File::from(path);
+        let file = config::File::from(path.clone());
         let config_for_path = match config::Config::builder().add_source(file).build() {
             Ok(conf) => conf,
             Err(e) => {
@@ -215,7 +215,7 @@ impl OptionsProviderBuilder {
             },
         };
         let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-        let canonical_feature_name = get_canonical_feature_name(path, directory);
+        let canonical_feature_name = get_canonical_feature_name(&path, directory);
 
         // Ensure the name is set in the metadata.
         let metadata = match feature_config.metadata {
