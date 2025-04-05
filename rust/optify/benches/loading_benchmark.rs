@@ -48,21 +48,28 @@ fn benchmark_loading(c: &mut Criterion) {
 
     let mut group = c.benchmark_group(format!("file_loading-{}", num_files));
 
-    group.bench_function("parallel_loading", |b| {
+    group.bench_function("parallel loading (walkdir)", |b| {
         b.iter(|| {
             let mut builder = OptionsProviderBuilder::new();
             builder
-                .add_directory_with_parallel(black_box(test_dir), true)
+                .add_directory_with_walkdir_parallel(black_box(test_dir))
                 .unwrap();
         })
     });
 
-    group.bench_function("sequential_loading", |b| {
+    group.bench_function("parallel loading (jwalk)", |b| {
         b.iter(|| {
             let mut builder = OptionsProviderBuilder::new();
             builder
-                .add_directory_with_parallel(black_box(test_dir), false)
+                .add_directory_with_jwalk_parallel(black_box(test_dir))
                 .unwrap();
+        })
+    });
+
+    group.bench_function("sequential loading (original)", |b| {
+        b.iter(|| {
+            let mut builder = OptionsProviderBuilder::new();
+            builder.add_directory(black_box(test_dir)).unwrap();
         })
     });
 
