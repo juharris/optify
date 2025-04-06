@@ -158,10 +158,9 @@ impl OptionsProviderBuilder {
             sources: Sources::new(),
         }
     }
-    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
-        self.add_directory_with_jwalk_parallel(directory)
-    }
 
+    /// Deprecated. Use `add_directory` instead.
+    /// Just for benchmarking.
     pub fn add_directory_sequential(&mut self, directory: &Path) -> Result<&Self, String> {
         for entry in walkdir::WalkDir::new(directory) {
             let entry = entry.unwrap();
@@ -286,7 +285,7 @@ impl OptionsProviderBuilder {
         Ok(self)
     }
 
-    pub fn add_directory_with_jwalk_parallel(&mut self, directory: &Path) -> Result<&Self, String> {
+    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
         let loading_results: Vec<Result<LoadingResult, String>> = jwalk::WalkDir::new(directory)
             .into_iter()
             .par_bridge()

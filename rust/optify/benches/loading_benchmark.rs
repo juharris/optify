@@ -79,7 +79,7 @@ fn cleanup_test_files(dir: &Path) {
 
 fn benchmark_loading(c: &mut Criterion) {
     let test_dir = Path::new("bench_test_files");
-    let num_files = 100;
+    let num_files = 1000;
     let _guard = TestDirGuard::new(test_dir);
     let test_build = false;
 
@@ -90,9 +90,7 @@ fn benchmark_loading(c: &mut Criterion) {
     group.bench_function("parallel loading (jwalk)", |b| {
         b.iter(|| {
             let mut builder = OptionsProviderBuilder::new();
-            builder
-                .add_directory_with_jwalk_parallel(black_box(test_dir))
-                .unwrap();
+            builder.add_directory(black_box(test_dir)).unwrap();
             if test_build {
                 // Ensure that there are no errors in the builder.
                 builder.build().unwrap();

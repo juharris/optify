@@ -12,6 +12,7 @@
 	"cSpell.words": [
 		"jwalk",
 		"serde",
-		"unicase"
+		"unicase",
+		"walkdir"
 	]
 }
