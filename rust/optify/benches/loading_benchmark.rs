@@ -79,7 +79,7 @@ fn cleanup_test_files(dir: &Path) {
 
 fn benchmark_loading(c: &mut Criterion) {
     let test_dir = Path::new("bench_test_files");
-    let num_files = 1000;
+    let num_files = 100;
     let _guard = TestDirGuard::new(test_dir);
     let test_build = false;
 
@@ -116,6 +116,19 @@ fn benchmark_loading(c: &mut Criterion) {
             let mut builder = OptionsProviderBuilder::new();
             builder
                 .add_directory_sequential(black_box(test_dir))
+                .unwrap();
+            if test_build {
+                // Ensure that there are no errors in the builder.
+                builder.build().unwrap();
+            }
+        })
+    });
+
+    group.bench_function("sequential loading (jwalk)", |b| {
+        b.iter(|| {
+            let mut builder = OptionsProviderBuilder::new();
+            builder
+                .add_directory_jwalk_sequential(black_box(test_dir))
                 .unwrap();
             if test_build {
                 // Ensure that there are no errors in the builder.
