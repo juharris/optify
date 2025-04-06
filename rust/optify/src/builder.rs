@@ -158,8 +158,11 @@ impl OptionsProviderBuilder {
             sources: Sources::new(),
         }
     }
-
     pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+        self.add_directory_with_jwalk_parallel(directory)
+    }
+
+    pub fn add_directory_sequential(&mut self, directory: &Path) -> Result<&Self, String> {
         for entry in walkdir::WalkDir::new(directory) {
             let entry = entry.unwrap();
             let path = entry.path();
@@ -277,38 +280,7 @@ impl OptionsProviderBuilder {
             })
             .collect();
         for loading_result in loading_results {
-            let result: LoadingResult = loading_result?;
-            let canonical_feature_name = result.canonical_feature_name;
-            let imports = result.imports;
-            let metadata = result.metadata;
-
-            if self
-                .sources
-                .insert(canonical_feature_name.clone(), result.source)
-                .is_some()
-            {
-                return Err(format!(
-                    "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
-                ));
-            }
-
-            if let Some(imports) = imports {
-                self.imports.insert(canonical_feature_name.clone(), imports);
-            }
-
-            add_alias(
-                &mut self.aliases,
-                &canonical_feature_name,
-                &canonical_feature_name,
-            )?;
-
-            if let Some(ref aliases) = metadata.aliases {
-                for alias in aliases {
-                    add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
-                }
-            }
-
-            self.features.insert(canonical_feature_name, metadata);
+            self.process_loading_result(&loading_result)?;
         }
 
         Ok(self)
@@ -330,38 +302,7 @@ impl OptionsProviderBuilder {
             })
             .collect();
         for loading_result in loading_results {
-            let result: LoadingResult = loading_result?;
-            let canonical_feature_name = result.canonical_feature_name;
-            let imports = result.imports;
-            let metadata = result.metadata;
-
-            if self
-                .sources
-                .insert(canonical_feature_name.clone(), result.source)
-                .is_some()
-            {
-                return Err(format!(
-                    "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
-                ));
-            }
-
-            if let Some(imports) = imports {
-                self.imports.insert(canonical_feature_name.clone(), imports);
-            }
-
-            add_alias(
-                &mut self.aliases,
-                &canonical_feature_name,
-                &canonical_feature_name,
-            )?;
-
-            if let Some(ref aliases) = metadata.aliases {
-                for alias in aliases {
-                    add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
-                }
-            }
-
-            self.features.insert(canonical_feature_name, metadata);
+            self.process_loading_result(&loading_result)?;
         }
 
         Ok(self)
@@ -397,6 +338,7 @@ impl OptionsProviderBuilder {
         if !path.is_file() {
             return None;
         }
+
         // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
         if path.extension().filter(|e| *e == "md").is_some() {
             return None;
@@ -457,5 +399,39 @@ impl OptionsProviderBuilder {
             imports: feature_config.imports,
             metadata,
         }))
+    }
+
+    fn process_loading_result(
+        &mut self,
+        loading_result: &Result<LoadingResult, String>,
+    ) -> Result<(), String> {
+        let info = loading_result.as_ref().expect("the file should be loaded");
+        let canonical_feature_name = &info.canonical_feature_name;
+        if self
+            .sources
+            .insert(canonical_feature_name.clone(), info.source.clone())
+            .is_some()
+        {
+            return Err(format!(
+                "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
+            ));
+        }
+        if let Some(imports) = &info.imports {
+            self.imports
+                .insert(canonical_feature_name.clone(), imports.clone());
+        }
+        add_alias(
+            &mut self.aliases,
+            canonical_feature_name,
+            canonical_feature_name,
+        )?;
+        if let Some(ref aliases) = info.metadata.aliases {
+            for alias in aliases {
+                add_alias(&mut self.aliases, alias, canonical_feature_name)?;
+            }
+        }
+        self.features
+            .insert(canonical_feature_name.clone(), info.metadata.clone());
+        Ok(())
     }
 }
