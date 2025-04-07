@@ -208,12 +208,8 @@ impl OptionsProviderBuilder {
     }
 
     fn process_entry(path: &Path, directory: &Path) -> Option<Result<LoadingResult, String>> {
-        if !path.is_file() {
-            return None;
-        }
-
         // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
-        if path.extension().filter(|e| *e == "md").is_some() {
+        if !path.is_file() || path.extension().filter(|e| *e == "md").is_some() {
             return None;
         }
 
@@ -236,14 +232,13 @@ impl OptionsProviderBuilder {
             Ok(v) => v,
             Err(e) => {
                 return Some(Err(format!(
-                    "Error deserializing configuration for file '{}': {e}",
+                    "Error deserializing configuration for file '{:?}': {e}",
                     path.to_string_lossy(),
                 )))
             }
         };
 
         let options_as_json_str = match feature_config.options {
-            None => "{}".to_owned(),
             Some(options) => match options.try_deserialize::<serde_json::Value>() {
                 Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
                 Err(e) => {
@@ -253,6 +248,7 @@ impl OptionsProviderBuilder {
                     )))
                 }
             },
+            None => "{}".to_owned(),
         };
         let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
         let canonical_feature_name = get_canonical_feature_name(path, directory);
@@ -263,7 +259,7 @@ impl OptionsProviderBuilder {
                 metadata.name = Some(canonical_feature_name.clone());
                 metadata
             }
-            None => OptionsMetadata::new(None, None, None, Some(canonical_feature_name.clone())),
+            None => OptionsMetadata::new(None, None, Some(canonical_feature_name.clone()), None),
         };
 
         Some(Ok(LoadingResult {
