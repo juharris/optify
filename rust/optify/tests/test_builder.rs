@@ -55,6 +55,21 @@ fn test_builder_duplicate_alias() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn test_builder_name_with_no_metadata() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/no_metadata");
+    let mut builder = OptionsProviderBuilder::new();
+    builder.add_directory(path)?;
+    let provider = builder.build()?;
+    let metadata = provider
+        .get_feature_metadata("subdir/a")
+        .expect("metadata should be found");
+    assert_eq!(metadata.name, Some("subdir/a".to_string()));
+    let opts = provider.get_options("wtv", &vec!["subdir/a".to_string()])?;
+    assert_eq!(opts.as_i64(), Some(3));
+    Ok(())
+}
+
+#[test]
 fn test_builder_used_canonical_alias() {
     let path = std::path::Path::new("tests/used_canonical_name");
     let mut builder = OptionsProviderBuilder::new();

@@ -1,6 +1,6 @@
 [package]
 name = "optify"
-version = "0.6.1"
+version = "0.6.2"
 edition = "2021"
 
 description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights. This library is mainly made to support building implementations for other languages such as Node.js, Python, and Ruby. It is not meant to be consumed directly yet."
@@ -18,6 +18,7 @@ exclude = [
 
 [dependencies]
 config = "0.15.6"
+rayon = "1.10.0"
 serde = "1.0.217"
 serde_derive = "1.0.217"
 serde_json = "1.0.140"
@@ -26,3 +27,8 @@ walkdir = "2.5.0"
 
 [dev-dependencies]
 regex = "1.11.1"
+criterion = "0.5.1"
+
+[[bench]]
+name = "loading_benchmark"
+harness = false
