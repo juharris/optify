@@ -87,49 +87,10 @@ fn benchmark_loading(c: &mut Criterion) {
 
     let mut group = c.benchmark_group(format!("file_loading-{}", num_files));
 
-    group.bench_function("parallel loading (jwalk)", |b| {
+    group.bench_function("parallel loading", |b| {
         b.iter(|| {
             let mut builder = OptionsProviderBuilder::new();
             builder.add_directory(black_box(test_dir)).unwrap();
-            if test_build {
-                // Ensure that there are no errors in the builder.
-                builder.build().unwrap();
-            }
-        })
-    });
-
-    group.bench_function("parallel loading (walkdir)", |b| {
-        b.iter(|| {
-            let mut builder = OptionsProviderBuilder::new();
-            builder
-                .add_directory_with_walkdir_parallel(black_box(test_dir))
-                .unwrap();
-            if test_build {
-                // Ensure that there are no errors in the builder.
-                builder.build().unwrap();
-            }
-        })
-    });
-
-    group.bench_function("sequential loading (original)", |b| {
-        b.iter(|| {
-            let mut builder = OptionsProviderBuilder::new();
-            builder
-                .add_directory_sequential(black_box(test_dir))
-                .unwrap();
-            if test_build {
-                // Ensure that there are no errors in the builder.
-                builder.build().unwrap();
-            }
-        })
-    });
-
-    group.bench_function("sequential loading (jwalk)", |b| {
-        b.iter(|| {
-            let mut builder = OptionsProviderBuilder::new();
-            builder
-                .add_directory_jwalk_sequential(black_box(test_dir))
-                .unwrap();
             if test_build {
                 // Ensure that there are no errors in the builder.
                 builder.build().unwrap();

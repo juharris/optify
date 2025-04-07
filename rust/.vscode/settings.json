@@ -10,7 +10,6 @@
 		"editor.formatOnSave": true
 	},
 	"cSpell.words": [
-		"jwalk",
 		"serde",
 		"unicase",
 		"walkdir"
