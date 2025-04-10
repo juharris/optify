@@ -46,6 +46,7 @@ Core Features:
   Features are intended to be combined to build the final configuration.
 * **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
 * Supports clear file names and **aliases** for feature names.
+* **Reads files in parallel** when loading your configurations.
 * **Caching**: Configurations for a key and enabled features are cached to avoid rebuilding objects.
   Caching is only implemented in Ruby for now.
 * Files are only read once when the `OptionsProvider` is built.
