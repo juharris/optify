@@ -55,7 +55,6 @@ impl WrappedOptionsProvider {
             .unwrap()
             .to_owned()
     }
-
     fn get_canonical_feature_names(&self, feature_name: Vec<String>) -> Vec<String> {
         self.0
             .borrow()
@@ -65,8 +64,10 @@ impl WrappedOptionsProvider {
                     .map(|s| s.as_str())
                     .collect::<Vec<&str>>(),
             )
-            .unwrap()
-            .to_owned()
+            .expect("given names should be valid")
+            .into_iter()
+            .map(|s| s.to_owned())
+            .collect()
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {

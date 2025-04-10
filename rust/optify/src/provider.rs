@@ -78,13 +78,12 @@ impl OptionsProvider {
     pub fn get_canonical_feature_names(
         &self,
         feature_names: &[&str],
-    ) -> Result<Vec<String>, String> {
+    ) -> Result<Vec<&String>, String> {
         Ok(feature_names
             .iter()
             .map(|name| {
                 self.get_canonical_feature_name(name)
                     .expect("given names should be valid")
-                    .to_owned()
             })
             .collect())
     }
