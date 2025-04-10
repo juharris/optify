@@ -48,6 +48,19 @@ class OptifyTest < Test::Unit::TestCase
     assert_equal(expected, JSON.parse(all_opts))
   end
 
+  def test_get_canonical_feature_names
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
+    canonical_feature_names = provider.get_canonical_feature_names(%w[A B feature_A])
+    assert_equal(%w[feature_A feature_B/initial feature_A], canonical_feature_names)
+
+    err = assert_raise do
+      provider.get_canonical_feature_names(%w[error])
+    end
+    assert_equal('given names should be valid: "The given feature \"error\" was not found."', err.message)
+  end
+
   def test_suites
     test_suites_dir = '../../tests/test_suites'
     Dir.each_child(test_suites_dir) do |suite|
