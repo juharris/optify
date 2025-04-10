@@ -13,6 +13,19 @@ fn get_provider() -> &'static optify::provider::OptionsProvider {
 }
 
 #[test]
+fn test_provider_get_canonical_feature_names() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider();
+    let canonical_feature_names =
+        provider.get_canonical_feature_names(&vec!["a", "b", "feature_A"])?;
+    assert_eq!(
+        canonical_feature_names,
+        vec!["feature_A", "feature_B/initial", "feature_A"]
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_provider_get_entire_config() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let feature_names: Vec<String> = vec!["a".to_string()];

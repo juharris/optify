@@ -74,6 +74,14 @@ module Optify
     sig { params(feature_name: String).returns(String) }
     def get_canonical_feature_name(feature_name); end
 
+    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+    # Canonical feature names map to themselves.
+    #
+    # @param feature_names The names of aliases or features.
+    # @return The canonical feature names.
+    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
+    def get_canonical_feature_names(feature_names); end
+
     # @return The metadata for the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
     def get_feature_metadata(canonical_feature_name); end
