@@ -88,9 +88,7 @@ module Optify
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
       init unless @cache
-      feature_names = feature_names.map do |feature_name|
-        get_canonical_feature_name(feature_name)
-      end
+      feature_names = get_canonical_feature_names(feature_names)
 
       cache_key = [key, feature_names, config_class]
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)

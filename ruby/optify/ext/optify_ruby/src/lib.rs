@@ -56,6 +56,19 @@ impl WrappedOptionsProvider {
             .to_owned()
     }
 
+    fn get_canonical_feature_names(&self, feature_name: Vec<String>) -> Vec<String> {
+        self.0
+            .borrow()
+            .get_canonical_feature_names(
+                &feature_name
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<&str>>(),
+            )
+            .unwrap()
+            .to_owned()
+    }
+
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
         self.0
             .borrow()
@@ -155,6 +168,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     provider_class.define_method(
         "get_canonical_feature_name",
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
+    )?;
+    provider_class.define_method(
+        "get_canonical_feature_names",
+        method!(WrappedOptionsProvider::get_canonical_feature_names, 1),
     )?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
 

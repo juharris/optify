@@ -70,6 +70,25 @@ impl OptionsProvider {
         }
     }
 
+    // Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+    // Canonical feature names map to themselves.
+    //
+    // @param feature_names The names of aliases or features.
+    // @return The canonical feature names.
+    pub fn get_canonical_feature_names(
+        &self,
+        feature_names: &[&str],
+    ) -> Result<Vec<String>, String> {
+        Ok(feature_names
+            .iter()
+            .map(|name| {
+                self.get_canonical_feature_name(name)
+                    .expect("given names should be valid")
+                    .to_owned()
+            })
+            .collect())
+    }
+
     pub fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata> {
         self.features.get(canonical_feature_name)
     }

@@ -57,6 +57,13 @@ class Optify::OptionsProvider
   # @return The canonical feature name.
   def get_canonical_feature_name: (String feature_name) -> String
 
+  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+  # Canonical feature names map to themselves.
+  #
+  # @param feature_names The names of aliases or features.
+  # @return The canonical feature names.
+  def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
+
   # @return The metadata for the feature.
   def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
 
