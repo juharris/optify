@@ -52,13 +52,17 @@ class OptifyTest < Test::Unit::TestCase
     provider = Optify::OptionsProviderBuilder.new
                                              .add_directory('../../tests/test_suites/simple/configs')
                                              .build
-    canonical_feature_names = provider.get_canonical_feature_names(%w[A B feature_A])
+    feature_names = %w[A B feature_A]
+    canonical_feature_names = provider.get_canonical_feature_names(feature_names)
     assert_equal(%w[feature_A feature_B/initial feature_A], canonical_feature_names)
 
     err = assert_raise do
       provider.get_canonical_feature_names(%w[error])
     end
     assert_equal('given names should be valid: "The given feature \"error\" was not found."', err.message)
+
+    names = feature_names.map { |name| provider.get_canonical_feature_name(name) }
+    assert_equal(canonical_feature_names, names)
   end
 
   def test_suites
@@ -111,5 +115,22 @@ class OptifyTest < Test::Unit::TestCase
     all_features = provider.features
     all_features.sort!
     assert_equal(['A_with_comments', 'feature_A', 'feature_B/initial'], all_features)
+  end
+
+  def test_get_options_with_preferences
+    provider = Optify::OptionsProviderBuilder.new
+                                             .add_directory('../../tests/test_suites/simple/configs')
+                                             .build
+    feature_names = %w[A B]
+    preferences = Optify::GetOptionsPreferences.new
+    preferences.skip_feature_name_conversion = false
+    options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
+    assert_equal('root string same', options.rootString)
+
+    preferences.skip_feature_name_conversion = true
+    err = assert_raise do
+      provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
+    end
+    assert_equal('key, feature names, and preferences should be valid: "Feature name \"A\" was not found."', err.message)
   end
 end

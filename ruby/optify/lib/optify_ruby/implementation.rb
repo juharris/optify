@@ -88,7 +88,11 @@ module Optify
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
       init unless @cache
-      feature_names = get_canonical_feature_names(feature_names)
+      unless preferences&.skip_feature_name_conversion
+        # When there are just a few names, then it can be faster to convert them one by one in a loop to avoid working with an array in Rust.
+        # When there are over 7 names, then it is faster to convert them with one call to Rust.
+        feature_names = get_canonical_feature_names(feature_names)
+      end
 
       cache_key = [key, feature_names, config_class]
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
