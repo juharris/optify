@@ -1,7 +1,7 @@
 use config::{self};
 use std::collections::HashMap;
 
-use crate::schema::metadata::OptionsMetadata;
+use crate::{schema::metadata::OptionsMetadata, OptionsProviderTrait};
 
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
@@ -21,11 +21,13 @@ pub struct CacheOptions {}
 
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
+#[derive(Clone)]
 pub struct OptionsProvider {
     aliases: Aliases,
     features: Features,
     sources: Sources,
 }
+
 
 impl OptionsProvider {
     pub(crate) fn new(aliases: &Aliases, features: &Features, sources: &Sources) -> Self {
@@ -35,97 +37,6 @@ impl OptionsProvider {
             sources: sources.clone(),
         }
     }
-
-    pub fn get_all_options(
-        &self,
-        feature_names: &Vec<String>,
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
-    ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
-
-        match config {
-            Ok(cfg) => match cfg.try_deserialize() {
-                Ok(value) => Ok(value),
-                Err(e) => Err(e.to_string()),
-            },
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
-    // Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
-    // Canonical feature names map to themselves.
-    //
-    // @param feature_name The name of an alias or a feature.
-    // @return The canonical feature name.
-    pub fn get_canonical_feature_name(&self, feature_name: &str) -> Result<&String, String> {
-        // Canonical feature names are also included as keys in the aliases map.
-        let feature_name = unicase::UniCase::new(feature_name.to_owned());
-        match self.aliases.get(&feature_name) {
-            Some(canonical_name) => Ok(canonical_name),
-            None => Err(format!(
-                "The given feature {:?} was not found.",
-                feature_name
-            )),
-        }
-    }
-
-    // Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-    // Canonical feature names map to themselves.
-    //
-    // @param feature_names The names of aliases or features.
-    // @return The canonical feature names.
-    pub fn get_canonical_feature_names(
-        &self,
-        feature_names: &[&str],
-    ) -> Result<Vec<&String>, String> {
-        Ok(feature_names
-            .iter()
-            .map(|name| {
-                self.get_canonical_feature_name(name)
-                    .expect("given names should be valid")
-            })
-            .collect())
-    }
-
-    pub fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata> {
-        self.features.get(canonical_feature_name)
-    }
-
-    pub fn get_features(&self) -> Vec<String> {
-        self.sources.keys().map(|s| s.to_owned()).collect()
-    }
-
-    pub fn get_features_with_metadata(&self) -> &Features {
-        &self.features
-    }
-
-    pub fn get_options(
-        &self,
-        key: &str,
-        feature_names: &Vec<String>,
-    ) -> Result<serde_json::Value, String> {
-        self.get_options_with_preferences(key, feature_names, &None, &None)
-    }
-
-    pub fn get_options_with_preferences(
-        &self,
-        key: &str,
-        feature_names: &Vec<String>,
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
-    ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
-
-        match config {
-            Ok(cfg) => match cfg.get(key) {
-                Ok(value) => Ok(value),
-                Err(e) => Err(e.to_string()),
-            },
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
     fn _get_entire_config(
         &self,
         feature_names: &Vec<String>,
@@ -164,4 +75,93 @@ impl OptionsProvider {
         }
         Ok(config_builder.build())
     }
+}
+
+impl OptionsProviderTrait for OptionsProvider {
+    fn get_all_options(
+        &self,
+        feature_names: &Vec<String>,
+        cache_options: &Option<CacheOptions>,
+        preferences: &Option<GetOptionsPreferences>,
+    ) -> Result<serde_json::Value, String> {
+        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+
+        match config {
+            Ok(cfg) => match cfg.try_deserialize() {
+                Ok(value) => Ok(value),
+                Err(e) => Err(e.to_string()),
+            },
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    // Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+    // Canonical feature names map to themselves.
+    //
+    // @param feature_name The name of an alias or a feature.
+    // @return The canonical feature name.
+    fn get_canonical_feature_name(&self, feature_name: &str) -> Result<&String, String> {
+        // Canonical feature names are also included as keys in the aliases map.
+        let feature_name = unicase::UniCase::new(feature_name.to_owned());
+        match self.aliases.get(&feature_name) {
+            Some(canonical_name) => Ok(canonical_name),
+            None => Err(format!(
+                "The given feature {:?} was not found.",
+                feature_name
+            )),
+        }
+    }
+
+    fn get_canonical_feature_names(
+        &self,
+        feature_names: &[&str],
+    ) -> Result<Vec<&String>, String> {
+        Ok(feature_names
+            .iter()
+            .map(|name| {
+                self.get_canonical_feature_name(name)
+                    .expect("given names should be valid")
+            })
+            .collect())
+    }
+
+    fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata> {
+        self.features.get(canonical_feature_name)
+    }
+
+    fn get_features(&self) -> Vec<String> {
+        self.sources.keys().map(|s| s.to_owned()).collect()
+    }
+
+    fn get_features_with_metadata(&self) -> &Features {
+        &self.features
+    }
+
+    fn get_options(
+        &self,
+        key: &str,
+        feature_names: &Vec<String>,
+    ) -> Result<serde_json::Value, String> {
+        self.get_options_with_preferences(key, feature_names, &None, &None)
+    }
+
+    fn get_options_with_preferences(
+        &self,
+        key: &str,
+        feature_names: &Vec<String>,
+        cache_options: &Option<CacheOptions>,
+        preferences: &Option<GetOptionsPreferences>,
+    ) -> Result<serde_json::Value, String> {
+        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+
+        match config {
+            Ok(cfg) => match cfg.get(key) {
+                Ok(value) => Ok(value),
+                Err(e) => Err(e.to_string()),
+            },
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+  
 }

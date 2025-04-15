@@ -1,14 +1,15 @@
-use optify::builder::OptionsProviderBuilder;
-
+use optify::{builder::OptionsProviderBuilder, OptionsProviderBuilderTrait, OptionsProviderTrait};
 use std::sync::OnceLock;
-static PROVIDER: OnceLock<optify::provider::OptionsProvider> = OnceLock::new();
 
-fn get_provider() -> &'static optify::provider::OptionsProvider {
+static PROVIDER: OnceLock<Box<dyn OptionsProviderTrait + Send + Sync>> = OnceLock::new();
+
+fn get_provider() -> &'static Box<dyn OptionsProviderTrait + Send + Sync> {
     PROVIDER.get_or_init(|| {
         let path = std::path::Path::new("../../tests/test_suites/simple/configs");
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(path).unwrap();
-        builder.build().unwrap()
+        let provider = builder.build().unwrap();
+        Box::new(provider)
     })
 }
 

@@ -6,6 +6,8 @@ use std::path::Path;
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
+use crate::builder_trait::OptionsProviderBuilderTrait;
+use crate::provider_trait::OptionsProviderTrait;
 
 type Imports = HashMap<String, Vec<String>>;
 
@@ -159,54 +161,6 @@ impl OptionsProviderBuilder {
         }
     }
 
-    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
-        let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
-            .into_iter()
-            .par_bridge()
-            .filter_map(|entry| {
-                Self::process_entry(
-                    entry
-                        .unwrap_or_else(|_| {
-                            panic!("Error walking directory: {}", directory.display())
-                        })
-                        .path(),
-                    directory,
-                )
-            })
-            .collect();
-        for loading_result in loading_results {
-            self.process_loading_result(&loading_result)?;
-        }
-
-        Ok(self)
-    }
-
-    pub fn build(&mut self) -> Result<OptionsProvider, String> {
-        let mut resolved_imports: HashSet<String> = HashSet::new();
-        for (canonical_feature_name, imports_for_feature) in &self.imports {
-            if resolved_imports.insert(canonical_feature_name.clone()) {
-                // Check for infinite loops by starting a path here.
-                let mut features_in_resolution_path: HashSet<String> =
-                    HashSet::from([canonical_feature_name.clone()]);
-                resolve_imports(
-                    canonical_feature_name,
-                    imports_for_feature,
-                    &mut resolved_imports,
-                    &mut features_in_resolution_path,
-                    &self.aliases,
-                    &self.imports,
-                    &mut self.sources,
-                )?;
-            }
-        }
-
-        Ok(OptionsProvider::new(
-            &self.aliases,
-            &self.features,
-            &self.sources,
-        ))
-    }
-
     fn process_entry(path: &Path, directory: &Path) -> Option<Result<LoadingResult, String>> {
         // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
         if !path.is_file() || path.extension().filter(|e| *e == "md").is_some() {
@@ -303,4 +257,55 @@ impl OptionsProviderBuilder {
             .insert(canonical_feature_name.clone(), info.metadata.clone());
         Ok(())
     }
+}
+
+impl OptionsProviderBuilderTrait for OptionsProviderBuilder {
+    fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+        let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
+            .into_iter()
+            .par_bridge()
+            .filter_map(|entry| {
+                Self::process_entry(
+                    entry
+                        .unwrap_or_else(|_| {
+                            panic!("Error walking directory: {}", directory.display())
+                        })
+                        .path(),
+                    directory,
+                )
+            })
+            .collect();
+        for loading_result in loading_results {
+            self.process_loading_result(&loading_result)?;
+        }
+
+        Ok(self)
+    }
+
+    fn build(&mut self) -> Result<impl OptionsProviderTrait, String> {
+        let mut resolved_imports: HashSet<String> = HashSet::new();
+        for (canonical_feature_name, imports_for_feature) in &self.imports {
+            if resolved_imports.insert(canonical_feature_name.clone()) {
+                // Check for infinite loops by starting a path here.
+                let mut features_in_resolution_path: HashSet<String> =
+                    HashSet::from([canonical_feature_name.clone()]);
+                resolve_imports(
+                    canonical_feature_name,
+                    imports_for_feature,
+                    &mut resolved_imports,
+                    &mut features_in_resolution_path,
+                    &self.aliases,
+                    &self.imports,
+                    &mut self.sources,
+                )?;
+            }
+        }
+
+        Ok(OptionsProvider::new(
+            &self.aliases,
+            &self.features,
+            &self.sources,
+        ))
+    }
+
 }
