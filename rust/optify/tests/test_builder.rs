@@ -1,6 +1,5 @@
 use optify::{
-    builder::OptionsProviderBuilder, builder::OptionsProviderBuilderTrait,
-    provider::OptionsProviderTrait,
+    builder::OptionsProviderBuilder, builder::OptionsRegistryBuilder, provider::OptionsRegistry,
 };
 
 #[test]

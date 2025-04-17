@@ -1,10 +1,10 @@
 use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
-use optify::builder::OptionsProviderBuilderTrait;
+use optify::builder::OptionsRegistryBuilder;
 use optify::convert_to_str_slice;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
-use optify::provider::OptionsProviderTrait;
+use optify::provider::OptionsRegistry;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 

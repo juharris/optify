@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 
-use optify::builder::{OptionsProviderBuilder, OptionsProviderBuilderTrait};
+use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
 use optify::convert_to_str_slice;
-use optify::provider::{OptionsProvider, OptionsProviderTrait};
+use optify::provider::{OptionsProvider, OptionsRegistry};
 
 #[pyclass(name = "OptionsProviderBuilder")]
 // TODO Try to use inheritance, maybe?

@@ -1,6 +1,6 @@
 use optify::{
-    builder::{OptionsProviderBuilder, OptionsProviderBuilderTrait},
-    provider::{OptionsProvider, OptionsProviderTrait},
+    builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
+    provider::{OptionsProvider, OptionsRegistry},
 };
 use std::sync::OnceLock;
 

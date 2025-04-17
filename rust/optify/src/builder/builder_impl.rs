@@ -3,7 +3,7 @@ use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
-use crate::builder::OptionsProviderBuilderTrait;
+use crate::builder::OptionsRegistryBuilder;
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
@@ -258,7 +258,7 @@ impl OptionsProviderBuilder {
     }
 }
 
-impl OptionsProviderBuilderTrait<OptionsProvider> for OptionsProviderBuilder {
+impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()

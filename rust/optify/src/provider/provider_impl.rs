@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::schema::metadata::OptionsMetadata;
 
-use super::OptionsProviderTrait;
+use super::OptionsRegistry;
 
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
@@ -86,7 +86,7 @@ impl OptionsProvider {
     }
 }
 
-impl OptionsProviderTrait for OptionsProvider {
+impl OptionsRegistry for OptionsProvider {
     fn get_all_options(
         &self,
         feature_names: &[&str],
