@@ -1,15 +1,18 @@
-use optify::{builder::OptionsProviderBuilder, OptionsProviderBuilderTrait, OptionsProviderTrait};
+use optify::{
+    builder::OptionsProviderBuilder, OptionsProvider, OptionsProviderBuilderTrait,
+    OptionsProviderTrait,
+};
 use std::sync::OnceLock;
 
-static PROVIDER: OnceLock<Box<dyn OptionsProviderTrait + Send + Sync>> = OnceLock::new();
+static PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 
-fn get_provider() -> &'static Box<dyn OptionsProviderTrait + Send + Sync> {
+fn get_provider() -> &'static OptionsProvider {
     PROVIDER.get_or_init(|| {
         let path = std::path::Path::new("../../tests/test_suites/simple/configs");
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(path).unwrap();
-        let provider = builder.build().unwrap();
-        Box::new(provider)
+        
+        builder.build().unwrap()
     })
 }
 
@@ -17,7 +20,7 @@ fn get_provider() -> &'static Box<dyn OptionsProviderTrait + Send + Sync> {
 fn test_provider_get_canonical_feature_names() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let canonical_feature_names =
-        provider.get_canonical_feature_names(&vec!["a", "b", "feature_A"])?;
+        provider.get_canonical_feature_names(&["a", "b", "feature_A"])?;
     assert_eq!(
         canonical_feature_names,
         vec!["feature_A", "feature_B/initial", "feature_A"]

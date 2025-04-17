@@ -3,11 +3,10 @@ use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
+use crate::builder_trait::OptionsProviderBuilderTrait;
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
-use crate::builder_trait::OptionsProviderBuilderTrait;
-use crate::provider_trait::OptionsProviderTrait;
 
 type Imports = HashMap<String, Vec<String>>;
 
@@ -259,7 +258,7 @@ impl OptionsProviderBuilder {
     }
 }
 
-impl OptionsProviderBuilderTrait for OptionsProviderBuilder {
+impl OptionsProviderBuilderTrait<OptionsProvider> for OptionsProviderBuilder {
     fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
@@ -282,7 +281,7 @@ impl OptionsProviderBuilderTrait for OptionsProviderBuilder {
         Ok(self)
     }
 
-    fn build(&mut self) -> Result<impl OptionsProviderTrait, String> {
+    fn build(&mut self) -> Result<OptionsProvider, String> {
         let mut resolved_imports: HashSet<String> = HashSet::new();
         for (canonical_feature_name, imports_for_feature) in &self.imports {
             if resolved_imports.insert(canonical_feature_name.clone()) {
@@ -307,5 +306,4 @@ impl OptionsProviderBuilderTrait for OptionsProviderBuilder {
             &self.sources,
         ))
     }
-
 }

@@ -1,6 +1,9 @@
 use serde_json::Value;
 
-use crate::{provider::{CacheOptions, Features, GetOptionsPreferences}, schema::metadata::OptionsMetadata};
+use crate::{
+    provider::{CacheOptions, Features, GetOptionsPreferences},
+    schema::metadata::OptionsMetadata,
+};
 
 /// Trait defining the core functionality for an options provider
 pub trait OptionsProviderTrait: Clone {
@@ -20,10 +23,7 @@ pub trait OptionsProviderTrait: Clone {
     //
     // @param feature_names The names of aliases or features.
     // @return The canonical feature names.
-    fn get_canonical_feature_names(
-        &self,
-        feature_names: &[&str],
-    ) -> Result<Vec<&String>, String>;
+    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<&String>, String>;
 
     fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata>;
 
@@ -42,4 +42,4 @@ pub trait OptionsProviderTrait: Clone {
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<Value, String>;
-} 
+}

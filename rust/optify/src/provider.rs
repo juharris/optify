@@ -28,7 +28,6 @@ pub struct OptionsProvider {
     sources: Sources,
 }
 
-
 impl OptionsProvider {
     pub(crate) fn new(aliases: &Aliases, features: &Features, sources: &Sources) -> Self {
         OptionsProvider {
@@ -112,10 +111,7 @@ impl OptionsProviderTrait for OptionsProvider {
         }
     }
 
-    fn get_canonical_feature_names(
-        &self,
-        feature_names: &[&str],
-    ) -> Result<Vec<&String>, String> {
+    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<&String>, String> {
         Ok(feature_names
             .iter()
             .map(|name| {
@@ -162,6 +158,4 @@ impl OptionsProviderTrait for OptionsProvider {
             Err(e) => Err(e.to_string()),
         }
     }
-
-  
 }
