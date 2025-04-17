@@ -4,7 +4,7 @@
 ](https://pypi.org/project/optify)
 
 ⚠️ Development in progress ⚠️\
-APIs are not final and will change, for example, interfaces with be used.
+APIs are not final and may change, for example, interfaces may be used and names may change.
 This is just meant to be minimal to get started and help build a Python library.
 
 See the [homepage] for details.
