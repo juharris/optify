@@ -21,6 +21,7 @@ pub struct GetOptionsPreferences {
 
 pub struct CacheOptions {}
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! convert_to_str_slice {
     ($vec:expr) => {
