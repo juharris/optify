@@ -38,7 +38,7 @@ impl OptionsProvider {
     }
     fn _get_entire_config(
         &self,
-        feature_names: &Vec<String>,
+        feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
@@ -53,7 +53,7 @@ impl OptionsProvider {
         for feature_name in feature_names {
             // Check for an alias.
             // Canonical feature names are also included as keys in the aliases map.
-            let mut canonical_feature_name = feature_name;
+            let mut canonical_feature_name = *feature_name;
             if !skip_feature_name_conversion {
                 canonical_feature_name = self.get_canonical_feature_name(feature_name)?;
             }
@@ -79,7 +79,7 @@ impl OptionsProvider {
 impl OptionsProviderTrait for OptionsProvider {
     fn get_all_options(
         &self,
-        feature_names: &Vec<String>,
+        feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
@@ -125,26 +125,22 @@ impl OptionsProviderTrait for OptionsProvider {
         self.features.get(canonical_feature_name)
     }
 
-    fn get_features(&self) -> Vec<String> {
-        self.sources.keys().map(|s| s.to_owned()).collect()
+    fn get_features(&self) -> Vec<&str> {
+        self.sources.keys().map(|s| s.as_str()).collect()
     }
 
     fn get_features_with_metadata(&self) -> &Features {
         &self.features
     }
 
-    fn get_options(
-        &self,
-        key: &str,
-        feature_names: &Vec<String>,
-    ) -> Result<serde_json::Value, String> {
+    fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<serde_json::Value, String> {
         self.get_options_with_preferences(key, feature_names, &None, &None)
     }
 
     fn get_options_with_preferences(
         &self,
         key: &str,
-        feature_names: &Vec<String>,
+        feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {

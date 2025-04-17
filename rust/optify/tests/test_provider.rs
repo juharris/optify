@@ -11,7 +11,6 @@ fn get_provider() -> &'static OptionsProvider {
         let path = std::path::Path::new("../../tests/test_suites/simple/configs");
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(path).unwrap();
-        
         builder.build().unwrap()
     })
 }
@@ -19,8 +18,7 @@ fn get_provider() -> &'static OptionsProvider {
 #[test]
 fn test_provider_get_canonical_feature_names() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
-    let canonical_feature_names =
-        provider.get_canonical_feature_names(&["a", "b", "feature_A"])?;
+    let canonical_feature_names = provider.get_canonical_feature_names(&["a", "b", "feature_A"])?;
     assert_eq!(
         canonical_feature_names,
         vec!["feature_A", "feature_B/initial", "feature_A"]
@@ -32,7 +30,7 @@ fn test_provider_get_canonical_feature_names() -> Result<(), Box<dyn std::error:
 #[test]
 fn test_provider_get_entire_config() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
-    let feature_names: Vec<String> = vec!["a".to_string()];
+    let feature_names: Vec<&str> = vec!["a"];
     let entire_config = provider.get_all_options(&feature_names, &None, &None)?;
     let key = "myConfig";
     let opts = provider.get_options(key, &feature_names)?;
