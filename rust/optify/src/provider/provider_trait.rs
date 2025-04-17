@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// Trait defining the core functionality for an options provider
-pub trait OptionsRegistry: Clone {
+pub trait OptionsRegistry {
     /// Gets all options for the specified feature names
     fn get_all_options(
         &self,
