@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::OptionsProviderTrait;
+use crate::provider::OptionsProviderTrait;
 
 /// Trait defining the core functionality for building an options provider.
 ///

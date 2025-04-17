@@ -3,7 +3,7 @@ use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
-use crate::builder_trait::OptionsProviderBuilderTrait;
+use crate::builder::OptionsProviderBuilderTrait;
 use crate::provider::{Aliases, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;

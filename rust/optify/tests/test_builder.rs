@@ -1,4 +1,7 @@
-use optify::{builder::OptionsProviderBuilder, OptionsProviderBuilderTrait, OptionsProviderTrait};
+use optify::{
+    builder::OptionsProviderBuilder, builder::OptionsProviderBuilderTrait,
+    provider::OptionsProviderTrait,
+};
 
 #[test]
 fn test_builder_circular_imports() -> Result<(), Box<dyn std::error::Error>> {

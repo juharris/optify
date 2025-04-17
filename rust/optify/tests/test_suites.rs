@@ -1,6 +1,9 @@
 use std::fs;
 
-use optify::{builder::OptionsProviderBuilder, OptionsProviderBuilderTrait, OptionsProviderTrait};
+use optify::{
+    builder::OptionsProviderBuilder, builder::OptionsProviderBuilderTrait,
+    provider::OptionsProviderTrait,
+};
 
 fn test_suite(path: &std::path::Path) {
     let mut builder = OptionsProviderBuilder::new();

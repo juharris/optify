@@ -1,7 +1,9 @@
 use config::{self};
 use std::collections::HashMap;
 
-use crate::{schema::metadata::OptionsMetadata, OptionsProviderTrait};
+use crate::schema::metadata::OptionsMetadata;
+
+use super::OptionsProviderTrait;
 
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
