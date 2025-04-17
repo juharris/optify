@@ -46,6 +46,7 @@ impl OptionsProvider {
             sources: sources.clone(),
         }
     }
+
     fn _get_entire_config(
         &self,
         feature_names: &[&str],

@@ -1,8 +1,7 @@
 use std::fs;
 
 use optify::{
-    builder::OptionsProviderBuilder, builder::OptionsRegistryBuilder,
-    provider::OptionsRegistry,
+    builder::OptionsProviderBuilder, builder::OptionsRegistryBuilder, provider::OptionsRegistry,
 };
 
 fn test_suite(path: &std::path::Path) {
