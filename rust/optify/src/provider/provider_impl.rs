@@ -21,6 +21,13 @@ pub struct GetOptionsPreferences {
 
 pub struct CacheOptions {}
 
+#[macro_export]
+macro_rules! convert_to_str_slice {
+    ($vec:expr) => {
+        $vec.iter().map(|s| s.as_str()).collect::<Vec<&str>>()
+    };
+}
+
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 #[derive(Clone)]

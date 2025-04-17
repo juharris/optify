@@ -1,7 +1,8 @@
 use pyo3::prelude::*;
 
-use optify::builder::OptionsProviderBuilder;
-use optify::provider::OptionsProvider;
+use optify::builder::{OptionsProviderBuilder, OptionsProviderBuilderTrait};
+use optify::convert_to_str_slice;
+use optify::provider::{OptionsProvider, OptionsProviderTrait};
 
 #[pyclass(name = "OptionsProviderBuilder")]
 // TODO Try to use inheritance, maybe?
@@ -13,12 +14,17 @@ struct PyOptionsProvider(OptionsProvider);
 #[pymethods]
 impl PyOptionsProvider {
     fn features(&self) -> Vec<String> {
-        self.0.get_features()
+        self.0
+            .get_features()
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> String {
+        let _feature_names = convert_to_str_slice!(feature_names);
         self.0
-            .get_options(key, &feature_names)
+            .get_options(key, &_feature_names)
             .expect("key and feature names should be valid")
             .to_string()
     }

@@ -1,6 +1,7 @@
 use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsProviderBuilderTrait;
+use optify::convert_to_str_slice;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
 use optify::provider::OptionsProviderTrait;
@@ -31,12 +32,6 @@ struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
 fn convert_metadata(metadata: &OptionsMetadata) -> String {
     serde_json::to_string(metadata).unwrap()
-}
-
-macro_rules! convert_to_str_slice {
-    ($vec:expr) => {
-        $vec.iter().map(|s| s.as_str()).collect::<Vec<&str>>()
-    };
 }
 
 impl WrappedOptionsProvider {
