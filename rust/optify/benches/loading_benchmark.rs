@@ -1,5 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use optify::builder::OptionsProviderBuilder;
+use optify::builder::OptionsRegistryBuilder;
 use std::fs;
 use std::io::Write;
 use std::path::Path;

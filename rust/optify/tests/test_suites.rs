@@ -1,6 +1,8 @@
 use std::fs;
 
-use optify::builder::OptionsProviderBuilder;
+use optify::{
+    builder::OptionsProviderBuilder, builder::OptionsRegistryBuilder, provider::OptionsRegistry,
+};
 
 fn test_suite(path: &std::path::Path) {
     let mut builder = OptionsProviderBuilder::new();
@@ -19,8 +21,8 @@ fn test_suite(path: &std::path::Path) {
             .as_array()
             .unwrap()
             .iter()
-            .map(|v| v.as_str().unwrap().to_string())
-            .collect();
+            .map(|v| v.as_str().unwrap())
+            .collect::<Vec<&str>>();
         expected_options.iter().for_each(|(key, expected_value)| {
             let config = provider.get_options(key, &features);
             if let Err(e) = &config {

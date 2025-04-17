@@ -1,7 +1,10 @@
 use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
+use optify::builder::OptionsRegistryBuilder;
+use optify::convert_to_str_slice;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
+use optify::provider::OptionsRegistry;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 
@@ -40,10 +43,11 @@ impl WrappedOptionsProvider {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
+        let _features = convert_to_str_slice!(feature_names);
         Ok(self
             .0
             .borrow()
-            .get_all_options(&feature_names, &None, &_preferences)
+            .get_all_options(&_features, &None, &_preferences)
             .expect("features and preferences should be valid")
             .to_string())
     }
@@ -78,7 +82,12 @@ impl WrappedOptionsProvider {
     }
 
     fn get_features(&self) -> Vec<String> {
-        self.0.borrow().get_features()
+        self.0
+            .borrow()
+            .get_features()
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
@@ -88,9 +97,10 @@ impl WrappedOptionsProvider {
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
     fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
+        let _features = convert_to_str_slice!(feature_names);
         self.0
             .borrow()
-            .get_options_with_preferences(&key, &feature_names, &None, &None)
+            .get_options_with_preferences(&key, &_features, &None, &None)
             .expect("key and feature names should be valid")
             .to_string()
     }
@@ -102,9 +112,10 @@ impl WrappedOptionsProvider {
         preferences: &MutGetOptionsPreferences,
     ) -> String {
         let _preferences = convert_preferences(preferences);
+        let _features = convert_to_str_slice!(feature_names);
         self.0
             .borrow()
-            .get_options_with_preferences(&key, &feature_names, &None, &_preferences)
+            .get_options_with_preferences(&key, &_features, &None, &_preferences)
             .expect("key, feature names, and preferences should be valid")
             .to_string()
     }

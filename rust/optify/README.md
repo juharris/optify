@@ -11,7 +11,7 @@ See [tests](../../tests/) for examples and tests for different implementations o
 See the root [README.md](../../README.md) for more information and examples.
 
 ⚠️ Development in progress ⚠️\
-APIs are not final and will change, for example, interfaces with be used.
+APIs are not final and may change, for example, names may change.
 This is just meant to be minimal to get started and help build Python and Ruby libraries.
 
 ## Testing

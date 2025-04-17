@@ -1,4 +1,6 @@
-use optify::builder::OptionsProviderBuilder;
+use optify::{
+    builder::OptionsProviderBuilder, builder::OptionsRegistryBuilder, provider::OptionsRegistry,
+};
 
 #[test]
 fn test_builder_circular_imports() -> Result<(), Box<dyn std::error::Error>> {
@@ -64,7 +66,7 @@ fn test_builder_name_with_no_metadata() -> Result<(), Box<dyn std::error::Error>
         .get_feature_metadata("subdir/a")
         .expect("metadata should be found");
     assert_eq!(metadata.name, Some("subdir/a".to_string()));
-    let opts = provider.get_options("wtv", &vec!["subdir/a".to_string()])?;
+    let opts = provider.get_options("wtv", &["subdir/a"])?;
     assert_eq!(opts.as_i64(), Some(3));
     Ok(())
 }

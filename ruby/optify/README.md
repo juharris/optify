@@ -1,10 +1,6 @@
 # Optify Rust Bindings for Ruby
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 
-⚠️ Development in progress ⚠️\
-APIs are not final and will change, for example, interfaces with be used.
-This is just meant to be minimal to get started and help build a Ruby library.
-
 ## Usage
 
 The gem is called `optify-config`, but we would like to call it just `optify`, but that name was taken by a gem that has not been updated since 2012.
