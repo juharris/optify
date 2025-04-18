@@ -56,7 +56,7 @@ impl WrappedOptionsProvider {
         self.0
             .borrow()
             .get_canonical_feature_name(&feature_name)
-            .unwrap()
+            .expect("feature_name should be valid")
             .to_owned()
     }
 
