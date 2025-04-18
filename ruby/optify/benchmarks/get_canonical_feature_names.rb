@@ -24,17 +24,29 @@ feature_trials = [
    'a', 'B']
 ]
 
+#: (Optify::OptionsProvider, Array[String]) -> Array[String]
+def get_canonical_feature_names_loop(provider, feature_names)
+  feature_names.map do |feature_name|
+    provider.get_canonical_feature_name(feature_name)
+  end
+end
+
 Benchmark.bm do |x|
   feature_trials.each do |feature_names|
-    x.report("get_canonical_feature_names #{feature_names}") do
+    # Warm up.
+    100.times do
+      provider.get_canonical_feature_names(feature_names)
+    end
+
+    x.report("get_canonical_feature_names (length: #{feature_names.length}) #{feature_names}") do
       N.times do
-        provider.get_canonical_feature_names(feature_names)
+        _new_names = provider.get_canonical_feature_names(feature_names)
       end
     end
 
-    x.report("get_canonical_feature_name in loop #{feature_names}") do
+    x.report("get_canonical_feature_name in loop (length: #{feature_names.length}) #{feature_names}") do
       N.times do
-        _new_names = feature_names.map { |feature_name| provider.get_canonical_feature_name(feature_name) }
+        _new_names = get_canonical_feature_names_loop(provider, feature_names)
       end
     end
   end

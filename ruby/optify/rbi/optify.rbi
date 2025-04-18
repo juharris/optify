@@ -76,6 +76,7 @@ module Optify
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
     # Canonical feature names map to themselves.
+    # This implementation may do an optimization for small arrays.
     #
     # @param feature_names The names of aliases or features.
     # @return The canonical feature names.
@@ -134,6 +135,15 @@ module Optify
     def init; end
 
     private
+
+    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+    # Canonical feature names map to themselves.
+    # This implementation calls the Rust implementation directly.
+    #
+    # @param feature_names The names of aliases or features.
+    # @return The canonical feature names.
+    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
+    def _get_canonical_feature_names(feature_names); end
 
     # @return The metadata for the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
