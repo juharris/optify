@@ -59,6 +59,7 @@ class Optify::OptionsProvider
 
   # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
   # Canonical feature names map to themselves.
+  # This implementation may do an optimization for small arrays.
   #
   # @param feature_names The names of aliases or features.
   # @return The canonical feature names.
@@ -81,6 +82,14 @@ class Optify::OptionsProvider
   # (Optional) Eagerly initializes the cache.
   # @return [OptionsProvider] `self`.
   def init: () -> OptionsProvider
+
+  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+  # Canonical feature names map to themselves.
+  # This implementation calls the Rust implementation directly.
+  #
+  # @param feature_names The names of aliases or features.
+  # @return The canonical feature names.
+  def _get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
 
   # @return The metadata for the feature.
   def get_feature_metadata_json: (String canonical_feature_name) -> String?

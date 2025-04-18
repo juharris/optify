@@ -19,6 +19,18 @@ module Optify
   class OptionsProvider
     extend T::Sig
 
+    #: (Array[String] feature_names) -> Array[String]
+    def get_canonical_feature_names(feature_names)
+      # Try to optimize a typical case where there are just a few features.
+      # Ideally in production, a single feature that imports many other features is used for the most common scenario.
+      # Benchmarks show that it is faster to use a loop than to call the Rust implementation which involves making a `Vec<String>` and returning a `Vec<String>`.
+      if feature_names.length < 4
+        feature_names.map { |feature_name| get_canonical_feature_name(feature_name) }
+      else
+        _get_canonical_feature_names(feature_names)
+      end
+    end
+
     #: -> Hash[String, OptionsMetadata]
     def features_with_metadata
       return @features_with_metadata if @features_with_metadata
