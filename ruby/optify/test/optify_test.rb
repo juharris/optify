@@ -56,10 +56,14 @@ class OptifyTest < Test::Unit::TestCase
     canonical_feature_names = provider.get_canonical_feature_names(feature_names)
     assert_equal(%w[feature_A feature_B/initial feature_A], canonical_feature_names)
 
+    feature_names = %w[A B feature_A a b feature_B/initial a B fEaTuRe_A]
+    canonical_feature_names = provider.get_canonical_feature_names(feature_names)
+    assert_equal(%w[feature_A feature_B/initial feature_A feature_A feature_B/initial feature_B/initial feature_A feature_B/initial feature_A], canonical_feature_names)
+
     err = assert_raise do
       provider.get_canonical_feature_names(%w[error])
     end
-    assert_equal('given names should be valid: "The given feature \"error\" was not found."', err.message)
+    assert_equal('feature_name should be valid: "The given feature \"error\" was not found."', err.message)
 
     names = feature_names.map { |name| provider.get_canonical_feature_name(name) }
     assert_equal(canonical_feature_names, names)
