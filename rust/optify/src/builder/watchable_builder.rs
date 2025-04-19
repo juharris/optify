@@ -37,19 +37,23 @@ impl WatchableOptionsProviderBuilder {
     }
 }
 
+// TODO Move to another file.
 pub struct WatchableOptionsProvider {
     current_provider: Arc<RwLock<OptionsProvider>>,
     watched_directories: Vec<PathBuf>,
+    // The watcher needs to be held to continue watching files for changes.
     #[allow(dead_code)]
     watcher: notify::RecommendedWatcher,
 }
 
 impl WatchableOptionsProvider {
     fn new(watched_directories: Vec<PathBuf>) -> Self {
+        // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut watcher =
             notify::recommended_watcher(move |res: Result<Event, notify::Error>| match res {
                 Ok(event) => {
+                    // Seems like no other types of events are needed as the tests show that we can handle a few cases, but let's add more tests, like adding a subdirectory.
                     if let EventKind::Modify(_) = event.kind {
                         tx.send(event.paths).unwrap();
                     }
@@ -58,12 +62,10 @@ impl WatchableOptionsProvider {
             })
             .unwrap();
 
-        // Set up initial watches first
         for dir in &watched_directories {
             watcher.watch(dir, RecursiveMode::Recursive).unwrap();
         }
 
-        // Then build the initial provider
         let mut builder = OptionsProviderBuilder::new();
         for dir in &watched_directories {
             builder.add_directory(dir).unwrap();
@@ -76,24 +78,52 @@ impl WatchableOptionsProvider {
             watcher,
         };
 
-        // Spawn a thread to handle file changes
         let current_provider = self_.current_provider.clone();
         let watched_directories = self_.watched_directories.clone();
         std::thread::spawn(move || {
             for _paths in rx {
-                // When files change, rebuild the provider
-                let mut builder = OptionsProviderBuilder::new();
-                for dir in &watched_directories {
-                    if let Err(e) = builder.add_directory(dir) {
-                        println!("Error rebuilding provider: {}", e);
-                        continue;
+                println!(
+                    "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
+                    _paths
+                );
+                let result = std::panic::catch_unwind(|| {
+                    let mut skip_rebuild = false;
+                    let mut builder = OptionsProviderBuilder::new();
+                    for dir in &watched_directories {
+                        if let Err(e) = builder.add_directory(dir) {
+                            println!("\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m", e);
+                            skip_rebuild = true;
+                            break;
+                        }
                     }
-                }
-                if let Ok(new_provider) = builder.build() {
-                    // Atomically swap the provider
-                    if let Ok(mut provider) = current_provider.write() {
-                        *provider = new_provider;
+
+                    if skip_rebuild {
+                        // Ignore errors because the developer might still be changing the files.
+                        // TODO If there are still errors after a few minutes, then consider panicking.
+                        return;
                     }
+
+                    match builder.build() {
+                        Ok(new_provider) => match current_provider.write() {
+                            Ok(mut provider) => {
+                                *provider = new_provider;
+                                println!("\x1b[32m[optify] Successfully rebuilt the OptionsProvider.\x1b[0m");
+                            }
+                            Err(err) => {
+                                println!(
+                                    "\x1b[31m[optify] Error rebuilding provider: {}\nWill not change the provider until the files are fixed.\x1b[0m",
+                                    err
+                                );
+                            }
+                        },
+                        Err(err) => {
+                            println!("\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m", err);
+                        }
+                    }
+                });
+
+                if let Err(_) = result {
+                    println!("\x1b[31m[optify] Error rebuilding the provider. Will not change the provider until the files are fixed.\x1b[0m");
                 }
             }
         });
