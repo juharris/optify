@@ -30,8 +30,8 @@ impl MutGetOptionsPreferences {
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
-fn convert_metadata(metadata: &OptionsMetadata) -> String {
-    serde_json::to_string(metadata).unwrap()
+fn convert_metadata(metadata: OptionsMetadata) -> String {
+    serde_json::to_string(&metadata).unwrap()
 }
 
 impl WrappedOptionsProvider {
@@ -89,7 +89,7 @@ impl WrappedOptionsProvider {
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
     fn get_features_with_metadata_json(&self) -> String {
-        serde_json::to_string(self.0.borrow().get_features_with_metadata()).unwrap()
+        serde_json::to_string(&self.0.borrow().get_features_with_metadata()).unwrap()
     }
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
