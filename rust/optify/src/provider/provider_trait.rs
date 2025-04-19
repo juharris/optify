@@ -16,20 +16,20 @@ pub trait OptionsRegistry {
     ) -> Result<Value, String>;
 
     /// Gets the canonical feature name for a given feature name or alias
-    fn get_canonical_feature_name(&self, feature_name: &str) -> Result<&String, String>;
+    fn get_canonical_feature_name(&self, feature_name: &str) -> Result<String, String>;
 
     // Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
     // Canonical feature names map to themselves.
     //
     // @param feature_names The names of aliases or features.
     // @return The canonical feature names.
-    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<&String>, String>;
+    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<String>, String>;
 
-    fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata>;
+    fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<OptionsMetadata>;
 
-    fn get_features(&self) -> Vec<&str>;
+    fn get_features(&self) -> Vec<String>;
 
-    fn get_features_with_metadata(&self) -> &Features;
+    fn get_features_with_metadata(&self) -> Features;
 
     /// Gets options for a specific key and feature names
     fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<Value, String>;
