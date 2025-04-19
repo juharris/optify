@@ -122,7 +122,7 @@ impl WatchableOptionsProvider {
                     }
                 });
 
-                if let Err(_) = result {
+                if result.is_err() {
                     println!("\x1b[31m[optify] Error rebuilding the provider. Will not change the provider until the files are fixed.\x1b[0m");
                 }
             }
