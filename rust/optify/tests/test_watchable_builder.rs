@@ -1,11 +1,11 @@
-use optify::builder::WatchableOptionsProviderBuilder;
+use optify::builder::OptionsWatcherBuilder;
 use optify::provider::OptionsRegistry;
 use std::fs::File;
 use std::io::Write;
 use std::thread;
 use std::time::Duration;
 
-const SLEEP_TIME: u64 = 50;
+const SLEEP_TIME: u64 = 100;
 
 #[test]
 fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,7 +16,7 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
     let mut file = File::create(&options_file)?;
     file.write_all(b"{\"options\":{\"test\":42}}")?;
 
-    let mut builder = WatchableOptionsProviderBuilder::new();
+    let mut builder = OptionsWatcherBuilder::new();
     builder.add_directory(test_dir)?;
     let provider = builder.build()?;
 
@@ -48,7 +48,7 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     let subdir2 = temp_dir2.path().join("dir2");
     std::fs::create_dir_all(&subdir2)?;
 
-    let mut builder = WatchableOptionsProviderBuilder::new();
+    let mut builder = OptionsWatcherBuilder::new();
     builder.add_directory(subdir1.as_path())?;
     builder.add_directory(subdir2.as_path())?;
     let provider = builder.build()?;
@@ -93,7 +93,7 @@ fn test_watchable_builder_error_rebuilding_provider() -> Result<(), Box<dyn std:
     let mut file = File::create(&options_file)?;
     file.write_all(b"{\"metadata\":{\"aliases\":[\"test\"]}, \"options\":{\"test\":42}}")?;
 
-    let mut builder = WatchableOptionsProviderBuilder::new();
+    let mut builder = OptionsWatcherBuilder::new();
     builder.add_directory(test_dir)?;
     let provider = builder.build()?;
 

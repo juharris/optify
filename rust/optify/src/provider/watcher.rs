@@ -1,5 +1,5 @@
 use notify::{Event, EventKind, RecursiveMode, Watcher};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{mpsc::channel, Arc, RwLock};
 
 use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
@@ -8,37 +8,7 @@ use crate::provider::{
 };
 use crate::schema::metadata::OptionsMetadata;
 
-pub struct WatchableOptionsProviderBuilder {
-    watched_directories: Vec<PathBuf>,
-}
-
-impl Default for WatchableOptionsProviderBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl WatchableOptionsProviderBuilder {
-    pub fn new() -> Self {
-        Self {
-            watched_directories: Vec::new(),
-        }
-    }
-
-    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
-        self.watched_directories.push(directory.to_path_buf());
-        Ok(self)
-    }
-
-    pub fn build(&mut self) -> Result<WatchableOptionsProvider, String> {
-        Ok(WatchableOptionsProvider::new(
-            self.watched_directories.clone(),
-        ))
-    }
-}
-
-// TODO Move to another file.
-pub struct WatchableOptionsProvider {
+pub struct OptionsWatcher {
     current_provider: Arc<RwLock<OptionsProvider>>,
     watched_directories: Vec<PathBuf>,
     // The watcher needs to be held to continue watching files for changes.
@@ -46,8 +16,8 @@ pub struct WatchableOptionsProvider {
     watcher: notify::RecommendedWatcher,
 }
 
-impl WatchableOptionsProvider {
-    fn new(watched_directories: Vec<PathBuf>) -> Self {
+impl OptionsWatcher {
+    pub(crate) fn new(watched_directories: Vec<PathBuf>) -> Self {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut watcher =
@@ -132,7 +102,7 @@ impl WatchableOptionsProvider {
     }
 }
 
-impl OptionsRegistry for WatchableOptionsProvider {
+impl OptionsRegistry for OptionsWatcher {
     fn get_all_options(
         &self,
         feature_names: &[&str],
