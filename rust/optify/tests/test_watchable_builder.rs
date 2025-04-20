@@ -5,7 +5,7 @@ use std::io::Write;
 use std::thread;
 use std::time::Duration;
 
-const SLEEP_TIME: u64 = 100;
+const SLEEP_TIME: u64 = 50;
 
 #[test]
 fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>> {
@@ -72,10 +72,28 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
 
     // Remove the first file.
     std::fs::remove_file(&file1)?;
+
+    // Some operating systems need more time to actually remove the file.
+    let start_time = std::time::Instant::now();
+    let max_sleep_time = 3000;
+    // We need to sleep for a little bit to let the watcher process the changes.
     thread::sleep(Duration::from_millis(SLEEP_TIME));
+    while file1.exists() {
+        thread::sleep(Duration::from_millis(SLEEP_TIME));
+        if start_time.elapsed().as_millis() > max_sleep_time {
+            panic!(
+                "File {} still exists after {}ms",
+                file1.display(),
+                max_sleep_time
+            );
+        }
+    }
 
     let options1 = provider.get_options("test1", &["test1"]);
-    assert!(options1.is_err());
+    assert!(
+        options1.is_err(),
+        "There should be an error because the file was removed."
+    );
     assert_eq!(
         options1.err().unwrap(),
         "The given feature \"test1\" was not found."
