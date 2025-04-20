@@ -30,6 +30,7 @@ impl OptionsWatcherBuilder {
 }
 
 impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
+    /// Add a directory to watch for changes.
     fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
         self.watched_directories.push(directory.to_path_buf());
         Ok(self)

@@ -109,3 +109,76 @@ class Optify::OptionsProviderBuilder
   # @return [OptionsProvider] A newly built `OptionsProvider`.
   def build: () -> OptionsProvider
 end
+
+# Like `OptionsProvider` but also watches for changes to the files and reloads the options.
+class Optify::OptionsWatcher
+  # @return All of the canonical feature names.
+  def features: () -> ::Array[String]
+
+  # @return All of the keys and values for the the features.
+  def features_with_metadata: () -> ::Hash[String, OptionsMetadata]
+
+  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
+  # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+  # Canonical feature names map to themselves.
+  #
+  # @param feature_name The name of an alias or a feature.
+  # @return The canonical feature name.
+  def get_canonical_feature_name: (String feature_name) -> String
+
+  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+  # Canonical feature names map to themselves.
+  # This implementation may do an optimization for small arrays.
+  #
+  # @param feature_names The names of aliases or features.
+  # @return The canonical feature names.
+  def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
+
+  # @return The metadata for the feature.
+  def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
+
+  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+
+  # Fetches options in JSON format based on the provided key and feature names.
+  #
+  # @param key [String] the key to fetch options for.
+  # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+  # @return [String] the options in JSON.
+  def get_options_json: (String key, ::Array[String] feature_names) -> String
+
+  def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
+  # (Optional) Eagerly initializes the cache.
+  # @return [OptionsProvider] `self`.
+  def init: () -> OptionsProvider
+
+  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+  # Canonical feature names map to themselves.
+  # This implementation calls the Rust implementation directly.
+  #
+  # @param feature_names The names of aliases or features.
+  # @return The canonical feature names.
+  def _get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
+
+  # @return The metadata for the feature.
+  def get_feature_metadata_json: (String canonical_feature_name) -> String?
+
+  # @return All of the keys and values for the the features.
+  def features_with_metadata_json: () -> String
+end
+
+# A builder for creating an `OptionsWatcher` instance.
+#
+# This builder is kept separate from the `OptionsProviderBuilder`
+# in order to keep `OptionsProviderBuilder` and `OptionsProvider` as simple and efficient as possible for production use.
+class Optify::OptionsWatcherBuilder
+  # Adds a directory to watch for changes.
+  #
+  # @param path [String] The path of the directory to add.
+  # @return [OptionsWatcherBuilder] `self`.
+  def add_directory: (String path) -> OptionsWatcherBuilder
+
+  # @return [OptionsWatcher] A newly built `OptionsWatcher`.
+  def build: () -> OptionsWatcher
+end
