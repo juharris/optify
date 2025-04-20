@@ -14,6 +14,12 @@ See the root [README.md](../../README.md) for more information and examples.
 APIs are not final and may change, for example, names may change.
 This is just meant to be minimal to get started and help build Python and Ruby libraries.
 
+## How It Works
+
+The [`config`][config] crate (library) is used to help combine configuration files.
+
+Optionally, when working locally, there is support to watch for changes to the configuration files and folders using the [`notify`][notify] crate (library).
+
 ## Testing
 
 Run:
@@ -32,3 +38,6 @@ cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 cargo login
 cargo publish
 ```
+
+[config]: https://crates.io/crates/config
+[notify]: https://crates.io/crates/notify
