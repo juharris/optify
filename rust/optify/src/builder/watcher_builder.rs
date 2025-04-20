@@ -2,6 +2,14 @@ use std::path::{Path, PathBuf};
 
 use crate::provider::OptionsWatcher;
 
+use super::OptionsRegistryBuilder;
+
+/// A builder to use for local development to create an `OptionsWatcher` which changes the underlying `OptionsProvider` when files are changed.
+///
+/// This builder is kept separate from the `OptionsProviderBuilder` in order to keep `OptionsProviderBuilder` and `OptionsProvider` as simple and efficient as possible for production use.
+///
+/// ⚠️ Development in progress ⚠️\
+/// Not truly considered public yet and mainly available to support bindings for other languages.
 pub struct OptionsWatcherBuilder {
     watched_directories: Vec<PathBuf>,
 }
@@ -14,17 +22,19 @@ impl Default for OptionsWatcherBuilder {
 
 impl OptionsWatcherBuilder {
     pub fn new() -> Self {
-        Self {
+        OptionsWatcherBuilder {
             watched_directories: Vec::new(),
         }
     }
+}
 
-    pub fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
+    fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
         self.watched_directories.push(directory.to_path_buf());
         Ok(self)
     }
 
-    pub fn build(&mut self) -> Result<OptionsWatcher, String> {
+    fn build(&mut self) -> Result<OptionsWatcher, String> {
         Ok(OptionsWatcher::new(self.watched_directories.clone()))
     }
 }

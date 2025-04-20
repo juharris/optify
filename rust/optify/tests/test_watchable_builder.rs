@@ -1,4 +1,4 @@
-use optify::builder::OptionsWatcherBuilder;
+use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::OptionsRegistry;
 use std::fs::File;
 use std::io::Write;

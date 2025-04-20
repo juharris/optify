@@ -31,7 +31,8 @@ jobs:
     name: "Build & Test"
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      # FIXME Undo before merging.
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest

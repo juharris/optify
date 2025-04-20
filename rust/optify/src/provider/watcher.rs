@@ -8,6 +8,11 @@ use crate::provider::{
 };
 use crate::schema::metadata::OptionsMetadata;
 
+/// A registry which changes the underlying when files are changed.
+/// This is mainly meant to use for local development.
+///
+/// ⚠️ Development in progress ⚠️\
+/// Not truly considered public yet and mainly available to support bindings for other languages.
 pub struct OptionsWatcher {
     current_provider: Arc<RwLock<OptionsProvider>>,
     watched_directories: Vec<PathBuf>,

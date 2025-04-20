@@ -10,8 +10,10 @@ use crate::schema::metadata::OptionsMetadata;
 
 type Imports = HashMap<String, Vec<String>>;
 
+/// A builder to use in production to create an `OptionsProvider`.
+///
 /// ⚠️ Development in progress ⚠️\
-/// Not truly considered public and mainly available to support bindings for other languages.
+/// Not truly considered public yet and mainly available to support bindings for other languages.
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
