@@ -10,6 +10,7 @@ use super::OptionsRegistryBuilder;
 ///
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public yet and mainly available to support bindings for other languages.
+#[derive(Clone)]
 pub struct OptionsWatcherBuilder {
     watched_directories: Vec<PathBuf>,
 }

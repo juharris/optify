@@ -1,10 +1,12 @@
 use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
+use optify::builder::OptionsWatcherBuilder;
 use optify::convert_to_str_slice;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
 use optify::provider::OptionsRegistry;
+use optify::provider::OptionsWatcher;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 
@@ -155,6 +157,120 @@ impl WrappedOptionsProviderBuilder {
     }
 }
 
+#[wrap(class = "Optify::OptionsWatcher")]
+struct WrappedOptionsWatcher(RefCell<OptionsWatcher>);
+
+impl WrappedOptionsWatcher {
+    fn get_all_options_json(
+        &self,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<String, magnus::Error> {
+        let _preferences = convert_preferences(preferences);
+        let _features = convert_to_str_slice!(feature_names);
+        Ok(self
+            .0
+            .borrow()
+            .get_all_options(&_features, &None, &_preferences)
+            .expect("features and preferences should be valid")
+            .to_string())
+    }
+
+    fn get_canonical_feature_name(&self, feature_name: String) -> String {
+        self.0
+            .borrow()
+            .get_canonical_feature_name(&feature_name)
+            .expect("feature_name should be valid")
+            .to_owned()
+    }
+
+    fn get_canonical_feature_names(&self, feature_names: Vec<String>) -> Vec<String> {
+        let _features = convert_to_str_slice!(feature_names);
+        self.0
+            .borrow()
+            .get_canonical_feature_names(&_features)
+            .expect("given names should be valid")
+            .into_iter()
+            .map(|s| s.to_owned())
+            .collect()
+    }
+
+    fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
+        self.0
+            .borrow()
+            .get_feature_metadata(&canonical_feature_name)
+            .map(convert_metadata)
+    }
+
+    fn get_features(&self) -> Vec<String> {
+        self.0
+            .borrow()
+            .get_features()
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
+
+    fn get_features_with_metadata_json(&self) -> String {
+        serde_json::to_string(&self.0.borrow().get_features_with_metadata()).unwrap()
+    }
+
+    fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
+        let _features = convert_to_str_slice!(feature_names);
+        self.0
+            .borrow()
+            .get_options_with_preferences(&key, &_features, &None, &None)
+            .expect("key and feature names should be valid")
+            .to_string()
+    }
+
+    fn get_options_json_with_preferences(
+        &self,
+        key: String,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> String {
+        let _preferences = convert_preferences(preferences);
+        let _features = convert_to_str_slice!(feature_names);
+        self.0
+            .borrow()
+            .get_options_with_preferences(&key, &_features, &None, &_preferences)
+            .expect("key, feature names, and preferences should be valid")
+            .to_string()
+    }
+}
+
+#[derive(Clone)]
+#[wrap(class = "Optify::OptionsWatcherBuilder")]
+struct WrappedOptionsWatcherBuilder(RefCell<OptionsWatcherBuilder>);
+
+impl WrappedOptionsWatcherBuilder {
+    fn new() -> Self {
+        Self(RefCell::new(OptionsWatcherBuilder::new()))
+    }
+
+    fn add_directory(
+        &self,
+        directory: String,
+    ) -> Result<WrappedOptionsWatcherBuilder, magnus::Error> {
+        let path = std::path::Path::new(&directory);
+        self.0
+            .borrow_mut()
+            .add_directory(path)
+            .expect("directory contents should be valid");
+        Ok(self.clone())
+    }
+
+    fn build(&self) -> WrappedOptionsWatcher {
+        WrappedOptionsWatcher(RefCell::new(
+            self.0
+                .borrow_mut()
+                .build()
+                .expect("OptionsWatcher should be built successfully"),
+        ))
+    }
+}
+
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let module = ruby.define_module("Optify")?;
@@ -170,6 +286,7 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     builder_class.define_method("build", method!(WrappedOptionsProviderBuilder::build, 0))?;
 
     let provider_class = module.define_class("OptionsProvider", ruby.class_object())?;
+    provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
     provider_class.define_method(
         "get_all_options_json",
         method!(WrappedOptionsProvider::get_all_options_json, 2),
@@ -178,21 +295,6 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         "get_canonical_feature_name",
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
     )?;
-    provider_class.define_private_method(
-        "_get_canonical_feature_names",
-        method!(WrappedOptionsProvider::get_canonical_feature_names, 1),
-    )?;
-    provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
-
-    // Private methods for internal use.
-    provider_class.define_private_method(
-        "features_with_metadata_json",
-        method!(WrappedOptionsProvider::get_features_with_metadata_json, 0),
-    )?;
-    provider_class.define_private_method(
-        "get_feature_metadata_json",
-        method!(WrappedOptionsProvider::get_feature_metadata_json, 1),
-    )?;
     provider_class.define_method(
         "get_options_json",
         method!(WrappedOptionsProvider::get_options_json, 2),
@@ -200,6 +302,20 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     provider_class.define_method(
         "get_options_json_with_preferences",
         method!(WrappedOptionsProvider::get_options_json_with_preferences, 3),
+    )?;
+
+    // Private methods for internal use.
+    provider_class.define_private_method(
+        "_get_canonical_feature_names",
+        method!(WrappedOptionsProvider::get_canonical_feature_names, 1),
+    )?;
+    provider_class.define_private_method(
+        "features_with_metadata_json",
+        method!(WrappedOptionsProvider::get_features_with_metadata_json, 0),
+    )?;
+    provider_class.define_private_method(
+        "get_feature_metadata_json",
+        method!(WrappedOptionsProvider::get_feature_metadata_json, 1),
     )?;
 
     let get_options_preferences_class =
@@ -216,6 +332,50 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     get_options_preferences_class.define_method(
         "skip_feature_name_conversion",
         method!(MutGetOptionsPreferences::skip_feature_name_conversion, 0),
+    )?;
+
+    let watcher_builder_class =
+        module.define_class("OptionsWatcherBuilder", ruby.class_object())?;
+    watcher_builder_class
+        .define_singleton_method("new", function!(WrappedOptionsWatcherBuilder::new, 0))?;
+    watcher_builder_class.define_method(
+        "add_directory",
+        method!(WrappedOptionsWatcherBuilder::add_directory, 1),
+    )?;
+    watcher_builder_class
+        .define_method("build", method!(WrappedOptionsWatcherBuilder::build, 0))?;
+
+    let watcher_class = module.define_class("OptionsWatcher", ruby.class_object())?;
+    watcher_class.define_method("features", method!(WrappedOptionsWatcher::get_features, 0))?;
+    watcher_class.define_method(
+        "get_all_options_json",
+        method!(WrappedOptionsWatcher::get_all_options_json, 2),
+    )?;
+    watcher_class.define_method(
+        "get_canonical_feature_name",
+        method!(WrappedOptionsWatcher::get_canonical_feature_name, 1),
+    )?;
+    watcher_class.define_method(
+        "get_options_json",
+        method!(WrappedOptionsWatcher::get_options_json, 2),
+    )?;
+    watcher_class.define_method(
+        "get_options_json_with_preferences",
+        method!(WrappedOptionsWatcher::get_options_json_with_preferences, 3),
+    )?;
+
+    // Private methods for internal use.
+    watcher_class.define_private_method(
+        "features_with_metadata_json",
+        method!(WrappedOptionsWatcher::get_features_with_metadata_json, 0),
+    )?;
+    watcher_class.define_private_method(
+        "_get_canonical_feature_names",
+        method!(WrappedOptionsWatcher::get_canonical_feature_names, 1),
+    )?;
+    watcher_class.define_private_method(
+        "get_feature_metadata_json",
+        method!(WrappedOptionsWatcher::get_feature_metadata_json, 1),
     )?;
 
     Ok(())
