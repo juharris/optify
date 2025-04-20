@@ -28,9 +28,18 @@ impl OptionsWatcher {
         let mut watcher =
             notify::recommended_watcher(move |res: Result<Event, notify::Error>| match res {
                 Ok(event) => {
-                    // Seems like no other types of events are needed as the tests show that we can handle a few cases, but let's add more tests, like adding a subdirectory.
-                    if let EventKind::Modify(_) = event.kind {
-                        tx.send(event.paths).unwrap();
+                    // Handle all event kinds except for Access.
+                    match event.kind {
+                        EventKind::Create(_)
+                        | EventKind::Modify(_)
+                        | EventKind::Remove(_)
+                        | EventKind::Other
+                        | EventKind::Any => {
+                            tx.send(event.paths).unwrap();
+                        }
+                        EventKind::Access(_) => {
+                            // Ignore Access events
+                        }
                     }
                 }
                 Err(e) => println!("watch error: {:?}", e),
