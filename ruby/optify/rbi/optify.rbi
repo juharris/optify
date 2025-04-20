@@ -249,8 +249,8 @@ module Optify
     def get_options_json_with_preferences(key, feature_names, preferences); end
 
     # (Optional) Eagerly initializes the cache.
-    # @return [OptionsProvider] `self`.
-    sig { returns(OptionsProvider) }
+    # @return [OptionsWatcher] `self`.
+    sig { returns(OptionsWatcher) }
     def init; end
 
     private

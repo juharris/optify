@@ -150,8 +150,8 @@ class Optify::OptionsWatcher
   def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
   # (Optional) Eagerly initializes the cache.
-  # @return [OptionsProvider] `self`.
-  def init: () -> OptionsProvider
+  # @return [OptionsWatcher] `self`.
+  def init: () -> OptionsWatcher
 
   # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
   # Canonical feature names map to themselves.
