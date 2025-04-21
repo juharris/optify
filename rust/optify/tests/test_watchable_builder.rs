@@ -52,16 +52,24 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     builder.add_directory(subdir1.as_path())?;
     builder.add_directory(subdir2.as_path())?;
     let provider = builder.build()?;
+    let created_at = provider.last_modified();
 
     let options1 = provider.get_options("test1", &["test1"])?;
     assert_eq!(options1.as_i64(), Some(1));
 
+    assert_eq!(provider.last_modified(), created_at);
+
     let options2 = provider.get_options("test2", &["test2"]);
     assert!(options2.is_err());
+
+    assert_eq!(provider.last_modified(), created_at);
 
     let file2 = subdir2.join("test2.json");
     File::create(&file2)?.write_all(b"{\"options\": {\"test2\": 2}}")?;
     thread::sleep(Duration::from_millis(SLEEP_TIME));
+
+    assert!(provider.last_modified() > created_at);
+    let last_modified = provider.last_modified();
 
     let options2 = provider.get_options("test2", &["test2"])?;
     assert_eq!(options2.as_i64(), Some(2));
@@ -88,6 +96,8 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
             );
         }
     }
+
+    assert!(provider.last_modified() > last_modified);
 
     let options1 = provider.get_options("test1", &["test1"]);
     assert!(

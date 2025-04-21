@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # typed: strict
 
-#require 'sorbet-runtime'
+require 'sorbet-runtime'
 
 module Optify
   module ProviderModule # rubocop:disable Style/Documentation

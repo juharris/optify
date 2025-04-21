@@ -1,6 +1,6 @@
 use notify::{Event, EventKind, RecursiveMode, Watcher};
 use std::path::PathBuf;
-use std::sync::{mpsc::channel, Arc, RwLock};
+use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
 use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
 use crate::provider::{
@@ -15,6 +15,7 @@ use crate::schema::metadata::OptionsMetadata;
 /// Not truly considered public yet and mainly available to support bindings for other languages.
 pub struct OptionsWatcher {
     current_provider: Arc<RwLock<OptionsProvider>>,
+    last_modified: Arc<Mutex<std::time::SystemTime>>,
     watched_directories: Vec<PathBuf>,
     // The watcher needs to be held to continue watching files for changes.
     #[allow(dead_code)]
@@ -42,7 +43,7 @@ impl OptionsWatcher {
                         }
                     }
                 }
-                Err(e) => println!("watch error: {:?}", e),
+                Err(e) => println!("\x1b[31m[optify] Watch error: {:?}\x1b[0m", e),
             })
             .unwrap();
 
@@ -52,18 +53,23 @@ impl OptionsWatcher {
 
         let mut builder = OptionsProviderBuilder::new();
         for dir in &watched_directories {
-            builder.add_directory(dir).unwrap();
+            builder
+                .add_directory(dir)
+                .expect("directory and contents to be valid");
         }
-        let provider = builder.build().unwrap();
+        let provider = builder.build().expect("provider to be built");
+        let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
 
         let self_ = Self {
             current_provider: Arc::new(RwLock::new(provider)),
+            last_modified,
             watched_directories,
             watcher,
         };
 
         let current_provider = self_.current_provider.clone();
         let watched_directories = self_.watched_directories.clone();
+        let last_modified = self_.last_modified.clone();
         std::thread::spawn(move || {
             for _paths in rx {
                 println!(
@@ -74,10 +80,15 @@ impl OptionsWatcher {
                     let mut skip_rebuild = false;
                     let mut builder = OptionsProviderBuilder::new();
                     for dir in &watched_directories {
-                        if let Err(e) = builder.add_directory(dir) {
-                            println!("\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m", e);
-                            skip_rebuild = true;
-                            break;
+                        if dir.exists() {
+                            if let Err(e) = builder.add_directory(dir) {
+                                println!(
+                                    "\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m",
+                                    e
+                                );
+                                skip_rebuild = true;
+                                break;
+                            }
                         }
                     }
 
@@ -91,6 +102,7 @@ impl OptionsWatcher {
                         Ok(new_provider) => match current_provider.write() {
                             Ok(mut provider) => {
                                 *provider = new_provider;
+                                *last_modified.lock().unwrap() = std::time::SystemTime::now();
                                 println!("\x1b[32m[optify] Successfully rebuilt the OptionsProvider.\x1b[0m");
                             }
                             Err(err) => {
@@ -113,6 +125,10 @@ impl OptionsWatcher {
         });
 
         self_
+    }
+
+    pub fn last_modified(&self) -> std::time::SystemTime {
+        *self.last_modified.lock().unwrap()
     }
 }
 
