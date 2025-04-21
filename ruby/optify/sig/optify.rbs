@@ -63,6 +63,20 @@ module Optify::ProviderModule
   # @return The canonical feature names.
   def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
 
+  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
+  # @return The metadata for the feature.
+  def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
+
+  # Fetches options in JSON format based on the provided key and feature names.
+  #
+  # @param key [String] the key to fetch options for.
+  # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+  # @return [String] the options in JSON.
+  def get_options_json: (String key, ::Array[String] feature_names) -> String
+
+  def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
   # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
   # Canonical feature names map to themselves.
   # This implementation calls the Rust implementation directly.
@@ -87,20 +101,6 @@ end
 # Provides configurations based on keys and enabled feature names.
 class Optify::OptionsProvider
   include ProviderModule
-
-  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
-
-  # @return The metadata for the feature.
-  def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
-
-  # Fetches options in JSON format based on the provided key and feature names.
-  #
-  # @param key [String] the key to fetch options for.
-  # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-  # @return [String] the options in JSON.
-  def get_options_json: (String key, ::Array[String] feature_names) -> String
-
-  def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 end
 
 # A builder for creating an `OptionsProvider` instance.
@@ -118,20 +118,6 @@ end
 # Like `OptionsProvider` but also watches for changes to the files and reloads the options.
 class Optify::OptionsWatcher
   include ProviderModule
-
-  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
-
-  # @return The metadata for the feature.
-  def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
-
-  # Fetches options in JSON format based on the provided key and feature names.
-  #
-  # @param key [String] the key to fetch options for.
-  # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-  # @return [String] the options in JSON.
-  def get_options_json: (String key, ::Array[String] feature_names) -> String
-
-  def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
   # @return [Time] Returns the time when the provider was finished building.
   def last_modified: () -> Time

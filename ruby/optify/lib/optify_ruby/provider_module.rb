@@ -43,6 +43,35 @@ module Optify
       result
     end
 
+    # Fetches options based on the provided key and feature names.
+    #
+    # @param key The key to fetch options for.
+    # @param feature_names The enabled feature names to use to build the options.
+    # @param config_class The class of the configuration to return.
+    # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
+    # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
+    # @param preferences The preferences to use when getting options.
+    # @return The options.
+    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+    def _get_options(key, feature_names, config_class, cache_options = nil, preferences = nil)
+      return get_options_with_cache(key, feature_names, config_class, cache_options, preferences) if cache_options
+
+      unless config_class.respond_to?(:from_hash)
+        Kernel.raise NotImplementedError,
+                     "The provided config class must implement `from_hash` as a class method
+              in order to be converted.
+              Recommended: extend `Optify::BaseConfig`."
+      end
+
+      options_json = if preferences
+                       get_options_json_with_preferences(key, feature_names, preferences)
+                     else
+                       get_options_json(key, feature_names)
+                     end
+      hash = JSON.parse(options_json)
+      T.unsafe(config_class).from_hash(hash)
+    end
+
     #: -> void
     def _init
       @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))

@@ -76,6 +76,37 @@ module Optify
     sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
     def get_canonical_feature_names(feature_names); end
 
+    # @return All of the keys and values for the the features.
+    sig do
+      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
+        .returns(String)
+    end
+    def get_all_options_json(feature_names, preferences); end
+
+    # @return The metadata for the feature.
+    sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
+    def get_feature_metadata(canonical_feature_name); end
+
+    # Fetches options in JSON format based on the provided key and feature names.
+    #
+    # @param key [String] the key to fetch options for.
+    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+    # @return [String] the options in JSON.
+    sig { params(key: String, feature_names: T::Array[String]).returns(String) }
+    def get_options_json(key, feature_names); end
+
+    # Fetches options in JSON format based on the provided key and feature names.
+    #
+    # @param key [String] the key to fetch options for.
+    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
+    # @return [String] the options in JSON.
+    sig do
+      params(key: String, feature_names: T::Array[String], preferences: GetOptionsPreferences)
+        .returns(String)
+    end
+    def get_options_json_with_preferences(key, feature_names, preferences); end
+
     private
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
@@ -126,37 +157,6 @@ module Optify
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
     include ProviderModule
-
-    # @return All of the keys and values for the the features.
-    sig do
-      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
-        .returns(String)
-    end
-    def get_all_options_json(feature_names, preferences); end
-
-    # @return The metadata for the feature.
-    sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
-    def get_feature_metadata(canonical_feature_name); end
-
-    # Fetches options in JSON format based on the provided key and feature names.
-    #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @return [String] the options in JSON.
-    sig { params(key: String, feature_names: T::Array[String]).returns(String) }
-    def get_options_json(key, feature_names); end
-
-    # Fetches options in JSON format based on the provided key and feature names.
-    #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
-    # @return [String] the options in JSON.
-    sig do
-      params(key: String, feature_names: T::Array[String], preferences: GetOptionsPreferences)
-        .returns(String)
-    end
-    def get_options_json_with_preferences(key, feature_names, preferences); end
   end
 
   # A builder for creating an `OptionsProvider` instance.
@@ -176,37 +176,6 @@ module Optify
   # Like `OptionsProvider` but also watches for changes to the files and reloads the options.
   class OptionsWatcher
     include ProviderModule
-
-    # @return All of the keys and values for the the features.
-    sig do
-      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
-        .returns(String)
-    end
-    def get_all_options_json(feature_names, preferences); end
-
-    # @return The metadata for the feature.
-    sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
-    def get_feature_metadata(canonical_feature_name); end
-
-    # Fetches options in JSON format based on the provided key and feature names.
-    #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @return [String] the options in JSON.
-    sig { params(key: String, feature_names: T::Array[String]).returns(String) }
-    def get_options_json(key, feature_names); end
-
-    # Fetches options in JSON format based on the provided key and feature names.
-    #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
-    # @return [String] the options in JSON.
-    sig do
-      params(key: String, feature_names: T::Array[String], preferences: GetOptionsPreferences)
-        .returns(String)
-    end
-    def get_options_json_with_preferences(key, feature_names, preferences); end
 
     # @return [Time] Returns the time when the provider was finished building.
     sig { returns(Time) }
