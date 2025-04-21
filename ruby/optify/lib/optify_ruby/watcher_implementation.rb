@@ -11,7 +11,8 @@ require_relative './options_metadata'
 require_relative './provider_module'
 
 module Optify
-  class OptionsWatcher # rubocop:disable Style/Documentation
+  # @!visibility private
+  class OptionsWatcher
     include ProviderModule
 
     # TODO: Find a better way to proxy the methods with copying the parameters.

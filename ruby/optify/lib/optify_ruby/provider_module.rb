@@ -4,7 +4,8 @@
 require 'sorbet-runtime'
 
 module Optify
-  module ProviderModule # rubocop:disable Style/Documentation
+  # @!visibility private
+  module ProviderModule
     extend T::Sig
 
     #: (Array[String] feature_names) -> Array[String]
