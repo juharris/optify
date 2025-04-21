@@ -57,6 +57,14 @@ module Optify::ProviderModule
 
   # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
   # Canonical feature names map to themselves.
+  # This implementation may do an optimization for small arrays.
+  #
+  # @param feature_names The names of aliases or features.
+  # @return The canonical feature names.
+  def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
+
+  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+  # Canonical feature names map to themselves.
   # This implementation calls the Rust implementation directly.
   #
   # @param feature_names The names of aliases or features.
@@ -68,6 +76,12 @@ module Optify::ProviderModule
 
   # @return All of the keys and values for the the features.
   def features_with_metadata_json: () -> String
+
+  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+
+  # (Optional) Eagerly initializes the cache.
+  # @return `self`.
+  def init: () -> self
 end
 
 # Provides configurations based on keys and enabled feature names.
@@ -76,18 +90,8 @@ class Optify::OptionsProvider
 
   def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
-  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-  # Canonical feature names map to themselves.
-  # This implementation may do an optimization for small arrays.
-  #
-  # @param feature_names The names of aliases or features.
-  # @return The canonical feature names.
-  def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
-
   # @return The metadata for the feature.
   def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
-
-  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
 
   # Fetches options in JSON format based on the provided key and feature names.
   #
@@ -97,10 +101,6 @@ class Optify::OptionsProvider
   def get_options_json: (String key, ::Array[String] feature_names) -> String
 
   def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
-
-  # (Optional) Eagerly initializes the cache.
-  # @return [OptionsProvider] `self`.
-  def init: () -> OptionsProvider
 end
 
 # A builder for creating an `OptionsProvider` instance.
@@ -121,18 +121,8 @@ class Optify::OptionsWatcher
 
   def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
-  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-  # Canonical feature names map to themselves.
-  # This implementation may do an optimization for small arrays.
-  #
-  # @param feature_names The names of aliases or features.
-  # @return The canonical feature names.
-  def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
-
   # @return The metadata for the feature.
   def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
-
-  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
 
   # Fetches options in JSON format based on the provided key and feature names.
   #
@@ -142,10 +132,6 @@ class Optify::OptionsWatcher
   def get_options_json: (String key, ::Array[String] feature_names) -> String
 
   def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
-
-  # (Optional) Eagerly initializes the cache.
-  # @return [OptionsWatcher] `self`.
-  def init: () -> OptionsWatcher
 
   # @return [Time] Returns the time when the provider was finished building.
   def last_modified: () -> Time

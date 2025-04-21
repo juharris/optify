@@ -48,5 +48,30 @@ module Optify
       @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
       @features_with_metadata = T.let(nil, T.nilable(T::Hash[String, OptionsMetadata]))
     end
+
+    NOT_FOUND_IN_CACHE_SENTINEL = Object.new
+
+    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, Optify::CacheOptions _cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+    def get_options_with_cache(key, feature_names, config_class, _cache_options, preferences = nil)
+      # Cache directly in Ruby instead of Rust because:
+      # * Avoid any possible conversion overhead.
+      # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
+      init unless @cache
+      unless preferences&.skip_feature_name_conversion
+        # When there are just a few names, then it can be faster to convert them one by one in a loop to avoid working with an array in Rust.
+        # When there are over 7 names, then it is faster to convert them with one call to Rust.
+        feature_names = get_canonical_feature_names(feature_names)
+      end
+
+      cache_key = [key, feature_names, config_class]
+      result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
+      return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
+
+      preferences ||= GetOptionsPreferences.new
+      preferences.skip_feature_name_conversion = true
+      result = get_options(key, feature_names, config_class, nil, preferences)
+
+      T.must(@cache)[cache_key] = result
+    end
   end
 end

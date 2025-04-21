@@ -67,6 +67,15 @@ module Optify
     sig { params(feature_name: String).returns(String) }
     def get_canonical_feature_name(feature_name); end
 
+    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+    # Canonical feature names map to themselves.
+    # This implementation may do an optimization for small arrays.
+    #
+    # @param feature_names The names of aliases or features.
+    # @return The canonical feature names.
+    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
+    def get_canonical_feature_names(feature_names); end
+
     private
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
@@ -85,31 +94,6 @@ module Optify
     # @return All of the keys and values for the the features.
     sig { returns(String) }
     def features_with_metadata_json; end
-  end
-
-  # Provides configurations based on keys and enabled feature names.
-  class OptionsProvider
-    include ProviderModule
-
-    # @return All of the keys and values for the the features.
-    sig do
-      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
-        .returns(String)
-    end
-    def get_all_options_json(feature_names, preferences); end
-
-    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-    # Canonical feature names map to themselves.
-    # This implementation may do an optimization for small arrays.
-    #
-    # @param feature_names The names of aliases or features.
-    # @return The canonical feature names.
-    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
-    def get_canonical_feature_names(feature_names); end
-
-    # @return The metadata for the feature.
-    sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
-    def get_feature_metadata(canonical_feature_name); end
 
     # Fetches options based on the provided key and feature names.
     #
@@ -133,6 +117,27 @@ module Optify
     end
     def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil); end
 
+    # (Optional) Eagerly initializes the cache.
+    # @return `self`.
+    sig { returns(T.self_type) }
+    def init; end
+  end
+
+  # Provides configurations based on keys and enabled feature names.
+  class OptionsProvider
+    include ProviderModule
+
+    # @return All of the keys and values for the the features.
+    sig do
+      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
+        .returns(String)
+    end
+    def get_all_options_json(feature_names, preferences); end
+
+    # @return The metadata for the feature.
+    sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
+    def get_feature_metadata(canonical_feature_name); end
+
     # Fetches options in JSON format based on the provided key and feature names.
     #
     # @param key [String] the key to fetch options for.
@@ -152,11 +157,6 @@ module Optify
         .returns(String)
     end
     def get_options_json_with_preferences(key, feature_names, preferences); end
-
-    # (Optional) Eagerly initializes the cache.
-    # @return [OptionsProvider] `self`.
-    sig { returns(OptionsProvider) }
-    def init; end
   end
 
   # A builder for creating an `OptionsProvider` instance.
@@ -184,40 +184,9 @@ module Optify
     end
     def get_all_options_json(feature_names, preferences); end
 
-    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-    # Canonical feature names map to themselves.
-    # This implementation may do an optimization for small arrays.
-    #
-    # @param feature_names The names of aliases or features.
-    # @return The canonical feature names.
-    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
-    def get_canonical_feature_names(feature_names); end
-
     # @return The metadata for the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
     def get_feature_metadata(canonical_feature_name); end
-
-    # Fetches options based on the provided key and feature names.
-    #
-    # @param key The key to fetch options for.
-    # @param feature_names The enabled feature names to use to build the options.
-    # @param config_class The class of the configuration to return.
-    # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
-    # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
-    # @param preferences The preferences to use when getting options.
-    # @return The options.
-    sig do
-      type_parameters(:Config)
-        .params(
-          key: String,
-          feature_names: T::Array[String],
-          config_class: T::Class[T.type_parameter(:Config)],
-          cache_options: T.nilable(CacheOptions),
-          preferences: T.nilable(Optify::GetOptionsPreferences)
-        )
-        .returns(T.type_parameter(:Config))
-    end
-    def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil); end
 
     # Fetches options in JSON format based on the provided key and feature names.
     #
@@ -238,11 +207,6 @@ module Optify
         .returns(String)
     end
     def get_options_json_with_preferences(key, feature_names, preferences); end
-
-    # (Optional) Eagerly initializes the cache.
-    # @return [OptionsWatcher] `self`.
-    sig { returns(OptionsWatcher) }
-    def init; end
 
     # @return [Time] Returns the time when the provider was finished building.
     sig { returns(Time) }
