@@ -49,8 +49,40 @@ module Optify
     def skip_feature_name_conversion; end
   end
 
+  # A module that provides the methods to help implement providers.
+  module ProviderModule
+    # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+    # Canonical feature names map to themselves.
+    #
+    # @param feature_name The name of an alias or a feature.
+    # @return The canonical feature name.
+    sig { params(feature_name: String).returns(String) }
+    def get_canonical_feature_name(feature_name); end
+
+    private
+
+    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+    # Canonical feature names map to themselves.
+    # This implementation calls the Rust implementation directly.
+    #
+    # @param feature_names The names of aliases or features.
+    # @return The canonical feature names.
+    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
+    def _get_canonical_feature_names(feature_names); end
+
+    # @return The metadata for the feature.
+    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
+    def get_feature_metadata_json(canonical_feature_name); end
+
+    # @return All of the keys and values for the the features.
+    sig { returns(String) }
+    def features_with_metadata_json; end
+  end
+
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider
+    include ProviderModule
+
     # @return All of the canonical feature names.
     sig { returns(T::Array[String]) }
     def features; end
@@ -65,14 +97,6 @@ module Optify
         .returns(String)
     end
     def get_all_options_json(feature_names, preferences); end
-
-    # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
-    # Canonical feature names map to themselves.
-    #
-    # @param feature_name The name of an alias or a feature.
-    # @return The canonical feature name.
-    sig { params(feature_name: String).returns(String) }
-    def get_canonical_feature_name(feature_name); end
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
     # Canonical feature names map to themselves.
@@ -133,25 +157,6 @@ module Optify
     # @return [OptionsProvider] `self`.
     sig { returns(OptionsProvider) }
     def init; end
-
-    private
-
-    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-    # Canonical feature names map to themselves.
-    # This implementation calls the Rust implementation directly.
-    #
-    # @param feature_names The names of aliases or features.
-    # @return The canonical feature names.
-    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
-    def _get_canonical_feature_names(feature_names); end
-
-    # @return The metadata for the feature.
-    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
-    def get_feature_metadata_json(canonical_feature_name); end
-
-    # @return All of the keys and values for the the features.
-    sig { returns(String) }
-    def features_with_metadata_json; end
   end
 
   # A builder for creating an `OptionsProvider` instance.
@@ -184,14 +189,6 @@ module Optify
         .returns(String)
     end
     def get_all_options_json(feature_names, preferences); end
-
-    # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
-    # Canonical feature names map to themselves.
-    #
-    # @param feature_name The name of an alias or a feature.
-    # @return The canonical feature name.
-    sig { params(feature_name: String).returns(String) }
-    def get_canonical_feature_name(feature_name); end
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
     # Canonical feature names map to themselves.
@@ -252,25 +249,6 @@ module Optify
     # @return [OptionsWatcher] `self`.
     sig { returns(OptionsWatcher) }
     def init; end
-
-    private
-
-    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-    # Canonical feature names map to themselves.
-    # This implementation calls the Rust implementation directly.
-    #
-    # @param feature_names The names of aliases or features.
-    # @return The canonical feature names.
-    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
-    def _get_canonical_feature_names(feature_names); end
-
-    # @return The metadata for the feature.
-    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
-    def get_feature_metadata_json(canonical_feature_name); end
-
-    # @return All of the keys and values for the the features.
-    sig { returns(String) }
-    def features_with_metadata_json; end
   end
 
   # A builder for creating an `OptionsWatcher` instance.
