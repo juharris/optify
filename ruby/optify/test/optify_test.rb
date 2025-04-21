@@ -8,9 +8,11 @@ require_relative 'my_config'
 
 class OptifyTest < Test::Unit::TestCase
   def test_empty_build
-    builder = Optify::OptionsProviderBuilder.new
-    provider = builder.build
-    assert_not_nil(provider)
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      builder = klass.new
+      provider = builder.build
+      assert_not_nil(provider, "Failed to build #{klass}")
+    end
   end
 
   #: (String suite_path) -> void

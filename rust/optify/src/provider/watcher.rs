@@ -30,6 +30,7 @@ impl OptionsWatcher {
             notify::recommended_watcher(move |res: Result<Event, notify::Error>| match res {
                 Ok(event) => {
                     // Handle all event kinds except for Access.
+                    // TODO Maybe add debounce because it seems like many events trigger when re-writing one file.
                     match event.kind {
                         EventKind::Create(_)
                         | EventKind::Modify(_)
@@ -127,6 +128,7 @@ impl OptionsWatcher {
         self_
     }
 
+    /// Returns the time when the provider was finished building.
     pub fn last_modified(&self) -> std::time::SystemTime {
         *self.last_modified.lock().unwrap()
     }

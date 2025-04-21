@@ -1,0 +1,36 @@
+# frozen_string_literal: true
+# typed: true
+
+require 'json'
+require 'test/unit'
+require 'tmpdir'
+require_relative '../lib/optify'
+require_relative 'my_config'
+
+class OptifyWatcherTest < Test::Unit::TestCase
+  def test_last_modified
+    # Create a temporary directory for the test.
+    temp_dir = Dir.mktmpdir
+    temp_file = File.join(temp_dir, 'test.json')
+    File.write(temp_file, JSON.dump({ 'options' => { 'myConfig' => { 'rootString' => 'value wtv' } } }))
+
+    provider = Optify::OptionsWatcherBuilder.new
+                                            .add_directory(temp_dir)
+                                            .build
+    last_modified = provider.last_modified
+    assert_equal(last_modified, provider.last_modified)
+
+    config_a = provider.get_options('myConfig', ['test'], MyConfig)
+    assert_equal('value wtv', config_a.rootString)
+    assert_equal(last_modified, provider.last_modified)
+
+    File.write(temp_file, JSON.dump({ 'options' => { 'myConfig' => { 'rootString' => 'value changed' } } }))
+    sleep(0.010)
+    assert_true(provider.last_modified > last_modified)
+    last_modified = provider.last_modified
+
+    config_a = provider.get_options('myConfig', ['test'], MyConfig)
+    assert_equal('value changed', config_a.rootString)
+    assert_equal(last_modified, provider.last_modified)
+  end
+end

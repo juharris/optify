@@ -238,6 +238,10 @@ impl WrappedOptionsWatcher {
             .expect("key, feature names, and preferences should be valid")
             .to_string()
     }
+
+    fn last_modified(&self) -> std::time::SystemTime {
+        self.0.borrow().last_modified()
+    }
 }
 
 #[derive(Clone)]
@@ -362,6 +366,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_method(
         "get_options_json_with_preferences",
         method!(WrappedOptionsWatcher::get_options_json_with_preferences, 3),
+    )?;
+    watcher_class.define_method(
+        "last_modified",
+        method!(WrappedOptionsWatcher::last_modified, 0),
     )?;
 
     // Private methods for internal use.
