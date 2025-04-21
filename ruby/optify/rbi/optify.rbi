@@ -49,8 +49,10 @@ module Optify
     def skip_feature_name_conversion; end
   end
 
-  # A module that provides the methods to help implement providers.
-  module ProviderModule
+  # A registry of features that provides configurations.
+  class OptionsRegistry
+    abstract!
+
     # @return All of the canonical feature names.
     sig { returns(T::Array[String]) }
     def features; end
@@ -59,6 +61,16 @@ module Optify
     sig { returns(T::Hash[String, OptionsMetadata]) }
     def features_with_metadata; end
 
+    # @return All of the keys and values for the the features.
+    sig do
+      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
+        .returns(String)
+    end
+    def get_all_options_json(feature_names, preferences); end
+  end
+
+  # A module that provides the methods to help implement providers.
+  module ProviderModule
     # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
     # Canonical feature names map to themselves.
     #
@@ -75,13 +87,6 @@ module Optify
     # @return The canonical feature names.
     sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
     def get_canonical_feature_names(feature_names); end
-
-    # @return All of the keys and values for the the features.
-    sig do
-      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
-        .returns(String)
-    end
-    def get_all_options_json(feature_names, preferences); end
 
     # @return The metadata for the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
@@ -155,7 +160,7 @@ module Optify
   end
 
   # Provides configurations based on keys and enabled feature names.
-  class OptionsProvider
+  class OptionsProvider < OptionsRegistry
     include ProviderModule
   end
 
@@ -174,7 +179,7 @@ module Optify
   end
 
   # Like `OptionsProvider` but also watches for changes to the files and reloads the options.
-  class OptionsWatcher
+  class OptionsWatcher < OptionsRegistry
     include ProviderModule
 
     # @return [Time] Returns the time when the provider was finished building.

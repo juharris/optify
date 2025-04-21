@@ -40,14 +40,19 @@ class Optify::GetOptionsPreferences
   def skip_feature_name_conversion: () -> bool
 end
 
-# A module that provides the methods to help implement providers.
-module Optify::ProviderModule
+# A registry of features that provides configurations.
+class Optify::OptionsRegistry
   # @return All of the canonical feature names.
   def features: () -> ::Array[String]
 
   # @return All of the keys and values for the the features.
   def features_with_metadata: () -> ::Hash[String, OptionsMetadata]
 
+  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+end
+
+# A module that provides the methods to help implement providers.
+module Optify::ProviderModule
   # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
   # Canonical feature names map to themselves.
   #
@@ -62,8 +67,6 @@ module Optify::ProviderModule
   # @param feature_names The names of aliases or features.
   # @return The canonical feature names.
   def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
-
-  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
   # @return The metadata for the feature.
   def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
@@ -99,7 +102,7 @@ module Optify::ProviderModule
 end
 
 # Provides configurations based on keys and enabled feature names.
-class Optify::OptionsProvider
+class Optify::OptionsProvider < OptionsRegistry
   include ProviderModule
 end
 
@@ -116,7 +119,7 @@ class Optify::OptionsProviderBuilder
 end
 
 # Like `OptionsProvider` but also watches for changes to the files and reloads the options.
-class Optify::OptionsWatcher
+class Optify::OptionsWatcher < OptionsRegistry
   include ProviderModule
 
   # @return [Time] Returns the time when the provider was finished building.

@@ -14,6 +14,9 @@ module Optify
   class OptionsWatcher # rubocop:disable Style/Documentation
     include ProviderModule
 
+    # TODO: Find a better way to proxy the methods with copying the parameters.
+    # Using aliases
+
     #: -> Hash[String, OptionsMetadata]
     def features_with_metadata
       _check_cache
@@ -40,7 +43,7 @@ module Optify
 
     #: -> void
     def _check_cache
-      return unless !@cache_creation_time || @cache_creation_time < last_modified
+      return if @cache_creation_time && @cache_creation_time > last_modified
 
       # The cache is not setup or it is out of date.
       init
