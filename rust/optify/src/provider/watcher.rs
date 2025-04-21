@@ -1,3 +1,4 @@
+use notify::event::ModifyKind;
 use notify::{Event, EventKind, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
@@ -32,15 +33,20 @@ impl OptionsWatcher {
                     // Handle all event kinds except for Access.
                     // TODO Maybe add debounce because it seems like many events trigger when re-writing one file.
                     match event.kind {
-                        EventKind::Create(_)
-                        | EventKind::Modify(_)
-                        | EventKind::Remove(_)
+                        EventKind::Access(_) => { /* Ignore Access events. */ }
+                        EventKind::Any
+                        | EventKind::Create(_)
                         | EventKind::Other
-                        | EventKind::Any => {
+                        | EventKind::Remove(_) => {
                             tx.send(event.paths).unwrap();
                         }
-                        EventKind::Access(_) => {
-                            // Ignore Access events
+                        EventKind::Modify(modify_kind) => {
+                            match modify_kind {
+                                ModifyKind::Metadata(_) => { /* Ignore metadata modification events. */}
+                                _ => {
+                                    tx.send(event.paths).unwrap();
+                                }
+                            }
                         }
                     }
                 }
