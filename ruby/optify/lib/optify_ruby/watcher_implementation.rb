@@ -15,7 +15,6 @@ module Optify
     include ProviderModule
 
     # TODO: Find a better way to proxy the methods with copying the parameters.
-    # Using aliases
 
     #: -> Hash[String, OptionsMetadata]
     def features_with_metadata
