@@ -34,8 +34,13 @@ module Optify
     # @return The options.
     #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
     def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil)
-      # FIXME: Maybe get rid of the cache because it will not get invalidated.
-      return get_options_with_cache(key, feature_names, config_class, cache_options, preferences) if cache_options
+      if cache_options
+        if !@cache_creation_time || @cache_creation_time < last_modified
+          # The cache is not setup or it is out of date.
+          init
+        end
+        return get_options_with_cache(key, feature_names, config_class, cache_options, preferences)
+      end
 
       unless config_class.respond_to?(:from_hash)
         raise NotImplementedError,
@@ -57,8 +62,8 @@ module Optify
     # @return [OptionsWatcher] `self`.
     #: -> OptionsWatcher
     def init
-      # FIXME: Maybe get rid of the cache because it will not get invalidated.
       @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
+      @cache_creation_time = T.let(Time.now, T.nilable(Time))
       self
     end
 
@@ -71,7 +76,6 @@ module Optify
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
-      init unless @cache
       unless preferences&.skip_feature_name_conversion
         # When there are just a few names, then it can be faster to convert them one by one in a loop to avoid working with an array in Rust.
         # When there are over 7 names, then it is faster to convert them with one call to Rust.
