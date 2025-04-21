@@ -16,11 +16,8 @@ module Optify
 
     #: -> Hash[String, OptionsMetadata]
     def features_with_metadata
-      result = JSON.parse(features_with_metadata_json)
-      result.each do |key, value|
-        result[key] = OptionsMetadata.from_hash(value)
-      end
-      result
+      _check_cache
+      _features_with_metadata
     end
 
     # Fetches options based on the provided key and feature names.
@@ -35,10 +32,7 @@ module Optify
     #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
     def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil)
       if cache_options
-        if !@cache_creation_time || @cache_creation_time < last_modified
-          # The cache is not setup or it is out of date.
-          init
-        end
+        _check_cache
         return get_options_with_cache(key, feature_names, config_class, cache_options, preferences)
       end
 
@@ -62,7 +56,7 @@ module Optify
     # @return [OptionsWatcher] `self`.
     #: -> OptionsWatcher
     def init
-      @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
+      _init
       @cache_creation_time = T.let(Time.now, T.nilable(Time))
       self
     end
@@ -70,6 +64,14 @@ module Optify
     private
 
     NOT_FOUND_IN_CACHE_SENTINEL = Object.new
+
+    #: -> void
+    def _check_cache
+      return unless !@cache_creation_time || @cache_creation_time < last_modified
+
+      # The cache is not setup or it is out of date.
+      init
+    end
 
     #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, Optify::CacheOptions _cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
     def get_options_with_cache(key, feature_names, config_class, _cache_options, preferences = nil)

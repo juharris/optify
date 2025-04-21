@@ -54,6 +54,9 @@ class OptifyWatcherTest < Test::Unit::TestCase
     assert_equal('value wtv', config_a.rootString)
     config_a2 = provider.get_options('myConfig', ['test'], MyConfig, cache_options)
     assert_same(config_a, config_a2)
+    all_metadata = provider.features_with_metadata
+    assert_equal(1, all_metadata.size)
+    assert_same(all_metadata, provider.features_with_metadata)
 
     File.write(temp_file, JSON.dump({ 'options' => { 'myConfig' => { 'rootString' => 'value changed' } } }))
     start_time = Time.now
@@ -64,6 +67,8 @@ class OptifyWatcherTest < Test::Unit::TestCase
 
     assert(provider.last_modified > last_modified)
     last_modified = provider.last_modified
+    assert_not_same(all_metadata, provider.features_with_metadata)
+
     config_a = provider.get_options('myConfig', ['test'], MyConfig, cache_options)
     assert_not_same(config_a2, config_a)
     assert_equal('value changed', config_a.rootString)

@@ -22,16 +22,7 @@ module Optify
 
     #: -> Hash[String, OptionsMetadata]
     def features_with_metadata
-      return @features_with_metadata if @features_with_metadata
-
-      result = JSON.parse(features_with_metadata_json)
-      result.each do |key, value|
-        result[key] = OptionsMetadata.from_hash(value)
-      end
-      result.freeze
-
-      @features_with_metadata = T.let(result, T.nilable(T::Hash[String, OptionsMetadata]))
-      result
+      _features_with_metadata
     end
 
     # Fetches options based on the provided key and feature names.
@@ -67,7 +58,7 @@ module Optify
     # @return [OptionsProvider] `self`.
     #: -> OptionsProvider
     def init
-      @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
+      _init
       self
     end
 
