@@ -25,7 +25,11 @@ class OptifyWatcherTest < Test::Unit::TestCase
     assert_equal(last_modified, provider.last_modified)
 
     File.write(temp_file, JSON.dump({ 'options' => { 'myConfig' => { 'rootString' => 'value changed' } } }))
-    sleep(0.010)
+    start_time = Time.now
+    while provider.last_modified == last_modified
+      sleep(0.005)
+      raise 'Timeout waiting for last_modified to change' if Time.now - start_time > 1
+    end
     assert_true(provider.last_modified > last_modified)
     last_modified = provider.last_modified
 

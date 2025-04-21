@@ -17,58 +17,64 @@ class OptifyTest < Test::Unit::TestCase
 
   #: (String suite_path) -> void
   def run_suite(suite_path)
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory(File.join(suite_path, 'configs'))
-                                             .build
-    expectations_path = File.join(suite_path, 'expectations')
-    Dir.each_child(expectations_path) do |test_case|
-      expectation_path = File.join(expectations_path, test_case)
-      expected_info = JSON.parse(File.read(expectation_path))
-      expected_options = expected_info['options']
-      features = expected_info['features']
-      expected_options.each do |key, expected_value|
-        expected_json = provider.get_options_json(key, features)
-        options = JSON.parse(expected_json, object_class: Hash)
-        expected_json = expected_value.to_json
-        expected_open_struct = JSON.parse(expected_json, object_class: Hash)
-        assert_equal(expected_open_struct, options,
-                     "Options for key \"#{key}\" with features #{features}
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      provider = klass.new
+                      .add_directory(File.join(suite_path, 'configs'))
+                      .build
+      expectations_path = File.join(suite_path, 'expectations')
+      Dir.each_child(expectations_path) do |test_case|
+        expectation_path = File.join(expectations_path, test_case)
+        expected_info = JSON.parse(File.read(expectation_path))
+        expected_options = expected_info['options']
+        features = expected_info['features']
+        expected_options.each do |key, expected_value|
+          expected_json = provider.get_options_json(key, features)
+          options = JSON.parse(expected_json, object_class: Hash)
+          expected_json = expected_value.to_json
+          expected_open_struct = JSON.parse(expected_json, object_class: Hash)
+          assert_equal(expected_open_struct, options,
+                       "Options for key \"#{key}\" with features #{features}
                      do not match for test suite at #{expectation_path}")
+        end
       end
     end
   end
 
   def test_get_all_options
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory('../../tests/test_suites/simple/configs')
-                                             .build
-    features = ['a']
-    all_opts = provider.get_all_options_json(features, Optify::GetOptionsPreferences.new)
-    key = 'myConfig'
-    opts = provider.get_options_json(key, features)
-    expected = { key => JSON.parse(opts) }
-    assert_equal(expected, JSON.parse(all_opts))
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      features = ['a']
+      all_opts = provider.get_all_options_json(features, Optify::GetOptionsPreferences.new)
+      key = 'myConfig'
+      opts = provider.get_options_json(key, features)
+      expected = { key => JSON.parse(opts) }
+      assert_equal(expected, JSON.parse(all_opts))
+    end
   end
 
   def test_get_canonical_feature_names
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory('../../tests/test_suites/simple/configs')
-                                             .build
-    feature_names = %w[A B feature_A]
-    canonical_feature_names = provider.get_canonical_feature_names(feature_names)
-    assert_equal(%w[feature_A feature_B/initial feature_A], canonical_feature_names)
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      feature_names = %w[A B feature_A]
+      canonical_feature_names = provider.get_canonical_feature_names(feature_names)
+      assert_equal(%w[feature_A feature_B/initial feature_A], canonical_feature_names)
 
-    feature_names = %w[A B feature_A a b feature_B/initial a B fEaTuRe_A]
-    canonical_feature_names = provider.get_canonical_feature_names(feature_names)
-    assert_equal(%w[feature_A feature_B/initial feature_A feature_A feature_B/initial feature_B/initial feature_A feature_B/initial feature_A], canonical_feature_names)
+      feature_names = %w[A B feature_A a b feature_B/initial a B fEaTuRe_A]
+      canonical_feature_names = provider.get_canonical_feature_names(feature_names)
+      assert_equal(%w[feature_A feature_B/initial feature_A feature_A feature_B/initial feature_B/initial feature_A feature_B/initial feature_A], canonical_feature_names)
 
-    err = assert_raise do
-      provider.get_canonical_feature_names(%w[error])
+      err = assert_raise do
+        provider.get_canonical_feature_names(%w[error])
+      end
+      assert_equal('feature_name should be valid: "The given feature \"error\" was not found."', err.message)
+
+      names = feature_names.map { |name| provider.get_canonical_feature_name(name) }
+      assert_equal(canonical_feature_names, names)
     end
-    assert_equal('feature_name should be valid: "The given feature \"error\" was not found."', err.message)
-
-    names = feature_names.map { |name| provider.get_canonical_feature_name(name) }
-    assert_equal(canonical_feature_names, names)
   end
 
   def test_suites
@@ -82,61 +88,69 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_cache
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory('../../tests/test_suites/simple/configs')
-                                             .build
-                                             .init
-    cache_options = Optify::CacheOptions.new
-    config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
-    config_b = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
-    config_b2 = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
-    config_b3 = provider.get_options('myConfig', ['b'], MyConfig, cache_options)
-    config_b4 = provider.get_options('myConfig', ['featUre_B/iNITial'], MyConfig, cache_options)
-    assert_not_same(config_a, config_b)
-    assert_same(config_b, config_b2)
-    assert_same(config_b, config_b3)
-    assert_same(config_b, config_b4)
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+                      .init
+      cache_options = Optify::CacheOptions.new
+      config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
+      config_b = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
+      config_b2 = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
+      config_b3 = provider.get_options('myConfig', ['b'], MyConfig, cache_options)
+      config_b4 = provider.get_options('myConfig', ['featUre_B/iNITial'], MyConfig, cache_options)
+      assert_not_same(config_a, config_b)
+      assert_same(config_b, config_b2)
+      assert_same(config_b, config_b3)
+      assert_same(config_b, config_b4)
 
-    config_a_b = provider.get_options('myConfig', %w[A B], MyConfig, cache_options)
-    config_b_a = provider.get_options('myConfig', %w[B A], MyConfig, cache_options)
-    assert_not_same(config_a_b, config_b_a)
-    config_a_b2 = provider.get_options('myConfig', ['A', 'featUre_B/iNITial'], MyConfig, cache_options)
-    assert_same(config_a_b, config_a_b2)
+      config_a_b = provider.get_options('myConfig', %w[A B], MyConfig, cache_options)
+      config_b_a = provider.get_options('myConfig', %w[B A], MyConfig, cache_options)
+      assert_not_same(config_a_b, config_b_a)
+      config_a_b2 = provider.get_options('myConfig', ['A', 'featUre_B/iNITial'], MyConfig, cache_options)
+      assert_same(config_a_b, config_a_b2)
+    end
   end
 
   def test_custom_config_class
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory('../../tests/test_suites/simple/configs')
-                                             .build
-    config = provider.get_options('myConfig', ['A'], MyConfig)
-    assert_equal('root string same', config.rootString)
-    assert_equal(['example item 1'], config.myArray)
-    assert_equal(2, config.myObject.two)
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      config = provider.get_options('myConfig', ['A'], MyConfig)
+      assert_equal('root string same', config.rootString)
+      assert_equal(['example item 1'], config.myArray)
+      assert_equal(2, config.myObject.two)
+    end
   end
 
   def test_features
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory('../../tests/test_suites/simple/configs')
-                                             .build
-    all_features = provider.features
-    all_features.sort!
-    assert_equal(['A_with_comments', 'feature_A', 'feature_B/initial'], all_features)
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      all_features = provider.features
+      all_features.sort!
+      assert_equal(['A_with_comments', 'feature_A', 'feature_B/initial'], all_features)
+    end
   end
 
   def test_get_options_with_preferences
-    provider = Optify::OptionsProviderBuilder.new
-                                             .add_directory('../../tests/test_suites/simple/configs')
-                                             .build
-    feature_names = %w[A B]
-    preferences = Optify::GetOptionsPreferences.new
-    preferences.skip_feature_name_conversion = false
-    options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
-    assert_equal('root string same', options.rootString)
+    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      feature_names = %w[A B]
+      preferences = Optify::GetOptionsPreferences.new
+      preferences.skip_feature_name_conversion = false
+      options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
+      assert_equal('root string same', options.rootString)
 
-    preferences.skip_feature_name_conversion = true
-    err = assert_raise do
-      provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
+      preferences.skip_feature_name_conversion = true
+      err = assert_raise do
+        provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
+      end
+      assert_equal('key, feature names, and preferences should be valid: "Feature name \"A\" was not found."', err.message)
     end
-    assert_equal('key, feature names, and preferences should be valid: "Feature name \"A\" was not found."', err.message)
   end
 end
