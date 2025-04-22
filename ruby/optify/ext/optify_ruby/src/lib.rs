@@ -32,8 +32,8 @@ impl MutGetOptionsPreferences {
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
 
-fn convert_metadata(metadata: OptionsMetadata) -> String {
-    serde_json::to_string(&metadata).unwrap()
+fn convert_metadata(metadata: &OptionsMetadata) -> String {
+    serde_json::to_string(metadata).unwrap()
 }
 
 impl WrappedOptionsProvider {
@@ -77,7 +77,7 @@ impl WrappedOptionsProvider {
         self.0
             .borrow()
             .get_feature_metadata(&canonical_feature_name)
-            .map(convert_metadata)
+            .map(|metadata| convert_metadata(&metadata))
     }
 
     fn get_features(&self) -> Vec<String> {
@@ -199,7 +199,7 @@ impl WrappedOptionsWatcher {
         self.0
             .borrow()
             .get_feature_metadata(&canonical_feature_name)
-            .map(convert_metadata)
+            .map(|metadata| convert_metadata(&metadata))
     }
 
     fn get_features(&self) -> Vec<String> {
