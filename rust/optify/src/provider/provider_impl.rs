@@ -63,10 +63,11 @@ impl OptionsProvider {
         for feature_name in feature_names {
             // Check for an alias.
             // Canonical feature names are also included as keys in the aliases map.
-            let mut canonical_feature_name = *feature_name;
-            if !skip_feature_name_conversion {
-                canonical_feature_name = self.get_canonical_feature_name(feature_name)?;
-            }
+            let canonical_feature_name = if skip_feature_name_conversion {
+                &feature_name.to_string()
+            } else {
+                &self.get_canonical_feature_name(feature_name)?
+            };
 
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
@@ -109,11 +110,11 @@ impl OptionsRegistry for OptionsProvider {
     //
     // @param feature_name The name of an alias or a feature.
     // @return The canonical feature name.
-    fn get_canonical_feature_name(&self, feature_name: &str) -> Result<&String, String> {
+    fn get_canonical_feature_name(&self, feature_name: &str) -> Result<String, String> {
         // Canonical feature names are also included as keys in the aliases map.
         let feature_name = unicase::UniCase::new(feature_name.to_owned());
         match self.aliases.get(&feature_name) {
-            Some(canonical_name) => Ok(canonical_name),
+            Some(canonical_name) => Ok(canonical_name.to_owned()),
             None => Err(format!(
                 "The given feature {:?} was not found.",
                 feature_name
@@ -121,26 +122,23 @@ impl OptionsRegistry for OptionsProvider {
         }
     }
 
-    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<&String>, String> {
-        Ok(feature_names
+    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<String>, String> {
+        feature_names
             .iter()
-            .map(|name| {
-                self.get_canonical_feature_name(name)
-                    .expect("given names should be valid")
-            })
-            .collect())
+            .map(|name| self.get_canonical_feature_name(name))
+            .collect()
     }
 
-    fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<&OptionsMetadata> {
-        self.features.get(canonical_feature_name)
+    fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<OptionsMetadata> {
+        self.features.get(canonical_feature_name).cloned()
     }
 
-    fn get_features(&self) -> Vec<&str> {
-        self.sources.keys().map(|s| s.as_str()).collect()
+    fn get_features(&self) -> Vec<String> {
+        self.sources.keys().cloned().collect()
     }
 
-    fn get_features_with_metadata(&self) -> &Features {
-        &self.features
+    fn get_features_with_metadata(&self) -> Features {
+        self.features.clone()
     }
 
     fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<serde_json::Value, String> {

@@ -29,5 +29,6 @@ class OptifyTest < Test::Unit::TestCase
     assert_equal(a_metadata&.name, all_metadata['feature_A']&.name)
     assert_equal(b_metadata&.aliases, all_metadata['feature_B/initial']&.aliases)
     assert_equal(b_metadata&.name, all_metadata['feature_B/initial']&.name)
+    assert_same(all_metadata, provider.features_with_metadata)
   end
 end

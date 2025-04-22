@@ -3,6 +3,7 @@
 
 # The implementation to use directly Ruby and with types declared.
 require_relative 'optify_ruby/implementation'
+require_relative 'optify_ruby/watcher_implementation'
 
 # The implementation in Rust which redefines some methods.
 # This yields some warnings, but we should redeclare the methods in Ruby to help with type checking anyway.

@@ -49,8 +49,10 @@ module Optify
     def skip_feature_name_conversion; end
   end
 
-  # Provides configurations based on keys and enabled feature names.
-  class OptionsProvider
+  # A registry of features that provides configurations.
+  class OptionsRegistry
+    abstract!
+
     # @return All of the canonical feature names.
     sig { returns(T::Array[String]) }
     def features; end
@@ -65,7 +67,12 @@ module Optify
         .returns(String)
     end
     def get_all_options_json(feature_names, preferences); end
+  end
 
+  # A module only for internal use that provides the methods to help implement providers.
+  # Some of the methods shown within this module are implemented in Rust
+  # and are declared in this common module to avoid duplicate declarations in different classes.
+  module ProviderModule
     # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
     # Canonical feature names map to themselves.
     #
@@ -86,6 +93,45 @@ module Optify
     # @return The metadata for the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
     def get_feature_metadata(canonical_feature_name); end
+
+    # Fetches options in JSON format based on the provided key and feature names.
+    #
+    # @param key [String] the key to fetch options for.
+    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+    # @return [String] the options in JSON.
+    sig { params(key: String, feature_names: T::Array[String]).returns(String) }
+    def get_options_json(key, feature_names); end
+
+    # Fetches options in JSON format based on the provided key and feature names.
+    #
+    # @param key [String] the key to fetch options for.
+    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
+    # @return [String] the options in JSON.
+    sig do
+      params(key: String, feature_names: T::Array[String], preferences: GetOptionsPreferences)
+        .returns(String)
+    end
+    def get_options_json_with_preferences(key, feature_names, preferences); end
+
+    private
+
+    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+    # Canonical feature names map to themselves.
+    # This implementation calls the Rust implementation directly.
+    #
+    # @param feature_names The names of aliases or features.
+    # @return The canonical feature names.
+    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
+    def _get_canonical_feature_names(feature_names); end
+
+    # @return The metadata for the feature.
+    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
+    def get_feature_metadata_json(canonical_feature_name); end
+
+    # @return All of the keys and values for the the features.
+    sig { returns(String) }
+    def features_with_metadata_json; end
 
     # Fetches options based on the provided key and feature names.
     #
@@ -109,49 +155,15 @@ module Optify
     end
     def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil); end
 
-    # Fetches options in JSON format based on the provided key and feature names.
-    #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @return [String] the options in JSON.
-    sig { params(key: String, feature_names: T::Array[String]).returns(String) }
-    def get_options_json(key, feature_names); end
-
-    # Fetches options in JSON format based on the provided key and feature names.
-    #
-    # @param key [String] the key to fetch options for.
-    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
-    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
-    # @return [String] the options in JSON.
-    sig do
-      params(key: String, feature_names: T::Array[String], preferences: GetOptionsPreferences)
-        .returns(String)
-    end
-    def get_options_json_with_preferences(key, feature_names, preferences); end
-
     # (Optional) Eagerly initializes the cache.
-    # @return [OptionsProvider] `self`.
-    sig { returns(OptionsProvider) }
+    # @return `self`.
+    sig { returns(T.self_type) }
     def init; end
+  end
 
-    private
-
-    # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-    # Canonical feature names map to themselves.
-    # This implementation calls the Rust implementation directly.
-    #
-    # @param feature_names The names of aliases or features.
-    # @return The canonical feature names.
-    sig { params(feature_names: T::Array[String]).returns(T::Array[String]) }
-    def _get_canonical_feature_names(feature_names); end
-
-    # @return The metadata for the feature.
-    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
-    def get_feature_metadata_json(canonical_feature_name); end
-
-    # @return All of the keys and values for the the features.
-    sig { returns(String) }
-    def features_with_metadata_json; end
+  # Provides configurations based on keys and enabled feature names.
+  class OptionsProvider < OptionsRegistry
+    include ProviderModule
   end
 
   # A builder for creating an `OptionsProvider` instance.
@@ -165,6 +177,32 @@ module Optify
 
     # @return [OptionsProvider] A newly built `OptionsProvider`.
     sig { returns(OptionsProvider) }
+    def build; end
+  end
+
+  # Like `OptionsProvider` but also watches for changes to the files and reloads the options.
+  class OptionsWatcher < OptionsRegistry
+    include ProviderModule
+
+    # @return [Time] Returns the time when the provider was finished building.
+    sig { returns(Time) }
+    def last_modified; end
+  end
+
+  # A builder for creating an `OptionsWatcher` instance.
+  #
+  # This builder is kept separate from the `OptionsProviderBuilder`
+  # in order to keep `OptionsProviderBuilder` and `OptionsProvider` as simple and efficient as possible for production use.
+  class OptionsWatcherBuilder
+    # Adds a directory to watch for changes.
+    #
+    # @param path [String] The path of the directory to add.
+    # @return [OptionsWatcherBuilder] `self`.
+    sig { params(path: String).returns(OptionsWatcherBuilder) }
+    def add_directory(path); end
+
+    # @return [OptionsWatcher] A newly built `OptionsWatcher`.
+    sig { returns(OptionsWatcher) }
     def build; end
   end
 end
