@@ -18,6 +18,7 @@ exclude = [
 
 [dependencies]
 config = "0.15.6"
+notify = "8.0.0"
 notify-debouncer-full = "0.5.0"
 rayon = "1.10.0"
 serde = "1.0.217"

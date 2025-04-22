@@ -18,7 +18,7 @@ This is just meant to be minimal to get started and help build Python and Ruby l
 
 The [`config`][config] crate (library) is used to help combine configuration files.
 
-Optionally, when working locally, there is support to watch for changes to the configuration files and folders using the [`notify`][notify] crate (library).
+Optionally, when working locally, there is support to watch for changes to the configuration files and folders using the [`notify-debouncer-full`][notify-debouncer-full] crate (library).
 
 ## Testing
 
@@ -40,4 +40,4 @@ cargo publish
 ```
 
 [config]: https://crates.io/crates/config
-[notify]: https://crates.io/crates/notify
+[notify-debouncer-full]: https://crates.io/crates/notify-debouncer-full

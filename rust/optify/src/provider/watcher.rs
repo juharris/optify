@@ -1,4 +1,5 @@
-use notify_debouncer_full::{new_debouncer, notify::*, DebounceEventResult};
+use notify;
+use notify_debouncer_full::{new_debouncer, DebounceEventResult};
 use std::path::PathBuf;
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
@@ -20,7 +21,7 @@ pub struct OptionsWatcher {
     // The watcher needs to be held to continue watching files for changes.
     #[allow(dead_code)]
     debouncer_watcher:
-        notify_debouncer_full::Debouncer<FsEventWatcher, notify_debouncer_full::FileIdMap>,
+        notify_debouncer_full::Debouncer<notify::FsEventWatcher, notify_debouncer_full::FileIdMap>,
 }
 
 impl OptionsWatcher {
@@ -47,7 +48,7 @@ impl OptionsWatcher {
         .unwrap();
         for dir in &watched_directories {
             debouncer_watcher
-                .watch(dir, RecursiveMode::Recursive)
+                .watch(dir, notify::RecursiveMode::Recursive)
                 .unwrap();
         }
         let mut builder = OptionsProviderBuilder::new();
