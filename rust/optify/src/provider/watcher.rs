@@ -20,8 +20,10 @@ pub struct OptionsWatcher {
     watched_directories: Vec<PathBuf>,
     // The watcher needs to be held to continue watching files for changes.
     #[allow(dead_code)]
-    debouncer_watcher:
-        notify_debouncer_full::Debouncer<RecommendedWatcher, notify_debouncer_full::FileIdMap>,
+    debouncer_watcher: notify_debouncer_full::Debouncer<
+        RecommendedWatcher,
+        notify_debouncer_full::RecommendedCache,
+    >,
 }
 
 impl OptionsWatcher {
@@ -42,6 +44,7 @@ impl OptionsWatcher {
                         "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
                         paths
                     );
+
                     tx.send(()).unwrap();
                 }
                 Err(errors) => errors
