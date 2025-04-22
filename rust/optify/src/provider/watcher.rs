@@ -35,8 +35,7 @@ impl OptionsWatcher {
                 Ok(events) => {
                     let paths = events
                         .iter()
-                        .map(|event| event.paths.clone())
-                        .flatten()
+                        .flat_map(|event| event.paths.clone())
                         .collect::<HashSet<_>>();
 
                     println!(
