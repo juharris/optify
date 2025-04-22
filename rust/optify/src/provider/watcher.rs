@@ -1,5 +1,4 @@
-use notify::event::ModifyKind;
-use notify::{Event, EventKind, RecursiveMode, Watcher};
+use notify_debouncer_full::{new_debouncer, notify::*, DebounceEventResult};
 use std::path::PathBuf;
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
@@ -20,44 +19,37 @@ pub struct OptionsWatcher {
     watched_directories: Vec<PathBuf>,
     // The watcher needs to be held to continue watching files for changes.
     #[allow(dead_code)]
-    watcher: notify::RecommendedWatcher,
+    debouncer_watcher:
+        notify_debouncer_full::Debouncer<FsEventWatcher, notify_debouncer_full::FileIdMap>,
 }
 
 impl OptionsWatcher {
     pub(crate) fn new(watched_directories: Vec<PathBuf>) -> Self {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
-        let mut watcher =
-            notify::recommended_watcher(move |res: Result<Event, notify::Error>| match res {
-                Ok(event) => {
-                    // Handle all event kinds except for Access.
-                    // TODO Maybe add debounce because it seems like many events trigger when re-writing one file.
-                    match event.kind {
-                        EventKind::Access(_) => { /* Ignore Access events. */ }
-                        EventKind::Any
-                        | EventKind::Create(_)
-                        | EventKind::Other
-                        | EventKind::Remove(_) => {
-                            tx.send(event.paths).unwrap();
-                        }
-                        EventKind::Modify(modify_kind) => {
-                            match modify_kind {
-                                ModifyKind::Metadata(_) => { /* Ignore metadata modification events. */}
-                                _ => {
-                                    tx.send(event.paths).unwrap();
-                                }
-                            }
-                        }
-                    }
+        // TODO Improve print statements.
+        let mut debouncer_watcher = new_debouncer(
+            // TODO `std::time::Duration::from_secs(1),` + make tests more robust.
+            std::time::Duration::from_millis(10),
+            None,
+            move |result: DebounceEventResult| match result {
+                Ok(events) => {
+                    events
+                        .iter()
+                        .for_each(|event| println!("[optify] {event:?}"));
+                    tx.send(()).unwrap();
                 }
-                Err(e) => println!("\x1b[31m[optify] Watch error: {:?}\x1b[0m", e),
-            })
-            .unwrap();
-
+                Err(errors) => errors
+                    .iter()
+                    .for_each(|error| println!("\x1b[31m[optify] {error:?}\x1b[0m")),
+            },
+        )
+        .unwrap();
         for dir in &watched_directories {
-            watcher.watch(dir, RecursiveMode::Recursive).unwrap();
+            debouncer_watcher
+                .watch(dir, RecursiveMode::Recursive)
+                .unwrap();
         }
-
         let mut builder = OptionsProviderBuilder::new();
         for dir in &watched_directories {
             builder
@@ -71,18 +63,19 @@ impl OptionsWatcher {
             current_provider: Arc::new(RwLock::new(provider)),
             last_modified,
             watched_directories,
-            watcher,
+            debouncer_watcher,
         };
 
         let current_provider = self_.current_provider.clone();
         let watched_directories = self_.watched_directories.clone();
         let last_modified = self_.last_modified.clone();
+
         std::thread::spawn(move || {
             for _paths in rx {
                 println!(
-                    "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
-                    _paths
-                );
+                "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
+                _paths
+            );
                 let result = std::panic::catch_unwind(|| {
                     let mut skip_rebuild = false;
                     let mut builder = OptionsProviderBuilder::new();
@@ -114,9 +107,9 @@ impl OptionsWatcher {
                             }
                             Err(err) => {
                                 println!(
-                                    "\x1b[31m[optify] Error rebuilding provider: {}\nWill not change the provider until the files are fixed.\x1b[0m",
-                                    err
-                                );
+                                        "\x1b[31m[optify] Error rebuilding provider: {}\nWill not change the provider until the files are fixed.\x1b[0m",
+                                        err
+                                    );
                             }
                         },
                         Err(err) => {
@@ -146,17 +139,23 @@ impl OptionsRegistry for OptionsWatcher {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
-    ) -> Result<serde_json::Value, String> {
+    ) -> std::result::Result<serde_json::Value, String> {
         let provider = self.current_provider.read().unwrap();
         provider.get_all_options(feature_names, cache_options, preferences)
     }
 
-    fn get_canonical_feature_name(&self, feature_name: &str) -> Result<String, String> {
+    fn get_canonical_feature_name(
+        &self,
+        feature_name: &str,
+    ) -> std::result::Result<String, String> {
         let provider = self.current_provider.read().unwrap();
         provider.get_canonical_feature_name(feature_name)
     }
 
-    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<String>, String> {
+    fn get_canonical_feature_names(
+        &self,
+        feature_names: &[&str],
+    ) -> std::result::Result<Vec<String>, String> {
         let provider = self.current_provider.read().unwrap();
         provider.get_canonical_feature_names(feature_names)
     }
@@ -176,7 +175,11 @@ impl OptionsRegistry for OptionsWatcher {
         provider.get_features_with_metadata()
     }
 
-    fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<serde_json::Value, String> {
+    fn get_options(
+        &self,
+        key: &str,
+        feature_names: &[&str],
+    ) -> std::result::Result<serde_json::Value, String> {
         let provider = self.current_provider.read().unwrap();
         provider.get_options(key, feature_names)
     }
@@ -187,7 +190,7 @@ impl OptionsRegistry for OptionsWatcher {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
-    ) -> Result<serde_json::Value, String> {
+    ) -> std::result::Result<serde_json::Value, String> {
         let provider = self.current_provider.read().unwrap();
         provider.get_options_with_preferences(key, feature_names, cache_options, preferences)
     }
