@@ -1,5 +1,5 @@
-use notify;
-use notify_debouncer_full::{new_debouncer, DebounceEventResult};
+use notify_debouncer_full::{new_debouncer, notify::RecommendedWatcher, DebounceEventResult};
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
@@ -21,23 +21,28 @@ pub struct OptionsWatcher {
     // The watcher needs to be held to continue watching files for changes.
     #[allow(dead_code)]
     debouncer_watcher:
-        notify_debouncer_full::Debouncer<notify::FsEventWatcher, notify_debouncer_full::FileIdMap>,
+        notify_debouncer_full::Debouncer<RecommendedWatcher, notify_debouncer_full::FileIdMap>,
 }
 
 impl OptionsWatcher {
     pub(crate) fn new(watched_directories: Vec<PathBuf>) -> Self {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
-        // TODO Improve print statements.
         let mut debouncer_watcher = new_debouncer(
-            // TODO `std::time::Duration::from_secs(1),` + make tests more robust.
-            std::time::Duration::from_millis(10),
+            std::time::Duration::from_secs(1),
             None,
             move |result: DebounceEventResult| match result {
                 Ok(events) => {
-                    events
+                    let paths = events
                         .iter()
-                        .for_each(|event| println!("[optify] {event:?}"));
+                        .map(|event| event.paths.clone())
+                        .flatten()
+                        .collect::<HashSet<_>>();
+
+                    println!(
+                        "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
+                        paths
+                    );
                     tx.send(()).unwrap();
                 }
                 Err(errors) => errors
@@ -49,7 +54,7 @@ impl OptionsWatcher {
         for dir in &watched_directories {
             debouncer_watcher
                 .watch(dir, notify::RecursiveMode::Recursive)
-                .unwrap();
+                .expect("directory to be watched");
         }
         let mut builder = OptionsProviderBuilder::new();
         for dir in &watched_directories {
@@ -72,11 +77,7 @@ impl OptionsWatcher {
         let last_modified = self_.last_modified.clone();
 
         std::thread::spawn(move || {
-            for _paths in rx {
-                println!(
-                "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
-                _paths
-            );
+            for _ in rx {
                 let result = std::panic::catch_unwind(|| {
                     let mut skip_rebuild = false;
                     let mut builder = OptionsProviderBuilder::new();

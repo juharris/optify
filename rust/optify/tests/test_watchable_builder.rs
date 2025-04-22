@@ -19,15 +19,22 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
     let mut builder = OptionsWatcherBuilder::new();
     builder.add_directory(test_dir)?;
     let provider = builder.build()?;
+    let created_at = provider.last_modified();
 
     let options = provider.get_options("test", &["modifiable_test"])?;
     assert_eq!(options.as_i64(), Some(42));
 
-    thread::sleep(Duration::from_millis(SLEEP_TIME));
     let mut file = File::create(&options_file)?;
     file.write_all(b"{\"options\":{\"test\":43}}")?;
 
-    thread::sleep(Duration::from_millis(SLEEP_TIME));
+    let start_time = std::time::Instant::now();
+    let max_sleep_time = 3000;
+    while provider.last_modified() == created_at {
+        thread::sleep(Duration::from_millis(SLEEP_TIME));
+        if start_time.elapsed().as_millis() > max_sleep_time {
+            panic!("Provider did not update after {}ms.", max_sleep_time);
+        }
+    }
 
     let options = provider.get_options("test", &["modifiable_test"])?;
     assert_eq!(options.as_i64(), Some(43));
@@ -72,7 +79,7 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     while provider.last_modified() == created_at {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
         if start_time.elapsed().as_millis() > max_sleep_time {
-            panic!("Provider did not update after {}ms", max_sleep_time);
+            panic!("Provider did not update after {}ms.", max_sleep_time);
         }
     }
 
@@ -91,13 +98,11 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
 
     // Some operating systems need more time to actually remove the file.
     let start_time = std::time::Instant::now();
-    // We need to sleep for a little bit to let the watcher process the changes.
-    thread::sleep(Duration::from_millis(SLEEP_TIME));
-    while file1.exists() {
+    while provider.last_modified() == last_modified {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
         if start_time.elapsed().as_millis() > max_sleep_time {
             panic!(
-                "File {} still exists after {}ms",
+                "File {} still exists after {}ms.",
                 file1.display(),
                 max_sleep_time
             );
@@ -154,7 +159,7 @@ fn test_watchable_builder_error_rebuilding_provider() -> Result<(), Box<dyn std:
     while provider.last_modified() == last_modified {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
         if start_time.elapsed().as_millis() > max_sleep_time {
-            panic!("Provider did not update after {}ms", max_sleep_time);
+            panic!("Provider did not update after {}ms.", max_sleep_time);
         }
     }
 

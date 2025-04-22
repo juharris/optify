@@ -27,8 +27,8 @@ class OptifyWatcherTest < Test::Unit::TestCase
     File.write(temp_file, JSON.dump({ 'options' => { 'myConfig' => { 'rootString' => 'value changed' } } }))
     start_time = Time.now
     while provider.last_modified == last_modified
-      sleep(0.05)
-      raise 'Timeout waiting for last_modified to change' if Time.now - start_time > 1
+      sleep(0.1)
+      raise 'Timeout waiting for last_modified to change' if Time.now - start_time > 3
     end
     assert_true(provider.last_modified > last_modified)
     last_modified = provider.last_modified
@@ -61,8 +61,8 @@ class OptifyWatcherTest < Test::Unit::TestCase
     File.write(temp_file, JSON.dump({ 'options' => { 'myConfig' => { 'rootString' => 'value changed' } } }))
     start_time = Time.now
     while provider.last_modified == last_modified
-      sleep(0.05)
-      raise 'Timeout waiting for last_modified to change' if Time.now - start_time > 1
+      sleep(0.1)
+      raise 'Timeout waiting for last_modified to change' if Time.now - start_time > 3
     end
 
     assert(provider.last_modified > last_modified)
