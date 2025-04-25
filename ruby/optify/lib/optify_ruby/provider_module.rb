@@ -49,6 +49,7 @@ module Optify
     # @param key The key to fetch options for.
     # @param feature_names The enabled feature names to use to build the options.
     # @param config_class The class of the configuration to return.
+    # The class must implement `from_hash` as a class method to convert a hash to an instance of the class.
     # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
     # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
     # @param preferences The preferences to use when getting options.

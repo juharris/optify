@@ -94,6 +94,29 @@ module Optify
     sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
     def get_feature_metadata(canonical_feature_name); end
 
+    # Fetches options based on the provided key and feature names.
+    #
+    # @param key The key to fetch options for.
+    # @param feature_names The enabled feature names to use to build the options.
+    # @param config_class The class of the configuration to return.
+    # The class must implement `from_hash` as a class method to convert a hash to an instance of the class.
+    # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
+    # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
+    # @param preferences The preferences to use when getting options.
+    # @return The options.
+    sig do
+      type_parameters(:Config)
+        .params(
+          key: String,
+          feature_names: T::Array[String],
+          config_class: T::Class[T.type_parameter(:Config)],
+          cache_options: T.nilable(CacheOptions),
+          preferences: T.nilable(Optify::GetOptionsPreferences)
+        )
+        .returns(T.type_parameter(:Config))
+    end
+    def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil); end
+
     # Fetches options in JSON format based on the provided key and feature names.
     #
     # @param key [String] the key to fetch options for.
@@ -114,6 +137,11 @@ module Optify
     end
     def get_options_json_with_preferences(key, feature_names, preferences); end
 
+    # (Optional) Eagerly initializes the cache.
+    # @return `self`.
+    sig { returns(T.self_type) }
+    def init; end
+
     private
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
@@ -132,33 +160,6 @@ module Optify
     # @return All of the keys and values for the the features.
     sig { returns(String) }
     def features_with_metadata_json; end
-
-    # Fetches options based on the provided key and feature names.
-    #
-    # @param key The key to fetch options for.
-    # @param feature_names The enabled feature names to use to build the options.
-    # @param config_class The class of the configuration to return.
-    # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
-    # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
-    # @param preferences The preferences to use when getting options.
-    # @return The options.
-    sig do
-      type_parameters(:Config)
-        .params(
-          key: String,
-          feature_names: T::Array[String],
-          config_class: T::Class[T.type_parameter(:Config)],
-          cache_options: T.nilable(CacheOptions),
-          preferences: T.nilable(Optify::GetOptionsPreferences)
-        )
-        .returns(T.type_parameter(:Config))
-    end
-    def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil); end
-
-    # (Optional) Eagerly initializes the cache.
-    # @return `self`.
-    sig { returns(T.self_type) }
-    def init; end
   end
 
   # Provides configurations based on keys and enabled feature names.

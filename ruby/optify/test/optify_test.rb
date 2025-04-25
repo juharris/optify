@@ -145,6 +145,12 @@ class OptifyTest < Test::Unit::TestCase
       preferences.skip_feature_name_conversion = false
       options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       assert_equal('root string same', options.rootString)
+      s = provider.get_options_json('myConfig.rootString', feature_names)
+      assert_equal('"root string same"', s)
+      assert_equal('root string same', JSON.parse(s))
+      s = provider.get_options_json('myConfig.myObject.two', feature_names)
+      assert_equal('22', s)
+      assert_equal(22, JSON.parse(s))
 
       preferences.skip_feature_name_conversion = true
       err = assert_raise do

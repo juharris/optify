@@ -6,7 +6,9 @@
 	],
 	"rubyLsp.featureFlags": { "tapiocaAddon": true },
 	"search.exclude": {
-		"**/sorbet/rbi": true
+		"**/sorbet/rbi": true,
+		"pkg": true,
+		"tmp": true
 	},
 	"sorbet.enabled": true,
 	"sorbet.lspConfigs": [
