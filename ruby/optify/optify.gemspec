@@ -41,7 +41,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sorbet-runtime', '~> 0.5.11911'
 
   spec.add_development_dependency 'rake-compiler', '~> 1.2.9'
-  spec.add_development_dependency 'rbs', '~> 3.8.1'
+  spec.add_development_dependency 'rbs', '~> 3.9.2'
   spec.add_development_dependency 'sorbet', '~> 0.5.11911'
   spec.add_development_dependency 'tapioca', '~> 0.16.11'
 
