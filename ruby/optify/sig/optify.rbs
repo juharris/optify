@@ -73,6 +73,8 @@ module Optify::ProviderModule
   # @return The metadata for the feature.
   def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
 
+  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+
   # Fetches options in JSON format based on the provided key and feature names.
   #
   # @param key [String] the key to fetch options for.
@@ -81,6 +83,10 @@ module Optify::ProviderModule
   def get_options_json: (String key, ::Array[String] feature_names) -> String
 
   def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
+  # (Optional) Eagerly initializes the cache.
+  # @return `self`.
+  def init: () -> self
 
   # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
   # Canonical feature names map to themselves.
@@ -95,12 +101,6 @@ module Optify::ProviderModule
 
   # @return All of the keys and values for the the features.
   def features_with_metadata_json: () -> String
-
-  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
-
-  # (Optional) Eagerly initializes the cache.
-  # @return `self`.
-  def init: () -> self
 end
 
 # Provides configurations based on keys and enabled feature names.
