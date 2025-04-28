@@ -7,8 +7,10 @@ require_relative '../lib/optify'
 require_relative 'my_config'
 
 class OptifyTest < Test::Unit::TestCase
+  BUILDERS = [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].freeze
+
   def test_empty_build
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       builder = klass.new
       provider = builder.build
       assert_not_nil(provider, "Failed to build #{klass}")
@@ -17,7 +19,7 @@ class OptifyTest < Test::Unit::TestCase
 
   #: (String suite_path) -> void
   def run_suite(suite_path)
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory(File.join(suite_path, 'configs'))
                       .build
@@ -41,7 +43,7 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_get_all_options
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build
@@ -55,7 +57,7 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_get_canonical_feature_names
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build
@@ -88,7 +90,7 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_cache
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build
@@ -113,7 +115,7 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_custom_config_class
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build
@@ -125,7 +127,7 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_features
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build
@@ -136,7 +138,7 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_get_options_with_preferences
-    [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].each do |klass|
+    BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build

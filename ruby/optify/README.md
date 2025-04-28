@@ -55,6 +55,13 @@ puts config.name
 puts config.object.number
 ```
 
+To watch for changes and automatically reload those changes into the provider when the configuration files change, use `OptionsWatcherBuilder` to create an `OptionsWatcher` which has the same interface as `OptionsProvider`:
+```Ruby
+provider = Optify::OptionsWatcherBuilder.new
+    .add_directory('configs')
+    .build
+```
+
 See [optify_test.rb](test/optify_test.rb) for more examples.
 
 ## Setup
