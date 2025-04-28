@@ -133,8 +133,9 @@ options:
             three: 33
 ```
 
-You'll load the `Configurations` folder using an `OptionsProviderBuild` and then get an `OptionsProvider` from that builder.
-How that works depend on the language you are using.
+You'll load the `Configurations` folder using an `OptionsProviderBuilder` and then get an `OptionsProvider` from that builder.
+Some languages also have an `OptionsWatcherBuilder` which can be used to watch for changes in the configuration files and automatically reload changes into the `OptionsProvider`.
+The exact class names and methods may vary slightly depending on the language you are using.
 See below for links to implementations in different languages.
 
 The result of using features: `["A", "B"]` will be:
@@ -290,6 +291,9 @@ See [github.com/juharris/dotnet-OptionsProvider][dotnet-OptionsProvider] for a s
 Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
 
 ## Python
+[![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad)
+](https://pypi.org/project/optify)
+
 See the [python/optify](./python/optify/) folder.
 Built using the Rust implementation.
 
