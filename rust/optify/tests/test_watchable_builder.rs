@@ -1,9 +1,10 @@
 use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::OptionsRegistry;
+use optify::provider::DEFAULT_DEBOUNCE_DURATION;
 use std::fs::File;
 use std::io::Write;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 const SLEEP_TIME: u64 = 50;
 
@@ -120,6 +121,34 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
         options1.err().unwrap(),
         "The given feature \"test1\" was not found."
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_watchable_builder_read_file() -> Result<(), Box<dyn std::error::Error>> {
+    let temp_dir = tempfile::tempdir()?;
+    let test_dir = temp_dir.path();
+
+    let options_file = test_dir.join("test.json");
+    let mut file = File::create(&options_file)?;
+    file.write_all(b"{\"options\":{\"test\":42}}")?;
+
+    let mut builder = OptionsWatcherBuilder::new();
+    builder.add_directory(test_dir)?;
+    let provider = builder.build()?;
+
+    let last_modified = provider.last_modified();
+
+    let options = provider.get_options("test", &["test"])?;
+    assert_eq!(options.as_i64(), Some(42));
+
+    File::open(&options_file)?.set_modified(SystemTime::now())?;
+    let file_content = std::fs::read_to_string(&options_file)?;
+    assert_eq!(file_content, "{\"options\":{\"test\":42}}");
+    thread::sleep(DEFAULT_DEBOUNCE_DURATION + Duration::from_millis(700));
+
+    assert_eq!(provider.last_modified(), last_modified);
 
     Ok(())
 }

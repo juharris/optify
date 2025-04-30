@@ -9,6 +9,9 @@ use crate::provider::{
 };
 use crate::schema::metadata::OptionsMetadata;
 
+/// The duration to wait before triggering a rebuild after file changes.
+pub const DEFAULT_DEBOUNCE_DURATION: std::time::Duration = std::time::Duration::from_secs(1);
+
 /// A registry which changes the underlying when files are changed.
 /// This is mainly meant to use for local development.
 ///
@@ -31,7 +34,7 @@ impl OptionsWatcher {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut debouncer_watcher = new_debouncer(
-            std::time::Duration::from_secs(1),
+            DEFAULT_DEBOUNCE_DURATION,
             None,
             move |result: DebounceEventResult| match result {
                 Ok(events) => {
