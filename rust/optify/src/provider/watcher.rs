@@ -9,6 +9,9 @@ use crate::provider::{
 };
 use crate::schema::metadata::OptionsMetadata;
 
+/// The duration to wait before triggering a rebuild after file changes.
+pub const DEFAULT_DEBOUNCE_DURATION: std::time::Duration = std::time::Duration::from_secs(1);
+
 /// A registry which changes the underlying when files are changed.
 /// This is mainly meant to use for local development.
 ///
@@ -31,14 +34,28 @@ impl OptionsWatcher {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut debouncer_watcher = new_debouncer(
-            std::time::Duration::from_secs(1),
+            DEFAULT_DEBOUNCE_DURATION,
             None,
             move |result: DebounceEventResult| match result {
                 Ok(events) => {
                     let paths = events
                         .iter()
+                        .filter(|event| !event.kind.is_access())
+                        .filter(|event| {
+                            // Ignore metadata changes such as the modified time.
+                            match event.kind {
+                                notify::EventKind::Modify(modify_kind) => {
+                                    !matches!(modify_kind, notify::event::ModifyKind::Metadata(_))
+                                }
+                                _ => true,
+                            }
+                        })
                         .flat_map(|event| event.paths.clone())
                         .collect::<HashSet<_>>();
+
+                    if paths.is_empty() {
+                        return;
+                    }
 
                     println!(
                         "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
