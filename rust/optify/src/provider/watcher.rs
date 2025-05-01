@@ -40,8 +40,22 @@ impl OptionsWatcher {
                 Ok(events) => {
                     let paths = events
                         .iter()
+                        .filter(|event| !event.kind.is_access())
+                        .filter(|event| {
+                            // Ignore metadata changes such as the modified time.
+                            match event.kind {
+                                notify::EventKind::Modify(modify_kind) => {
+                                    !matches!(modify_kind, notify::event::ModifyKind::Metadata(_))
+                                }
+                                _ => true,
+                            }
+                        })
                         .flat_map(|event| event.paths.clone())
                         .collect::<HashSet<_>>();
+
+                    if paths.is_empty() {
+                        return;
+                    }
 
                     println!(
                         "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",

@@ -4,7 +4,7 @@ use optify::provider::DEFAULT_DEBOUNCE_DURATION;
 use std::fs::File;
 use std::io::Write;
 use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 const SLEEP_TIME: u64 = 50;
 
@@ -143,7 +143,7 @@ fn test_watchable_builder_read_file() -> Result<(), Box<dyn std::error::Error>> 
     let options = provider.get_options("test", &["test"])?;
     assert_eq!(options.as_i64(), Some(42));
 
-    File::open(&options_file)?.set_modified(SystemTime::now())?;
+    File::open(&options_file)?;
     let file_content = std::fs::read_to_string(&options_file)?;
     assert_eq!(file_content, "{\"options\":{\"test\":42}}");
     thread::sleep(DEFAULT_DEBOUNCE_DURATION + Duration::from_millis(700));
