@@ -143,8 +143,7 @@ fn test_watchable_builder_read_file() -> Result<(), Box<dyn std::error::Error>> 
     let options = provider.get_options("test", &["test"])?;
     assert_eq!(options.as_i64(), Some(42));
 
-    let file_content = std::fs::read_to_string(&options_file)?;
-    assert_eq!(file_content, "{\"options\":{\"test\":42}}");
+    File::open(&options_file)?;
     thread::sleep(DEFAULT_DEBOUNCE_DURATION + Duration::from_millis(700));
 
     assert_eq!(
@@ -152,6 +151,9 @@ fn test_watchable_builder_read_file() -> Result<(), Box<dyn std::error::Error>> 
         last_modified,
         "The last modified time should not have changed because we did not modify the file contents."
     );
+
+    let file_content = std::fs::read_to_string(&options_file)?;
+    assert_eq!(file_content, "{\"options\":{\"test\":42}}");
 
     Ok(())
 }
