@@ -148,7 +148,11 @@ fn test_watchable_builder_read_file() -> Result<(), Box<dyn std::error::Error>> 
     assert_eq!(file_content, "{\"options\":{\"test\":42}}");
     thread::sleep(DEFAULT_DEBOUNCE_DURATION + Duration::from_millis(700));
 
-    assert_eq!(provider.last_modified(), last_modified);
+    assert_eq!(
+        provider.last_modified(),
+        last_modified,
+        "The last modified time should not have changed because we did not modify the file contents."
+    );
 
     Ok(())
 }
