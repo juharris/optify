@@ -58,6 +58,7 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     let mut builder = OptionsWatcherBuilder::new();
     builder.add_directory(subdir1.as_path())?;
     builder.add_directory(subdir2.as_path())?;
+    builder.with_debounce_timeout(Duration::from_millis(100))?;
     let provider = builder.build()?;
     let created_at = provider.last_modified();
 
