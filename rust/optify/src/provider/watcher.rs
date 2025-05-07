@@ -41,9 +41,9 @@ impl OptionsWatcher {
                     let paths = events
                         .iter()
                         .filter(|event|
-                            !event.kind.is_access() &&
-                            // Ignore metadata changes such as the modified time.
+                            // Ignore reads and metadata changes such as the modified time.
                             match event.kind {
+                                notify::EventKind::Access(_) => false,
                                 notify::EventKind::Modify(modify_kind) => {
                                     !matches!(modify_kind, notify::event::ModifyKind::Metadata(_))
                                 }
@@ -55,6 +55,21 @@ impl OptionsWatcher {
 
                     if paths.is_empty() {
                         return;
+                    }
+
+                    // Temp to help debug.
+                    for event in events {
+                        println!("Event: {:?}", event);
+                        match event.kind {
+                            notify::EventKind::Modify(modify_kind) => {
+                                if !matches!(modify_kind, notify::event::ModifyKind::Metadata(_)) {
+                                    println!("Modify: {:?}", event.paths);
+                                }
+                            }
+                            _ => {
+                                println!("other Event: {:?}", event);
+                            }
+                        }
                     }
 
                     println!(
