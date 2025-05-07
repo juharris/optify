@@ -54,11 +54,9 @@ module Optify
         if type.respond_to?(:types)
           # Find a type that works for the hash.
           type.types.each do |t|
-            begin
-              return _convert_hash(value, t).freeze
-            rescue StandardError
-              # Ignore and try the next type.
-            end
+            return _convert_hash(value, t).freeze
+          rescue StandardError
+            # Ignore and try the next type.
           end
           raise TypeError.new("Could not convert hash: #{value} to #{type}.")
         end

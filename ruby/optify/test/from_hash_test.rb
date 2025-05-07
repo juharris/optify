@@ -219,25 +219,25 @@ class FromHashTest < Test::Unit::TestCase
     c = TestConfig.from_hash({ string_or_integer: 'hello' })
     assert_equal('hello', c.string_or_integer)
 
-    c = TestConfig.from_hash({ string_or_integer: 45629 })
-    assert_equal(45629, c.string_or_integer)
+    c = TestConfig.from_hash({ string_or_integer: 45_629 })
+    assert_equal(45_629, c.string_or_integer)
   end
 
   def test_nilable_string_or_integer
     c = TestConfig.from_hash({ nilable_string_or_integer: 'hello' })
     assert_equal('hello', c.nilable_string_or_integer)
 
-    c = TestConfig.from_hash({ nilable_string_or_integer: 312449 })
-    assert_equal(312449, c.nilable_string_or_integer)
+    c = TestConfig.from_hash({ nilable_string_or_integer: 312_449 })
+    assert_equal(312_449, c.nilable_string_or_integer)
 
     c = TestConfig.from_hash({ nilable_string_or_integer: nil })
     assert_nil(c.nilable_string_or_integer)
   end
 
   def test_string_or_object
-    c = TestConfig.from_hash({ string_or_object: { num: 871102 } })
+    c = TestConfig.from_hash({ string_or_object: { num: 871_102 } })
     assert_instance_of(TestObject, c.string_or_object)
-    assert_equal(871102, T.cast(c.string_or_object, TestObject).num)
+    assert_equal(871_102, T.cast(c.string_or_object, TestObject).num)
 
     c = TestConfig.from_hash({ string_or_object: 'hello' })
     assert_equal('hello', c.string_or_object)
@@ -292,13 +292,14 @@ class FromHashTest < Test::Unit::TestCase
     exception = assert_raises(TypeError) do
       TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => { 'invalid key' => 'value' } } })
     end
-    assert_match(/Could not convert hash: {"string" ?=> ?{"invalid key" ?=> ?"value"}} to T.nilable\(T::Hash\[String, T.any\(String, TestObject, TestObject2\)\]\)./, exception.message)
+    assert_match(/Could not convert hash: {"string" ?=> ?{"invalid key" ?=> ?"value"}} to T.nilable\(T::Hash\[String, T.any\(String, TestObject, TestObject2\)\]\)./,
+                 exception.message)
   end
 
   # Skip for now because we don't validate primitive value types.
   def skip_test_nilable_hash_with_string_or_object_or_object2_invalid_value
     exception = assert_raises(TypeError) do
-      TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 3} })
+      TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 3 } })
     end
     assert_match(/Could not convert value: 3 to T.nilable\(T.any\(String, TestObject, TestObject2\)\)./, exception.message)
   end
