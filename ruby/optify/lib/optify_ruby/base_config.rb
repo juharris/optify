@@ -44,7 +44,17 @@ module Optify
         return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
         # Handle `T.nilable(T::Hash[...])`
-        type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
+        # type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
+        if type.respond_to?(:types)
+          # FIXME Find a type that works for the hash.
+          type.types.each do |t|
+            begin
+              return _convert_hash(value, t)
+            rescue
+              # Ignore
+            end
+          end
+        end
         return _convert_hash(value, type).freeze
       end
 
@@ -52,7 +62,7 @@ module Optify
     end
 
     #: (Hash[untyped, untyped] hash, untyped type) -> untyped
-    def self._convert_hash(hash, type) # rubocop:disable Metrics/PerceivedComplexity
+    def self._convert_hash(hash, type)
       if type.respond_to?(:raw_type)
         # There is an object for the hash.
         type_for_hash = type.raw_type
