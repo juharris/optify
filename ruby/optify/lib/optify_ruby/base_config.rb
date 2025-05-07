@@ -23,19 +23,27 @@ module Optify
     # @return The new instance.
     #: (Hash[untyped, untyped] hash) -> instance
     def self.from_hash(hash)
-      result = new
+      instance = new
 
       hash.each do |key, value|
         sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
         value = _convert_value(value, sig_return_type)
-        result.instance_variable_set("@#{key}", value)
+        instance.instance_variable_set("@#{key}", value)
       end
 
-      T.unsafe(result).freeze if T.unsafe(result).respond_to?(:freeze)
+      result = T.unsafe(instance)
+      result.freeze if result.respond_to?(:freeze)
+      # TODO Try
+      # result.freeze
     end
 
     #: (untyped value, untyped type) -> untyped
     def self._convert_value(value, type)
+      if type.is_a?(T::Types::Untyped)
+        # The hash is not typed.
+        return value
+      end
+
       case value
       when Array
         # Handle `T.nilable(T::Array[...])`
@@ -49,7 +57,7 @@ module Optify
           # FIXME Find a type that works for the hash.
           type.types.each do |t|
             begin
-              return _convert_hash(value, t)
+              return _convert_hash(value, t).freeze
             rescue
               # Ignore
             end
@@ -65,9 +73,10 @@ module Optify
     def self._convert_hash(hash, type)
       if type.respond_to?(:raw_type)
         # There is an object for the hash.
+        # It could be a custom class, a String, or maybe something else.
         type_for_hash = type.raw_type
         return type_for_hash.from_hash(hash) if type_for_hash.respond_to?(:from_hash)
-      elsif type.instance_of?(T::Types::TypedHash)
+      elsif type.is_a?(T::Types::TypedHash)
         # The hash should be a hash, but the values might be objects to convert.
         type_for_values = type.values
 
@@ -81,11 +90,16 @@ module Optify
 
         # The values are not recognized objects.
         return hash.transform_values { |v| _convert_value(v, type_for_values) }
+      # elsif type.is_a?(T::Types::Untyped)
+      #   # The hash is not typed.
+      #   return hash
       end
 
       # Fallback to doing nothing.
       # This can happen if there are is no type information for a key in the hash.
-      hash
+      
+      raise "No type information for key: #{type} with value: #{hash}"
+      # hash
     end
 
     private_class_method :_convert_hash, :_convert_value

@@ -38,6 +38,9 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T::Array[T::Hash[Symbol, TestObject]]) }
   attr_reader :hashes
 
+  sig { returns(Hash) }
+  attr_reader :hash_with_no_types
+
   sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
   attr_reader :nilable_hashes_of_objects
 
@@ -58,6 +61,14 @@ class TestConfig < Optify::BaseConfig
 
   sig { returns(T.nilable(T::Hash[String, T.any(String, TestObject)])) }
   attr_reader :nilable_hash_with_string_or_object
+
+  # TODO Try 
+  # sig { returns(T.nilable(T::Hash[String, T.any(TestObject, String)])) }
+  # attr_reader :nilable_hash_with_object_or_string
+  # 
+  #
+  sig {returns(T.untyped)}
+  attr_reader :untyped
 end
 
 class FromHashTest < Test::Unit::TestCase
@@ -118,6 +129,12 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(4, o&.num)
   end
 
+  def test_hash_with_no_types
+    hash = { hash_with_no_types: { 'key' => 'value' } }
+    m = TestConfig.from_hash(hash)
+    assert_equal({ 'key' => 'value' }, m.hash_with_no_types)
+  end
+
   def test_hashes
     hash = { hashes: [{ key: { num: 6 } }, { key2: { 'num' => 7 } }] }
     m = TestConfig.from_hash(hash)
@@ -129,6 +146,7 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(6, m.hashes[0]&.fetch(:key)&.num)
     assert_equal(7, m.hashes[1]&.fetch(:key2)&.num)
   end
+
 
   def test_nilable_num
     hash = { nilable_num: nil }
@@ -212,5 +230,19 @@ class FromHashTest < Test::Unit::TestCase
     h = T.must(c.nilable_hash_with_string_or_object)
     assert_equal('hello', h['string'])
     assert_equal(42, T.cast(h['object'], TestObject).num)
+  end
+
+  def test_untyped
+    c = TestConfig.from_hash({ untyped: { 'key' => 'value' } })
+    assert_equal({ 'key' => 'value' }, c.untyped)
+
+    c = TestConfig.from_hash({ untyped: 'hello' })
+    assert_equal('hello', c.untyped)
+
+    c = TestConfig.from_hash({ untyped: 42 })
+    assert_equal(42, c.untyped)
+
+    c = TestConfig.from_hash({ untyped: [1, 2, 3] })
+    assert_equal([1, 2, 3], c.untyped) 
   end
 end
