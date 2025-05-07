@@ -62,12 +62,10 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T.nilable(T::Hash[String, T.any(String, TestObject)])) }
   attr_reader :nilable_hash_with_string_or_object
 
-  # TODO Try 
-  # sig { returns(T.nilable(T::Hash[String, T.any(TestObject, String)])) }
-  # attr_reader :nilable_hash_with_object_or_string
-  # 
-  #
-  sig {returns(T.untyped)}
+  sig { returns(T.nilable(T::Hash[String, T.any(TestObject, String)])) }
+  attr_reader :nilable_hash_with_object_or_string
+
+  sig { returns(T.untyped) }
   attr_reader :untyped
 end
 
@@ -146,7 +144,6 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(6, m.hashes[0]&.fetch(:key)&.num)
     assert_equal(7, m.hashes[1]&.fetch(:key2)&.num)
   end
-
 
   def test_nilable_num
     hash = { nilable_num: nil }
@@ -232,6 +229,13 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(42, T.cast(h['object'], TestObject).num)
   end
 
+  def test_nilable_hash_with_object_or_string
+    c = TestConfig.from_hash({ nilable_hash_with_object_or_string: { 'string' => 'hello', 'object' => { num: 42 } } })
+    h = T.must(c.nilable_hash_with_object_or_string)
+    assert_equal('hello', h['string'])
+    assert_equal(42, T.cast(h['object'], TestObject).num)
+  end
+
   def test_untyped
     c = TestConfig.from_hash({ untyped: { 'key' => 'value' } })
     assert_equal({ 'key' => 'value' }, c.untyped)
@@ -243,6 +247,6 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(42, c.untyped)
 
     c = TestConfig.from_hash({ untyped: [1, 2, 3] })
-    assert_equal([1, 2, 3], c.untyped) 
+    assert_equal([1, 2, 3], c.untyped)
   end
 end
