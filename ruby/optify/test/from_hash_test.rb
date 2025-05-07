@@ -43,6 +43,21 @@ class TestConfig < Optify::BaseConfig
 
   sig { returns(T::Array[T.nilable(TestObject)]) }
   attr_reader :nilable_objects
+
+  sig { returns(T.any(String, Integer)) }
+  attr_reader :string_or_integer
+
+  sig { returns(T.nilable(T.any(String, Integer))) }
+  attr_reader :nilable_string_or_integer
+
+  sig { returns(T.any(String, TestObject)) }
+  attr_reader :string_or_object
+
+  sig { returns(T.nilable(T.any(String, TestObject))) }
+  attr_reader :nilable_string_or_object
+
+  sig { returns(T.nilable(T::Hash[String, T.any(String, TestObject)])) }
+  attr_reader :nilable_hash_with_string_or_object
 end
 
 class FromHashTest < Test::Unit::TestCase
@@ -153,5 +168,49 @@ class FromHashTest < Test::Unit::TestCase
     hash = { num: 33 }
     m = TestObject.from_hash(hash)
     assert_equal(33, m.num)
+  end
+
+  def test_string_or_integer
+    c = TestConfig.from_hash({ string_or_integer: 'hello' })
+    assert_equal('hello', c.string_or_integer)
+
+    c = TestConfig.from_hash({ string_or_integer: 42 })
+    assert_equal(42, c.string_or_integer)
+  end
+
+  def test_nilable_string_or_integer
+    c = TestConfig.from_hash({ nilable_string_or_integer: 'hello' })
+    assert_equal('hello', c.nilable_string_or_integer)
+
+    c = TestConfig.from_hash({ nilable_string_or_integer: 42 })
+    assert_equal(42, c.nilable_string_or_integer)
+
+    c = TestConfig.from_hash({ nilable_string_or_integer: nil })
+    assert_nil(c.nilable_string_or_integer)
+  end
+
+  def test_string_or_object
+    c = TestConfig.from_hash({ string_or_object: { num: 42 } })
+    assert_instance_of(TestObject, c.string_or_object)
+    assert_equal(42, T.cast(c.string_or_object, TestObject).num)
+
+    c = TestConfig.from_hash({ string_or_object: 'hello' })
+    assert_equal('hello', c.string_or_object)
+  end
+
+  def test_nilable_string_or_object
+    c = TestConfig.from_hash({ nilable_string_or_object: 'hello' })
+    assert_equal('hello', c.nilable_string_or_object)
+
+    c = TestConfig.from_hash({ nilable_string_or_object: { num: 42 } })
+    assert_instance_of(TestObject, c.nilable_string_or_object)
+    assert_equal(42, T.cast(c.nilable_string_or_object, TestObject).num)
+  end
+
+  def test_nilable_hash_with_string_or_object
+    c = TestConfig.from_hash({ nilable_hash_with_string_or_object: { 'string' => 'hello', 'object' => { num: 42 } } })
+    h = T.must(c.nilable_hash_with_string_or_object)
+    assert_equal('hello', h['string'])
+    assert_equal(42, T.cast(h['object'], TestObject).num)
   end
 end
