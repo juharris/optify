@@ -91,7 +91,7 @@ module Optify
         return hash.transform_values { |v| _convert_value(v, type_for_values) }
       end
 
-      raise TypeError.new("No type information for key: #{type} with value: #{hash}")
+      raise TypeError.new("Could not convert hash #{hash} to `#{type}`.")
     end
 
     private_class_method :_convert_hash, :_convert_value
