@@ -20,6 +20,9 @@ class TestObject2 < Optify::BaseConfig
 end
 
 class TestConfig < Optify::BaseConfig
+  sig { returns(T::Array[T.any(String, TestObject)]) }
+  attr_reader :array_of_string_or_object
+
   sig { returns(T::Hash[String, Integer]) }
   attr_reader :hash
 
@@ -105,6 +108,14 @@ class FromHashTest < Test::Unit::TestCase
     assert_nil(m.nilable_objects[2])
     assert_nil(m.nilable_objects[3]&.nilable_num)
     assert_equal(44, m.nilable_objects[4]&.nilable_num)
+  end
+
+  def test_array_of_string_or_object
+    hash = { array_of_string_or_object: ['hello', { num: 923_471 }] }
+    c = TestConfig.from_hash(hash)
+    assert_equal('hello', c.array_of_string_or_object[0])
+    assert_instance_of(TestObject, c.array_of_string_or_object[1])
+    assert_equal(923_471, T.cast(c.array_of_string_or_object[1], TestObject).num)
   end
 
   def test_from_hash_deep

@@ -63,6 +63,8 @@ module Optify
         return _convert_hash(value, type).freeze
       end
 
+      # It would be nice to validate that the value is of the correct type here.
+      # For example that a string is a string and an Integer is an Integer.
       value
     end
 
