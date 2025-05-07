@@ -13,6 +13,12 @@ class TestObject < Optify::BaseConfig
   attr_reader :nilable_num
 end
 
+# An object with distinct properties from `TestObject`.
+class TestObject2 < Optify::BaseConfig
+  sig { returns(String) }
+  attr_reader :string
+end
+
 class TestConfig < Optify::BaseConfig
   sig { returns(T::Hash[String, Integer]) }
   attr_reader :hash
@@ -56,6 +62,9 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T.any(String, TestObject)) }
   attr_reader :string_or_object
 
+  sig { returns(T.any(String, TestObject, TestObject2)) }
+  attr_reader :string_or_object_or_object2
+
   sig { returns(T.nilable(T.any(String, TestObject))) }
   attr_reader :nilable_string_or_object
 
@@ -64,6 +73,9 @@ class TestConfig < Optify::BaseConfig
 
   sig { returns(T.nilable(T::Hash[String, T.any(TestObject, String)])) }
   attr_reader :nilable_hash_with_object_or_string
+
+  sig { returns(T.nilable(T::Hash[String, T.any(String, TestObject, TestObject2)])) }
+  attr_reader :nilable_hash_with_string_or_object_or_object2
 
   sig { returns(T.untyped) }
   attr_reader :untyped
@@ -96,9 +108,11 @@ class FromHashTest < Test::Unit::TestCase
     hash = { 'rootString' => value, :myObject => { 'two' => 2 }, 'myObjects' => [{ two: 222 }] }
     m = MyConfig.from_hash(hash)
     assert_equal(value, m.rootString)
-    assert_raises(NoMethodError) do
+    exception = assert_raises(NoMethodError) do
       T.unsafe(m).rootString = 'wtv'
     end
+    assert_match(/undefined method [`']rootString=' for an instance of MyConfig/, exception.message)
+
     assert_equal(2, m.myObject.two)
     assert_equal(222, m.myObjects[0]&.two)
   end
@@ -222,6 +236,19 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal(42, T.cast(c.nilable_string_or_object, TestObject).num)
   end
 
+  def test_string_or_object_or_object2
+    c = TestConfig.from_hash({ string_or_object_or_object2: 'hello' })
+    assert_equal('hello', c.string_or_object_or_object2)
+
+    c = TestConfig.from_hash({ string_or_object_or_object2: { num: 42 } })
+    assert_instance_of(TestObject, c.string_or_object_or_object2)
+    assert_equal(42, T.cast(c.string_or_object_or_object2, TestObject).num)
+
+    c = TestConfig.from_hash({ string_or_object_or_object2: { string: 'hello' } })
+    assert_instance_of(TestObject2, c.string_or_object_or_object2)
+    assert_equal('hello', T.cast(c.string_or_object_or_object2, TestObject2).string)
+  end
+
   def test_nilable_hash_with_string_or_object
     c = TestConfig.from_hash({ nilable_hash_with_string_or_object: { 'string' => 'hello', 'object' => { num: 42 } } })
     h = T.must(c.nilable_hash_with_string_or_object)
@@ -234,6 +261,28 @@ class FromHashTest < Test::Unit::TestCase
     h = T.must(c.nilable_hash_with_object_or_string)
     assert_equal('hello', h['string'])
     assert_equal(42, T.cast(h['object'], TestObject).num)
+  end
+
+  def test_nilable_hash_with_string_or_object_or_object2
+    c = TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 'hello', 'object' => { num: 42 }, 'object2' => { string: 'hello2' }, 'nil' => nil } })
+    h = T.must(c.nilable_hash_with_string_or_object_or_object2)
+    assert_equal('hello', h['string'])
+    assert_equal(42, T.cast(h['object'], TestObject).num)
+    assert_equal('hello2', T.cast(h['object2'], TestObject2).string)
+    assert_nil(h['nil'])
+  end
+
+  def test_nilable_hash_with_string_or_object_or_object2_invalid_object
+    exception = assert_raises(TypeError) do
+      TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => { 'invalid key' => 'value' } } })
+    end
+    assert_match(/Could not convert hash: {"string" ?=> ?{"invalid key" ?=> ?"value"}} to T.nilable\(T::Hash\[String, T.any\(String, TestObject, TestObject2\)\]\)./, exception.message)
+  end
+
+  def test_nilable_hash_with_string_or_object_or_object2_invalid_value
+    assert_raises(TypeError.new("Could not convert hash: 3 to T.nilable(T::Hash[String, T.any(String, TestObject, TestObject2)]).")) do
+      TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 3} })
+    end
   end
 
   def test_untyped

@@ -37,7 +37,7 @@ module Optify
     #: (untyped value, untyped type) -> untyped
     def self._convert_value(value, type)
       if type.is_a?(T::Types::Untyped)
-        # The hash is not typed.
+        # No preferred type is given, so return the value as is.
         return value
       end
 
@@ -48,15 +48,19 @@ module Optify
         inner_type = type.type
         return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
-        # Handle `T.nilable(T::Hash[...])`
-        # type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
+        # Handle `T.nilable(T::Hash[...])` and `T.any(...)`.
+        # We used to use `type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)`, but it's not needed now that we handle `T.any(...)`
+        # because using `.types` works for both cases.
         if type.respond_to?(:types)
-          # FIXME: Find a type that works for the hash.
+          # Find a type that works for the hash.
           type.types.each do |t|
-            return _convert_hash(value, t).freeze
-          rescue StandardError
-            # Ignore
+            begin
+              return _convert_hash(value, t).freeze
+            rescue StandardError
+              # Ignore and try the next type.
+            end
           end
+          raise TypeError.new("Could not convert hash: #{value} to #{type}.")
         end
         return _convert_hash(value, type).freeze
       end
@@ -83,18 +87,11 @@ module Optify
           end
         end
 
-        # The values are not recognized objects.
+        # The values are not specific recognized objects.
         return hash.transform_values { |v| _convert_value(v, type_for_values) }
-        # elsif type.is_a?(T::Types::Untyped)
-        #   # The hash is not typed.
-        #   return hash
       end
 
-      # Fallback to doing nothing.
-      # This can happen if there are is no type information for a key in the hash.
-
-      raise "No type information for key: #{type} with value: #{hash}"
-      # hash
+      raise TypeError.new("No type information for key: #{type} with value: #{hash}")
     end
 
     private_class_method :_convert_hash, :_convert_value
