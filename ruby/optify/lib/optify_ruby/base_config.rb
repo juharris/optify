@@ -23,19 +23,24 @@ module Optify
     # @return The new instance.
     #: (Hash[untyped, untyped] hash) -> instance
     def self.from_hash(hash)
-      result = new
+      instance = new
 
       hash.each do |key, value|
         sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
         value = _convert_value(value, sig_return_type)
-        result.instance_variable_set("@#{key}", value)
+        instance.instance_variable_set("@#{key}", value)
       end
 
-      T.unsafe(result).freeze if T.unsafe(result).respond_to?(:freeze)
+      instance.freeze
     end
 
     #: (untyped value, untyped type) -> untyped
     def self._convert_value(value, type)
+      if type.is_a?(T::Types::Untyped)
+        # No preferred type is given, so return the value as is.
+        return value
+      end
+
       case value
       when Array
         # Handle `T.nilable(T::Array[...])`
@@ -43,39 +48,50 @@ module Optify
         inner_type = type.type
         return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
-        # Handle `T.nilable(T::Hash[...])`
-        type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
+        # Handle `T.nilable(T::Hash[...])` and `T.any(...)`.
+        # We used to use `type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)`, but it's not needed now that we handle `T.any(...)`
+        # because using `.types` works for both cases.
+        if type.respond_to?(:types)
+          # Find a type that works for the hash.
+          type.types.each do |t|
+            return _convert_hash(value, t).freeze
+          rescue StandardError
+            # Ignore and try the next type.
+          end
+          raise TypeError, "Could not convert hash: #{value} to #{type}."
+        end
         return _convert_hash(value, type).freeze
       end
 
+      # It would be nice to validate that the value is of the correct type here.
+      # For example that a string is a string and an Integer is an Integer.
       value
     end
 
     #: (Hash[untyped, untyped] hash, untyped type) -> untyped
-    def self._convert_hash(hash, type) # rubocop:disable Metrics/PerceivedComplexity
+    def self._convert_hash(hash, type)
       if type.respond_to?(:raw_type)
         # There is an object for the hash.
+        # It could be a custom class, a String, or maybe something else.
         type_for_hash = type.raw_type
         return type_for_hash.from_hash(hash) if type_for_hash.respond_to?(:from_hash)
-      elsif type.instance_of?(T::Types::TypedHash)
+      elsif type.is_a?(T::Types::TypedHash)
         # The hash should be a hash, but the values might be objects to convert.
         type_for_values = type.values
 
         if type_for_values.respond_to?(:raw_type)
-          raw_type_for_values = type_for_values.raw_type
+          raw_type_for_values = T.unsafe(type_for_values).raw_type
           if raw_type_for_values.respond_to?(:from_hash)
             # Use proper types.
             return hash.transform_values { |v| raw_type_for_values.from_hash(v) }
           end
         end
 
-        # The values are not recognized objects.
+        # The values are not specific recognized objects.
         return hash.transform_values { |v| _convert_value(v, type_for_values) }
       end
 
-      # Fallback to doing nothing.
-      # This can happen if there are is no type information for a key in the hash.
-      hash
+      raise TypeError, "Could not convert hash #{hash} to `#{type}`."
     end
 
     private_class_method :_convert_hash, :_convert_value

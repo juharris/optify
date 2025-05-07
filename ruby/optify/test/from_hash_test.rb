@@ -13,7 +13,16 @@ class TestObject < Optify::BaseConfig
   attr_reader :nilable_num
 end
 
+# An object with distinct properties from `TestObject`.
+class TestObject2 < Optify::BaseConfig
+  sig { returns(String) }
+  attr_reader :string
+end
+
 class TestConfig < Optify::BaseConfig
+  sig { returns(T::Array[T.any(String, TestObject)]) }
+  attr_reader :array_of_string_or_object
+
   sig { returns(T::Hash[String, Integer]) }
   attr_reader :hash
 
@@ -38,11 +47,44 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T::Array[T::Hash[Symbol, TestObject]]) }
   attr_reader :hashes
 
+  sig { returns(Hash) }
+  attr_reader :hash_with_no_types
+
+  sig { returns(T::Hash[String, T.untyped]) }
+  attr_reader :hash_with_untyped_values
+
   sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
   attr_reader :nilable_hashes_of_objects
 
   sig { returns(T::Array[T.nilable(TestObject)]) }
   attr_reader :nilable_objects
+
+  sig { returns(T.any(String, Integer)) }
+  attr_reader :string_or_integer
+
+  sig { returns(T.nilable(T.any(String, Integer))) }
+  attr_reader :nilable_string_or_integer
+
+  sig { returns(T.any(String, TestObject)) }
+  attr_reader :string_or_object
+
+  sig { returns(T.any(String, TestObject, TestObject2)) }
+  attr_reader :string_or_object_or_object2
+
+  sig { returns(T.nilable(T.any(String, TestObject))) }
+  attr_reader :nilable_string_or_object
+
+  sig { returns(T.nilable(T::Hash[String, T.any(String, TestObject)])) }
+  attr_reader :nilable_hash_with_string_or_object
+
+  sig { returns(T.nilable(T::Hash[String, T.any(TestObject, String)])) }
+  attr_reader :nilable_hash_with_object_or_string
+
+  sig { returns(T.nilable(T::Hash[String, T.any(String, TestObject, TestObject2)])) }
+  attr_reader :nilable_hash_with_string_or_object_or_object2
+
+  sig { returns(T.untyped) }
+  attr_reader :untyped
 end
 
 class FromHashTest < Test::Unit::TestCase
@@ -57,14 +99,23 @@ class FromHashTest < Test::Unit::TestCase
   end
 
   def test_array_nilable_objects
-    hash = { nilable_objects: [nil, { num: 42 }, nil, { "nilable_num": nil }, { "nilable_num": 44 }] }
+    hash = { nilable_objects: [nil, { num: 243 }, nil, { "nilable_num": nil }, { "nilable_num": 44 }] }
     m = TestConfig.from_hash(hash)
     assert_equal(5, m.nilable_objects.size)
     assert_nil(m.nilable_objects[0])
     assert_instance_of(TestObject, m.nilable_objects[1])
+    assert_equal(243, m.nilable_objects[1]&.num)
     assert_nil(m.nilable_objects[2])
     assert_nil(m.nilable_objects[3]&.nilable_num)
     assert_equal(44, m.nilable_objects[4]&.nilable_num)
+  end
+
+  def test_array_of_string_or_object
+    hash = { array_of_string_or_object: ['hello', { num: 923_471 }] }
+    c = TestConfig.from_hash(hash)
+    assert_equal('hello', c.array_of_string_or_object[0])
+    assert_instance_of(TestObject, c.array_of_string_or_object[1])
+    assert_equal(923_471, T.cast(c.array_of_string_or_object[1], TestObject).num)
   end
 
   def test_from_hash_deep
@@ -72,9 +123,11 @@ class FromHashTest < Test::Unit::TestCase
     hash = { 'rootString' => value, :myObject => { 'two' => 2 }, 'myObjects' => [{ two: 222 }] }
     m = MyConfig.from_hash(hash)
     assert_equal(value, m.rootString)
-    assert_raises(NoMethodError) do
+    exception = assert_raises(NoMethodError) do
       T.unsafe(m).rootString = 'wtv'
     end
+    assert_match(/undefined method [`']rootString=' for an instance of MyConfig/, exception.message)
+
     assert_equal(2, m.myObject.two)
     assert_equal(222, m.myObjects[0]&.two)
   end
@@ -101,6 +154,24 @@ class FromHashTest < Test::Unit::TestCase
     assert_instance_of(TestObject, o)
     assert(o.frozen?)
     assert_equal(4, o&.num)
+  end
+
+  def test_hash_to_string
+    exception = assert_raises(TypeError) do
+      TestObject2.from_hash({ string: { 'key' => 'value' } })
+    end
+    assert_match(/Could not convert hash {"key" ?=> ?"value"} to `String`/, exception.message)
+  end
+
+  def test_hash_with_untyped_values
+    m = TestConfig.from_hash({ hash_with_untyped_values: { 'key' => 'value', 'key2' => { 'num' => 4 }, 'num' => 5 } })
+    assert_equal({ 'key' => 'value', 'key2' => { 'num' => 4 }, 'num' => 5 }, m.hash_with_untyped_values)
+  end
+
+  def test_hash_with_no_types
+    hash = { hash_with_no_types: { 'key' => 'value' } }
+    m = TestConfig.from_hash(hash)
+    assert_equal({ 'key' => 'value' }, m.hash_with_no_types)
   end
 
   def test_hashes
@@ -153,5 +224,108 @@ class FromHashTest < Test::Unit::TestCase
     hash = { num: 33 }
     m = TestObject.from_hash(hash)
     assert_equal(33, m.num)
+  end
+
+  def test_string_or_integer
+    c = TestConfig.from_hash({ string_or_integer: 'hello' })
+    assert_equal('hello', c.string_or_integer)
+
+    c = TestConfig.from_hash({ string_or_integer: 45_629 })
+    assert_equal(45_629, c.string_or_integer)
+  end
+
+  def test_nilable_string_or_integer
+    c = TestConfig.from_hash({ nilable_string_or_integer: 'hello' })
+    assert_equal('hello', c.nilable_string_or_integer)
+
+    c = TestConfig.from_hash({ nilable_string_or_integer: 312_449 })
+    assert_equal(312_449, c.nilable_string_or_integer)
+
+    c = TestConfig.from_hash({ nilable_string_or_integer: nil })
+    assert_nil(c.nilable_string_or_integer)
+  end
+
+  def test_string_or_object
+    c = TestConfig.from_hash({ string_or_object: { num: 871_102 } })
+    assert_instance_of(TestObject, c.string_or_object)
+    assert_equal(871_102, T.cast(c.string_or_object, TestObject).num)
+
+    c = TestConfig.from_hash({ string_or_object: 'hello' })
+    assert_equal('hello', c.string_or_object)
+  end
+
+  def test_nilable_string_or_object
+    c = TestConfig.from_hash({ nilable_string_or_object: 'hello' })
+    assert_equal('hello', c.nilable_string_or_object)
+
+    c = TestConfig.from_hash({ nilable_string_or_object: { num: 42 } })
+    assert_instance_of(TestObject, c.nilable_string_or_object)
+    assert_equal(42, T.cast(c.nilable_string_or_object, TestObject).num)
+  end
+
+  def test_string_or_object_or_object2
+    c = TestConfig.from_hash({ string_or_object_or_object2: 'hello' })
+    assert_equal('hello', c.string_or_object_or_object2)
+
+    c = TestConfig.from_hash({ string_or_object_or_object2: { num: 42 } })
+    assert_instance_of(TestObject, c.string_or_object_or_object2)
+    assert_equal(42, T.cast(c.string_or_object_or_object2, TestObject).num)
+
+    c = TestConfig.from_hash({ string_or_object_or_object2: { string: 'hello' } })
+    assert_instance_of(TestObject2, c.string_or_object_or_object2)
+    assert_equal('hello', T.cast(c.string_or_object_or_object2, TestObject2).string)
+  end
+
+  def test_nilable_hash_with_string_or_object
+    c = TestConfig.from_hash({ nilable_hash_with_string_or_object: { 'string' => 'hello', 'object' => { num: 42 } } })
+    h = T.must(c.nilable_hash_with_string_or_object)
+    assert_equal('hello', h['string'])
+    assert_equal(42, T.cast(h['object'], TestObject).num)
+  end
+
+  def test_nilable_hash_with_object_or_string
+    c = TestConfig.from_hash({ nilable_hash_with_object_or_string: { 'string' => 'hello', 'object' => { num: 42 } } })
+    h = T.must(c.nilable_hash_with_object_or_string)
+    assert_equal('hello', h['string'])
+    assert_equal(42, T.cast(h['object'], TestObject).num)
+  end
+
+  def test_nilable_hash_with_string_or_object_or_object2
+    c = TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 'hello', 'object' => { num: 42 }, 'object2' => { string: 'hello2' }, 'nil' => nil } })
+    h = T.must(c.nilable_hash_with_string_or_object_or_object2)
+    assert_equal('hello', h['string'])
+    assert_equal(42, T.cast(h['object'], TestObject).num)
+    assert_equal('hello2', T.cast(h['object2'], TestObject2).string)
+    assert_nil(h['nil'])
+  end
+
+  def test_nilable_hash_with_string_or_object_or_object2_invalid_object
+    exception = assert_raises(TypeError) do
+      TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => { 'invalid key' => 'value' } } })
+    end
+    assert_match(/Could not convert hash: {"string" ?=> ?{"invalid key" ?=> ?"value"}} to T.nilable\(T::Hash\[String, T.any\(String, TestObject, TestObject2\)\]\)./,
+                 exception.message)
+  end
+
+  # Skip for now because we don't validate primitive value types.
+  def skip_test_nilable_hash_with_string_or_object_or_object2_invalid_value
+    exception = assert_raises(TypeError) do
+      TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 3 } })
+    end
+    assert_match(/Could not convert value: 3 to T.nilable\(T.any\(String, TestObject, TestObject2\)\)./, exception.message)
+  end
+
+  def test_untyped
+    c = TestConfig.from_hash({ untyped: { 'key' => 'value' } })
+    assert_equal({ 'key' => 'value' }, c.untyped)
+
+    c = TestConfig.from_hash({ untyped: 'hello' })
+    assert_equal('hello', c.untyped)
+
+    c = TestConfig.from_hash({ untyped: 42 })
+    assert_equal(42, c.untyped)
+
+    c = TestConfig.from_hash({ untyped: [1, 2, 3] })
+    assert_equal([1, 2, 3], c.untyped)
   end
 end
