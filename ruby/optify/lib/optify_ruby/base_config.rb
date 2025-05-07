@@ -31,10 +31,7 @@ module Optify
         instance.instance_variable_set("@#{key}", value)
       end
 
-      result = T.unsafe(instance)
-      result.freeze if result.respond_to?(:freeze)
-      # TODO Try
-      # result.freeze
+      instance.freeze
     end
 
     #: (untyped value, untyped type) -> untyped
@@ -54,13 +51,11 @@ module Optify
         # Handle `T.nilable(T::Hash[...])`
         # type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
         if type.respond_to?(:types)
-          # FIXME Find a type that works for the hash.
+          # FIXME: Find a type that works for the hash.
           type.types.each do |t|
-            begin
-              return _convert_hash(value, t).freeze
-            rescue
-              # Ignore
-            end
+            return _convert_hash(value, t).freeze
+          rescue StandardError
+            # Ignore
           end
         end
         return _convert_hash(value, type).freeze
@@ -90,14 +85,14 @@ module Optify
 
         # The values are not recognized objects.
         return hash.transform_values { |v| _convert_value(v, type_for_values) }
-      # elsif type.is_a?(T::Types::Untyped)
-      #   # The hash is not typed.
-      #   return hash
+        # elsif type.is_a?(T::Types::Untyped)
+        #   # The hash is not typed.
+        #   return hash
       end
 
       # Fallback to doing nothing.
       # This can happen if there are is no type information for a key in the hash.
-      
+
       raise "No type information for key: #{type} with value: #{hash}"
       # hash
     end
