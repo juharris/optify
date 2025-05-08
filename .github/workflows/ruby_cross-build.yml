@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: ci-data
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         ruby_platform:
         # Add more as needed.
@@ -85,10 +85,14 @@ jobs:
         platform: ${{ matrix.ruby_platform }}
         # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
-        # If we want to go back to specific supported versions, we can use the following:
+        # If we want to use specific supported versions, we can use the following:
         ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
-        # Tried doing this, but it said ">= 3.0, < 3.1.dev" on rubygems.
-        # Tried ">=3.0, < 4", but RubyGems said: ">= 3.0, < 3.1.dev"
+        # For ruby-versions: Tried doing this, but it said ">= 3.0, < 3.1.dev" on rubygems.
+        # For ruby-versions: Tried ">=3.0, < 4", but RubyGems said: ">= 3.0, < 3.1.dev"
+
+        # The Docker containers for tag 0.9.113 did not get published, so we'll use 0.9.111 for now.
+        # 0.9.114 will probably be the next released version, but then we should be able to remove this line that sets the tag and just use the default.
+        tag: '0.9.111'
         working-directory: ./ruby/optify
 
     - name: "[Ruby] Publish"
