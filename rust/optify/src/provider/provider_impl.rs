@@ -51,6 +51,7 @@ impl OptionsProvider {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
+        overrides: &Option<serde_json::Value>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
         if let Some(_cache_options) = cache_options {
             return Err("Caching is not supported yet.".to_owned());
@@ -83,6 +84,15 @@ impl OptionsProvider {
             };
             config_builder = config_builder.add_source(source.clone());
         }
+
+        if let Some(overrides) = overrides {
+            let overrides_as_json_str = serde_json::to_string(&overrides).unwrap();
+            config_builder = config_builder.add_source(config::File::from_str(
+                &overrides_as_json_str,
+                config::FileFormat::Json,
+            ));
+        }
+
         Ok(config_builder.build())
     }
 }
@@ -94,7 +104,7 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+        let config = self._get_entire_config(feature_names, cache_options, preferences, &None)?;
 
         match config {
             Ok(cfg) => match cfg.try_deserialize() {
@@ -142,7 +152,7 @@ impl OptionsRegistry for OptionsProvider {
     }
 
     fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<serde_json::Value, String> {
-        self.get_options_with_preferences(key, feature_names, &None, &None)
+        self.get_options_with_preferences(key, feature_names, &None, &None, &None)
     }
 
     fn get_options_with_preferences(
@@ -151,8 +161,10 @@ impl OptionsRegistry for OptionsProvider {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
+        overrides: &Option<serde_json::Value>,
     ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+        let config =
+            self._get_entire_config(feature_names, cache_options, preferences, overrides)?;
 
         match config {
             Ok(cfg) => match cfg.get(key) {

@@ -41,5 +41,6 @@ pub trait OptionsRegistry {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
+        overrides: &Option<Value>,
     ) -> Result<Value, String>;
 }
