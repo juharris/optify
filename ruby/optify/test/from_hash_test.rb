@@ -17,6 +17,9 @@ end
 class TestObject2 < Optify::BaseConfig
   sig { returns(String) }
   attr_reader :string
+
+  sig { returns(T::Hash[Symbol, TestObject]) }
+  attr_reader :hash_symbol_to_object
 end
 
 class TestConfig < Optify::BaseConfig
@@ -46,6 +49,9 @@ class TestConfig < Optify::BaseConfig
 
   sig { returns(T::Array[T::Hash[Symbol, TestObject]]) }
   attr_reader :hashes
+
+  sig { returns(T::Hash[Symbol, Symbol]) }
+  attr_reader :symbol_to_symbol
 
   sig { returns(Hash) }
   attr_reader :hash_with_no_types
@@ -141,14 +147,14 @@ class FromHashTest < Test::Unit::TestCase
   end
 
   def test_from_hash_for_hash_with_object
-    hash = { hash_with_object: { key: { num: 3 } } }
+    hash = { hash_with_object: { 'key' => { num: 3 } } }
     m = TestConfig.from_hash(hash)
     o = m.hash_with_object[:key]
     assert_instance_of(TestObject, o)
     assert(o.frozen?)
     assert_equal(3, m.hash_with_object[:key]&.num)
 
-    hash = { hash_of_hash_with_object: { 'key' => { key2: { 'num': 4 } } } }
+    hash = { hash_of_hash_with_object: { 'key' => { 'key2' => { 'num': 4 } } } }
     m = TestConfig.from_hash(hash)
     o = T.must(m.hash_of_hash_with_object['key'])[:key2]
     assert_instance_of(TestObject, o)
@@ -174,8 +180,29 @@ class FromHashTest < Test::Unit::TestCase
     assert_equal({ 'key' => 'value' }, m.hash_with_no_types)
   end
 
+  def test_hash_symbol_to_object
+    hash = { 'string_or_object_or_object2' => { 'hash_symbol_to_object' => { 'key' => { 'num' => 4 } } } }
+    c = TestConfig.from_hash(hash)
+    hash_symbol_to_object = T.cast(c.string_or_object_or_object2, TestObject2).hash_symbol_to_object
+    assert_instance_of(Hash, hash_symbol_to_object)
+    assert_instance_of(TestObject, hash_symbol_to_object[:key])
+    assert_equal(4, hash_symbol_to_object[:key]&.num)
+  end
+
   def test_hashes
     hash = { hashes: [{ key: { num: 6 } }, { key2: { 'num' => 7 } }] }
+    m = TestConfig.from_hash(hash)
+    assert_equal(2, m.hashes.size)
+    assert_instance_of(Hash, m.hashes[0])
+    assert_instance_of(Hash, m.hashes[1])
+    assert_instance_of(TestObject, T.must(m.hashes[0])[:key])
+    assert_instance_of(TestObject, T.must(m.hashes[1])[:key2])
+    assert_equal(6, m.hashes[0]&.fetch(:key)&.num)
+    assert_equal(7, m.hashes[1]&.fetch(:key2)&.num)
+  end
+
+  def test_hashes_from_strings
+    hash = { hashes: [{ 'key' => { 'num' => 6 } }, { 'key2' => { 'num' => 7 } }] }
     m = TestConfig.from_hash(hash)
     assert_equal(2, m.hashes.size)
     assert_instance_of(Hash, m.hashes[0])
@@ -313,6 +340,12 @@ class FromHashTest < Test::Unit::TestCase
       TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 3 } })
     end
     assert_match(/Could not convert value: 3 to T.nilable\(T.any\(String, TestObject, TestObject2\)\)./, exception.message)
+  end
+
+  def test_symbol_to_symbol
+    hash = { 'symbol_to_symbol' => { 'key' => 'value' } }
+    c = TestConfig.from_hash(hash)
+    assert_equal({ key: :value }, c.symbol_to_symbol)
   end
 
   def test_untyped
