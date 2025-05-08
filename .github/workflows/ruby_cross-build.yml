@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: ci-data
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         ruby_platform:
         # Add more as needed.
