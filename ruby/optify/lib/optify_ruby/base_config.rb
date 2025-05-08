@@ -41,6 +41,8 @@ module Optify
         return value
       end
 
+      return value.to_sym if type.is_a?(T::Types::Simple) && type.raw_type == Symbol
+
       case value
       when Array
         # Handle `T.nilable(T::Array[...])`
@@ -77,18 +79,16 @@ module Optify
         return type_for_hash.from_hash(hash) if type_for_hash.respond_to?(:from_hash)
       elsif type.is_a?(T::Types::TypedHash)
         # The hash should be a hash, but the values might be objects to convert.
+        type_for_keys = type.keys
+
+        convert_key = if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
+                        lambda(&:to_sym)
+                      else
+                        lambda(&:itself)
+                      end
+
         type_for_values = type.values
-
-        if type_for_values.respond_to?(:raw_type)
-          raw_type_for_values = T.unsafe(type_for_values).raw_type
-          if raw_type_for_values.respond_to?(:from_hash)
-            # Use proper types.
-            return hash.transform_values { |v| raw_type_for_values.from_hash(v) }
-          end
-        end
-
-        # The values are not specific recognized objects.
-        return hash.transform_values { |v| _convert_value(v, type_for_values) }
+        return hash.map { |k, v| [convert_key.call(k), _convert_value(v, type_for_values)] }.to_h
       end
 
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
