@@ -16,6 +16,7 @@ struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 impl MutGetOptionsPreferences {
     fn new() -> Self {
         Self(RefCell::new(GetOptionsPreferences {
+            overrides: None,
             skip_feature_name_conversion: false,
         }))
     }
@@ -122,6 +123,8 @@ impl WrappedOptionsProvider {
 
 fn convert_preferences(preferences: &MutGetOptionsPreferences) -> Option<GetOptionsPreferences> {
     Some(optify::provider::GetOptionsPreferences {
+        // TODO: Handle overrides.
+        overrides: None,
         skip_feature_name_conversion: preferences.skip_feature_name_conversion(),
     })
 }

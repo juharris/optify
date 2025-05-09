@@ -211,15 +211,8 @@ impl OptionsRegistry for OptionsWatcher {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
-        overrides: &Option<serde_json::Value>,
     ) -> std::result::Result<serde_json::Value, String> {
         let provider = self.current_provider.read().unwrap();
-        provider.get_options_with_preferences(
-            key,
-            feature_names,
-            cache_options,
-            preferences,
-            overrides,
-        )
+        provider.get_options_with_preferences(key, feature_names, cache_options, preferences)
     }
 }

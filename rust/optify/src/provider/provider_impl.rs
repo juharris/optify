@@ -16,7 +16,31 @@ pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
 pub struct GetOptionsPreferences {
+    pub overrides: Option<serde_json::Value>,
     pub skip_feature_name_conversion: bool,
+}
+
+impl Default for GetOptionsPreferences {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl GetOptionsPreferences {
+    pub fn new() -> Self {
+        Self {
+            overrides: None,
+            skip_feature_name_conversion: false,
+        }
+    }
+
+    pub fn set_overrides(&mut self, overrides: Option<serde_json::Value>) {
+        self.overrides = overrides;
+    }
+
+    pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
+        self.skip_feature_name_conversion = skip_feature_name_conversion;
+    }
 }
 
 pub struct CacheOptions {}
@@ -51,7 +75,6 @@ impl OptionsProvider {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
-        overrides: &Option<serde_json::Value>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
         if let Some(_cache_options) = cache_options {
             return Err("Caching is not supported yet.".to_owned());
@@ -84,13 +107,14 @@ impl OptionsProvider {
             };
             config_builder = config_builder.add_source(source.clone());
         }
-
-        if let Some(overrides) = overrides {
-            let overrides_as_json_str = serde_json::to_string(&overrides).unwrap();
-            config_builder = config_builder.add_source(config::File::from_str(
-                &overrides_as_json_str,
-                config::FileFormat::Json,
-            ));
+        if let Some(_preferences) = preferences {
+            if let Some(overrides) = &_preferences.overrides {
+                let overrides_as_json_str = serde_json::to_string(overrides).unwrap();
+                config_builder = config_builder.add_source(config::File::from_str(
+                    &overrides_as_json_str,
+                    config::FileFormat::Json,
+                ));
+            }
         }
 
         Ok(config_builder.build())
@@ -104,7 +128,7 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences, &None)?;
+        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
 
         match config {
             Ok(cfg) => match cfg.try_deserialize() {
@@ -152,7 +176,7 @@ impl OptionsRegistry for OptionsProvider {
     }
 
     fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<serde_json::Value, String> {
-        self.get_options_with_preferences(key, feature_names, &None, &None, &None)
+        self.get_options_with_preferences(key, feature_names, &None, &None)
     }
 
     fn get_options_with_preferences(
@@ -161,10 +185,8 @@ impl OptionsRegistry for OptionsProvider {
         feature_names: &[&str],
         cache_options: &Option<CacheOptions>,
         preferences: &Option<GetOptionsPreferences>,
-        overrides: &Option<serde_json::Value>,
     ) -> Result<serde_json::Value, String> {
-        let config =
-            self._get_entire_config(feature_names, cache_options, preferences, overrides)?;
+        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
 
         match config {
             Ok(cfg) => match cfg.get(key) {
