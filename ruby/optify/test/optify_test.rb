@@ -171,11 +171,14 @@ class OptifyTest < Test::Unit::TestCase
       assert_equal('root string overrides', options.rootString)
       assert_equal(options_without_overrides.rootString2, options.rootString2)
 
+      # Test that overrides work for nested values.
       value = 2222
       assert_not_equal(value, options_without_overrides.myObject.two)
       preferences.overrides = { 'myConfig' => { 'myObject' => { 'two' => value } } }
       options = provider.get_options('myConfig', feature_names, MyConfig, cache_options, preferences)
+      assert_equal(options_without_overrides.myObject.one, options.myObject.one)
       assert_equal(value, options.myObject.two)
+      assert_equal(options_without_overrides.rootString, options.rootString)
       assert_equal(options_without_overrides.rootString2, options.rootString2)
     end
   end

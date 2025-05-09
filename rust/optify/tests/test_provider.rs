@@ -19,7 +19,7 @@ fn get_provider() -> &'static OptionsProvider {
 fn test_provider_get_options_with_overrides() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let mut preferences = GetOptionsPreferences::new();
-    preferences.set_overrides(Some(
+    preferences.set_overrides_json(Some(
         serde_json::json!({
             "myConfig": {
                 "new key": 33,

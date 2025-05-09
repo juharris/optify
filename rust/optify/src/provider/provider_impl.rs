@@ -19,7 +19,7 @@ pub struct GetOptionsPreferences {
     /// Overrides to apply after the built configuration.
     /// A string is used because it makes it easier to pass to the `config` library, but this may change in the future.
     /// It also makes it simpler and maybe faster to get from other programming languages.
-    pub overrides: Option<String>,
+    pub overrides_json: Option<String>,
     pub skip_feature_name_conversion: bool,
 }
 
@@ -32,13 +32,13 @@ impl Default for GetOptionsPreferences {
 impl GetOptionsPreferences {
     pub fn new() -> Self {
         Self {
-            overrides: None,
+            overrides_json: None,
             skip_feature_name_conversion: false,
         }
     }
 
-    pub fn set_overrides(&mut self, overrides: Option<String>) {
-        self.overrides = overrides;
+    pub fn set_overrides_json(&mut self, overrides: Option<String>) {
+        self.overrides_json = overrides;
     }
 
     pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
@@ -81,7 +81,7 @@ impl OptionsProvider {
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
         if let Some(_cache_options) = cache_options {
             if let Some(preferences) = preferences {
-                if preferences.overrides.is_some() {
+                if preferences.overrides_json.is_some() {
                     return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
                 }
             }
@@ -116,7 +116,7 @@ impl OptionsProvider {
             config_builder = config_builder.add_source(source.clone());
         }
         if let Some(preferences) = preferences {
-            if let Some(overrides) = &preferences.overrides {
+            if let Some(overrides) = &preferences.overrides_json {
                 config_builder = config_builder
                     .add_source(config::File::from_str(overrides, config::FileFormat::Json));
             }

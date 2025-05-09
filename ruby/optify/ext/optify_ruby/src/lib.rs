@@ -16,24 +16,22 @@ struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 impl MutGetOptionsPreferences {
     fn new() -> Self {
         Self(RefCell::new(GetOptionsPreferences {
-            overrides: None,
+            overrides_json: None,
             skip_feature_name_conversion: false,
         }))
     }
 
     // Overrides Section
     fn has_overrides(&self) -> bool {
-        self.0.borrow().overrides.is_some()
+        self.0.borrow().overrides_json.is_some()
     }
 
-    // TODO Maybe we should use https://github.com/OneSignal/serde-magnus to help with converting a Ruby hash.
-    // Either way, we'll use a Hash in the Ruby interface.
     fn set_overrides_json(&self, overrides: Option<String>) {
-        self.0.borrow_mut().overrides = overrides;
+        self.0.borrow_mut().overrides_json = overrides;
     }
 
-    fn get_overrides(&self) -> Option<String> {
-        self.0.borrow().overrides.clone()
+    fn get_overrides_json(&self) -> Option<String> {
+        self.0.borrow().overrides_json.clone()
     }
 
     // Skip Feature Name Conversion Section
@@ -139,7 +137,7 @@ impl WrappedOptionsProvider {
 
 fn convert_preferences(preferences: &MutGetOptionsPreferences) -> Option<GetOptionsPreferences> {
     Some(optify::provider::GetOptionsPreferences {
-        overrides: preferences.get_overrides(),
+        overrides_json: preferences.get_overrides_json(),
         skip_feature_name_conversion: preferences.skip_feature_name_conversion(),
     })
 }
