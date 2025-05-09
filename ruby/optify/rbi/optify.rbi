@@ -43,8 +43,25 @@ module Optify
 
   # Preferences when getting options.
   class GetOptionsPreferences
-    sig { params(value: T::Boolean).returns(GetOptionsPreferences) }
+    # Indicates if overrides are set.
+    sig { returns(T::Boolean) }
+    def overrides?; end
+
+    # Set overrides to apply after building the options based on the feature names.
+    # Do not provide overrides when requesting cached options.
+    # @param value The overrides to apply.
+    sig { params(value: T.nilable(T::Hash[T.untyped, T.untyped])).void }
+    def overrides=(value); end
+
+    # Set overrides to apply after building the options based on the feature names.
+    # Do not provide overrides when requesting cached options.
+    # @param value The overrides to apply as serialized JSON.
+    sig { params(value: T.nilable(String)).void }
+    def overrides_json=(value); end
+
+    sig { params(value: T::Boolean).void }
     def skip_feature_name_conversion=(value); end
+
     sig { returns(T::Boolean) }
     def skip_feature_name_conversion; end
   end

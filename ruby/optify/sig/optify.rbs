@@ -35,7 +35,20 @@ end
 
 # Preferences when getting options.
 class Optify::GetOptionsPreferences
-  def skip_feature_name_conversion=: (bool value) -> GetOptionsPreferences
+  # Indicates if overrides are set.
+  def overrides?: () -> bool
+
+  # Set overrides to apply after building the options based on the feature names.
+  # Do not provide overrides when requesting cached options.
+  # @param value The overrides to apply.
+  def overrides=: (::Hash[untyped, untyped]? value) -> void
+
+  # Set overrides to apply after building the options based on the feature names.
+  # Do not provide overrides when requesting cached options.
+  # @param value The overrides to apply as serialized JSON.
+  def overrides_json=: (String? value) -> void
+
+  def skip_feature_name_conversion=: (bool value) -> void
 
   def skip_feature_name_conversion: () -> bool
 end

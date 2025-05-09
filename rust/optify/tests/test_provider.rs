@@ -1,6 +1,6 @@
 use optify::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
-    provider::{OptionsProvider, OptionsRegistry},
+    provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
 };
 use std::sync::OnceLock;
 
@@ -13,6 +13,52 @@ fn get_provider() -> &'static OptionsProvider {
         builder.add_directory(path).unwrap();
         builder.build().unwrap()
     })
+}
+
+#[test]
+fn test_provider_get_options_with_overrides() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider();
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.set_overrides_json(Some(
+        serde_json::json!({
+            "myConfig": {
+                "new key": 33,
+                "rootString": "new string",
+                "myObject": {
+                    "one": 1321,
+                    "something new for test_provider_get_options_with_overrides": "hello"
+                }
+            }
+        })
+        .to_string(),
+    ));
+    let opts = provider.get_options_with_preferences("myConfig", &["a"], &None, &Some(preferences));
+
+    let expected = serde_json::json!({
+        "new key": 33,
+        "rootString": "new string",
+        "rootString2": "gets overridden",
+        "myArray": [
+            "example item 1"
+        ],
+        "myObject": {
+            "one": 1321,
+            "two": 2,
+            "something new for test_provider_get_options_with_overrides": "hello",
+            "string": "string",
+            "deeper": {
+                "wtv": 3,
+                "list": [
+                    1,
+                    2
+                ]
+            }
+        }
+    });
+
+    assert_eq!(opts.unwrap(), expected);
+
+    Ok(())
 }
 
 #[test]

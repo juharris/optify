@@ -16,10 +16,25 @@ struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 impl MutGetOptionsPreferences {
     fn new() -> Self {
         Self(RefCell::new(GetOptionsPreferences {
+            overrides_json: None,
             skip_feature_name_conversion: false,
         }))
     }
 
+    // Overrides Section
+    fn has_overrides(&self) -> bool {
+        self.0.borrow().overrides_json.is_some()
+    }
+
+    fn set_overrides_json(&self, overrides: Option<String>) {
+        self.0.borrow_mut().overrides_json = overrides;
+    }
+
+    fn get_overrides_json(&self) -> Option<String> {
+        self.0.borrow().overrides_json.clone()
+    }
+
+    // Skip Feature Name Conversion Section
     fn set_skip_feature_name_conversion(&self, value: bool) {
         self.0.borrow_mut().skip_feature_name_conversion = value;
     }
@@ -122,6 +137,7 @@ impl WrappedOptionsProvider {
 
 fn convert_preferences(preferences: &MutGetOptionsPreferences) -> Option<GetOptionsPreferences> {
     Some(optify::provider::GetOptionsPreferences {
+        overrides_json: preferences.get_overrides_json(),
         skip_feature_name_conversion: preferences.skip_feature_name_conversion(),
     })
 }
@@ -326,6 +342,14 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         module.define_class("GetOptionsPreferences", ruby.class_object())?;
     get_options_preferences_class
         .define_singleton_method("new", function!(MutGetOptionsPreferences::new, 0))?;
+    get_options_preferences_class.define_method(
+        "overrides?",
+        method!(MutGetOptionsPreferences::has_overrides, 0),
+    )?;
+    get_options_preferences_class.define_method(
+        "overrides_json=",
+        method!(MutGetOptionsPreferences::set_overrides_json, 1),
+    )?;
     get_options_preferences_class.define_method(
         "skip_feature_name_conversion=",
         method!(
