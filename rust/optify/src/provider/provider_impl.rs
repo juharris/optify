@@ -77,6 +77,11 @@ impl OptionsProvider {
         preferences: &Option<GetOptionsPreferences>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
         if let Some(_cache_options) = cache_options {
+            if let Some(preferences) = preferences {
+                if let Some(_overrides) = &preferences.overrides {
+                    return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
+                }
+            }
             return Err("Caching is not supported yet.".to_owned());
         };
         let mut config_builder = config::Config::builder();
@@ -107,8 +112,8 @@ impl OptionsProvider {
             };
             config_builder = config_builder.add_source(source.clone());
         }
-        if let Some(_preferences) = preferences {
-            if let Some(overrides) = &_preferences.overrides {
+        if let Some(preferences) = preferences {
+            if let Some(overrides) = &preferences.overrides {
                 let overrides_as_json_str = serde_json::to_string(overrides).unwrap();
                 config_builder = config_builder.add_source(config::File::from_str(
                     &overrides_as_json_str,

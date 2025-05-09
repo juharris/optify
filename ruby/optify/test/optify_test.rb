@@ -137,29 +137,46 @@ class OptifyTest < Test::Unit::TestCase
     end
   end
 
+  def test_get_options_with_cache_and_overrides
+    BUILDERS.each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+                      .init
+      cache_options = Optify::CacheOptions.new
+      feature_names = %w[A B]
+      preferences = Optify::GetOptionsPreferences.new
+      preferences.overrides = {}
+      exception = assert_raise(ArgumentError) do
+        provider.get_options('myConfig', feature_names, MyConfig, cache_options, preferences)
+      end
+      assert_equal('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.', exception.message)
+    end
+  end
+
   def test_get_options_with_overrides
     BUILDERS.each do |klass|
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build
+      cache_options = nil
       feature_names = %w[A B]
       preferences = Optify::GetOptionsPreferences.new
-      # TODO
-      preferences.overrides = {}
-      options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
-      assert_equal('root string same', options.rootString)
-      s = provider.get_options_json('myConfig.rootString', feature_names)
-      assert_equal('"root string same"', s)
-      assert_equal('root string same', JSON.parse(s))
-      s = provider.get_options_json('myConfig.myObject.two', feature_names)
-      assert_equal('22', s)
-      assert_equal(22, JSON.parse(s))
+      options_without_overrides = provider.get_options('myConfig', feature_names, MyConfig, cache_options, preferences)
+      assert_equal('root string same', options_without_overrides.rootString)
 
-      preferences.skip_feature_name_conversion = true
-      err = assert_raise do
-        provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
-      end
-      assert_equal('key, feature names, and preferences should be valid: "Feature name \"A\" was not found."', err.message)
+      preferences = Optify::GetOptionsPreferences.new
+      preferences.overrides = { 'myConfig' => { rootString: 'root string overrides' } }
+      options = provider.get_options('myConfig', feature_names, MyConfig, cache_options, preferences)
+      assert_equal('root string overrides', options.rootString)
+      assert_equal(options_without_overrides.rootString2, options.rootString2)
+
+      value = 2222
+      assert_not_equal(value, options_without_overrides.myObject.two)
+      preferences.overrides = { 'myConfig' => { 'myObject' => { 'two' => value } } }
+      options = provider.get_options('myConfig', feature_names, MyConfig, cache_options, preferences)
+      assert_equal(value, options.myObject.two)
+      assert_equal(options_without_overrides.rootString2, options.rootString2)
     end
   end
 

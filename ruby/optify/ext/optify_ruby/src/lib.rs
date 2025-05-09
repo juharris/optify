@@ -21,6 +21,11 @@ impl MutGetOptionsPreferences {
         }))
     }
 
+    // Overrides Section
+    fn has_overrides(&self) -> bool {
+        self.0.borrow().overrides.is_some()
+    }
+
     // TODO Maybe we should use https://github.com/OneSignal/serde-magnus to help with converting a Ruby hash.
     // Either way, we'll use a Hash in the Ruby interface.
     fn set_overrides_json(&self, overrides_string: Option<String>) {
@@ -31,6 +36,11 @@ impl MutGetOptionsPreferences {
         };
     }
 
+    fn get_overrides(&self) -> Option<serde_json::Value> {
+        self.0.borrow().overrides.clone()
+    }
+
+    // Skip Feature Name Conversion Section
     fn set_skip_feature_name_conversion(&self, value: bool) {
         self.0.borrow_mut().skip_feature_name_conversion = value;
     }
@@ -133,8 +143,7 @@ impl WrappedOptionsProvider {
 
 fn convert_preferences(preferences: &MutGetOptionsPreferences) -> Option<GetOptionsPreferences> {
     Some(optify::provider::GetOptionsPreferences {
-        // TODO: Handle overrides.
-        overrides: None,
+        overrides: preferences.get_overrides(),
         skip_feature_name_conversion: preferences.skip_feature_name_conversion(),
     })
 }
@@ -339,6 +348,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         module.define_class("GetOptionsPreferences", ruby.class_object())?;
     get_options_preferences_class
         .define_singleton_method("new", function!(MutGetOptionsPreferences::new, 0))?;
+    get_options_preferences_class.define_method(
+        "overrides?",
+        method!(MutGetOptionsPreferences::has_overrides, 0),
+    )?;
     get_options_preferences_class.define_private_method(
         "overrides_json=",
         method!(MutGetOptionsPreferences::set_overrides_json, 1),

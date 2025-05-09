@@ -43,10 +43,15 @@ module Optify
 
   # Preferences when getting options.
   class GetOptionsPreferences
+    sig { returns(T::Boolean) }
+    def overrides?; end
+
     sig { params(value: T::Hash[T.untyped, T.untyped]).void }
     def overrides=(value); end
+
     sig { params(value: T::Boolean).void }
     def skip_feature_name_conversion=(value); end
+
     sig { returns(T::Boolean) }
     def skip_feature_name_conversion; end
 

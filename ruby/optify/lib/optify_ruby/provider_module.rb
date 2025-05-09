@@ -87,6 +87,11 @@ module Optify
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
+      if preferences&.overrides?
+        Kernel.raise ArgumentError,
+                     'Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.'
+      end
+
       init unless @cache
       unless preferences&.skip_feature_name_conversion
         # When there are just a few names, then it can be faster to convert them one by one in a loop to avoid working with an array in Rust.
@@ -98,6 +103,7 @@ module Optify
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
+      # TODO: Copy the preferences to avoid mutating the original object.
       preferences ||= GetOptionsPreferences.new
       preferences.skip_feature_name_conversion = true
       result = get_options(key, feature_names, config_class, nil, preferences)

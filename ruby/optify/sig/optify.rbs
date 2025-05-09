@@ -35,6 +35,8 @@ end
 
 # Preferences when getting options.
 class Optify::GetOptionsPreferences
+  def overrides?: () -> bool
+
   def overrides=: (::Hash[untyped, untyped] value) -> void
 
   def skip_feature_name_conversion=: (bool value) -> void
