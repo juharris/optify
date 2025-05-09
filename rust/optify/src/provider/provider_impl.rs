@@ -16,7 +16,10 @@ pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
 pub struct GetOptionsPreferences {
-    pub overrides: Option<serde_json::Value>,
+    /// Overrides to apply after the built configuration.
+    /// A string is used because it makes it easier to pass to the `config` library, but this may change in the future.
+    /// It also makes it simpler and maybe faster to get from other programming languages.
+    pub overrides: Option<String>,
     pub skip_feature_name_conversion: bool,
 }
 
@@ -34,7 +37,7 @@ impl GetOptionsPreferences {
         }
     }
 
-    pub fn set_overrides(&mut self, overrides: Option<serde_json::Value>) {
+    pub fn set_overrides(&mut self, overrides: Option<String>) {
         self.overrides = overrides;
     }
 
@@ -78,7 +81,7 @@ impl OptionsProvider {
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
         if let Some(_cache_options) = cache_options {
             if let Some(preferences) = preferences {
-                if let Some(_overrides) = &preferences.overrides {
+                if preferences.overrides.is_some() {
                     return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
                 }
             }
@@ -114,11 +117,8 @@ impl OptionsProvider {
         }
         if let Some(preferences) = preferences {
             if let Some(overrides) = &preferences.overrides {
-                let overrides_as_json_str = serde_json::to_string(overrides).unwrap();
-                config_builder = config_builder.add_source(config::File::from_str(
-                    &overrides_as_json_str,
-                    config::FileFormat::Json,
-                ));
+                config_builder = config_builder
+                    .add_source(config::File::from_str(overrides, config::FileFormat::Json));
             }
         }
 

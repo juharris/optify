@@ -28,15 +28,11 @@ impl MutGetOptionsPreferences {
 
     // TODO Maybe we should use https://github.com/OneSignal/serde-magnus to help with converting a Ruby hash.
     // Either way, we'll use a Hash in the Ruby interface.
-    fn set_overrides_json(&self, overrides_string: Option<String>) {
-        self.0.borrow_mut().overrides = if let Some(overrides_string) = overrides_string {
-            serde_json::from_str(&overrides_string).expect("overrides should be valid JSON")
-        } else {
-            None
-        };
+    fn set_overrides_json(&self, overrides: Option<String>) {
+        self.0.borrow_mut().overrides = overrides;
     }
 
-    fn get_overrides(&self) -> Option<serde_json::Value> {
+    fn get_overrides(&self) -> Option<String> {
         self.0.borrow().overrides.clone()
     }
 
@@ -352,7 +348,7 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         "overrides?",
         method!(MutGetOptionsPreferences::has_overrides, 0),
     )?;
-    get_options_preferences_class.define_private_method(
+    get_options_preferences_class.define_method(
         "overrides_json=",
         method!(MutGetOptionsPreferences::set_overrides_json, 1),
     )?;
