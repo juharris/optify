@@ -35,9 +35,13 @@ end
 
 # Preferences when getting options.
 class Optify::GetOptionsPreferences
-  def skip_feature_name_conversion=: (bool value) -> GetOptionsPreferences
+  def overrides=: (::Hash[untyped, untyped] value) -> void
+
+  def skip_feature_name_conversion=: (bool value) -> void
 
   def skip_feature_name_conversion: () -> bool
+
+  def overrides_json=: (String value) -> void
 end
 
 # A registry of features that provides configurations.

@@ -43,10 +43,17 @@ module Optify
 
   # Preferences when getting options.
   class GetOptionsPreferences
-    sig { params(value: T::Boolean).returns(GetOptionsPreferences) }
+    sig { params(value: T::Hash[T.untyped, T.untyped]).void }
+    def overrides=(value); end
+    sig { params(value: T::Boolean).void }
     def skip_feature_name_conversion=(value); end
     sig { returns(T::Boolean) }
     def skip_feature_name_conversion; end
+
+    private
+
+    sig { params(value: String).void }
+    def overrides_json=(value); end
   end
 
   # A registry of features that provides configurations.

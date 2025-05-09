@@ -21,6 +21,16 @@ impl MutGetOptionsPreferences {
         }))
     }
 
+    // TODO Maybe we should use https://github.com/OneSignal/serde-magnus to help with converting a Ruby hash.
+    // Either way, we'll use a Hash in the Ruby interface.
+    fn set_overrides_json(&self, overrides_string: Option<String>) {
+        self.0.borrow_mut().overrides = if let Some(overrides_string) = overrides_string {
+            serde_json::from_str(&overrides_string).expect("overrides should be valid JSON")
+        } else {
+            None
+        };
+    }
+
     fn set_skip_feature_name_conversion(&self, value: bool) {
         self.0.borrow_mut().skip_feature_name_conversion = value;
     }
@@ -329,6 +339,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         module.define_class("GetOptionsPreferences", ruby.class_object())?;
     get_options_preferences_class
         .define_singleton_method("new", function!(MutGetOptionsPreferences::new, 0))?;
+    get_options_preferences_class.define_private_method(
+        "overrides_json=",
+        method!(MutGetOptionsPreferences::set_overrides_json, 1),
+    )?;
     get_options_preferences_class.define_method(
         "skip_feature_name_conversion=",
         method!(

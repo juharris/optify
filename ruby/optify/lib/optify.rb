@@ -2,6 +2,7 @@
 # typed: strict
 
 # The implementation to use directly Ruby and with types declared.
+require_relative 'optify_ruby/get_options_preferences'
 require_relative 'optify_ruby/implementation'
 require_relative 'optify_ruby/watcher_implementation'
 
