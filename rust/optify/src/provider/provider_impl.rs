@@ -23,6 +23,15 @@ pub struct GetOptionsPreferences {
     pub skip_feature_name_conversion: bool,
 }
 
+impl Clone for GetOptionsPreferences {
+    fn clone(&self) -> Self {
+        Self {
+            overrides_json: self.overrides_json.clone(),
+            skip_feature_name_conversion: self.skip_feature_name_conversion,
+        }
+    }
+}
+
 impl Default for GetOptionsPreferences {
     fn default() -> Self {
         Self::new()

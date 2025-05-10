@@ -10,6 +10,7 @@ use optify::provider::OptionsWatcher;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 
+#[derive(Clone)]
 #[wrap(class = "Optify::GetOptionsPreferences")]
 struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 
@@ -342,6 +343,8 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         module.define_class("GetOptionsPreferences", ruby.class_object())?;
     get_options_preferences_class
         .define_singleton_method("new", function!(MutGetOptionsPreferences::new, 0))?;
+    get_options_preferences_class
+        .define_method("dup", method!(MutGetOptionsPreferences::clone, 0))?;
     get_options_preferences_class.define_method(
         "overrides?",
         method!(MutGetOptionsPreferences::has_overrides, 0),

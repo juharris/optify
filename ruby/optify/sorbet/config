@@ -1,5 +1,6 @@
 --dir
 .
+--cache-dir=tmp/sorbet_cache
 --enable-experimental-rbs-signatures
 --ignore=tmp/
 --ignore=vendor/
