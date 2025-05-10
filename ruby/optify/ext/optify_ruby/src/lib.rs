@@ -21,6 +21,10 @@ impl MutGetOptionsPreferences {
         }))
     }
 
+    fn clone(&self) -> Self {
+        Self(RefCell::new(self.0.borrow().clone()))
+    }
+
     // Overrides Section
     fn has_overrides(&self) -> bool {
         self.0.borrow().overrides_json.is_some()
@@ -342,6 +346,8 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         module.define_class("GetOptionsPreferences", ruby.class_object())?;
     get_options_preferences_class
         .define_singleton_method("new", function!(MutGetOptionsPreferences::new, 0))?;
+    get_options_preferences_class
+        .define_method("dup", method!(MutGetOptionsPreferences::clone, 0))?;
     get_options_preferences_class.define_method(
         "overrides?",
         method!(MutGetOptionsPreferences::has_overrides, 0),

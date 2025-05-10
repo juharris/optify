@@ -11,7 +11,7 @@ module Optify
     #: (Array[String] feature_names) -> Array[String]
     def get_canonical_feature_names(feature_names)
       # Try to optimize a typical case where there are just a few features.
-      # Ideally in production, a single feature that imports many other features is used for the most common scenario.
+      # Ideally in production, a single feature that imports many other features is used for the most common scenarios.
       # Benchmarks show that it is faster to use a loop than to call the Rust implementation which involves making a `Vec<String>` and returning a `Vec<String>`.
       if feature_names.length < 4
         feature_names.map { |feature_name| get_canonical_feature_name(feature_name) }
@@ -93,19 +93,24 @@ module Optify
       end
 
       init unless @cache
-      unless preferences&.skip_feature_name_conversion
-        # When there are just a few names, then it can be faster to convert them one by one in a loop to avoid working with an array in Rust.
-        # When there are over 7 names, then it is faster to convert them with one call to Rust.
-        feature_names = get_canonical_feature_names(feature_names)
-      end
+      feature_names = get_canonical_feature_names(feature_names) unless preferences&.skip_feature_name_conversion
 
       cache_key = [key, feature_names, config_class]
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
-      # TODO: Copy the preferences to avoid mutating the original object.
-      preferences ||= GetOptionsPreferences.new
-      preferences.skip_feature_name_conversion = true
+      # Handle a cache miss.
+
+      # We can avoid converting the features names because they're already converted, if that was desired.
+      # Indeed the copying of preferences could be wasteful, but this only happens on a cache miss.
+      if preferences.nil?
+        preferences = GetOptionsPreferences.new
+        preferences.skip_feature_name_conversion = true
+      else
+        preferences = preferences.dup
+        preferences.skip_feature_name_conversion = true
+      end
+
       result = get_options(key, feature_names, config_class, nil, preferences)
 
       T.must(@cache)[cache_key] = result

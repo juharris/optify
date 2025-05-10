@@ -114,6 +114,23 @@ class OptifyTest < Test::Unit::TestCase
     end
   end
 
+  def test_cache_with_preferences
+    BUILDERS.each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+                      .init
+      cache_options = Optify::CacheOptions.new
+      preferences = Optify::GetOptionsPreferences.new
+      preferences.skip_feature_name_conversion = false
+      config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options, preferences)
+      assert_false(preferences.skip_feature_name_conversion)
+      config_a2 = provider.get_options('myConfig', ['a'], MyConfig, cache_options, preferences)
+      assert_false(preferences.skip_feature_name_conversion)
+      assert_same(config_a, config_a2)
+    end
+  end
+
   def test_custom_config_class
     BUILDERS.each do |klass|
       provider = klass.new
