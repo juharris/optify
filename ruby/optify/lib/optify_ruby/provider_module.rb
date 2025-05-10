@@ -102,11 +102,12 @@ module Optify
       # Handle a cache miss.
 
       # We can avoid converting the features names because they're already converted, if that was desired.
-      # Indeed the copying of preferences could be wasteful, but this only happens on a cache miss.
       if preferences.nil?
         preferences = GetOptionsPreferences.new
         preferences.skip_feature_name_conversion = true
       else
+        # Indeed the copying of preferences could be wasteful, but this only happens on a cache miss
+        # and when no custom preferences are provided.
         preferences = preferences.dup
         preferences.skip_feature_name_conversion = true
       end
