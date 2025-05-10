@@ -35,16 +35,16 @@ Gem::Specification.new do |spec|
 
   spec.extensions = ['ext/optify_ruby/extconf.rb']
 
-  # needed until rubygems supports Rust support is out of beta
-  spec.add_dependency 'rb_sys', '~> 0.9.113'
+  # needed until rubygems Rust support is out of beta
+  spec.add_dependency 'rb_sys', '~> 0.9.114'
 
-  spec.add_dependency 'sorbet-runtime', '~> 0.5.11911'
+  spec.add_dependency 'sorbet-runtime', '~> 0.5.12083'
 
-  spec.add_development_dependency 'rake-compiler', '~> 1.2.9'
-  spec.add_development_dependency 'rbs', '~> 3.9.2'
-  spec.add_development_dependency 'sorbet', '~> 0.5.11911'
+  spec.add_development_dependency 'rake-compiler', '~> 1.3.0'
+  spec.add_development_dependency 'rbs', '~> 3.9.3'
+  spec.add_development_dependency 'sorbet', '~> 0.5.12083'
   spec.add_development_dependency 'tapioca', '~> 0.16.11'
 
   # Tests
-  spec.add_development_dependency 'test-unit', '~> 3.6.7'
+  spec.add_development_dependency 'test-unit', '~> 3.6.8'
 end
