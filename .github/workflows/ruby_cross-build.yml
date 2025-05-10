@@ -90,6 +90,9 @@ jobs:
         # For ruby-versions: Tried doing this, but it said ">= 3.0, < 3.1.dev" on rubygems.
         # For ruby-versions: Tried ">=3.0, < 4", but RubyGems said: ">= 3.0, < 3.1.dev"
 
+        # The Docker containers for tag 0.9.113 did not get published, so we'll use 0.9.111 for now.
+        # 0.9.114 will probably be the next released version, but then we should be able to remove this line that sets the tag and just use the default.
+        tag: '0.9.111'
         working-directory: ./ruby/optify
 
     - name: "[Ruby] Publish"
