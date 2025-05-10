@@ -10,6 +10,7 @@ use optify::provider::OptionsWatcher;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 
+#[derive(Clone)]
 #[wrap(class = "Optify::GetOptionsPreferences")]
 struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 
@@ -19,10 +20,6 @@ impl MutGetOptionsPreferences {
             overrides_json: None,
             skip_feature_name_conversion: false,
         }))
-    }
-
-    fn clone(&self) -> Self {
-        Self(RefCell::new(self.0.borrow().clone()))
     }
 
     // Overrides Section
