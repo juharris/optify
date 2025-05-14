@@ -121,18 +121,23 @@ impl WrappedOptionsProvider {
     }
 
     fn get_options_json_with_preferences(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         key: String,
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
-    ) -> String {
+    ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
         let _features = convert_to_str_slice!(feature_names);
-        self.0
-            .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &_preferences)
-            .expect("key, feature names, and preferences should be valid")
-            .to_string()
+        match rb_self.0.borrow().get_options_with_preferences(
+            &key,
+            &_features,
+            &None,
+            &_preferences,
+        ) {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 }
 
@@ -242,18 +247,23 @@ impl WrappedOptionsWatcher {
     }
 
     fn get_options_json_with_preferences(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         key: String,
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
-    ) -> String {
+    ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
         let _features = convert_to_str_slice!(feature_names);
-        self.0
-            .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &_preferences)
-            .expect("key, feature names, and preferences should be valid")
-            .to_string()
+        match rb_self.0.borrow().get_options_with_preferences(
+            &key,
+            &_features,
+            &None,
+            &_preferences,
+        ) {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
     fn last_modified(&self) -> std::time::SystemTime {

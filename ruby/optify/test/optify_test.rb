@@ -221,7 +221,7 @@ class OptifyTest < Test::Unit::TestCase
       err = assert_raise do
         provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       end
-      assert_equal('key, feature names, and preferences should be valid: "Feature name \"A\" was not found."', err.message)
+      assert_equal('Feature name "A" was not found.', err.message)
     end
   end
 end
