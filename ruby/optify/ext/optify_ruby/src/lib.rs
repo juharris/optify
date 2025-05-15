@@ -62,11 +62,11 @@ impl WrappedOptionsProvider {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
+        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_all_options(&_features, &None, &_preferences)
+            .get_all_options(&features, &None, &_preferences)
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
@@ -78,10 +78,11 @@ impl WrappedOptionsProvider {
         rb_self: &Self,
         feature_name: String,
     ) -> Result<String, magnus::Error> {
-        match rb_self.0.borrow().get_canonical_feature_name(&feature_name) {
-            Ok(canonical_name) => Ok(canonical_name),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
-        }
+        rb_self
+            .0
+            .borrow()
+            .get_canonical_feature_name(&feature_name)
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
     fn get_canonical_feature_names(
@@ -89,11 +90,12 @@ impl WrappedOptionsProvider {
         rb_self: &Self,
         feature_names: Vec<String>,
     ) -> Result<Vec<String>, magnus::Error> {
-        let _features = convert_to_str_slice!(feature_names);
-        match rb_self.0.borrow().get_canonical_feature_names(&_features) {
-            Ok(canonical_names) => Ok(canonical_names.into_iter().map(|s| s.to_owned()).collect()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
-        }
+        let features = convert_to_str_slice!(feature_names);
+        rb_self
+            .0
+            .borrow()
+            .get_canonical_feature_names(&features)
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -104,12 +106,7 @@ impl WrappedOptionsProvider {
     }
 
     fn get_features(&self) -> Vec<String> {
-        self.0
-            .borrow()
-            .get_features()
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect()
+        self.0.borrow().get_features()
     }
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
@@ -124,11 +121,11 @@ impl WrappedOptionsProvider {
         key: String,
         feature_names: Vec<String>,
     ) -> Result<String, magnus::Error> {
-        let _features = convert_to_str_slice!(feature_names);
+        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &None)
+            .get_options_with_preferences(&key, &features, &None, &None)
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
@@ -143,13 +140,12 @@ impl WrappedOptionsProvider {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
-        match rb_self.0.borrow().get_options_with_preferences(
-            &key,
-            &_features,
-            &None,
-            &_preferences,
-        ) {
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
+            .0
+            .borrow()
+            .get_options_with_preferences(&key, &features, &None, &_preferences)
+        {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
         }
@@ -203,11 +199,11 @@ impl WrappedOptionsWatcher {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
+        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_all_options(&_features, &None, &_preferences)
+            .get_all_options(&features, &None, &_preferences)
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
@@ -219,10 +215,11 @@ impl WrappedOptionsWatcher {
         rb_self: &Self,
         feature_name: String,
     ) -> Result<String, magnus::Error> {
-        match rb_self.0.borrow().get_canonical_feature_name(&feature_name) {
-            Ok(canonical_name) => Ok(canonical_name),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
-        }
+        rb_self
+            .0
+            .borrow()
+            .get_canonical_feature_name(&feature_name)
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
     fn get_canonical_feature_names(
@@ -230,11 +227,12 @@ impl WrappedOptionsWatcher {
         rb_self: &Self,
         feature_names: Vec<String>,
     ) -> Result<Vec<String>, magnus::Error> {
-        let _features = convert_to_str_slice!(feature_names);
-        match rb_self.0.borrow().get_canonical_feature_names(&_features) {
-            Ok(canonical_names) => Ok(canonical_names.into_iter().map(|s| s.to_owned()).collect()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
-        }
+        let features = convert_to_str_slice!(feature_names);
+        rb_self
+            .0
+            .borrow()
+            .get_canonical_feature_names(&features)
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -245,12 +243,7 @@ impl WrappedOptionsWatcher {
     }
 
     fn get_features(&self) -> Vec<String> {
-        self.0
-            .borrow()
-            .get_features()
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect()
+        self.0.borrow().get_features()
     }
 
     fn get_features_with_metadata_json(&self) -> String {
@@ -263,11 +256,11 @@ impl WrappedOptionsWatcher {
         key: String,
         feature_names: Vec<String>,
     ) -> Result<String, magnus::Error> {
-        let _features = convert_to_str_slice!(feature_names);
+        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &None)
+            .get_options_with_preferences(&key, &features, &None, &None)
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
@@ -282,13 +275,12 @@ impl WrappedOptionsWatcher {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
-        match rb_self.0.borrow().get_options_with_preferences(
-            &key,
-            &_features,
-            &None,
-            &_preferences,
-        ) {
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
+            .0
+            .borrow()
+            .get_options_with_preferences(&key, &features, &None, &_preferences)
+        {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
         }
