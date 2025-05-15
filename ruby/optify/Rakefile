@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 # typed: false
 
+require 'bundler/gem_tasks'
 require 'rb_sys/extensiontask'
 require 'rake/testtask'
 
