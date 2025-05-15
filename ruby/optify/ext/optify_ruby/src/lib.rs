@@ -56,37 +56,46 @@ impl WrappedOptionsProvider {
     // These methods cannot accept `str`s because of how magnus works.
     // Return the JSON as a string so that it can be deserialized easily into a specific immutable class in Ruby.
     fn get_all_options_json(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
-        Ok(self
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
             .0
             .borrow()
-            .get_all_options(&_features, &None, &_preferences)
-            .expect("features and preferences should be valid")
-            .to_string())
+            .get_all_options(&features, &None, &_preferences)
+        {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
-    fn get_canonical_feature_name(&self, feature_name: String) -> String {
-        self.0
+    fn get_canonical_feature_name(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_name: String,
+    ) -> Result<String, magnus::Error> {
+        rb_self
+            .0
             .borrow()
             .get_canonical_feature_name(&feature_name)
-            .expect("feature_name should be valid")
-            .to_owned()
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
-    fn get_canonical_feature_names(&self, feature_names: Vec<String>) -> Vec<String> {
-        let _features = convert_to_str_slice!(feature_names);
-        self.0
+    fn get_canonical_feature_names(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+    ) -> Result<Vec<String>, magnus::Error> {
+        let features = convert_to_str_slice!(feature_names);
+        rb_self
+            .0
             .borrow()
-            .get_canonical_feature_names(&_features)
-            .expect("given names should be valid")
-            .into_iter()
-            .map(|s| s.to_owned())
-            .collect()
+            .get_canonical_feature_names(&features)
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -97,12 +106,7 @@ impl WrappedOptionsProvider {
     }
 
     fn get_features(&self) -> Vec<String> {
-        self.0
-            .borrow()
-            .get_features()
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect()
+        self.0.borrow().get_features()
     }
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
@@ -111,28 +115,40 @@ impl WrappedOptionsProvider {
     }
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
-    fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
-        let _features = convert_to_str_slice!(feature_names);
-        self.0
+    fn get_options_json(
+        ruby: &Ruby,
+        rb_self: &Self,
+        key: String,
+        feature_names: Vec<String>,
+    ) -> Result<String, magnus::Error> {
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
+            .0
             .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &None)
-            .expect("key and feature names should be valid")
-            .to_string()
+            .get_options_with_preferences(&key, &features, &None, &None)
+        {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
     fn get_options_json_with_preferences(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         key: String,
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
-    ) -> String {
+    ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
-        self.0
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
+            .0
             .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &_preferences)
-            .expect("key, feature names, and preferences should be valid")
-            .to_string()
+            .get_options_with_preferences(&key, &features, &None, &_preferences)
+        {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 }
 
@@ -153,24 +169,22 @@ impl WrappedOptionsProviderBuilder {
     }
 
     fn add_directory(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         directory: String,
     ) -> Result<WrappedOptionsProviderBuilder, magnus::Error> {
         let path = std::path::Path::new(&directory);
-        self.0
-            .borrow_mut()
-            .add_directory(path)
-            .expect("directory contents should be valid");
-        Ok(self.clone())
+        match rb_self.0.borrow_mut().add_directory(path) {
+            Ok(builder) => Ok(WrappedOptionsProviderBuilder(RefCell::new(builder.clone()))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
-    fn build(&self) -> WrappedOptionsProvider {
-        WrappedOptionsProvider(RefCell::new(
-            self.0
-                .borrow_mut()
-                .build()
-                .expect("OptionsProvider should be built successfully"),
-        ))
+    fn build(ruby: &Ruby, rb_self: &Self) -> Result<WrappedOptionsProvider, magnus::Error> {
+        match rb_self.0.borrow_mut().build() {
+            Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 }
 
@@ -179,37 +193,46 @@ struct WrappedOptionsWatcher(RefCell<OptionsWatcher>);
 
 impl WrappedOptionsWatcher {
     fn get_all_options_json(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
-        Ok(self
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
             .0
             .borrow()
-            .get_all_options(&_features, &None, &_preferences)
-            .expect("features and preferences should be valid")
-            .to_string())
+            .get_all_options(&features, &None, &_preferences)
+        {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
-    fn get_canonical_feature_name(&self, feature_name: String) -> String {
-        self.0
+    fn get_canonical_feature_name(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_name: String,
+    ) -> Result<String, magnus::Error> {
+        rb_self
+            .0
             .borrow()
             .get_canonical_feature_name(&feature_name)
-            .expect("feature_name should be valid")
-            .to_owned()
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
-    fn get_canonical_feature_names(&self, feature_names: Vec<String>) -> Vec<String> {
-        let _features = convert_to_str_slice!(feature_names);
-        self.0
+    fn get_canonical_feature_names(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+    ) -> Result<Vec<String>, magnus::Error> {
+        let features = convert_to_str_slice!(feature_names);
+        rb_self
+            .0
             .borrow()
-            .get_canonical_feature_names(&_features)
-            .expect("given names should be valid")
-            .into_iter()
-            .map(|s| s.to_owned())
-            .collect()
+            .get_canonical_feature_names(&features)
+            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -220,40 +243,47 @@ impl WrappedOptionsWatcher {
     }
 
     fn get_features(&self) -> Vec<String> {
-        self.0
-            .borrow()
-            .get_features()
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect()
+        self.0.borrow().get_features()
     }
 
     fn get_features_with_metadata_json(&self) -> String {
         serde_json::to_string(&self.0.borrow().get_features_with_metadata()).unwrap()
     }
 
-    fn get_options_json(&self, key: String, feature_names: Vec<String>) -> String {
-        let _features = convert_to_str_slice!(feature_names);
-        self.0
+    fn get_options_json(
+        ruby: &Ruby,
+        rb_self: &Self,
+        key: String,
+        feature_names: Vec<String>,
+    ) -> Result<String, magnus::Error> {
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
+            .0
             .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &None)
-            .expect("key and feature names should be valid")
-            .to_string()
+            .get_options_with_preferences(&key, &features, &None, &None)
+        {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
     fn get_options_json_with_preferences(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         key: String,
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
-    ) -> String {
+    ) -> Result<String, magnus::Error> {
         let _preferences = convert_preferences(preferences);
-        let _features = convert_to_str_slice!(feature_names);
-        self.0
+        let features = convert_to_str_slice!(feature_names);
+        match rb_self
+            .0
             .borrow()
-            .get_options_with_preferences(&key, &_features, &None, &_preferences)
-            .expect("key, feature names, and preferences should be valid")
-            .to_string()
+            .get_options_with_preferences(&key, &features, &None, &_preferences)
+        {
+            Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
     fn last_modified(&self) -> std::time::SystemTime {
@@ -271,24 +301,22 @@ impl WrappedOptionsWatcherBuilder {
     }
 
     fn add_directory(
-        &self,
+        ruby: &Ruby,
+        rb_self: &Self,
         directory: String,
     ) -> Result<WrappedOptionsWatcherBuilder, magnus::Error> {
         let path = std::path::Path::new(&directory);
-        self.0
-            .borrow_mut()
-            .add_directory(path)
-            .expect("directory contents should be valid");
-        Ok(self.clone())
+        match rb_self.0.borrow_mut().add_directory(path) {
+            Ok(builder) => Ok(WrappedOptionsWatcherBuilder(RefCell::new(builder.clone()))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 
-    fn build(&self) -> WrappedOptionsWatcher {
-        WrappedOptionsWatcher(RefCell::new(
-            self.0
-                .borrow_mut()
-                .build()
-                .expect("OptionsWatcher should be built successfully"),
-        ))
+    fn build(ruby: &Ruby, rb_self: &Self) -> Result<WrappedOptionsWatcher, magnus::Error> {
+        match rb_self.0.borrow_mut().build() {
+            Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+        }
     }
 }
 
