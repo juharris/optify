@@ -72,7 +72,7 @@ class OptifyTest < Test::Unit::TestCase
       err = assert_raise do
         provider.get_canonical_feature_names(%w[error])
       end
-      assert_equal('feature_name should be valid: "The given feature \"error\" was not found."', err.message)
+      assert_equal('The given feature "error" was not found.', err.message)
 
       names = feature_names.map { |name| provider.get_canonical_feature_name(name) }
       assert_equal(canonical_feature_names, names)
