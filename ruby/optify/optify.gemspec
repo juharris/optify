@@ -14,9 +14,7 @@ Gem::Specification.new do |spec|
   spec.authors = ['Justin D. Harris']
 
   # Only certain versions are supported by Magnus: https://github.com/matsadler/magnus.
-  # Despite what this says, rubygems does not respect it.
-  # Probably because of how we build a cross-compiled gem in CI.
-  # See notes in ruby_cross-build.yml.
+  # See notes in ruby_cross-build.yml for more details about cross-compilation and source gems.
   spec.required_ruby_version = '>= 3.0'
 
   spec.metadata = {
