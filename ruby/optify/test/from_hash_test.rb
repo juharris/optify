@@ -98,8 +98,8 @@ class FromHashTest < Test::Unit::TestCase
     hash = { objects: [{ num: 5 }, { 'num' => 4 }] }
     m = TestConfig.from_hash(hash)
     assert_equal(2, m.objects.size)
-    assert_instance_of(TestObject, m.objects[0])
-    assert_instance_of(TestObject, m.objects[1])
+    assert_equal(TestObject.from_hash({ num: 5 }), m.objects[0])
+    assert_equal(TestObject.from_hash({ num: 4 }), m.objects[1])
     assert_equal(5, m.objects[0]&.num)
     assert_equal(4, m.objects[1]&.num)
   end
@@ -109,11 +109,10 @@ class FromHashTest < Test::Unit::TestCase
     m = TestConfig.from_hash(hash)
     assert_equal(5, m.nilable_objects.size)
     assert_nil(m.nilable_objects[0])
-    assert_instance_of(TestObject, m.nilable_objects[1])
-    assert_equal(243, m.nilable_objects[1]&.num)
+    assert_equal(TestObject.from_hash({ num: 243 }), m.nilable_objects[1])
     assert_nil(m.nilable_objects[2])
     assert_nil(m.nilable_objects[3]&.nilable_num)
-    assert_equal(44, m.nilable_objects[4]&.nilable_num)
+    assert_equal(TestObject.from_hash({ nilable_num: 44 }), m.nilable_objects[4])
   end
 
   def test_array_of_string_or_object
@@ -275,7 +274,8 @@ class FromHashTest < Test::Unit::TestCase
   def test_string_or_object
     c = TestConfig.from_hash({ string_or_object: { num: 871_102 } })
     assert_instance_of(TestObject, c.string_or_object)
-    assert_equal(871_102, T.cast(c.string_or_object, TestObject).num)
+    o = TestObject.from_hash({ num: 871_102 })
+    assert_equal(o, c.string_or_object)
 
     c = TestConfig.from_hash({ string_or_object: 'hello' })
     assert_equal('hello', c.string_or_object)
