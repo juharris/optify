@@ -218,8 +218,12 @@ class OptifyTest < Test::Unit::TestCase
       assert_equal(22, JSON.parse(s))
 
       preferences.skip_feature_name_conversion = true
-      err = assert_raise do
+      err = assert_raise(RuntimeError) do
         provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
+      rescue => e # rubocop:disable Style/RescueStandardError
+        raise e
+      rescue Exception => e # rubocop:disable Style/RescueException
+        assert false, "Expected RuntimeError that can be caught by `rescue => e`, got #{e.class}"
       end
       assert_equal('Feature name "A" was not found.', err.message)
     end
