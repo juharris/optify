@@ -126,6 +126,7 @@ jobs:
     - name: Build gem
       run: |
         set -ex
+        mkdir --parents pkg
         gem build optify.gemspec --output pkg/optify-config.gem
       working-directory: ./ruby/optify
 
