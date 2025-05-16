@@ -36,7 +36,7 @@ jobs:
           stable-ruby-versions: |
             exclude: [head]
 
-  # Build the gem for specific Ruby versions and platforms so that they don't have to build it.
+  # Build the gem for specific Ruby versions and platforms so that devs don't have to build it locally.
   cross-gem:
     name: "Build"
     runs-on: ubuntu-latest
@@ -142,5 +142,6 @@ jobs:
         ls -lh "${gem_path}"
         gem push "${gem_path}"
         sha256sum "${gem_path}"
+      working-directory: ./ruby/optify
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
