@@ -23,7 +23,6 @@ env:
 
 jobs:
   # Following example from https://github.com/oxidize-rb/actions/blob/main/cross-gem
-  # Hopefully this builds the gem for multiple Ruby versions.
   ci-data:
     runs-on: ubuntu-latest
     outputs:
@@ -36,6 +35,8 @@ jobs:
           # We don't need the latest bleeding edge.
           stable-ruby-versions: |
             exclude: [head]
+
+  # Build the gem for specific Ruby versions and platforms so that they don't have to build it.
   cross-gem:
     name: "Build"
     runs-on: ubuntu-latest
@@ -85,10 +86,7 @@ jobs:
         platform: ${{ matrix.ruby_platform }}
         # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
-        # If we want to use specific supported versions, we can use the following:
         ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
-        # For ruby-versions: Tried doing this, but it said ">= 3.0, < 3.1.dev" on rubygems.
-        # For ruby-versions: Tried ">=3.0, < 4", but RubyGems said: ">= 3.0, < 3.1.dev"
 
         # The Docker containers for tag 0.9.113 did not get published, so we'll use 0.9.111 for now.
         # 0.9.114 will probably be the next released version, but then we should be able to remove this line that sets the tag and just use the default.
@@ -104,6 +102,43 @@ jobs:
       run: |
         set -ex
         gem_path="${{ steps.cross-build.outputs.gem-path }}"
+        ls -lh "${gem_path}"
+        gem push "${gem_path}"
+        sha256sum "${gem_path}"
+      env:
+        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
+
+  # Publish a gem with the Rust source code so that versions of ruby and platforms that aren't built by this action can compile the Rust code when they build.
+  # This allows future versions of Ruby to be used that aren't explicitly supported by this action.
+  source-gem:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # setup-ruby also runs `bundle install`.
+    # It uses the Ruby version from .ruby-version.
+    - uses: ruby/setup-ruby@v1
+      name: "Setup"
+      with:
+        bundler-cache: true
+        working-directory: ./ruby/optify
+
+    - name: Build gem
+      run: |
+        set -ex
+        mkdir --parents pkg
+        gem build optify.gemspec --output pkg/optify-config.gem
+      working-directory: ./ruby/optify
+
+    - name: "Publish"
+      if: github.ref == 'refs/heads/main'
+      shell: bash
+      # It probably just fails if the gem is already published.
+      # We want to only be lenient for the `gem push`, but we would still want to clearly see that an issue happened during the run.
+      continue-on-error: true
+      run: |
+        set -ex
+        gem_path="pkg/*.gem"
         ls -lh "${gem_path}"
         gem push "${gem_path}"
         sha256sum "${gem_path}"

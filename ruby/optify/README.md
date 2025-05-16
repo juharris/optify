@@ -156,14 +156,25 @@ A GitHub Action is setup to publish the gem as needed.
 To publish manually, run the following with the correct version and architecture:
 ```shell
 RB_SYS_CARGO_PROFILE='release' RB_SYS_CROSS_COMPILE=true rake native gem
-gem push pkg/optify-<version>-<architecture>.gem
+gem push pkg/optify-config-<version>-<architecture>.gem
+```
+
+To build a source gem:
+```shell
+mkdir -p pkg
+gem build optify.gemspec --output pkg/optify-config.gem
 ```
 
 To check metadata for the gem file:
 ```shell
-tar -xf pkg/optify-<version>-<architecture>.gem
+tar -xf pkg/optify-config-<version>-<architecture>.gem
 gzip -d metadata.gz
 less metadata
+```
+
+To inspect the contents of the gem:
+```shell
+gem unpack optify-config-<version>-<architecture>.gem
 ```
 
 To see credentials to get the API key to update a GitHub Action, run:
