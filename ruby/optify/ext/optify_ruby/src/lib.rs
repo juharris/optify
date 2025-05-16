@@ -69,7 +69,7 @@ impl WrappedOptionsProvider {
             .get_all_options(&features, &None, &_preferences)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 
@@ -82,7 +82,7 @@ impl WrappedOptionsProvider {
             .0
             .borrow()
             .get_canonical_feature_name(&feature_name)
-            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
+            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
     }
 
     fn get_canonical_feature_names(
@@ -95,7 +95,7 @@ impl WrappedOptionsProvider {
             .0
             .borrow()
             .get_canonical_feature_names(&features)
-            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
+            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -128,7 +128,7 @@ impl WrappedOptionsProvider {
             .get_options_with_preferences(&key, &features, &None, &None)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 
@@ -147,7 +147,7 @@ impl WrappedOptionsProvider {
             .get_options_with_preferences(&key, &features, &None, &_preferences)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 }
@@ -176,14 +176,14 @@ impl WrappedOptionsProviderBuilder {
         let path = std::path::Path::new(&directory);
         match rb_self.0.borrow_mut().add_directory(path) {
             Ok(builder) => Ok(WrappedOptionsProviderBuilder(RefCell::new(builder.clone()))),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_arg_error(), e)),
         }
     }
 
     fn build(ruby: &Ruby, rb_self: &Self) -> Result<WrappedOptionsProvider, magnus::Error> {
         match rb_self.0.borrow_mut().build() {
             Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 }
@@ -206,7 +206,7 @@ impl WrappedOptionsWatcher {
             .get_all_options(&features, &None, &_preferences)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 
@@ -219,7 +219,7 @@ impl WrappedOptionsWatcher {
             .0
             .borrow()
             .get_canonical_feature_name(&feature_name)
-            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
+            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
     }
 
     fn get_canonical_feature_names(
@@ -232,7 +232,7 @@ impl WrappedOptionsWatcher {
             .0
             .borrow()
             .get_canonical_feature_names(&features)
-            .map_err(|e| magnus::Error::new(ruby.exception_exception(), e))
+            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -263,7 +263,7 @@ impl WrappedOptionsWatcher {
             .get_options_with_preferences(&key, &features, &None, &None)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 
@@ -282,7 +282,7 @@ impl WrappedOptionsWatcher {
             .get_options_with_preferences(&key, &features, &None, &_preferences)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 
@@ -308,14 +308,14 @@ impl WrappedOptionsWatcherBuilder {
         let path = std::path::Path::new(&directory);
         match rb_self.0.borrow_mut().add_directory(path) {
             Ok(builder) => Ok(WrappedOptionsWatcherBuilder(RefCell::new(builder.clone()))),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_arg_error(), e)),
         }
     }
 
     fn build(ruby: &Ruby, rb_self: &Self) -> Result<WrappedOptionsWatcher, magnus::Error> {
         match rb_self.0.borrow_mut().build() {
             Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
-            Err(e) => Err(magnus::Error::new(ruby.exception_exception(), e)),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
 }
