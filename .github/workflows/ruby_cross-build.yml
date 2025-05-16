@@ -138,7 +138,7 @@ jobs:
       continue-on-error: true
       run: |
         set -ex
-        gem_path="pkg/*.gem"
+        gem_path="pkg/optify-config.gem"
         ls -lh "${gem_path}"
         gem push "${gem_path}"
         sha256sum "${gem_path}"
