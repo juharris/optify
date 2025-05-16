@@ -223,7 +223,7 @@ class OptifyTest < Test::Unit::TestCase
       rescue => e # rubocop:disable Style/RescueStandardError
         raise e
       rescue Exception => e # rubocop:disable Style/RescueException
-        assert false, "Expected RuntimeError that can be caught by `rescue => e`, got #{e.class}"
+        flunk "Expected RuntimeError that can be caught by `rescue => e`, got #{e.class}"
       end
       assert_equal('Feature name "A" was not found.', err.message)
     end
