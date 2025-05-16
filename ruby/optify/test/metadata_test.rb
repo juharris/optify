@@ -10,18 +10,26 @@ class OptifyTest < Test::Unit::TestCase
                                              .add_directory('../../tests/test_suites/simple/configs')
                                              .build
     a_metadata = provider.get_feature_metadata('feature_A')
-    assert_not_nil(a_metadata)
-    assert_equal('feature_A', a_metadata&.name)
-    assert_equal(['a'], a_metadata&.aliases)
-    assert_equal('The file is for testing.', a_metadata&.details)
-    assert_equal('a-team@company.com', a_metadata&.owners)
+    expected_metadata = Optify::OptionsMetadata.from_hash(
+      {
+        name: 'feature_A',
+        aliases: ['a'],
+        details: 'The file is for testing.',
+        owners: 'a-team@company.com'
+      }
+    )
+    assert_equal(expected_metadata, a_metadata)
 
     b_metadata = provider.get_feature_metadata('feature_B/initial')
-    assert_not_nil(b_metadata)
-    assert_equal('feature_B/initial', b_metadata&.name)
-    assert_equal(['b'], b_metadata&.aliases)
-    assert_equal({ 'description' => 'This is a description of the feature.' }, b_metadata&.details)
-    assert_equal('team-b@company.com', b_metadata&.owners)
+    expected_metadata = Optify::OptionsMetadata.from_hash(
+      {
+        name: 'feature_B/initial',
+        aliases: ['b'],
+        details: { 'description' => 'This is a description of the feature.' },
+        owners: 'team-b@company.com'
+      }
+    )
+    assert_equal(expected_metadata, b_metadata)
 
     all_metadata = provider.features_with_metadata
     assert_equal(3, all_metadata.size)

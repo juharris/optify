@@ -19,6 +19,12 @@ module Optify
     # @return The new instance.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
     def self.from_hash(hash); end
+
+    # Compare this object with another object for equality.
+    # @param other The object to compare.
+    # @return [Boolean] true if the objects are equal; otherwise, false.
+    sig { params(other: T.untyped).returns(T::Boolean) }
+    def ==(other); end
   end
 
   # Options for caching.

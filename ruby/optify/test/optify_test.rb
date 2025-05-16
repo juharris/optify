@@ -220,7 +220,9 @@ class OptifyTest < Test::Unit::TestCase
       preferences.skip_feature_name_conversion = true
       err = assert_raise(RuntimeError) do
         provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
+      # Ensure that consumers of this library can use `rescue => e`.
       rescue => e # rubocop:disable Style/RescueStandardError
+        # Expected error.
         raise e
       rescue Exception => e # rubocop:disable Style/RescueException
         flunk "Expected RuntimeError that can be caught by `rescue => e`, got #{e.class}"

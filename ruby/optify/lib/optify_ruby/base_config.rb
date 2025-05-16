@@ -95,5 +95,18 @@ module Optify
     end
 
     private_class_method :_convert_hash, :_convert_value
+
+    # Compare this object with another object for equality.
+    # @param other The object to compare.
+    # @return [Boolean] true if the objects are equal; otherwise, false.
+    #: (untyped other) -> bool
+    def ==(other)
+      return true if other.equal?(self)
+      return false unless other.is_a?(self.class)
+
+      instance_variables.all? do |var|
+        instance_variable_get(var) == other.instance_variable_get(var)
+      end
+    end
   end
 end

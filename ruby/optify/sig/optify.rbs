@@ -15,6 +15,11 @@ class Optify::BaseConfig
   # @param hash The hash to create the instance from.
   # @return The new instance.
   def self.from_hash: (::Hash[untyped, untyped] hash) -> instance
+
+  # Compare this object with another object for equality.
+  # @param other The object to compare.
+  # @return [Boolean] true if the objects are equal; otherwise, false.
+  def ==: (untyped other) -> bool
 end
 
 # Options for caching.
