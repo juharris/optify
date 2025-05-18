@@ -10,7 +10,7 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - 'py*'
     paths:
       - ".github/workflows/python_publish.yml"
       - "python/**"
