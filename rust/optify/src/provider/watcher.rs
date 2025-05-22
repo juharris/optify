@@ -158,8 +158,8 @@ impl OptionsRegistry for OptionsWatcher {
     fn get_all_options(
         &self,
         feature_names: &[&str],
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
+        cache_options: Option<&CacheOptions>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> std::result::Result<serde_json::Value, String> {
         let provider = self.current_provider.read().unwrap();
         provider.get_all_options(feature_names, cache_options, preferences)
@@ -209,8 +209,8 @@ impl OptionsRegistry for OptionsWatcher {
         &self,
         key: &str,
         feature_names: &[&str],
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
+        cache_options: Option<&CacheOptions>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> std::result::Result<serde_json::Value, String> {
         let provider = self.current_provider.read().unwrap();
         provider.get_options_with_preferences(key, feature_names, cache_options, preferences)
