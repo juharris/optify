@@ -85,8 +85,8 @@ impl OptionsProvider {
     fn _get_entire_config(
         &self,
         feature_names: &[&str],
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
+        cache_options: Option<&CacheOptions>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
         if let Some(_cache_options) = cache_options {
             if let Some(preferences) = preferences {
@@ -139,8 +139,8 @@ impl OptionsRegistry for OptionsProvider {
     fn get_all_options(
         &self,
         feature_names: &[&str],
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
+        cache_options: Option<&CacheOptions>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
         let config = self._get_entire_config(feature_names, cache_options, preferences)?;
 
@@ -190,15 +190,15 @@ impl OptionsRegistry for OptionsProvider {
     }
 
     fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<serde_json::Value, String> {
-        self.get_options_with_preferences(key, feature_names, &None, &None)
+        self.get_options_with_preferences(key, feature_names, None, None)
     }
 
     fn get_options_with_preferences(
         &self,
         key: &str,
         feature_names: &[&str],
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
+        cache_options: Option<&CacheOptions>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
         let config = self._get_entire_config(feature_names, cache_options, preferences)?;
 

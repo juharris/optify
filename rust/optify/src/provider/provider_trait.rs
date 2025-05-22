@@ -11,8 +11,8 @@ pub trait OptionsRegistry {
     fn get_all_options(
         &self,
         feature_names: &[&str],
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
+        cache_options: Option<&CacheOptions>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Value, String>;
 
     /// Gets the canonical feature name for a given feature name or alias
@@ -39,7 +39,7 @@ pub trait OptionsRegistry {
         &self,
         key: &str,
         feature_names: &[&str],
-        cache_options: &Option<CacheOptions>,
-        preferences: &Option<GetOptionsPreferences>,
+        cache_options: Option<&CacheOptions>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Value, String>;
 }

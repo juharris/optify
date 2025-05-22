@@ -32,7 +32,7 @@ fn test_provider_get_options_with_overrides() -> Result<(), Box<dyn std::error::
         })
         .to_string(),
     ));
-    let opts = provider.get_options_with_preferences("myConfig", &["a"], &None, &Some(preferences));
+    let opts = provider.get_options_with_preferences("myConfig", &["a"], None, Some(&preferences));
 
     let expected = serde_json::json!({
         "new key": 33,
@@ -77,7 +77,7 @@ fn test_provider_get_canonical_feature_names() -> Result<(), Box<dyn std::error:
 fn test_provider_get_entire_config() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let feature_names: Vec<&str> = vec!["a"];
-    let entire_config = provider.get_all_options(&feature_names, &None, &None)?;
+    let entire_config = provider.get_all_options(&feature_names, None, None)?;
     let key = "myConfig";
     let opts = provider.get_options(key, &feature_names)?;
     let expected = serde_json::json!({
