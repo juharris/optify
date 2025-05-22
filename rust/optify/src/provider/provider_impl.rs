@@ -1,4 +1,3 @@
-use config::{self};
 use std::collections::HashMap;
 
 use crate::schema::metadata::OptionsMetadata;
