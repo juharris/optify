@@ -54,7 +54,9 @@ jobs:
             target: aarch64-unknown-linux-musl
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
-              set -e &&
+              set -ex &&
+              npm install -g corepack &&
+              corepack enable &&
               rustup target add aarch64-unknown-linux-musl &&
               yarn build --target aarch64-unknown-linux-musl
     name: "[${{ matrix.settings.target }}] Build & Test"
@@ -115,7 +117,7 @@ jobs:
           cache-dependency-path: ./js/optify-config/yarn.lock
           cache: yarn
           node-version: 20
-      - name: Build in docker
+      - name: "[Docker] Build"
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
         with:
