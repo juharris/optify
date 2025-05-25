@@ -188,7 +188,7 @@ jobs:
           path: ./js/optify-config/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   test-macOS-windows-binding:
-    name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
+    name: "[${{ matrix.settings.target }}] Test"
     needs:
       - build
     strategy:
@@ -205,7 +205,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install corepack
+        if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
         run: npm install -g corepack
+      - name: "[Windows] Install corepack"
+        if: ${{ matrix.settings.target == 'x86_64-pc-windows-msvc' }}
+        run: npm install -g corepack --force
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -222,15 +226,11 @@ jobs:
         with:
           name: bindings-${{ matrix.settings.target }}
           path: ./js/optify-config
-      - name: List packages
-        run: ls -R .
-        shell: bash
-        working-directory: ./js/optify-config
       - name: Test bindings
         run: yarn test
         working-directory: ./js/optify-config
   test-linux-x64-gnu-binding:
-    name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
+    name: "[Linux-x64-gnu] Test"
     needs:
       - build
     strategy:
@@ -257,12 +257,8 @@ jobs:
         with:
           name: bindings-x86_64-unknown-linux-gnu
           path: ./js/optify-config
-      - name: List packages
-        run: ls -R .
-        working-directory: ./js/optify-config
-        shell: bash
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
+        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim 'corepack enable && yarn test'
         working-directory: ./js/optify-config
   test-linux-aarch64-gnu-binding:
     name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
@@ -281,12 +277,9 @@ jobs:
         with:
           name: bindings-aarch64-unknown-linux-gnu
           path: ./js/optify-config
-      - name: List packages
-        run: ls -R .
-        shell: bash
-        working-directory: ./js/optify-config
       - name: Install dependencies
         run: |
+          corepack enable
           yarn config set supportedArchitectures.cpu "arm64"
           yarn config set supportedArchitectures.libc "glibc"
           yarn install
@@ -318,10 +311,6 @@ jobs:
         with:
           name: bindings-aarch64-unknown-linux-musl
           path: ./js/optify-config
-      - name: List packages
-        run: ls -R .
-        shell: bash
-        working-directory: ./js/optify-config
       - name: Install dependencies
         run: |
           yarn config set supportedArchitectures.cpu "arm64"
