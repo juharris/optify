@@ -227,7 +227,10 @@ jobs:
           name: bindings-${{ matrix.settings.target }}
           path: ./js/optify-config
       - name: Test bindings
-        run: yarn test
+        run: |
+          set -ex
+          yarn build
+          yarn test
         working-directory: ./js/optify-config
   test-linux-x64-gnu-binding:
     name: "[Linux-x64-gnu] Test"
@@ -258,7 +261,7 @@ jobs:
           name: bindings-x86_64-unknown-linux-gnu
           path: ./js/optify-config
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim 'corepack enable && yarn test'
+        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim 'npm install -g corepack && corepack enable && yarn build && yarn test'
         working-directory: ./js/optify-config
   test-linux-aarch64-gnu-binding:
     name: "[aarch64-unknown-linux-gnu] Test"
@@ -296,9 +299,11 @@ jobs:
           image: node:${{ matrix.node }}-slim
           options: '--platform linux/arm64 -v ${{ github.workspace }}/js/optify-config:/build -w /build'
           run: |
-            set -e
+            set -ex
+            npm install -g corepack
+            corepack enable
+            yarn build
             yarn test
-            ls -la
   test-linux-aarch64-musl-binding:
     name: "[aarch64-unknown-linux-musl] Test"
     needs:
@@ -313,6 +318,8 @@ jobs:
           path: ./js/optify-config
       - name: Install dependencies
         run: |
+          npm install -g corepack
+          corepack enable
           yarn config set supportedArchitectures.cpu "arm64"
           yarn config set supportedArchitectures.libc "musl"
           yarn install
@@ -330,7 +337,9 @@ jobs:
           options: '--platform linux/arm64 -v ${{ github.workspace }}/js/optify-config:/build -w /build'
           run: |
             set -ex
+            npm install -g corepack
             corepack enable
+            yarn build
             yarn test
   universal-macOS:
     name: Build universal macOS binary
