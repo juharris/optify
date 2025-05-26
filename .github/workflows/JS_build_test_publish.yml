@@ -256,13 +256,16 @@ jobs:
       - name: Install dependencies
         run: yarn install
         working-directory: ./js/optify-config
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: bindings-x86_64-unknown-linux-gnu
           path: ./js/optify-config
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim bash -c 'npm install -g corepack && corepack enable && yarn build && yarn test'
+        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim bash -c 'set -ex && npm install -g corepack && corepack enable && yarn test'
         working-directory: ./js/optify-config
   test-linux-aarch64-gnu-binding:
     name: "[aarch64-unknown-linux-gnu] Test"
