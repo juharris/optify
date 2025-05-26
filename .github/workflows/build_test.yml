@@ -68,14 +68,14 @@ jobs:
 
 
     # JavaScript
+    - name: "[JS] Install corepack"
+      run: npm install -g corepack
     - name: Setup node
       uses: actions/setup-node@v4
       with:
         cache: yarn
         cache-dependency-path: ./js/optify-config/yarn.lock
         node-version: 20
-    - name: "[JS] Install corepack"
-      run: npm install -g corepack
     - name: "[JS] Install dependencies"
       run: yarn install --frozen-lockfile
       working-directory: ./js/optify-config
