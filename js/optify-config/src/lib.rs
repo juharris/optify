@@ -1,14 +1,37 @@
 #![deny(clippy::all)]
 
+use napi::bindgen_prelude::*;
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
 use optify::provider::{OptionsProvider, OptionsRegistry};
+use optify::convert_to_str_slice;
 
 #[macro_use]
 extern crate napi_derive;
 
 #[napi(js_name = "OptionsProvider")]
 pub struct JsOptionsProvider {
-  inner: OptionsProvider,
+  inner: Reference<OptionsProvider>,
+}
+
+#[napi]
+impl JsOptionsProvider {
+  #[napi(constructor)]
+    pub fn new(inner: Reference<OptionsProvider>) -> Self {
+        Self { inner }
+    }
+
+    #[napi]
+    pub fn features(&self) -> Vec<String> {
+        self.inner.get_features()
+    }
+
+    #[napi]
+    pub fn get_options_json(&self, key: String, feature_names: Vec<String>) -> napi::Result<String> {
+        let feature_names = convert_to_str_slice!(feature_names);
+        self.inner.get_options(&key, &feature_names)
+            .map(|json| json.to_string())
+            .map_err(|e| napi::Error::from_reason(e.to_string()))
+    }
 }
 
 #[napi(js_name = "OptionsProviderBuilder")]
@@ -35,6 +58,7 @@ impl JsOptionsProviderBuilder {
     #[napi]
     pub fn build(&mut self) -> napi::Result<JsOptionsProvider> {
         let provider = self.inner.build().map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        // FIXME Create a `Reference<OptionsProvider>` from `provider`.
         Ok(JsOptionsProvider { inner: provider })
     }
 }

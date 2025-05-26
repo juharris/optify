@@ -13,7 +13,11 @@ const runSuite = (suitePath: string) => {
     const expectationPath = path.join(expectationsPath, testCase);
     const expectedInfo = JSON.parse(fs.readFileSync(expectationPath, 'utf8'));
     const {expectedOptions, features} = expectedInfo;
-    // TODO
+    for (const [key, expectedValue] of Object.entries(expectedOptions)) {
+      const actualJson = provider.getOptionsJson(key, features);
+      const actualOptions = JSON.parse(actualJson);
+      expect(actualOptions).toEqual(expectedValue)
+    }
   }
 };
 

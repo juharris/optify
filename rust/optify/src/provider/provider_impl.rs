@@ -66,6 +66,7 @@ macro_rules! convert_to_str_slice {
 
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
+#[derive(Debug, Clone)]
 pub struct OptionsProvider {
     aliases: Aliases,
     features: Features,
