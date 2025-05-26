@@ -231,6 +231,7 @@ jobs:
           set -ex
           yarn build
           yarn test
+        shell: bash
         working-directory: ./js/optify-config
   test-linux-x64-gnu-binding:
     name: "[Linux-x64-gnu] Test"
@@ -261,7 +262,7 @@ jobs:
           name: bindings-x86_64-unknown-linux-gnu
           path: ./js/optify-config
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim 'npm install -g corepack && corepack enable && yarn build && yarn test'
+        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim bash -c 'npm install -g corepack && corepack enable && yarn build && yarn test'
         working-directory: ./js/optify-config
   test-linux-aarch64-gnu-binding:
     name: "[aarch64-unknown-linux-gnu] Test"
