@@ -422,7 +422,11 @@ jobs:
         shell: bash
         working-directory: ./js/optify-config
       - name: Publish
+        if: github.ref == 'refs/heads/main'
+        # FIXME: What is the point of checking the commit message? Seems super hacky.
+        # We probably always want to publish the release for main.
         run: |
+          set -ex
           npm config set provenance true
           if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
           then
