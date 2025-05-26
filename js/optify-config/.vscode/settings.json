@@ -1,0 +1,4 @@
+{
+	// Avoid issues with napi macros.
+	"rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] }
+}
