@@ -16,6 +16,7 @@ on:
       - "js/**"
       - "rust/**"
       - "tests/**"
+
   pull_request:
     branches: [ "main" ]
     paths:
