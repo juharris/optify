@@ -68,6 +68,11 @@ jobs:
 
 
     # JavaScript
+    - name: "[JS][Rust] Lint"
+      run : cargo fmt -- --check
+      working-directory: ./js/optify-config
+    # Don't use clippy because it gives too many errors.
+    # It seems like the macros confuse it.
     - name: "[JS] Install corepack"
       run: npm install -g corepack
     - name: Setup node
