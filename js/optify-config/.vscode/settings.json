@@ -1,4 +1,10 @@
 {
 	// Avoid issues with napi macros.
-	"rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] }
+	"rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
+	"[json]": {
+		"editor.formatOnSave": true
+	},
+	"[typescript]": {
+		"editor.formatOnSave": true
+	}
 }
