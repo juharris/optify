@@ -291,6 +291,9 @@ jobs:
           yarn config set supportedArchitectures.libc "glibc"
           yarn install
         working-directory: ./js/optify-config
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -306,7 +309,6 @@ jobs:
             set -ex
             npm install -g corepack
             corepack enable
-            yarn build
             yarn test
   test-linux-aarch64-musl-binding:
     name: "[aarch64-unknown-linux-musl] Test"
@@ -328,6 +330,9 @@ jobs:
           yarn config set supportedArchitectures.libc "musl"
           yarn install
         working-directory: ./js/optify-config
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -343,7 +348,6 @@ jobs:
             set -ex
             npm install -g corepack
             corepack enable
-            yarn build
             yarn test
   universal-macOS:
     name: Build universal macOS binary
