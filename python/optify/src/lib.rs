@@ -21,6 +21,19 @@ impl PyOptionsProvider {
             .collect()
     }
 
+    fn get_canonical_feature_name(&self, feature_name: &str) -> String {
+        self.0
+            .get_canonical_feature_name(feature_name)
+            .expect("feature name should be valid")
+    }
+
+    fn get_canonical_feature_names(&self, feature_names: Vec<String>) -> Vec<String> {
+        let _feature_names = convert_to_str_slice!(feature_names);
+        self.0
+            .get_canonical_feature_names(&_feature_names)
+            .expect("feature names should be valid")
+    }
+
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> String {
         let _feature_names = convert_to_str_slice!(feature_names);
         self.0
