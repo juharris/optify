@@ -42,6 +42,16 @@ class OptifyTest < Test::Unit::TestCase
     end
   end
 
+  def test_aliases
+    BUILDERS.each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      aliases = provider.aliases.sort!
+      assert_equal(%w[a b], aliases)
+    end
+  end
+
   def test_get_all_options
     BUILDERS.each do |klass|
       provider = klass.new

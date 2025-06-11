@@ -53,6 +53,10 @@ fn convert_metadata(metadata: &OptionsMetadata) -> String {
 }
 
 impl WrappedOptionsProvider {
+    fn get_aliases(&self) -> Vec<String> {
+        self.0.borrow().get_aliases()
+    }
+
     fn get_features_and_aliases(&self) -> Vec<String> {
         self.0.borrow().get_features_and_aliases()
     }
@@ -197,6 +201,10 @@ impl WrappedOptionsProviderBuilder {
 struct WrappedOptionsWatcher(RefCell<OptionsWatcher>);
 
 impl WrappedOptionsWatcher {
+    fn get_aliases(&self) -> Vec<String> {
+        self.0.borrow().get_aliases()
+    }
+
     fn get_features_and_aliases(&self) -> Vec<String> {
         self.0.borrow().get_features_and_aliases()
     }
@@ -345,6 +353,7 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     builder_class.define_method("build", method!(WrappedOptionsProviderBuilder::build, 0))?;
 
     let provider_class = module.define_class("OptionsProvider", ruby.class_object())?;
+    provider_class.define_method("aliases", method!(WrappedOptionsProvider::get_aliases, 0))?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
     provider_class.define_method(
         "features_and_aliases",
@@ -419,6 +428,7 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         .define_method("build", method!(WrappedOptionsWatcherBuilder::build, 0))?;
 
     let watcher_class = module.define_class("OptionsWatcher", ruby.class_object())?;
+    watcher_class.define_method("aliases", method!(WrappedOptionsWatcher::get_aliases, 0))?;
     watcher_class.define_method("features", method!(WrappedOptionsWatcher::get_features, 0))?;
     watcher_class.define_method(
         "features_and_aliases",

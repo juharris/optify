@@ -18,6 +18,15 @@ fn get_provider() -> &'static OptionsProvider {
 #[test]
 fn test_provider_get_aliases() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
+    let mut aliases = provider.get_aliases();
+    aliases.sort();
+    assert_eq!(aliases, vec!["a", "b",]);
+    Ok(())
+}
+
+#[test]
+fn test_provider_get_features_and_aliases() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider();
     let mut features_and_aliases = provider.get_features_and_aliases();
     features_and_aliases.sort();
     assert_eq!(

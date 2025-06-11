@@ -76,6 +76,10 @@ module Optify
   class OptionsRegistry
     abstract!
 
+    # @return All of the aliases.
+    sig { returns(T::Array[String]) }
+    def aliases; end
+
     # @return All of the aliases and features.
     sig { returns(T::Array[String]) }
     def features_and_aliases; end

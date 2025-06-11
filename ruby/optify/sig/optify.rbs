@@ -60,6 +60,9 @@ end
 
 # A registry of features that provides configurations.
 class Optify::OptionsRegistry
+  # @return All of the aliases.
+  def aliases: () -> ::Array[String]
+
   # @return All of the aliases and features.
   def features_and_aliases: () -> ::Array[String]
 
