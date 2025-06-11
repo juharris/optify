@@ -16,7 +16,7 @@ pub trait OptionsRegistry {
     /// Gets all options for the specified feature names
     fn get_all_options(
         &self,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Value, String>;
@@ -29,7 +29,10 @@ pub trait OptionsRegistry {
     //
     // @param feature_names The names of aliases or features.
     // @return The canonical feature names.
-    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<String>, String>;
+    fn get_canonical_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+    ) -> Result<Vec<String>, String>;
 
     fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<OptionsMetadata>;
 
@@ -38,13 +41,13 @@ pub trait OptionsRegistry {
     fn get_features_with_metadata(&self) -> Features;
 
     /// Gets options for a specific key and feature names
-    fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<Value, String>;
+    fn get_options(&self, key: &str, feature_names: &[impl AsRef<str>]) -> Result<Value, String>;
 
     /// Gets options with preferences for a specific key and feature names
     fn get_options_with_preferences(
         &self,
         key: &str,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Value, String>;

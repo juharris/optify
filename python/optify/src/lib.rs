@@ -1,7 +1,6 @@
 use pyo3::prelude::*;
 
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
-use optify::convert_to_str_slice;
 use optify::provider::{OptionsProvider, OptionsRegistry};
 
 #[pyclass(name = "OptionsProviderBuilder")]
@@ -28,14 +27,12 @@ impl PyOptionsProvider {
     }
 
     fn get_canonical_feature_names(&self, feature_names: Vec<String>) -> Vec<String> {
-        let feature_names = convert_to_str_slice!(feature_names);
         self.0
             .get_canonical_feature_names(&feature_names)
             .expect("feature names should be valid")
     }
 
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> String {
-        let feature_names = convert_to_str_slice!(feature_names);
         self.0
             .get_options(key, &feature_names)
             .expect("key and feature names should be valid")

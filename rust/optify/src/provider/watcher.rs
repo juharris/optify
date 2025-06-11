@@ -168,7 +168,7 @@ impl OptionsRegistry for OptionsWatcher {
 
     fn get_all_options(
         &self,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> std::result::Result<serde_json::Value, String> {
@@ -191,7 +191,7 @@ impl OptionsRegistry for OptionsWatcher {
 
     fn get_canonical_feature_names(
         &self,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
     ) -> std::result::Result<Vec<String>, String> {
         self.current_provider
             .read()
@@ -220,7 +220,7 @@ impl OptionsRegistry for OptionsWatcher {
     fn get_options(
         &self,
         key: &str,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
     ) -> std::result::Result<serde_json::Value, String> {
         self.current_provider
             .read()
@@ -231,7 +231,7 @@ impl OptionsRegistry for OptionsWatcher {
     fn get_options_with_preferences(
         &self,
         key: &str,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> std::result::Result<serde_json::Value, String> {

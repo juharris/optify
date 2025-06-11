@@ -2,7 +2,6 @@ use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
 use optify::builder::OptionsWatcherBuilder;
-use optify::convert_to_str_slice;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
 use optify::provider::OptionsRegistry;
@@ -70,11 +69,10 @@ impl WrappedOptionsProvider {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let preferences = convert_preferences(preferences);
-        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_all_options(&features, None, Some(&preferences))
+            .get_all_options(&feature_names, None, Some(&preferences))
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
@@ -98,11 +96,10 @@ impl WrappedOptionsProvider {
         rb_self: &Self,
         feature_names: Vec<String>,
     ) -> Result<Vec<String>, magnus::Error> {
-        let features = convert_to_str_slice!(feature_names);
         rb_self
             .0
             .borrow()
-            .get_canonical_feature_names(&features)
+            .get_canonical_feature_names(&feature_names)
             .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
     }
 
@@ -129,11 +126,10 @@ impl WrappedOptionsProvider {
         key: String,
         feature_names: Vec<String>,
     ) -> Result<String, magnus::Error> {
-        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_options_with_preferences(&key, &features, None, None)
+            .get_options_with_preferences(&key, &feature_names, None, None)
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
@@ -148,10 +144,9 @@ impl WrappedOptionsProvider {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let preferences = convert_preferences(preferences);
-        let features = convert_to_str_slice!(feature_names);
         match rb_self.0.borrow().get_options_with_preferences(
             &key,
-            &features,
+            &feature_names,
             None,
             Some(&preferences),
         ) {
@@ -216,11 +211,10 @@ impl WrappedOptionsWatcher {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let preferences = convert_preferences(preferences);
-        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_all_options(&features, None, Some(&preferences))
+            .get_all_options(&feature_names, None, Some(&preferences))
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
@@ -244,11 +238,10 @@ impl WrappedOptionsWatcher {
         rb_self: &Self,
         feature_names: Vec<String>,
     ) -> Result<Vec<String>, magnus::Error> {
-        let features = convert_to_str_slice!(feature_names);
         rb_self
             .0
             .borrow()
-            .get_canonical_feature_names(&features)
+            .get_canonical_feature_names(&feature_names)
             .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
     }
 
@@ -273,11 +266,10 @@ impl WrappedOptionsWatcher {
         key: String,
         feature_names: Vec<String>,
     ) -> Result<String, magnus::Error> {
-        let features = convert_to_str_slice!(feature_names);
         match rb_self
             .0
             .borrow()
-            .get_options_with_preferences(&key, &features, None, None)
+            .get_options_with_preferences(&key, &feature_names, None, None)
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
@@ -292,10 +284,9 @@ impl WrappedOptionsWatcher {
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
         let preferences = convert_preferences(preferences);
-        let features = convert_to_str_slice!(feature_names);
         match rb_self.0.borrow().get_options_with_preferences(
             &key,
-            &features,
+            &feature_names,
             None,
             Some(&preferences),
         ) {
