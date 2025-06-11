@@ -136,6 +136,8 @@ When it is possible to convert an RBS signature, then this library will try to s
 <!--
 When RBS supports checks at runtime and then we can support RBS style signatures in comments for configuration objects:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib test
+
+See https://github.com/Shopify/team-ruby-dx/issues/1392
  -->
 
 To generate the RBS file:
