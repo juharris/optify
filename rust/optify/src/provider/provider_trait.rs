@@ -7,10 +7,10 @@ use crate::{
 
 /// Trait defining the core functionality for an options provider
 pub trait OptionsRegistry {
-    /// Gets all aliases.
+    /// Gets all alias names.
     fn get_aliases(&self) -> Vec<String>;
 
-    /// Gets all aliases.
+    /// Gets all feature names and alias names.
     fn get_features_and_aliases(&self) -> Vec<String>;
 
     /// Gets all options for the specified feature names
