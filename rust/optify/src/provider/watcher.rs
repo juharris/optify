@@ -57,7 +57,7 @@ impl OptionsWatcher {
                         return;
                     }
 
-                    println!(
+                    eprintln!(
                         "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
                         paths
                     );
@@ -66,7 +66,7 @@ impl OptionsWatcher {
                 }
                 Err(errors) => errors
                     .iter()
-                    .for_each(|error| println!("\x1b[31m[optify] {error:?}\x1b[0m")),
+                    .for_each(|error| eprintln!("\x1b[31m[optify] {error:?}\x1b[0m")),
             },
         )
         .unwrap();
@@ -103,7 +103,7 @@ impl OptionsWatcher {
                     for dir in &watched_directories {
                         if dir.exists() {
                             if let Err(e) = builder.add_directory(dir) {
-                                println!(
+                                eprintln!(
                                     "\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m",
                                     e
                                 );
@@ -124,23 +124,23 @@ impl OptionsWatcher {
                             Ok(mut provider) => {
                                 *provider = new_provider;
                                 *last_modified.lock().unwrap() = std::time::SystemTime::now();
-                                println!("\x1b[32m[optify] Successfully rebuilt the OptionsProvider.\x1b[0m");
+                                eprintln!("\x1b[32m[optify] Successfully rebuilt the OptionsProvider.\x1b[0m");
                             }
                             Err(err) => {
-                                println!(
-                                        "\x1b[31m[optify] Error rebuilding provider: {}\nWill not change the provider until the files are fixed.\x1b[0m",
-                                        err
-                                    );
+                                eprintln!(
+                                    "\x1b[31m[optify] Error rebuilding provider: {}\nWill not change the provider until the files are fixed.\x1b[0m",
+                                    err
+                                );
                             }
                         },
                         Err(err) => {
-                            println!("\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m", err);
+                            eprintln!("\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m", err);
                         }
                     }
                 });
 
                 if result.is_err() {
-                    println!("\x1b[31m[optify] Error rebuilding the provider. Will not change the provider until the files are fixed.\x1b[0m");
+                    eprintln!("\x1b[31m[optify] Error rebuilding the provider. Will not change the provider until the files are fixed.\x1b[0m");
                 }
             }
         });
