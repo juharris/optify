@@ -14,6 +14,9 @@ class OptifyTest < Test::Unit::TestCase
       builder = klass.new
       provider = builder.build
       assert_not_nil(provider, "Failed to build #{klass}")
+      assert_equal([], provider.aliases.sort!)
+      assert_equal([], provider.features.sort!)
+      assert_equal([], provider.features_and_aliases.sort!)
     end
   end
 
