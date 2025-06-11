@@ -28,16 +28,16 @@ impl PyOptionsProvider {
     }
 
     fn get_canonical_feature_names(&self, feature_names: Vec<String>) -> Vec<String> {
-        let _feature_names = convert_to_str_slice!(feature_names);
+        let feature_names = convert_to_str_slice!(feature_names);
         self.0
-            .get_canonical_feature_names(&_feature_names)
+            .get_canonical_feature_names(&feature_names)
             .expect("feature names should be valid")
     }
 
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> String {
-        let _feature_names = convert_to_str_slice!(feature_names);
+        let feature_names = convert_to_str_slice!(feature_names);
         self.0
-            .get_options(key, &_feature_names)
+            .get_options(key, &feature_names)
             .expect("key and feature names should be valid")
             .to_string()
     }

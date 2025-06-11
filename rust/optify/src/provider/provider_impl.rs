@@ -81,7 +81,7 @@ impl OptionsProvider {
         }
     }
 
-    fn _get_entire_config(
+    fn get_entire_config(
         &self,
         feature_names: &[&str],
         cache_options: Option<&CacheOptions>,
@@ -154,7 +154,7 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
         match config {
             Ok(cfg) => match cfg.try_deserialize() {
@@ -212,7 +212,7 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
         match config {
             Ok(cfg) => match cfg.get(key) {
