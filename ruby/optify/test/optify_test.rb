@@ -14,6 +14,9 @@ class OptifyTest < Test::Unit::TestCase
       builder = klass.new
       provider = builder.build
       assert_not_nil(provider, "Failed to build #{klass}")
+      assert_equal([], provider.aliases.sort!)
+      assert_equal([], provider.features.sort!)
+      assert_equal([], provider.features_and_aliases.sort!)
     end
   end
 
@@ -39,6 +42,16 @@ class OptifyTest < Test::Unit::TestCase
                      do not match for test suite at #{expectation_path}")
         end
       end
+    end
+  end
+
+  def test_aliases
+    BUILDERS.each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      aliases = provider.aliases.sort!
+      assert_equal(%w[a b], aliases)
     end
   end
 
@@ -151,6 +164,23 @@ class OptifyTest < Test::Unit::TestCase
       all_features = provider.features
       all_features.sort!
       assert_equal(['A_with_comments', 'feature_A', 'feature_B/initial'], all_features)
+    end
+  end
+
+  def test_features_and_aliases
+    BUILDERS.each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      features_and_aliases = provider.features_and_aliases.sort!
+      assert_equal(
+        ['A_with_comments',
+         'a',
+         'b',
+         'feature_A',
+         'feature_B/initial'],
+        features_and_aliases
+      )
     end
   end
 

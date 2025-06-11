@@ -135,6 +135,19 @@ impl OptionsProvider {
 }
 
 impl OptionsRegistry for OptionsProvider {
+    fn get_aliases(&self) -> Vec<String> {
+        self.features
+            .values()
+            .filter_map(|metadata| metadata.aliases.as_ref())
+            .flatten()
+            .cloned()
+            .collect()
+    }
+
+    fn get_features_and_aliases(&self) -> Vec<String> {
+        self.aliases.keys().map(|k| k.to_string()).collect()
+    }
+
     fn get_all_options(
         &self,
         feature_names: &[&str],

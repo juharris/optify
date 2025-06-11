@@ -155,45 +155,66 @@ impl OptionsWatcher {
 }
 
 impl OptionsRegistry for OptionsWatcher {
+    fn get_aliases(&self) -> Vec<String> {
+        self.current_provider.read().unwrap().get_aliases()
+    }
+
+    fn get_features_and_aliases(&self) -> Vec<String> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_features_and_aliases()
+    }
+
     fn get_all_options(
         &self,
         feature_names: &[&str],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> std::result::Result<serde_json::Value, String> {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_all_options(feature_names, cache_options, preferences)
+        self.current_provider.read().unwrap().get_all_options(
+            feature_names,
+            cache_options,
+            preferences,
+        )
     }
 
     fn get_canonical_feature_name(
         &self,
         feature_name: &str,
     ) -> std::result::Result<String, String> {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_canonical_feature_name(feature_name)
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_canonical_feature_name(feature_name)
     }
 
     fn get_canonical_feature_names(
         &self,
         feature_names: &[&str],
     ) -> std::result::Result<Vec<String>, String> {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_canonical_feature_names(feature_names)
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_canonical_feature_names(feature_names)
     }
 
     fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<OptionsMetadata> {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_feature_metadata(canonical_feature_name)
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_feature_metadata(canonical_feature_name)
     }
 
     fn get_features(&self) -> Vec<String> {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_features()
+        self.current_provider.read().unwrap().get_features()
     }
 
     fn get_features_with_metadata(&self) -> Features {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_features_with_metadata()
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_features_with_metadata()
     }
 
     fn get_options(
@@ -201,8 +222,10 @@ impl OptionsRegistry for OptionsWatcher {
         key: &str,
         feature_names: &[&str],
     ) -> std::result::Result<serde_json::Value, String> {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_options(key, feature_names)
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_options(key, feature_names)
     }
 
     fn get_options_with_preferences(
@@ -212,7 +235,9 @@ impl OptionsRegistry for OptionsWatcher {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> std::result::Result<serde_json::Value, String> {
-        let provider = self.current_provider.read().unwrap();
-        provider.get_options_with_preferences(key, feature_names, cache_options, preferences)
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_options_with_preferences(key, feature_names, cache_options, preferences)
     }
 }
