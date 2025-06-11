@@ -154,6 +154,23 @@ class OptifyTest < Test::Unit::TestCase
     end
   end
 
+  def test_features_and_aliases
+    BUILDERS.each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      features_and_aliases = provider.features_and_aliases.sort!
+      assert_equal(
+        ['A_with_comments',
+         'a',
+         'b',
+         'feature_A',
+         'feature_B/initial'],
+        features_and_aliases
+      )
+    end
+  end
+
   def test_get_options_with_cache_and_overrides
     BUILDERS.each do |klass|
       provider = klass.new

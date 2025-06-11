@@ -53,6 +53,10 @@ fn convert_metadata(metadata: &OptionsMetadata) -> String {
 }
 
 impl WrappedOptionsProvider {
+    fn get_features_and_aliases(&self) -> Vec<String> {
+        self.0.borrow().get_features_and_aliases()
+    }
+
     // These methods cannot accept `str`s because of how magnus works.
     // Return the JSON as a string so that it can be deserialized easily into a specific immutable class in Ruby.
     fn get_all_options_json(
@@ -193,6 +197,10 @@ impl WrappedOptionsProviderBuilder {
 struct WrappedOptionsWatcher(RefCell<OptionsWatcher>);
 
 impl WrappedOptionsWatcher {
+    fn get_features_and_aliases(&self) -> Vec<String> {
+        self.0.borrow().get_features_and_aliases()
+    }
+
     fn get_all_options_json(
         ruby: &Ruby,
         rb_self: &Self,
@@ -339,6 +347,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let provider_class = module.define_class("OptionsProvider", ruby.class_object())?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
     provider_class.define_method(
+        "features_and_aliases",
+        method!(WrappedOptionsProvider::get_features_and_aliases, 0),
+    )?;
+    provider_class.define_method(
         "get_all_options_json",
         method!(WrappedOptionsProvider::get_all_options_json, 2),
     )?;
@@ -408,6 +420,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
 
     let watcher_class = module.define_class("OptionsWatcher", ruby.class_object())?;
     watcher_class.define_method("features", method!(WrappedOptionsWatcher::get_features, 0))?;
+    watcher_class.define_method(
+        "features_and_aliases",
+        method!(WrappedOptionsWatcher::get_features_and_aliases, 0),
+    )?;
     watcher_class.define_method(
         "get_all_options_json",
         method!(WrappedOptionsWatcher::get_all_options_json, 2),

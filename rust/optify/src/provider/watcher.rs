@@ -155,6 +155,11 @@ impl OptionsWatcher {
 }
 
 impl OptionsRegistry for OptionsWatcher {
+    fn get_features_and_aliases(&self) -> Vec<String> {
+        let provider = self.current_provider.read().unwrap();
+        provider.get_features_and_aliases()
+    }
+
     fn get_all_options(
         &self,
         feature_names: &[&str],
