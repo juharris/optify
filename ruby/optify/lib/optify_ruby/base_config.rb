@@ -8,8 +8,7 @@ module Optify
   # A base class for classes from configuration files.
   # Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`
   # because they will have an implementation of `from_hash` that works recursively.
-  # This class is a work in progress with minimal error handling
-  # and doesn't handle certain cases such as nilable types yet.
+  # This class is a work in progress with minimal error handling.
   # It may be moved to another gem in the future.
   class BaseConfig
     extend T::Sig
@@ -107,8 +106,8 @@ module Optify
       return true if other.equal?(self)
       return false unless other.is_a?(self.class)
 
-      instance_variables.all? do |var|
-        instance_variable_get(var) == other.instance_variable_get(var)
+      instance_variables.all? do |name|
+        instance_variable_get(name) == other.instance_variable_get(name)
       end
     end
   end
