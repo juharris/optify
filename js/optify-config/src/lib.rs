@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
-use optify::convert_to_str_slice;
 use optify::provider::{OptionsProvider, OptionsRegistry};
 
 #[macro_use]
@@ -26,7 +25,6 @@ impl JsOptionsProvider {
 
   #[napi]
   pub fn get_options_json(&self, key: String, feature_names: Vec<String>) -> napi::Result<String> {
-    let feature_names = convert_to_str_slice!(feature_names);
     self
       .inner
       .as_ref()
