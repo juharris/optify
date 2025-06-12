@@ -6,7 +6,7 @@ require_relative '../lib/optify'
 require_relative 'my_config'
 
 class TestObject < Optify::BaseConfig
-  sig { returns(Integer) }
+  #: Integer
   attr_reader :num
 
   sig { returns(T.nilable(Integer)) }
