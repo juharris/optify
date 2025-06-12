@@ -82,7 +82,7 @@ jobs:
         cache-dependency-path: ./js/optify-config/yarn.lock
         node-version: 20
     - name: "[JS] Install dependencies"
-      run: yarn install --frozen-lockfile
+      run: yarn install
       working-directory: ./js/optify-config
     - name: "[JS] Build"
       run: yarn build
