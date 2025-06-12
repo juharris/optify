@@ -6,7 +6,9 @@ require_relative '../lib/optify'
 require_relative 'my_config'
 
 class TestObject < Optify::BaseConfig
-  # Somehow this RBS signature works when all tests run, but it's not clear why and it's not guaranteed to work.
+  # Somehow this RBS signature works when all tests run,
+  # but not when only the tests in this specific file run and it's not clear why.
+  # So RBS signatures are not guaranteed to work.
   #: Integer?
   attr_reader :num
 
