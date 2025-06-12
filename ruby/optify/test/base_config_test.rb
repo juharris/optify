@@ -6,11 +6,9 @@ require_relative '../lib/optify'
 require_relative 'my_config'
 
 class TestObject < Optify::BaseConfig
-  #: Integer
+  # Somehow this RBS signature works when all tests run, but it's not clear why and it's not guaranteed to work.
+  #: Integer?
   attr_reader :num
-
-  sig { returns(Integer) }
-  attr_reader :sorbet_sig_num
 
   sig { returns(T.nilable(Integer)) }
   attr_reader :nilable_num
@@ -41,15 +39,9 @@ class BaseConfigTest < Test::Unit::TestCase
     assert_not_same(a1, a2)
     assert_equal(a1, a2)
     assert a1 == a2
-  end
 
-  def test_equality_sorbet_sig_num
-    a1 = TestObject.from_hash({ num: 2, sorbet_sig_num: 3 })
-    a2 = TestObject.from_hash({ num: 2, sorbet_sig_num: 3 })
-    assert_same(a1, a1)
-    assert_not_same(a1, a2)
-    assert_equal(a1, a2)
-    assert a1 == a2
+    assert_equal(1, a1.num)
+    assert_equal(1, a2.num)
   end
 
   def test_inequality_hash

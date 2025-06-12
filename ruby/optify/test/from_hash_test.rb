@@ -86,6 +86,10 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T.nilable(T::Hash[String, T.any(String, TestObject, TestObject2)])) }
   attr_reader :nilable_hash_with_string_or_object_or_object2
 
+  # We cannot parse this yet because we only handle Sorbet signatures for attributes.
+  #: TestObject2?
+  attr_reader :rbs_sig_object2
+
   sig { returns(T.untyped) }
   attr_reader :untyped
 end
@@ -343,6 +347,14 @@ class FromHashTest < Test::Unit::TestCase
     hash = { 'symbol_to_symbol' => { 'key' => 'value' } }
     c = TestConfig.from_hash(hash)
     assert_equal({ key: :value }, c.symbol_to_symbol)
+  end
+
+  def test_rbs_sig_num
+    hash = { rbs_sig_object2: { string: 'hello' } }
+    exception = assert_raises(RuntimeError) do
+      TestConfig.from_hash(hash)
+    end
+    assert_equal('A Sorbet signature is required for `TestConfig.rbs_sig_object2`.', exception.message)
   end
 
   def test_untyped
