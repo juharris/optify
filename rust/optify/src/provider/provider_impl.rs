@@ -56,14 +56,6 @@ impl GetOptionsPreferences {
 
 pub struct CacheOptions {}
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! convert_to_str_slice {
-    ($vec:expr) => {
-        $vec.iter().map(|s| s.as_str()).collect::<Vec<&str>>()
-    };
-}
-
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
@@ -81,9 +73,9 @@ impl OptionsProvider {
         }
     }
 
-    fn _get_entire_config(
+    fn get_entire_config(
         &self,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Result<config::Config, config::ConfigError>, String> {
@@ -104,9 +96,9 @@ impl OptionsProvider {
             // Check for an alias.
             // Canonical feature names are also included as keys in the aliases map.
             let canonical_feature_name = if skip_feature_name_conversion {
-                &feature_name.to_string()
+                feature_name.as_ref()
             } else {
-                &self.get_canonical_feature_name(feature_name)?
+                &self.get_canonical_feature_name(feature_name.as_ref())?
             };
 
             let source = match self.sources.get(canonical_feature_name) {
@@ -150,11 +142,11 @@ impl OptionsRegistry for OptionsProvider {
 
     fn get_all_options(
         &self,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
         match config {
             Ok(cfg) => match cfg.try_deserialize() {
@@ -182,10 +174,13 @@ impl OptionsRegistry for OptionsProvider {
         }
     }
 
-    fn get_canonical_feature_names(&self, feature_names: &[&str]) -> Result<Vec<String>, String> {
+    fn get_canonical_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+    ) -> Result<Vec<String>, String> {
         feature_names
             .iter()
-            .map(|name| self.get_canonical_feature_name(name))
+            .map(|name| self.get_canonical_feature_name(name.as_ref()))
             .collect()
     }
 
@@ -201,18 +196,22 @@ impl OptionsRegistry for OptionsProvider {
         self.features.clone()
     }
 
-    fn get_options(&self, key: &str, feature_names: &[&str]) -> Result<serde_json::Value, String> {
+    fn get_options(
+        &self,
+        key: &str,
+        feature_names: &[impl AsRef<str>],
+    ) -> Result<serde_json::Value, String> {
         self.get_options_with_preferences(key, feature_names, None, None)
     }
 
     fn get_options_with_preferences(
         &self,
         key: &str,
-        feature_names: &[&str],
+        feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self._get_entire_config(feature_names, cache_options, preferences)?;
+        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
         match config {
             Ok(cfg) => match cfg.get(key) {
