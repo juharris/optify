@@ -26,7 +26,10 @@ module Optify
       instance = new
 
       hash.each do |key, value|
-        sig_return_type = T::Utils.signature_for_method(instance_method(key)).return_type
+        sig = T::Utils.signature_for_method(instance_method(key))
+        raise "A Sorbet signature is required for `#{name}.#{key}`." if sig.nil?
+
+        sig_return_type = sig.return_type
         value = _convert_value(value, sig_return_type)
         instance.instance_variable_set("@#{key}", value)
       end

@@ -29,9 +29,6 @@ class TestConfig < Optify::BaseConfig
   sig { returns(T::Hash[String, Integer]) }
   attr_reader :hash
 
-  sig { returns(T.nilable(TestObject)) }
-  attr_reader :nilable_object
-
   sig { returns(T.nilable(T::Hash[String, Integer])) }
   attr_reader :nilable_hash
 

@@ -9,6 +9,9 @@ class TestObject < Optify::BaseConfig
   #: Integer
   attr_reader :num
 
+  sig { returns(Integer) }
+  attr_reader :sorbet_sig_num
+
   sig { returns(T.nilable(Integer)) }
   attr_reader :nilable_num
 
@@ -34,6 +37,15 @@ class BaseConfigTest < Test::Unit::TestCase
   def test_equality_numbers
     a1 = TestObject.from_hash({ num: 1 })
     a2 = TestObject.from_hash({ num: 1 })
+    assert_same(a1, a1)
+    assert_not_same(a1, a2)
+    assert_equal(a1, a2)
+    assert a1 == a2
+  end
+
+  def test_equality_sorbet_sig_num
+    a1 = TestObject.from_hash({ num: 2, sorbet_sig_num: 3 })
+    a2 = TestObject.from_hash({ num: 2, sorbet_sig_num: 3 })
     assert_same(a1, a1)
     assert_not_same(a1, a2)
     assert_equal(a1, a2)
