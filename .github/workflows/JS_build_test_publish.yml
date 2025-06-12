@@ -108,7 +108,7 @@ jobs:
         shell: bash
         working-directory: ./js/optify-config
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
         working-directory: ./js/optify-config
       - name: Setup node x86
         uses: actions/setup-node@v4
@@ -176,7 +176,7 @@ jobs:
 
             freebsd-version
 
-            yarn install
+            yarn install --frozen-lockfile
             yarn build
             yarn test
             rm -rf node_modules
@@ -220,7 +220,7 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Install dependencies
         run: |
-          yarn install
+          yarn install --frozen-lockfile
         working-directory: ./js/optify-config
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -255,7 +255,7 @@ jobs:
           cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: ${{ matrix.node }}
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
         working-directory: ./js/optify-config
       - name: Build
         run: yarn build
@@ -290,7 +290,7 @@ jobs:
           corepack enable
           yarn config set supportedArchitectures.cpu "arm64"
           yarn config set supportedArchitectures.libc "glibc"
-          yarn install
+          yarn install --frozen-lockfile
         working-directory: ./js/optify-config
       - name: Build
         run: yarn build
@@ -329,7 +329,7 @@ jobs:
           corepack enable
           yarn config set supportedArchitectures.cpu "arm64"
           yarn config set supportedArchitectures.libc "musl"
-          yarn install
+          yarn install --frozen-lockfile
         working-directory: ./js/optify-config
       - name: Build
         run: yarn build
@@ -366,7 +366,7 @@ jobs:
           cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: 20
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
         working-directory: ./js/optify-config
       - name: Download macOS x64 artifact
         uses: actions/download-artifact@v4
@@ -409,7 +409,7 @@ jobs:
           cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: 20
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
         working-directory: ./js/optify-config
       - name: Download all artifacts
         uses: actions/download-artifact@v4
