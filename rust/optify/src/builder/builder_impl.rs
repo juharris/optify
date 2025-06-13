@@ -46,9 +46,10 @@ fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
     path.strip_prefix(directory)
         .unwrap()
         .with_extension("")
-        .to_str()
-        .unwrap()
-        .to_owned()
+        .components()
+        .map(|component| component.as_os_str().to_str().unwrap())
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 fn resolve_imports(
@@ -307,5 +308,20 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             &self.features,
             &self.sources,
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_canonical_feature_name() {
+        let directory = std::path::Path::new("wtv");
+        let path = directory.join("dir1").join("dir2").join("feature_B.json");
+        assert_eq!(
+            "dir1/dir2/feature_B",
+            get_canonical_feature_name(&path, directory)
+        );
     }
 }

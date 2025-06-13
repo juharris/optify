@@ -8,6 +8,11 @@ pushd rust/optify
 cargo test
 popd
 
+pushd js/optify-config
+yarn build
+yarn test
+popd
+
 pushd python/optify
 maturin develop
 pytest

@@ -1,0 +1,449 @@
+name: "[JS] Build, Test, and Publish"
+
+env:
+  DEBUG: napi:*
+  APP_NAME: optify-config
+  CARGO_TERM_COLOR: always
+  MACOSX_DEPLOYMENT_TARGET: '10.13'
+permissions:
+  contents: write
+  id-token: write
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/JS_build_test_publish.yml"
+      - "js/**"
+      - "rust/**"
+      - "tests/**"
+
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/JS_build_test_publish.yml"
+      - "js/**"
+      - "rust/**"
+      - "tests/**"
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        settings:
+          - host: macos-latest
+            target: x86_64-apple-darwin
+            build: yarn build --target x86_64-apple-darwin
+          - host: windows-latest
+            build: yarn build --target x86_64-pc-windows-msvc
+            target: x86_64-pc-windows-msvc
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            build: yarn build --target x86_64-unknown-linux-gnu
+          - host: macos-latest
+            target: aarch64-apple-darwin
+            build: yarn build --target aarch64-apple-darwin
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+            build: yarn build --target aarch64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: |-
+              set -ex &&
+              npm install -g corepack &&
+              corepack enable &&
+              rustup target add aarch64-unknown-linux-musl &&
+              yarn build --target aarch64-unknown-linux-musl
+    name: "[${{ matrix.settings.target }}] Build & Test"
+    runs-on: ${{ matrix.settings.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install corepack
+        if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
+        run: npm install -g corepack
+      - name: "[Windows] Install corepack"
+        if: ${{ matrix.settings.target == 'x86_64-pc-windows-msvc' }}
+        run: npm install -g corepack --force
+      - name: Setup node
+        uses: actions/setup-node@v4
+        if: ${{ !matrix.settings.docker }}
+        with:
+          cache: yarn
+          cache-dependency-path: ./js/optify-config/yarn.lock
+          node-version: 20
+          
+      - name: Install
+        uses: dtolnay/rust-toolchain@stable
+        if: ${{ !matrix.settings.docker }}
+        with:
+          toolchain: stable
+          targets: ${{ matrix.settings.target }}
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            .cargo-cache
+            target/
+          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
+      - uses: goto-bus-stop/setup-zig@v2
+        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' || matrix.settings.target == 'armv7-unknown-linux-musleabihf' }}
+        with:
+          version: 0.13.0
+      - name: Setup toolchain
+        run: ${{ matrix.settings.setup }}
+        if: ${{ matrix.settings.setup }}
+        shell: bash
+      - name: Setup node x86
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        run: yarn config set supportedArchitectures.cpu "ia32"
+        shell: bash
+        working-directory: ./js/optify-config
+      - name: Install dependencies
+        run: yarn install
+        working-directory: ./js/optify-config
+      - name: Setup node x86
+        uses: actions/setup-node@v4
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        with:
+          architecture: x86
+          cache-dependency-path: ./js/optify-config/yarn.lock
+          cache: yarn
+          node-version: 20
+      - name: "[Docker] Build"
+        uses: addnab/docker-run-action@v3
+        if: ${{ matrix.settings.docker }}
+        with:
+          image: ${{ matrix.settings.docker }}
+          options: '--user 0:0 -v ${{ github.workspace }}/js/optify-config/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/js/optify-config/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/js/optify-config/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
+          run: ${{ matrix.settings.build }}
+      - name: Build
+        run: ${{ matrix.settings.build }}
+        if: ${{ !matrix.settings.docker }}
+        shell: bash
+        working-directory: ./js/optify-config
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: ./js/optify-config/${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
+  build-freebsd:
+    # Disable for now because it gives too many installation errors such as when trying to install `yarn`.
+    if: ${{ false }}
+    runs-on: macos-13
+    name: "[FreeBSD] Build"
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build & Test"
+        id: build
+        uses: cross-platform-actions/action@v0.24.0
+        env:
+          DEBUG: napi:*
+          RUSTUP_IO_THREADS: 1
+        with:
+          operating_system: freebsd
+          version: '13.2'
+          memory: 8G
+          cpu_count: 3
+          environment_variables: DEBUG RUSTUP_IO_THREADS
+          shell: bash
+          run: |
+            set -ex
+
+            cd js/optify-config
+            sudo pkg install -y -f curl node libnghttp2 npm
+            # TODO Avoid `sudo`.
+            sudo npm install -g corepack yarn --ignore-scripts
+            curl https://sh.rustup.rs -sSf --output rustup.sh
+            sh rustup.sh -y --profile minimal --default-toolchain stable
+            source "$HOME/.cargo/env"
+
+            rustc --version
+            node -v
+            yarn --version
+            pwd
+            ls -lah
+            whoami
+
+            freebsd-version
+
+            yarn install
+            yarn build
+            yarn test
+            rm -rf node_modules
+            rm -rf target
+            rm -rf .yarn/cache
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-freebsd
+          path: ./js/optify-config/${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
+  test-macOS-windows-binding:
+    name: "[${{ matrix.settings.target }}] Test"
+    needs:
+      - build
+    strategy:
+      fail-fast: true
+      matrix:
+        settings:
+          - host: macos-latest
+            target: x86_64-apple-darwin
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+        node:
+          - '20'
+    runs-on: ${{ matrix.settings.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install corepack
+        if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
+        run: npm install -g corepack
+      - name: "[Windows] Install corepack"
+        if: ${{ matrix.settings.target == 'x86_64-pc-windows-msvc' }}
+        run: npm install -g corepack --force
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          architecture: x64
+          cache: yarn
+          cache-dependency-path: ./js/optify-config/yarn.lock
+          node-version: ${{ matrix.node }}
+      - name: Install dependencies
+        run: |
+          yarn install
+        working-directory: ./js/optify-config
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: ./js/optify-config
+      - name: Test bindings
+        run: |
+          set -ex
+          yarn build
+          yarn test
+        shell: bash
+        working-directory: ./js/optify-config
+  test-linux-x64-gnu-binding:
+    name: "[Linux-x64-gnu] Test"
+    needs:
+      - build
+    strategy:
+      fail-fast: true
+      matrix:
+        node:
+          - '20'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install corepack
+        run: npm install -g corepack
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
+          cache-dependency-path: ./js/optify-config/yarn.lock
+          node-version: ${{ matrix.node }}
+      - name: Install dependencies
+        run: yarn install
+        working-directory: ./js/optify-config
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-x86_64-unknown-linux-gnu
+          path: ./js/optify-config
+      - name: Test bindings
+        run: docker run --rm -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config node:${{ matrix.node }}-slim bash -c 'set -ex && npm install -g corepack && corepack enable && yarn test'
+  test-linux-aarch64-gnu-binding:
+    name: "[aarch64-unknown-linux-gnu] Test"
+    needs:
+      - build
+    strategy:
+      fail-fast: true
+      matrix:
+        node:
+          - '20'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-aarch64-unknown-linux-gnu
+          path: ./js/optify-config
+      - name: Install dependencies
+        run: |
+          corepack enable
+          yarn config set supportedArchitectures.cpu "arm64"
+          yarn config set supportedArchitectures.libc "glibc"
+          yarn install
+        working-directory: ./js/optify-config
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        working-directory: ./js/optify-config
+      - name: Setup and run tests
+        uses: addnab/docker-run-action@v3
+        with:
+          image: node:${{ matrix.node }}-slim
+          options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
+          run: |
+            set -ex
+            npm install -g corepack
+            corepack enable
+            yarn test
+  test-linux-aarch64-musl-binding:
+    name: "[aarch64-unknown-linux-musl] Test"
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-aarch64-unknown-linux-musl
+          path: ./js/optify-config
+      - name: Install dependencies
+        run: |
+          npm install -g corepack
+          corepack enable
+          yarn config set supportedArchitectures.cpu "arm64"
+          yarn config set supportedArchitectures.libc "musl"
+          yarn install
+        working-directory: ./js/optify-config
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        working-directory: ./js/optify-config
+      - name: Setup and run tests
+        uses: addnab/docker-run-action@v3
+        with:
+          image: node:lts-alpine
+          options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
+          run: |
+            set -ex
+            npm install -g corepack
+            corepack enable
+            yarn test
+  universal-macOS:
+    name: Build universal macOS binary
+    needs:
+      - build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install corepack
+        run: npm install -g corepack
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
+          cache-dependency-path: ./js/optify-config/yarn.lock
+          node-version: 20
+      - name: Install dependencies
+        run: yarn install
+        working-directory: ./js/optify-config
+      - name: Download macOS x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-x86_64-apple-darwin
+          path: ./js/optify-config/artifacts
+      - name: Download macOS arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-aarch64-apple-darwin
+          path: ./js/optify-config/artifacts
+      - name: Combine binaries
+        run: yarn universal
+        working-directory: ./js/optify-config
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-universal-apple-darwin
+          path: ./js/optify-config/${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    needs:
+      # FreeBSD is disabled for now because it gives too many installation errors such as when trying to install `yarn`.
+      # - build-freebsd
+      - test-macOS-windows-binding
+      - test-linux-x64-gnu-binding
+      - test-linux-aarch64-gnu-binding
+      - test-linux-aarch64-musl-binding
+      - universal-macOS
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install corepack
+        run: npm install -g corepack
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
+          cache-dependency-path: ./js/optify-config/yarn.lock
+          node-version: 20
+      - name: Install dependencies
+        run: yarn install
+        working-directory: ./js/optify-config
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./js/optify-config/artifacts
+      - name: Move artifacts
+        run: yarn artifacts
+        working-directory: ./js/optify-config
+      - name: List packages
+        run: ls -R ./npm
+        shell: bash
+        working-directory: ./js/optify-config
+      - name: Publish
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        # It probably just fails if the gem is already published.
+        # We want to only be lenient for the `npm publish`, but we would still want to clearly see that an issue happened during the run.
+        continue-on-error: true
+        # FIXME: What is the point of checking the commit message? Seems super hacky.
+        # We probably always want to publish the release for main.
+        run: |
+          set -ex
+          npm config set provenance true
+          if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
+          then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish --access public
+          elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
+          then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish --tag next --access public
+          else
+            echo "Not a release, skipping publish"
+          fi
+        working-directory: ./js/optify-config
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
