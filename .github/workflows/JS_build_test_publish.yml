@@ -268,8 +268,7 @@ jobs:
           name: bindings-x86_64-unknown-linux-gnu
           path: ./js/optify-config
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim bash -c 'set -ex && npm install -g corepack && corepack enable && yarn test'
-        working-directory: ./js/optify-config
+        run: docker run --rm -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config node:${{ matrix.node }}-slim bash -c 'set -ex && npm install -g corepack && corepack enable && yarn test'
   test-linux-aarch64-gnu-binding:
     name: "[aarch64-unknown-linux-gnu] Test"
     needs:
@@ -307,7 +306,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: node:${{ matrix.node }}-slim
-          options: '--platform linux/arm64 -v ${{ github.workspace }}/js/optify-config:/build -w /build'
+          options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
             npm install -g corepack
@@ -346,7 +345,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: node:lts-alpine
-          options: '--platform linux/arm64 -v ${{ github.workspace }}/js/optify-config:/build -w /build'
+          options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
             npm install -g corepack
