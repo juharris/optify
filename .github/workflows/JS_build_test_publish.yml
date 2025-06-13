@@ -31,7 +31,9 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: true
+      # FIXME Undo
+      # fail-fast: true
+      fail-fast: false
       matrix:
         settings:
           - host: macos-latest
@@ -123,7 +125,7 @@ jobs:
         if: ${{ matrix.settings.docker }}
         with:
           image: ${{ matrix.settings.docker }}
-          options: '--user 0:0 -v ${{ github.workspace }}/js/optify-config/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/js/optify-config/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/js/optify-config/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}/js/optify-config:/build -w /build'
+          options: '--user 0:0 -v ${{ github.workspace }}/js/optify-config/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/js/optify-config/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/js/optify-config/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: ${{ matrix.settings.build }}
       - name: Build
         run: ${{ matrix.settings.build }}
