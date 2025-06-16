@@ -46,10 +46,9 @@ fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
     path.strip_prefix(directory)
         .unwrap()
         .with_extension("")
-        .components()
-        .map(|component| component.as_os_str().to_str().unwrap())
-        .collect::<Vec<_>>()
-        .join("/")
+        .to_str()
+        .unwrap()
+        .replace(std::path::MAIN_SEPARATOR, "/")
 }
 
 fn resolve_imports(
