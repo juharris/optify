@@ -47,7 +47,7 @@ fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
         .unwrap()
         .with_extension("")
         .to_str()
-        .unwrap()
+        .expect("path should be valid Unicode")
         .replace(std::path::MAIN_SEPARATOR, "/")
 }
 
