@@ -22,3 +22,7 @@ To automatically change the Rust code, run:
 ```shell
 cargo fmt
 ```
+
+## Publishing
+
+TODO See https://napi.rs/docs/introduction/getting-started#deep-dive

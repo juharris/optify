@@ -730,6 +730,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@optify/config@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@optify/config@workspace:."
+  dependencies:
+    "@jest/globals": "npm:^29.7.0"
+    "@napi-rs/cli": "npm:^2.18.4"
+    "@types/mocha": "npm:^10.0.10"
+    corepack: "npm:^0.32.0"
+    jest: "npm:^29.7.0"
+    ts-jest: "npm:^29.3.4"
+    typescript: "npm:^5.8.3"
+  languageName: unknown
+  linkType: soft
+
 "@pkgjs/parseargs@npm:^0.11.0":
   version: 0.11.0
   resolution: "@pkgjs/parseargs@npm:0.11.0"
@@ -2752,20 +2766,6 @@ __metadata:
   checksum: 10c0/ffcef6fbb2692c3c40749f31ea2e22677a876daea92959b8a80b521d95cca7a668c884d8b2045d1d8ee7d56796aa405c405462af112a1477594cc63531baeb8f
   languageName: node
   linkType: hard
-
-"optify-config@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "optify-config@workspace:."
-  dependencies:
-    "@jest/globals": "npm:^29.7.0"
-    "@napi-rs/cli": "npm:^2.18.4"
-    "@types/mocha": "npm:^10.0.10"
-    corepack: "npm:^0.32.0"
-    jest: "npm:^29.7.0"
-    ts-jest: "npm:^29.3.4"
-    typescript: "npm:^5.8.3"
-  languageName: unknown
-  linkType: soft
 
 "p-limit@npm:^2.2.0":
   version: 2.3.0
