@@ -1,5 +1,5 @@
 # Optify
-Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
+Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.
 Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
 [![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
@@ -46,6 +46,7 @@ Core Features:
   Features are intended to be combined to build the final configuration.
 * **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
 * Supports clear file names and **aliases** for feature names.
+* Feature names are **case insensitive**. `"feature_A"` and `"FeaTurE_a"` are the same.
 * **Reads files in parallel** when loading your configurations.
 * **Caching**: Configurations for a key and enabled features are cached to avoid rebuilding objects.
   Caching is only implemented in Ruby for now.
