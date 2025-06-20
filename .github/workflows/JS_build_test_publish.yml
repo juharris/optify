@@ -2,7 +2,7 @@ name: "[JS] Build, Test, and Publish"
 
 env:
   DEBUG: napi:*
-  APP_NAME: "config"
+  APP_NAME: config
   CARGO_TERM_COLOR: always
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 permissions:
@@ -427,7 +427,8 @@ jobs:
         shell: bash
         working-directory: ./js/optify-config
       - name: Publish
-        if: github.ref == 'refs/heads/main'
+        # FIXME: UNDO
+        # if: github.ref == 'refs/heads/main'
         shell: bash
         # It probably just fails if the gem is already published.
         # We want to only be lenient for the `npm publish`, but we would still want to clearly see that an issue happened during the run.
