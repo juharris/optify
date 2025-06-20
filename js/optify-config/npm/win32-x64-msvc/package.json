@@ -1,18 +1,28 @@
 {
   "name": "@optify/config-win32-x64-msvc",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "os": [
     "win32"
   ],
   "cpu": [
     "x64"
   ],
-  "main": "@optify/config.win32-x64-msvc.node",
+  "main": "config.win32-x64-msvc.node",
   "files": [
-    "@optify/config.win32-x64-msvc.node"
+    "config.win32-x64-msvc.node"
   ],
+  "description": "Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.",
+  "keywords": [
+    "configuration"
+  ],
+  "author": "Justin D. Harris <juharris@users.noreply.github.com>",
+  "homepage": "https://github.com/juharris/optify",
   "license": "MIT",
   "engines": {
     "node": ">= 10"
+  },
+  "repository": "https://github.com/juharris/optify",
+  "bugs": {
+    "url": "https://github.com/juharris/optify/issues"
   }
 }

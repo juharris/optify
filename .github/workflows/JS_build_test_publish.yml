@@ -2,8 +2,7 @@ name: "[JS] Build, Test, and Publish"
 
 env:
   DEBUG: napi:*
-  PACKAGE_SCOPE: '@optify'
-  APP_NAME: "@optify/config"
+  APP_NAME: "config"
   CARGO_TERM_COLOR: always
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 permissions:
@@ -227,7 +226,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ./js/optify-config/${{ env.PACKAGE_SCOPE }}
+          path: ./js/optify-config
       - name: Test bindings
         run: |
           set -ex
@@ -265,7 +264,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-x86_64-unknown-linux-gnu
-          path: ./js/optify-config/${{ env.PACKAGE_SCOPE }}
+          path: ./js/optify-config
       - name: Test bindings
         run: docker run --rm -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config node:${{ matrix.node }}-slim bash -c 'set -ex && npm install -g corepack && corepack enable && yarn test'
   test-linux-aarch64-gnu-binding:
@@ -284,7 +283,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-aarch64-unknown-linux-gnu
-          path: ./js/optify-config/${{ env.PACKAGE_SCOPE }}
+          path: ./js/optify-config
       - name: Install dependencies
         run: |
           corepack enable
@@ -322,7 +321,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-aarch64-unknown-linux-musl
-          path: ./js/optify-config/${{ env.PACKAGE_SCOPE }}
+          path: ./js/optify-config
       - name: Install dependencies
         run: |
           npm install -g corepack
@@ -372,21 +371,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-x86_64-apple-darwin
-          path: ./js/optify-config/artifacts/${{ env.PACKAGE_SCOPE }}
+          path: ./js/optify-config/artifacts
       - name: Download macOS arm64 artifact
         uses: actions/download-artifact@v4
         with:
           name: bindings-aarch64-apple-darwin
-          path: ./js/optify-config/artifacts/${{ env.PACKAGE_SCOPE }}
+          path: ./js/optify-config/artifacts
       - name: Combine binaries
         run: |
           set -ex
           ls -lRh ./artifacts/
-          mkdir -p ${{ env.PACKAGE_SCOPE}}
           yarn universal
-          ls -lh
-          ls -lRh ./artifacts/
-          ls -lRh ./${{ env.PACKAGE_SCOPE }}
+          ls -lh .
         shell: bash
         working-directory: ./js/optify-config
       - name: Upload artifact
@@ -422,7 +418,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./js/optify-config/artifacts/${{ env.PACKAGE_SCOPE }}
+          path: ./js/optify-config/artifacts
       - name: Move artifacts
         run: yarn artifacts
         working-directory: ./js/optify-config

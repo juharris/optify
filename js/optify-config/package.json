@@ -17,7 +17,7 @@
 	"main": "index.js",
 	"types": "index.d.ts",
 	"napi": {
-		"name": "@optify/config",
+		"name": "config",
 		"triples": {
 			"additional": [
 				"aarch64-apple-darwin",

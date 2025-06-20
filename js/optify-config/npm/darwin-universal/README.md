@@ -1,3 +1,3 @@
-# `optify-config-darwin-universal`
+# `@optify/config-darwin-universal`
 
-This is the **universal-apple-darwin** binary for `optify-config`
+This is the **universal-apple-darwin** binary for `@optify/config`

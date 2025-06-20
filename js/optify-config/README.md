@@ -25,4 +25,14 @@ cargo fmt
 
 ## Publishing
 
-TODO See https://napi.rs/docs/introduction/getting-started#deep-dive
+Use CI.
+
+Some notes:
+
+See https://napi.rs/docs/introduction/getting-started#deep-dive \
+See https://napi.rs/docs/introduction/simple-package
+
+Might help:
+```shell
+napi rename
+```
