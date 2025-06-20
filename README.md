@@ -4,6 +4,7 @@ Configurations for different experiments or feature flags are mergeable to suppo
 
 [![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
 [![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)](https://www.nuget.org/packages/OptionsProvider)
 [![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad)
 ](https://pypi.org/project/optify)
@@ -310,6 +311,13 @@ Built using the Rust implementation.
 See the [rust/optify](./rust/optify/) folder.
 Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
 The API may change slightly until version 1.0 is released.
+
+## Node.js
+[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
+
+See the [js/optify-config](./js/optify-config/) folder.
+Built using the Rust implementation.
+
 
 [cond-article]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
 [dotnet-OptionsProvider]: https://github.com/juharris/dotnet-OptionsProvider

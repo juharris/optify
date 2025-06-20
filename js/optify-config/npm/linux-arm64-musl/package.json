@@ -1,19 +1,29 @@
 {
-  "name": "optify-config-linux-arm64-musl",
-  "version": "0.0.0",
+  "name": "@optify/config-linux-arm64-musl",
+  "version": "0.0.1",
   "os": [
     "linux"
   ],
   "cpu": [
     "arm64"
   ],
-  "main": "optify-config.linux-arm64-musl.node",
+  "main": "config.linux-arm64-musl.node",
   "files": [
-    "optify-config.linux-arm64-musl.node"
+    "config.linux-arm64-musl.node"
   ],
+  "description": "Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.",
+  "keywords": [
+    "configuration"
+  ],
+  "author": "Justin D. Harris <juharris@users.noreply.github.com>",
+  "homepage": "https://github.com/juharris/optify",
   "license": "MIT",
   "engines": {
     "node": ">= 10"
+  },
+  "repository": "https://github.com/juharris/optify",
+  "bugs": {
+    "url": "https://github.com/juharris/optify/issues"
   },
   "libc": [
     "musl"
