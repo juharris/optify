@@ -292,6 +292,12 @@ Below are implementations for a few languages.
 See [github.com/juharris/dotnet-OptionsProvider][dotnet-OptionsProvider] for a similar library with dependency injection support.
 Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
 
+## Node.js
+[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
+
+See the [js/optify-config](./js/optify-config/) folder.
+Built using the Rust implementation.
+
 ## Python
 [![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad)
 ](https://pypi.org/project/optify)
@@ -311,13 +317,6 @@ Built using the Rust implementation.
 See the [rust/optify](./rust/optify/) folder.
 Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
 The API may change slightly until version 1.0 is released.
-
-## Node.js
-[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
-
-See the [js/optify-config](./js/optify-config/) folder.
-Built using the Rust implementation.
-
 
 [cond-article]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
 [dotnet-OptionsProvider]: https://github.com/juharris/dotnet-OptionsProvider
