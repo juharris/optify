@@ -48,9 +48,9 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
+        key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ matrix.os }}-cargo-
     - name: "[Rust] Build"
       run: cargo build --release
       working-directory: ./rust/optify
