@@ -138,7 +138,7 @@ jobs:
           path: ./js/optify-config/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   build-freebsd:
-    # Disable for now because it gives too many installation errors such as when trying to install `yarn`.
+    # Disabled for now because it gives too many installation errors such as when trying to install `yarn`.
     if: ${{ false }}
     runs-on: macos-13
     name: "[FreeBSD] Build"
@@ -379,7 +379,13 @@ jobs:
           name: bindings-aarch64-apple-darwin
           path: ./js/optify-config/artifacts/${{ env.PACKAGE_SCOPE }}
       - name: Combine binaries
-        run: yarn universal
+        run: |
+          set -ex
+          ls -lRh ./artifacts/
+          yarn universal
+          ls -lh
+          ls -lRh ./artifacts/
+        shell: bash
         working-directory: ./js/optify-config
       - name: Upload artifact
         uses: actions/upload-artifact@v4
