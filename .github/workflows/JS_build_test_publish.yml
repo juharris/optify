@@ -427,8 +427,7 @@ jobs:
         shell: bash
         working-directory: ./js/optify-config
       - name: Publish
-        # FIXME: UNDO
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         shell: bash
         # It probably just fails if the package is already published.
         # We want to only be lenient for the `npm publish`, but we would still want to clearly see that an issue happened during the run.
