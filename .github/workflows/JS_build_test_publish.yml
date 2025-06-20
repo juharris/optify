@@ -382,9 +382,11 @@ jobs:
         run: |
           set -ex
           ls -lRh ./artifacts/
+          mkdir -p ${{ env.PACKAGE_SCOPE}}
           yarn universal
           ls -lh
           ls -lRh ./artifacts/
+          ls -lRh ./${{ env.PACKAGE_SCOPE }}
         shell: bash
         working-directory: ./js/optify-config
       - name: Upload artifact
