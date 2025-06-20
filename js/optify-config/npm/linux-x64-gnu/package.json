@@ -1,5 +1,5 @@
 {
-  "name": "optify-config-linux-x64-gnu",
+  "name": "@optify/config-linux-x64-gnu",
   "version": "0.0.0",
   "os": [
     "linux"
@@ -7,9 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "optify-config.linux-x64-gnu.node",
+  "main": "@optify/config.linux-x64-gnu.node",
   "files": [
-    "optify-config.linux-x64-gnu.node"
+    "@optify/config.linux-x64-gnu.node"
   ],
   "license": "MIT",
   "engines": {

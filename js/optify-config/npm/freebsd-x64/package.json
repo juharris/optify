@@ -1,5 +1,5 @@
 {
-  "name": "optify-config-freebsd-x64",
+  "name": "@optify/config-freebsd-x64",
   "version": "0.0.0",
   "os": [
     "freebsd"
@@ -7,9 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "optify-config.freebsd-x64.node",
+  "main": "@optify/config.freebsd-x64.node",
   "files": [
-    "optify-config.freebsd-x64.node"
+    "@optify/config.freebsd-x64.node"
   ],
   "license": "MIT",
   "engines": {

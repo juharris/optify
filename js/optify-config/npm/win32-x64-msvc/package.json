@@ -1,5 +1,5 @@
 {
-  "name": "optify-config-win32-x64-msvc",
+  "name": "@optify/config-win32-x64-msvc",
   "version": "0.0.0",
   "os": [
     "win32"
@@ -7,9 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "optify-config.win32-x64-msvc.node",
+  "main": "@optify/config.win32-x64-msvc.node",
   "files": [
-    "optify-config.win32-x64-msvc.node"
+    "@optify/config.win32-x64-msvc.node"
   ],
   "license": "MIT",
   "engines": {

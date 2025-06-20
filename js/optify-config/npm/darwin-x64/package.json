@@ -1,5 +1,5 @@
 {
-  "name": "optify-config-darwin-x64",
+  "name": "@optify/config-darwin-x64",
   "version": "0.0.0",
   "os": [
     "darwin"
@@ -7,9 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "optify-config.darwin-x64.node",
+  "main": "@optify/config.darwin-x64.node",
   "files": [
-    "optify-config.darwin-x64.node"
+    "@optify/config.darwin-x64.node"
   ],
   "license": "MIT",
   "engines": {

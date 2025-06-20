@@ -1,12 +1,12 @@
 {
-  "name": "optify-config-darwin-universal",
+  "name": "@optify/config-darwin-universal",
   "version": "0.0.0",
   "os": [
     "darwin"
   ],
-  "main": "optify-config.darwin-universal.node",
+  "main": "@optify/config.darwin-universal.node",
   "files": [
-    "optify-config.darwin-universal.node"
+    "@optify/config.darwin-universal.node"
   ],
   "license": "MIT",
   "engines": {
