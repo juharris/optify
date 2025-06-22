@@ -426,6 +426,10 @@ jobs:
         run: ls -R ./npm
         shell: bash
         working-directory: ./js/optify-config
+      # Build so we can publish the index.* files.
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
       - name: Publish
         if: github.ref == 'refs/heads/main'
         shell: bash
