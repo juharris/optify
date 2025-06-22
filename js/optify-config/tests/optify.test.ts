@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
-import { OptionsProviderBuilder } from "../index";
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+import { OptionsProviderBuilder } from "../index";
 
 const runSuite = (suitePath: string) => {
   const builder = new OptionsProviderBuilder();
