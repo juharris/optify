@@ -426,8 +426,13 @@ jobs:
         run: ls -R ./npm
         shell: bash
         working-directory: ./js/optify-config
+      # Build so we can publish the index.* files.
+      - name: Build
+        run: yarn build
+        working-directory: ./js/optify-config
       - name: Publish
-        if: github.ref == 'refs/heads/main'
+        # FIXME: UNDO
+        # if: github.ref == 'refs/heads/main'
         shell: bash
         # It probably just fails if the package is already published.
         # We want to only be lenient for the `npm publish`, but we would still want to clearly see that an issue happened during the run.
