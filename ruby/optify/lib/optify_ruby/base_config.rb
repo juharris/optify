@@ -110,5 +110,44 @@ module Optify
         instance_variable_get(name) == other.instance_variable_get(name)
       end
     end
+
+    # Convert this object to a Hash recursively.
+    # This is mostly the reverse operation of `from_hash`,
+    # as keys will be symbols
+    # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
+    # @return [Hash] The hash representation of this object.
+    #: () -> Hash[Symbol, untyped]
+    def to_h
+      result = {}
+
+      instance_variables.each do |var_name|
+        # Remove the @ prefix to get the method name
+        method_name = var_name.to_s[1..] #: as !nil
+        value = instance_variable_get(var_name)
+        result[method_name.to_sym] = _convert_value_to_hash(value)
+      end
+
+      result
+    end
+
+    private
+
+    #: (untyped value) -> untyped
+    def _convert_value_to_hash(value)
+      case value
+      when Array
+        value.map { |v| _convert_value_to_hash(v) }
+      when Hash
+        value.transform_values { |v| _convert_value_to_hash(v) }
+      when nil
+        nil
+      else
+        if value.respond_to?(:to_h)
+          value.to_h
+        else
+          value
+        end
+      end
+    end
   end
 end
