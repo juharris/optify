@@ -3,6 +3,7 @@
 
 require 'test/unit'
 require_relative '../lib/optify'
+require_relative 'hash_utils'
 require_relative 'my_config'
 
 module FromHashTest
@@ -104,6 +105,7 @@ module FromHashTest
       assert_equal(TestObject.from_hash({ num: 4 }), m.objects[1])
       assert_equal(5, m.objects[0]&.num)
       assert_equal(4, m.objects[1]&.num)
+      assert_equal(HashUtils.deep_symbolize_keys(hash), m.to_h)
     end
 
     def test_array_nilable_objects
@@ -115,6 +117,7 @@ module FromHashTest
       assert_nil(m.nilable_objects[2])
       assert_nil(m.nilable_objects[3]&.nilable_num)
       assert_equal(TestObject.from_hash({ nilable_num: 44 }), m.nilable_objects[4])
+      assert_equal(HashUtils.deep_symbolize_keys(hash), m.to_h)
     end
 
     def test_array_of_string_or_object
@@ -137,6 +140,7 @@ module FromHashTest
 
       assert_equal(2, m.myObject.two)
       assert_equal(222, m.myObjects[0]&.two)
+      assert_equal(HashUtils.deep_symbolize_keys(hash), m.to_h)
     end
 
     def test_from_hash_with_hash
@@ -188,6 +192,7 @@ module FromHashTest
       assert_instance_of(Hash, hash_symbol_to_object)
       assert_instance_of(TestObject, hash_symbol_to_object[:key])
       assert_equal(4, hash_symbol_to_object[:key]&.num)
+      assert_equal(HashUtils.deep_symbolize_keys(hash), c.to_h)
     end
 
     def test_hashes
@@ -252,6 +257,7 @@ module FromHashTest
       hash = { num: 33 }
       m = TestObject.from_hash(hash)
       assert_equal(33, m.num)
+      assert_equal(hash, m.to_h)
     end
 
     def test_string_or_integer
@@ -274,13 +280,17 @@ module FromHashTest
     end
 
     def test_string_or_object
-      c = TestConfig.from_hash({ string_or_object: { num: 871_102 } })
+      hash = { string_or_object: { num: 871_102 } }
+      c = TestConfig.from_hash(hash)
       assert_instance_of(TestObject, c.string_or_object)
       o = TestObject.from_hash({ num: 871_102 })
       assert_equal(o, c.string_or_object)
+      assert_equal(hash, c.to_h)
 
-      c = TestConfig.from_hash({ string_or_object: 'hello' })
+      hash = { string_or_object: 'hello' }
+      c = TestConfig.from_hash(hash)
       assert_equal('hello', c.string_or_object)
+      assert_equal(hash, c.to_h)
     end
 
     def test_nilable_string_or_object
@@ -350,6 +360,7 @@ module FromHashTest
       hash = { 'symbol_to_symbol' => { 'key' => 'value' } }
       c = TestConfig.from_hash(hash)
       assert_equal({ key: :value }, c.symbol_to_symbol)
+      assert_equal({ symbol_to_symbol: { key: :value } }, c.to_h)
     end
 
     def test_rbs_sig_num
@@ -361,17 +372,25 @@ module FromHashTest
     end
 
     def test_untyped
-      c = TestConfig.from_hash({ untyped: { 'key' => 'value' } })
+      hash = { untyped: { 'key' => 'value' } }
+      c = TestConfig.from_hash(hash)
       assert_equal({ 'key' => 'value' }, c.untyped)
+      assert_equal(hash, c.to_h)
 
-      c = TestConfig.from_hash({ untyped: 'hello' })
+      hash = { untyped: 'hello' }
+      c = TestConfig.from_hash(hash)
       assert_equal('hello', c.untyped)
+      assert_equal(hash, c.to_h)
 
-      c = TestConfig.from_hash({ untyped: 42 })
+      hash = { untyped: 42 }
+      c = TestConfig.from_hash(hash)
       assert_equal(42, c.untyped)
+      assert_equal(hash, c.to_h)
 
-      c = TestConfig.from_hash({ untyped: [1, 2, 3] })
+      hash = { untyped: [1, 2, 3] }
+      c = TestConfig.from_hash(hash)
       assert_equal([1, 2, 3], c.untyped)
+      assert_equal(hash, c.to_h)
     end
   end
 end

@@ -13,17 +13,17 @@ on:
     branches: [ "main" ]
     paths:
       - ".github/workflows/JS_build_test_publish.yml"
-      - "js/**"
-      - "rust/**"
-      - "tests/**"
+      # We only really need to run this if the version is bumped.
+      # We test the code well enough in build_test.yml.
+      - "js/optify-config/package.json"
 
   pull_request:
     branches: [ "main" ]
     paths:
       - ".github/workflows/JS_build_test_publish.yml"
-      - "js/**"
-      - "rust/**"
-      - "tests/**"
+      # We only really need to run this if the version is bumped.
+      # We test the code well enough in build_test.yml.
+      - "js/optify-config/package.json"
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:

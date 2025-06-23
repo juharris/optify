@@ -177,12 +177,20 @@ The result of using features: `["B", "A"]` will be:
 There are several aspects to consider when defining the classes that are used to represent the built configuration of combined features.
 
 ## Immutability
-Classes should be reusable without side effects.
 Classes will often be shared and passed around throughout your codebase.
-In particular, configuration classes can be cached, so they can be shared across requests.
+In particular, configuration classes can be cached, so they can be shared across requests so no request should change the state of a configuration class.
+Classes should be reusable without side effects.
 
 ## Documentation
 Having clear documentation for classes and properties helps developers understand how to use the class and its properties when reading the codebase and writing business logic.
+
+## Scope of a Configuration Class
+Each configuration class should be scoped to a specific component or aspect of the system.
+Consider the [Single Responsibility Principle](https://wikipedia.org/wiki/Single-responsibility_principle) and [Law of Demeter](https://wikipedia.org/wiki/Law_of_Demeter).
+Using minimal classes helps developers understand the logic because as soon as they see the class, they know what behavior might change.
+If a class is too large with too many properties, then it's difficult to understand what properties may be used by the component and the behavior that might change.
+Large classes that are passed around too much quickly evolve to [God Objects](https://wikipedia.org/wiki/God_object) as they become a convenient place to dump new properties.
+Passing around these God Objects throughout your codebase makes it difficult to understand what a component may do because that component has convenient access to too many properties.
 
 ## Nullability
 Summary: **no guidance** because it's a case by case decision.
