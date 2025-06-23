@@ -43,8 +43,6 @@ module Optify
         return value
       end
 
-      return value.to_sym if type.is_a?(T::Types::Simple) && type.raw_type == Symbol
-
       case value
       when Array
         # Handle `T.nilable(T::Array[...])`
@@ -67,8 +65,15 @@ module Optify
         return _convert_hash(value, type).freeze
       end
 
-      # It would be nice to validate that the value is of the correct type here.
-      # For example that a string is a string and an Integer is an Integer.
+      # Validate primitive types.
+      # FIXME Handle `T.any` too.
+      if type.is_a?(T::Types::Simple)
+        return value.to_sym if type.raw_type == Symbol
+
+        expected_type = type.raw_type
+        raise TypeError, "Expected #{expected_type}, got #{value.class}: #{value.inspect}" unless value.is_a?(expected_type)
+      end
+
       value
     end
 

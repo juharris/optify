@@ -392,5 +392,38 @@ module FromHashTest
       assert_equal([1, 2, 3], c.untyped)
       assert_equal(hash, c.to_h)
     end
+
+    class FromHashValidationTest < Test::Unit::TestCase
+      def test_validation_nil
+        exception = assert_raises(TypeError) do
+          TestObject.from_hash({ num: nil })
+        end
+        assert_match(/Expected Integer, got NilClass: nil/, exception.message)
+      end
+
+      def test_validation_primitives
+        exception = assert_raises(TypeError) do
+          TestObject.from_hash({ num: 'string_instead_of_integer' })
+        end
+        assert_match(/Expected Integer, got String: "string_instead_of_integer"/, exception.message)
+
+        exception = assert_raises(TypeError) do
+          TestObject2.from_hash({ string: 123 })
+        end
+        assert_match(/Expected String, got Integer: 123/, exception.message)
+      end
+
+      def test_validation_nilable_any
+        exception = assert_raises(TypeError) do
+          TestConfig.from_hash({ string_or_integer: nil })
+        end
+        assert_match(/Expected T.any\(String, Integer\), got NilClass: nil/, exception.message)
+
+        exception = assert_raises(TypeError) do
+          TestConfig.from_hash({ nilable_string_or_integer: nil })
+        end
+        assert_match(/Expected T.nilable\(T.any\(String, Integer\)\), got NilClass: nil/, exception.message)
+      end
+    end
   end
 end
