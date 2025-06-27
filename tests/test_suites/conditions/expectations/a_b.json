@@ -1,0 +1,13 @@
+{
+	"features": [
+		"a",
+		"b"
+	],
+	"options": {
+		"config": {
+			"key": "from B",
+			"key_a": "from A",
+			"key_b": "only in B"
+		}
+	}
+}

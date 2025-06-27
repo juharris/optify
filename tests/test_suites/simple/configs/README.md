@@ -1,2 +1,2 @@
-The configuration files for our code.
-This file is ignored.
+The configuration files for some simple tests.
+This file is ignored by the builder.
