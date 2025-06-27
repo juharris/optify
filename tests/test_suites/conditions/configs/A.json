@@ -1,0 +1,22 @@
+{
+	"conditions": {
+		"and": [
+			{
+				"jsonPath": "$.info",
+				"operator": "equals",
+				"value": 3
+			},
+			{
+				"jsonPath": "$.status",
+				"operator": "regex",
+				"value": "^(active|new)$"
+			}
+		]
+	},
+	"options": {
+		"config": {
+			"key": "from A",
+			"key_a": "only in A"
+		}
+	}
+}
