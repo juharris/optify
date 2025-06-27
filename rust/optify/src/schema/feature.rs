@@ -2,6 +2,7 @@
 
 use serde::Deserialize;
 
+use super::conditions::ConditionExpression;
 use super::metadata::OptionsMetadata;
 
 pub(crate) type ConfigurationOptions = config::Value;
@@ -11,5 +12,6 @@ pub(crate) type ConfigurationOptions = config::Value;
 pub(crate) struct FeatureConfiguration {
     pub imports: Option<Vec<String>>,
     pub metadata: Option<OptionsMetadata>,
+    pub conditions: Option<ConditionExpression>,
     pub options: Option<ConfigurationOptions>,
 }
