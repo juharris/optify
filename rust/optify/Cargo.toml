@@ -2,6 +2,7 @@
 name = "optify"
 version = "0.10.0"
 edition = "2021"
+build = "build.rs"
 
 description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights. This library is mainly made to support building implementations for other languages such as Node.js, Python, and Ruby. It is not meant to be consumed directly yet."
 homepage = "https://github.com/juharris/optify/tree/main/rust/optify"
