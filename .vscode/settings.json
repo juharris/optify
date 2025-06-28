@@ -5,5 +5,19 @@
 	"sorbet.enabled": false,
 	"[json]": {
 		"editor.formatOnSave": true
+	},
+	"json.schemas": [
+		{
+			"fileMatch": [
+				"tests/test_suites/**/configs/**/*.json"
+			],
+			"url": "./schemas/feature_file.json"
+		}
+	],
+	"yaml.schemas": {
+		"./schemas/feature_file.json": [
+			"tests/test_suites/**/configs/**/*.yaml",
+			"tests/test_suites/**/configs/**/*.yml"
+		]
 	}
 }
