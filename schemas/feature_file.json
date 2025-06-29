@@ -11,7 +11,7 @@
 			"properties": {
 				"aliases": {
 					"type": "array",
-					"description": "Alternative names for the group of options. Helpful for using custom short names.",
+					"description": "Alternative names for the group of options. Helpful for using custom short names or obfuscating the feature name in production.",
 					"items": {
 						"type": "string",
 						"minLength": 1
@@ -19,44 +19,18 @@
 					"uniqueItems": true
 				},
 				"details": {
-					"description": "Other metadata that may be custom and application specific. Good place for documentation that should be available to the application.",
-					"oneOf": [
-						{
-							"type": "string"
-						},
-						{
-							"type": "object"
-						},
-						{
-							"type": "array"
-						},
-						{
-							"type": "number"
-						},
-						{
-							"type": "boolean"
-						},
-						{
-							"type": "null"
-						}
-					]
-				},
-				"name": {
-					"type": "string",
-					"description": "The name of the group of options. Usually derived from the file name including subdirectories.",
-					"minLength": 1
+					"description": "Other metadata that may be custom and application specific. Good place for information that should be available to the application programmatically."
 				},
 				"owners": {
 					"type": "string",
 					"description": "The creators or maintainers of this group of options. For example, emails separated by semicolons.",
 					"minLength": 1
 				}
-			},
-			"additionalProperties": false
+			}
 		},
 		"imports": {
 			"type": "array",
-			"description": "List of canonical feature names to import or inherit from. Do not use the file extension because the builder does not allow two files with the same relative path but different extensions in order to keep canonical feature names clear.",
+			"description": "List of canonical feature names to import or inherit from. Canonical feature names are derived from the relative path to the file, but without the file extension in order to keep canonical feature names clear.",
 			"items": {
 				"type": "string",
 				"minLength": 1,
@@ -70,44 +44,9 @@
 			"uniqueItems": true
 		},
 		"options": {
-			"description": "The actual configuration options. Can contain arbitrary nested structures of objects, arrays, strings, numbers, and booleans.",
-			"oneOf": [
-				{
-					"type": "object"
-				},
-				{
-					"type": "array"
-				},
-				{
-					"type": "string"
-				},
-				{
-					"type": "number"
-				},
-				{
-					"type": "boolean"
-				},
-				{
-					"type": "null"
-				}
-			]
+			"description": "The actual configuration options. The value for each key can contain arbitrary nested structures of objects, arrays, strings, numbers, booleans, or null.",
+			"type": "object"
 		}
 	},
-	"anyOf": [
-		{
-			"required": [
-				"imports"
-			]
-		},
-		{
-			"required": [
-				"metadata"
-			]
-		},
-		{
-			"required": [
-				"options"
-			]
-		}
-	]
+	"minProperties": 1
 }
