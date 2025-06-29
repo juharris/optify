@@ -46,6 +46,27 @@ impl JsOptionsProvider {
   }
 
   #[napi]
+  pub fn build(directory: String) -> napi::Result<JsOptionsProvider> {
+    let path = std::path::Path::new(&directory);
+    match OptionsProvider::build(path) {
+      Ok(provider) => Ok(JsOptionsProvider {
+        inner: Some(provider),
+      }),
+      Err(e) => Err(napi::Error::from_reason(e.to_string())),
+    }
+  }
+
+  #[napi]
+  pub fn build_from_directories(directories: Vec<String>) -> napi::Result<JsOptionsProvider> {
+    match OptionsProvider::build_from_directories(&directories) {
+      Ok(provider) => Ok(JsOptionsProvider {
+        inner: Some(provider),
+      }),
+      Err(e) => Err(napi::Error::from_reason(e.to_string())),
+    }
+  }
+
+  #[napi]
   pub fn features(&self) -> Vec<String> {
     self.inner.as_ref().unwrap().get_features()
   }

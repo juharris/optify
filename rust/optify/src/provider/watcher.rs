@@ -148,9 +148,9 @@ impl OptionsWatcher {
         self_
     }
 
-    pub fn build(path: &Path) -> Result<OptionsWatcher, String> {
+    pub fn build(directory: &Path) -> Result<OptionsWatcher, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        builder.add_directory(path)?;
+        builder.add_directory(directory)?;
         builder.build()
     }
 
