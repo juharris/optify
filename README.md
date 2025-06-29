@@ -222,7 +222,7 @@ there are a few ways to get hints and see documentation for the properties such 
 
 ### Recommended Extensions
 
-In ./vscode/extensions.json, add:
+In `./vscode/extensions.json`, add:
 ```JSON
 {
     "recommendations": [
