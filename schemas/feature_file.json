@@ -87,7 +87,6 @@
 			]
 		}
 	},
-	"additionalProperties": false,
 	"anyOf": [
 		{
 			"required": [

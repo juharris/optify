@@ -35,9 +35,10 @@ handler = handlers[handler_options.handler_name]
 handler.handle(params)
 ```
 
-It's fine to use systems that support enabled/disabled feature flags, but we'll inevitably need to support more sophisticated configurations than on/off or `true`/`false`.
+It's fine to use systems that only support enabled/disabled feature flags, but we'll inevitably need to support more sophisticated configurations than on/off or `true`/`false`.
 This project facilitates using deep configurations to be the backing for simple feature flags, thus keeping API contracts clean and facilitating the refactoring of code that uses the configurations.
 Allowing clients to know about and pass in deep configurations for specific components is hard to maintain and makes it difficult to change the structure of the configurations.
+Instead we can convert each enabled flag to a string and then build the merged configuration for the list of string "features".
 
 See [tests](./tests/) for examples and tests for different variations of this paradigm for managing options.
 
@@ -213,6 +214,63 @@ Eventually we can facilitate validation after a configuration is built.
 Other types are supported as the [config](https://crates.io/crates/config) Rust crate is used to back this project, but those other types are not as well-known and not as nice for working with deep objects so they are not recommended.
 In most cases, JSON should be preferred to help with some basic static structural validation at load time.
 Standard JSON validation will easily catch issues such as a bad merge conflict resolution, whereas it is easy to have valid YAML, but would not work as expected at runtime because of incorrect indentation.
+
+## Schema Help
+
+In VS Code, there are a few ways to get hints and see documentation for the properties such as `"options"`, `"metadata"`, and `"imports"` and their properties.
+
+### .vscode/settings.json
+
+To get help with many files, add the following to your `.vscode/settings.json` file:
+
+```JSON
+{
+    "json.validate.enable": true,
+    "json.schemaDownload.enable": true,
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "path/**/configs/**/*.json"
+            ],
+            "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
+        }
+    ],
+    "yaml.schemas": {
+        "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json": [
+            "path/to/configs/**/*.{yaml,yml}"
+        ]
+    }
+}
+```
+
+### Directly in JSON
+
+To only enable help in one JSON file:
+
+```JSON
+{
+    "$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json",
+    "metadata": {
+        ...
+    },
+    "options": {
+        ...
+    }
+} 
+```
+
+### Directly in YAML
+
+To only enable help in one YAML file:
+
+```YAML
+# yaml-language-server: $schema=https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json
+metadata:
+    ...
+options:
+    ...
+```
+
 
 # Inheritance
 Feature files can list ordered dependencies to declare other files to eagerly import.

@@ -6,6 +6,8 @@
 	"[json]": {
 		"editor.formatOnSave": true
 	},
+	"json.validate.enable": true,
+	"json.schemaDownload.enable": true,
 	"json.schemas": [
 		{
 			"fileMatch": [
@@ -16,8 +18,7 @@
 	],
 	"yaml.schemas": {
 		"./schemas/feature_file.json": [
-			"tests/test_suites/**/configs/**/*.yaml",
-			"tests/test_suites/**/configs/**/*.yml"
+			"tests/test_suites/**/configs/**/*.{yaml,yml}"
 		]
 	}
 }
