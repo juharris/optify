@@ -9,13 +9,53 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:json",
+    "onLanguage:yaml",
+    "onLanguage:json5"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "optify.helloWorld",
-        "title": "Hello World"
+        "command": "optify.previewFeature",
+        "title": "Preview Built Feature File",
+        "category": "Optify",
+        "icon": "$(preview)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "optify.previewFeature",
+          "when": "resourceExtname =~ /\\.(json|yaml|yml|json5)$/",
+          "group": "optify"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "optify.previewFeature",
+          "when": "resourceExtname =~ /\\.(json|yaml|yml|json5)$/",
+          "group": "navigation"
+        }
+      ]
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          "**/*.json",
+          "**/*.json5"
+        ],
+        "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
+      }
+    ],
+    "yamlValidation": [
+      {
+        "fileMatch": [
+          "**/*.yaml",
+          "**/*.yml"
+        ],
+        "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
       }
     ]
   },
@@ -28,6 +68,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.101.0",
@@ -39,6 +80,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@optify/config": "^0.0.3"
+    "@optify/config": "^0.0.3",
+    "js-yaml": "^4.1.0"
   }
 }

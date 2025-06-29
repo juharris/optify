@@ -4,8 +4,9 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "npm",
-			"script": "watch",
+			"label": "npm: watch",
+			"type": "shell",
+			"command": "source '/opt/dev/sh/nvm/nvm.sh' && nvm use 22 && npm run watch",
 			"problemMatcher": "$tsc-watch",
 			"isBackground": true,
 			"presentation": {
