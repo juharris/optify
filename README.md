@@ -95,11 +95,11 @@ class MyConfiguration
 
 Now you want to start experimenting with different values deep within `MyConfiguration`.
 
-Create a **new** folder for configurations files, for this example, we'll call it `Configurations` and add some files to it.
-All `*.json`, `*.yaml`, and `*.yml` files in `Configurations` and any of its subdirectories will be loaded into memory.
+Create a **new** folder for configurations files, for this example, we'll call it `configurations` and add some files to it.
+All `*.json`, `*.yaml`, and `*.yml` files in `configurations` and any of its subdirectories will be loaded into memory.
 Markdown files (ending in `.md`) are ignored.
 
-Create `Configurations/feature_A.json`:
+Create `configurations/feature_A.json`:
 ```json
 {
     "metadata": {
@@ -120,7 +120,7 @@ Create `Configurations/feature_A.json`:
 }
 ```
 
-Create `Configurations/feature_B/initial.yaml`:
+Create `configurations/feature_B/initial.yaml`:
 ```yaml
 metadata:
     aliases:
@@ -136,7 +136,7 @@ options:
             three: 33
 ```
 
-You'll load the `Configurations` folder using an `OptionsProviderBuilder` and then get an `OptionsProvider` from that builder.
+You'll load the `configurations` folder using an `OptionsProviderBuilder` and then get an `OptionsProvider` from that builder.
 Some languages also have an `OptionsWatcherBuilder` which can be used to watch for changes in the configuration files and automatically reload changes into the `OptionsProvider`.
 The exact class names and methods may vary slightly depending on the language you are using.
 See below for links to implementations in different languages.
@@ -217,9 +217,23 @@ Standard JSON validation will easily catch issues such as a bad merge conflict r
 
 ## Schema Help
 
-In VS Code, there are a few ways to get hints and see documentation for the properties such as `"options"`, `"metadata"`, and `"imports"` and their properties.
+In VS Code and editors derived from VS Code,
+there are a few ways to get hints and see documentation for the properties such as `"metadata"`, `"imports"`, and `"options"`.
 
-### .vscode/settings.json
+### Recommended Extensions
+
+In ./vscode/extensions.json, add:
+```JSON
+{
+    "recommendations": [
+        "redhat.vscode-yaml"
+    ]
+}
+```
+
+Then install those recommended extensions.
+
+### VS Code Settings
 
 To get help with many files, add the following to your `.vscode/settings.json` file:
 
@@ -278,13 +292,13 @@ Feature files can list ordered dependencies to declare other files to eagerly im
 This allows grouping related configurations while keeping most files small, focused, and like granular building blocks.
 This also helps keep lists of enabled features smaller at runtime for typical feature that are used together.
 
-Imports are resolved at build time, when `OptionsProviderBuilder::build` is called so that getting to right configuration from an `OptionsProvider` is as fast as possible, but sacrificing some extra memory overhead to store redundant options in each parent.
+Imports are resolved at build time, when `OptionsProviderBuilder::build` is called so that getting to right configuration from an `OptionsProvider` is as fast as possible, but sacrificing some extra memory overhead to store redundant options because the options will also be stored in each parent.
 
 Each import must be a canonical feature name, i.e., derived from path to a file in order to keep dependencies clear and to help with navigating through files.
 
 For example, if we have:
 
-`Configurations/feature_A.json`:
+`configurations/feature_A.json`:
 ```json
 {
     "options": {
@@ -302,7 +316,7 @@ For example, if we have:
 }
 ```
 
-`Configurations/feature_B.yaml`:
+`configurations/feature_B.yaml`:
 ```yaml
 options:
     myConfig:
@@ -313,7 +327,7 @@ options:
             three: 33
 ```
 
-And `Configurations/feature_C.yaml`:
+And `configurations/feature_C.yaml`:
 ```yaml
 imports:
     - "feature_A"
@@ -346,7 +360,7 @@ There is no limit on the depth for imports; imports can import other features th
 
 Circular imports are not allowed and will result in an error at build time.
 
-See [tests](./tests/) more examples.
+See [tests](./tests/) for more examples.
 
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.
