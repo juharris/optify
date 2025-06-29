@@ -14,5 +14,20 @@
 		"serde",
 		"unicase",
 		"walkdir"
-	]
+	],
+	"json.validate.enable": true,
+	"json.schemaDownload.enable": true,
+	"json.schemas": [
+		{
+			"fileMatch": [
+				"optify/tests/**/*.json"
+			],
+			"url": "../schemas/feature_file.json"
+		}
+	],
+	"yaml.schemas": {
+		"../schemas/feature_file.json": [
+			"optify/tests/**/*.{yaml,yml}"
+		]
+	}
 }
