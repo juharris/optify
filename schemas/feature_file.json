@@ -44,7 +44,7 @@
 			"uniqueItems": true
 		},
 		"options": {
-			"description": "The actual configuration options. The value for each key can contain arbitrary nested structures of objects, arrays, strings, numbers, booleans, or null.",
+			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
 			"type": "object"
 		}
 	},
