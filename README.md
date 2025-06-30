@@ -50,7 +50,7 @@ Core Features:
 * **Each *feature flag* can be represented by a JSON or YAML file** which contains options to override default configuration values when processing feature names or experiment names in a request.
 * Each file is a granular **partial** representation of the overall configuration.
   Features are intended to be combined to build the final configuration.
-* **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
+* **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. **Order of features matters**. Features are applied in the order they are given. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
 * Supports clear file names and **aliases** for feature names.
 * Feature names are **case insensitive**. `"feature_A"` and `"FeaTurE_a"` are the same.
 * **Reads files in parallel** when loading your configurations.

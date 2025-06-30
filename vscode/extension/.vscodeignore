@@ -11,3 +11,5 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 
 .claude/
+
+./assets/demo.gif

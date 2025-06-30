@@ -2,6 +2,8 @@
 
 Helps manage and develop [Optify] feature files.
 
+![demo](https://raw.githubusercontent.com/juharris/optify/refs/heads/main/vscode/extension/assets/demo.gif)
+
 ## Features
 
 * Show a preview of the built feature file.
@@ -13,26 +15,17 @@ Helps manage and develop [Optify] feature files.
 * Syntax highlighting and coloring in the preview.
 * Build a configuration for multiple features.
 
-<!--
-## Requirements
+## Recommended Settings
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
--->
-
-<!--
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
--->
+See [here](https://github.com/juharris/optify?tab=readme-ov-file#schema-help) for how to enable schema help for Optify files.
 
 ## Release Notes
+
+### 0.2.1: **Add gif**
+
+### 0.2.0: **Publish for Cursor**
+
+* Drop VS Code required version to 1.96.0.
 
 ### 0.1.0: **Initial release**
 
