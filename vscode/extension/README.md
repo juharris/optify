@@ -19,7 +19,7 @@ Helps manage and develop [Optify] feature files.
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 -->
 
-<!-->
+<!--
 ## Extension Settings
 
 Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
@@ -33,8 +33,6 @@ This extension contributes the following settings:
 -->
 
 ## Release Notes
-
-Users appreciate release notes as you update your extension.
 
 ### 0.1.0: **Initial release**
 
