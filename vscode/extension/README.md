@@ -1,6 +1,6 @@
 # Optify
 
-Helps manage [Optify] feature files.
+Helps manage and develop [Optify] feature files.
 
 ## Features
 
@@ -41,5 +41,12 @@ Users appreciate release notes as you update your extension.
 * Show preview of built feature file.
 * Click on an import to open the file.
 * Validate imports.
+
+## Development
+
+### Publishing
+Azure DevOps org: https://dev.azure.com/optify-config-org
+
+Publisher: https://marketplace.visualstudio.com/manage/publishers/optify-config
 
 [optify]: https://github.com/juharris/optify

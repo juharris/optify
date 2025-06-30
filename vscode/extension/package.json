@@ -2,7 +2,12 @@
   "name": "optify",
   "displayName": "Optify",
   "description": "Helps manage Optify feature files.",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "publisher": "optify-config",
+  "license": "MIT",
+  "repository": "https://github.com/juharris/optify",
+  "homepage": "https://github.com/juharris/optify/tree/main/vscode/extension",
+  "icon": "./assets/logo.png",
   "engines": {
     "vscode": "^1.101.0"
   },
@@ -64,6 +69,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
+    "publish": "vsce publish",
     "lint": "eslint src",
     "test": "vscode-test"
   },
@@ -76,6 +82,7 @@
     "@typescript-eslint/parser": "^8.31.1",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.0",
     "eslint": "^9.25.1",
     "typescript": "^5.8.3"
   },

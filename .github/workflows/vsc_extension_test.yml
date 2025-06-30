@@ -40,6 +40,9 @@ jobs:
     - name: "Lint"
       run: npm run lint
       working-directory: ./vscode/extension
+    - name: "Compile"
+      run: npm run compile
+      working-directory: ./vscode/extension
     - name: "Test"
       run: xvfb-run -a npm test
       if: runner.os == 'Linux'

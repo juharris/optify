@@ -1,4 +1,7 @@
+<img src="./assets/logo.png" alt="logo" width="64" style="margin-left: 40%"/>
+
 # Optify
+
 Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.
 Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
