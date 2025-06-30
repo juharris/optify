@@ -7,6 +7,9 @@ import { GetOptionsPreferences, OptionsProvider } from '@optify/config';
 export function activate(context: vscode.ExtensionContext) {
 	console.debug('Optify extension is now active!');
 
+	// Set up context for when clauses
+	updateOptifyFileContext();
+
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
 		if (!activeEditor) {
@@ -77,6 +80,11 @@ export function activate(context: vscode.ExtensionContext) {
 		if (isOptifyFeatureFile(document.fileName)) {
 			diagnosticsProvider.updateDiagnostics(document);
 		}
+		updateOptifyFileContext();
+	});
+
+	const onDidChangeActiveEditor = vscode.window.onDidChangeActiveTextEditor(() => {
+		updateOptifyFileContext();
 	});
 
 	context.subscriptions.push(
@@ -84,8 +92,15 @@ export function activate(context: vscode.ExtensionContext) {
 		linkProvider,
 		diagnosticCollection,
 		onDidChangeDocument,
-		onDidOpenDocument
+		onDidOpenDocument,
+		onDidChangeActiveEditor
 	);
+}
+
+function updateOptifyFileContext() {
+	const activeEditor = vscode.window.activeTextEditor;
+	const isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
+	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
 }
 
 function isOptifyFeatureFile(filePath: string, optifyRoot: string | undefined = undefined): boolean {

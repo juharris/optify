@@ -28,14 +28,14 @@
       "editor/context": [
         {
           "command": "optify.previewFeature",
-          "when": "resourceExtname =~ /\\.(json|yaml|yml|json5)$/",
+          "when": "optify.isOptifyFile",
           "group": "optify"
         }
       ],
       "editor/title": [
         {
           "command": "optify.previewFeature",
-          "when": "resourceExtname =~ /\\.(json|yaml|yml|json5)$/",
+          "when": "optify.isOptifyFile",
           "group": "navigation"
         }
       ]
