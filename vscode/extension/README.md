@@ -21,7 +21,8 @@ See [here](https://github.com/juharris/optify?tab=readme-ov-file#schema-help) fo
 
 ## Release Notes
 
-### 0.3.0 Ignore .optify folder
+### Next
+* Ignore .optify folder when building provider.
 
 ### 0.2.2: Add gif
 
