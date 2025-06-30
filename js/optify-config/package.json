@@ -45,6 +45,7 @@
 		"artifacts": "napi artifacts",
 		"build": "napi build --platform --release",
 		"build:debug": "napi build --platform",
+		"build:ts": "tsc",
 		"prepublishOnly": "napi prepublish -t npm",
 		"test": "jest",
 		"universal": "napi universal",

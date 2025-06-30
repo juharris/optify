@@ -36,21 +36,31 @@ jobs:
         settings:
           - host: macos-latest
             target: x86_64-apple-darwin
-            build: yarn build --target x86_64-apple-darwin
+            build: |
+              yarn build:ts
+              yarn build --target x86_64-apple-darwin
           - host: windows-latest
-            build: yarn build --target x86_64-pc-windows-msvc
+            build: |
+              yarn build:ts
+              yarn build --target x86_64-pc-windows-msvc
             target: x86_64-pc-windows-msvc
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            build: yarn build --target x86_64-unknown-linux-gnu
+            build: |
+              yarn build:ts
+              yarn build --target x86_64-unknown-linux-gnu
           - host: macos-latest
             target: aarch64-apple-darwin
-            build: yarn build --target aarch64-apple-darwin
+            build: |
+              yarn build:ts
+              yarn build --target aarch64-apple-darwin
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
-            build: yarn build --target aarch64-unknown-linux-gnu
+            build: |
+              yarn build:ts
+              yarn build --target aarch64-unknown-linux-gnu
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
@@ -59,6 +69,7 @@ jobs:
               npm install -g corepack &&
               corepack enable &&
               rustup target add aarch64-unknown-linux-musl &&
+              yarn build:ts &&
               yarn build --target aarch64-unknown-linux-musl
     name: "[${{ matrix.settings.target }}] Build & Test"
     runs-on: ${{ matrix.settings.host }}
@@ -177,6 +188,7 @@ jobs:
             freebsd-version
 
             yarn install
+            yarn build:ts
             yarn build
             yarn test
             rm -rf node_modules
@@ -230,6 +242,7 @@ jobs:
       - name: Test bindings
         run: |
           set -ex
+          yarn build:ts
           yarn build
           yarn test
         shell: bash
@@ -258,7 +271,9 @@ jobs:
         run: yarn install
         working-directory: ./js/optify-config
       - name: Build
-        run: yarn build
+        run: |
+          yarn build:ts
+          yarn build
         working-directory: ./js/optify-config
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -292,7 +307,9 @@ jobs:
           yarn install
         working-directory: ./js/optify-config
       - name: Build
-        run: yarn build
+        run: |
+          yarn build:ts
+          yarn build
         working-directory: ./js/optify-config
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -331,7 +348,9 @@ jobs:
           yarn install
         working-directory: ./js/optify-config
       - name: Build
-        run: yarn build
+        run: |
+          yarn build:ts
+          yarn build
         working-directory: ./js/optify-config
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -428,7 +447,9 @@ jobs:
         working-directory: ./js/optify-config
       # Build so we can publish the index.* files.
       - name: Build
-        run: yarn build
+        run: |
+          yarn build:ts
+          yarn build
         working-directory: ./js/optify-config
       - name: Publish
         if: github.ref == 'refs/heads/main'
