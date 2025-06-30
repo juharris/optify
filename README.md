@@ -1,13 +1,17 @@
+<img src="./assets/logo.png" alt="logo" width="64" style="margin-left: 40%"/>
+
 # Optify
+
 Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.
 Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
-[![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
+[![Crates.io](https://img.shields.io/crates/v/optify?logo=Rust)](https://crates.io/crates/optify)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
-[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
-[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)](https://www.nuget.org/packages/OptionsProvider)
-[![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad)
+[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
+[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
+[![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad&logo=Python)
 ](https://pypi.org/project/optify)
+[![VS Code Extension](https://img.shields.io/vscode-marketplace/v/optify-config.optify?color=blue&label=VS%20Code)][vsc-extension]
 
 > The configuration should declare **what** to do, but **not how** to do it.
 
@@ -46,7 +50,7 @@ Core Features:
 * **Each *feature flag* can be represented by a JSON or YAML file** which contains options to override default configuration values when processing feature names or experiment names in a request.
 * Each file is a granular **partial** representation of the overall configuration.
   Features are intended to be combined to build the final configuration.
-* **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
+* **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. **Order of features matters**. Features are applied in the order they are given. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
 * Supports clear file names and **aliases** for feature names.
 * Feature names are **case insensitive**. `"feature_A"` and `"FeaTurE_a"` are the same.
 * **Reads files in parallel** when loading your configurations.
@@ -220,12 +224,15 @@ Standard JSON validation will easily catch issues such as a bad merge conflict r
 In VS Code and editors derived from VS Code,
 there are a few ways to get hints and see documentation for the properties such as `"metadata"`, `"imports"`, and `"options"`.
 
+It is also recommended to install the [extension][vsc-extension] to get help with the JSON and YAML files.
+
 ### Recommended Extensions
 
 In `./vscode/extensions.json`, add:
 ```JSON
 {
     "recommendations": [
+        "optify-config.optify",
         "redhat.vscode-yaml"
     ]
 }
@@ -367,19 +374,19 @@ This repository is mainly for the Rust implementation and that implementation th
 Below are implementations for a few languages.
 
 ## .NET
-[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider)](https://www.nuget.org/packages/OptionsProvider)
+[![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
 
 See [github.com/juharris/dotnet-OptionsProvider][dotnet-OptionsProvider] for a similar library with dependency injection support.
 Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
 
 ## Node.js
-[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
+[![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
 
 See the [js/optify-config](./js/optify-config/) folder.
 Built using the Rust implementation.
 
 ## Python
-[![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad)
+[![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad&logo=Python)
 ](https://pypi.org/project/optify)
 
 See the [python/optify](./python/optify/) folder.
@@ -392,7 +399,7 @@ See the [ruby/optify](./ruby/optify/) folder.
 Built using the Rust implementation.
 
 ## Rust
-[![Crates.io](https://img.shields.io/crates/v/optify)](https://crates.io/crates/optify)
+[![Crates.io](https://img.shields.io/crates/v/optify?logo=Rust)](https://crates.io/crates/optify)
 
 See the [rust/optify](./rust/optify/) folder.
 Not intended to be used by other Rust projects yet as it's mainly made to support building implementations for other languages such as Node.js, Python, and Ruby.
@@ -400,3 +407,4 @@ The API may change slightly until version 1.0 is released.
 
 [cond-article]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
 [dotnet-OptionsProvider]: https://github.com/juharris/dotnet-OptionsProvider
+[vsc-extension]: https://marketplace.visualstudio.com/items?itemName=optify-config.optify

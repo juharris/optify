@@ -1,0 +1,62 @@
+name: "[VS Code Ext] Build & Test"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/vsc_extension-build_test.yml"
+      - "vscode/extension/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/vsc_extension-build_test.yml"
+      - "vscode/extension/**"
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: "Build & Test"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup node
+      uses: actions/setup-node@v4
+      with:
+        cache: npm
+        cache-dependency-path: ./vscode/extension/package-lock.json
+        node-version: 22
+    - name: "Install dependencies"
+      run: npm ci
+      working-directory: ./vscode/extension
+    - name: "Lint"
+      run: npm run lint
+      working-directory: ./vscode/extension
+    - name: "Compile"
+      run: npm run compile
+      working-directory: ./vscode/extension
+    - name: "Test"
+      run: xvfb-run -a npm test
+      if: runner.os == 'Linux'
+      working-directory: ./vscode/extension
+    - name: "Test"
+      run: npm test
+      if: runner.os != 'Linux'
+      working-directory: ./vscode/extension
+    - name: "Publish"
+      if: github.ref == 'refs/heads/main'
+      # It probably just fails if the extension is already published.
+      continue-on-error: true
+      shell: bash
+      run: npm run deploy
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    

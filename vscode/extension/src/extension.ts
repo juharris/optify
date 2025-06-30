@@ -1,0 +1,283 @@
+import { GetOptionsPreferences, OptionsProvider } from '@optify/config';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as vscode from 'vscode';
+import { ConfigParser } from './configparser';
+
+export function activate(context: vscode.ExtensionContext) {
+	console.debug('Optify extension is now active!');
+
+	// Set up context for when clauses
+	updateOptifyFileContext();
+
+	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
+		const activeEditor = vscode.window.activeTextEditor;
+		if (!activeEditor) {
+			vscode.window.showErrorMessage('No active editor found');
+			return;
+		}
+
+		const document = activeEditor.document;
+		const filePath = document.fileName;
+
+		console.debug("Trying to get preview for file: ", filePath);
+
+		try {
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			if (!workspaceFolder) {
+				vscode.window.showErrorMessage("File must be in a workspace");
+				return;
+			}
+
+			const optifyRoot = findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
+			if (!optifyRoot) {
+				vscode.window.showErrorMessage("Could not find Optify root directory");
+				return;
+			}
+
+			if (!isOptifyFeatureFile(filePath, optifyRoot, workspaceFolder)) {
+				vscode.window.showErrorMessage("Current file is not an Optify feature file");
+				return;
+			}
+
+			const canonicalName = getCanonicalName(filePath, optifyRoot);
+
+			const provider = OptionsProvider.build(optifyRoot);
+			const preferences = new GetOptionsPreferences();
+			preferences.setSkipFeatureNameConversion(true);
+			const builtConfigJson = provider.getAllOptionsJson([canonicalName], preferences);
+			const builtConfig = JSON.parse(builtConfigJson);
+
+			const panel = vscode.window.createWebviewPanel(
+				'optifyPreview',
+				`Optify Preview: ${canonicalName}`,
+				vscode.ViewColumn.Beside,
+				{ enableScripts: false }
+			);
+
+			panel.webview.html = getPreviewHtml([canonicalName], builtConfig);
+		} catch (error) {
+			console.error('Optify build error:', error);
+			vscode.window.showErrorMessage(`Failed to build feature: ${error}`);
+		}
+	});
+
+	const documentLinkProvider = new OptifyDocumentLinkProvider();
+	const linkProvider = vscode.languages.registerDocumentLinkProvider(
+		[{ scheme: 'file' }],
+		documentLinkProvider
+	);
+
+	const diagnosticCollection = vscode.languages.createDiagnosticCollection('optify');
+	const diagnosticsProvider = new OptifyDiagnosticsProvider(diagnosticCollection);
+
+	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
+		if (isOptifyFeatureFile(event.document.fileName)) {
+			diagnosticsProvider.updateDiagnostics(event.document);
+		}
+	});
+
+	const onDidOpenDocument = vscode.workspace.onDidOpenTextDocument((document) => {
+		if (isOptifyFeatureFile(document.fileName)) {
+			diagnosticsProvider.updateDiagnostics(document);
+		}
+		updateOptifyFileContext();
+	});
+
+	const onDidChangeActiveEditor = vscode.window.onDidChangeActiveTextEditor(() => {
+		updateOptifyFileContext();
+	});
+
+	context.subscriptions.push(
+		previewCommand,
+		linkProvider,
+		diagnosticCollection,
+		onDidChangeDocument,
+		onDidOpenDocument,
+		onDidChangeActiveEditor
+	);
+}
+
+function updateOptifyFileContext() {
+	const activeEditor = vscode.window.activeTextEditor;
+	const isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
+	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
+}
+
+function isOptifyFeatureFile(filePath: string,
+	optifyRoot: string | undefined = undefined,
+	workspaceFolder: vscode.WorkspaceFolder | undefined = undefined): boolean {
+	const ext = path.extname(filePath).toLowerCase();
+	// We only support a few types of files in this extension and the config Rust crate only supports a few file types.
+	if (!['.json', '.yaml', '.yml', '.json5'].includes(ext)) {
+		return false;
+	}
+
+	// Check if file is in an Optify project by looking for root directory.
+	if (!optifyRoot) {
+		workspaceFolder ||= vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
+		if (!workspaceFolder) {
+			return false;
+		}
+
+		optifyRoot = findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
+	}
+	return optifyRoot !== undefined;
+}
+
+function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
+	let currentDir = path.dirname(filePath);
+
+	const configDirs = new Set(['options', 'configs', 'configurations']);
+	while (currentDir !== path.dirname(currentDir)) {
+		// Check for configuration directories
+		const currentDirName = path.basename(currentDir);
+		if (configDirs.has(currentDirName)) {
+			return currentDir;
+		}
+
+		// Look for some kind of marker file, but it shouldn't be a suffix for a feature file.
+		const optifyConfigPath = path.join(currentDir, '.optify');
+		if (fs.existsSync(optifyConfigPath)) {
+			return currentDir;
+		}
+
+		currentDir = path.dirname(currentDir);
+		if (currentDir === workspaceRoot) {
+			return undefined;
+		}
+	}
+
+	return undefined;
+}
+
+function getCanonicalName(filePath: string, optifyRoot: string): string {
+	const relativePath = path.relative(optifyRoot, filePath);
+	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
+
+	return result;
+}
+
+function getPreviewHtml(features: string[], config: any): string {
+	const configJson = JSON.stringify(config, null, 2);
+	const featuresString = JSON.stringify(features);
+	return `
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<title>Optify Preview: ${featuresString}</title>
+			<style>
+				body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
+				h2 { border-bottom: 2px solid #007acc; padding-bottom: 10px; }
+				pre { padding: 1rem; overflow-x: auto; background-color: #383838; color: #d8d8d8; border-radius: 4px; }
+				code { background-color: transparent; font-family: 'Courier New', Courier, monospace; }
+			</style>
+		</head>
+		<body>
+			<h2>Features: <code>${featuresString}</code></h1>
+			<pre><code>${configJson}</code></pre>
+		</body>
+		</html>
+	`;
+}
+
+/**
+ * Adds links to imports.
+ */
+class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
+	provideDocumentLinks(document: vscode.TextDocument): vscode.DocumentLink[] {
+		const links: vscode.DocumentLink[] = [];
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return links; // No workspace folder, no links
+		}
+
+		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
+
+		// Only provide links for Optify feature files
+		if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot)) {
+			return links;
+		}
+
+		console.debug(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
+		const text = document.getText();
+
+		const imports = ConfigParser.parseImports(text, document.languageId);
+		if (imports) {
+			for (let i = 0; i < imports.length; i++) {
+				const importName = imports[i];
+				const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
+				if (range) {
+					const targetPath = resolveImportPath(importName, optifyRoot);
+					if (targetPath) {
+						const link = new vscode.DocumentLink(range, vscode.Uri.file(targetPath));
+						links.push(link);
+					}
+				}
+			}
+		}
+
+		return links;
+	}
+}
+
+
+function resolveImportPath(importName: string, optifyRoot: string): string | undefined {
+	const extensions = ['.json', '.yaml', '.yml', '.json5'];
+
+	// Try resolving relative to the optify root
+	for (const ext of extensions) {
+		const possiblePath = path.resolve(optifyRoot, importName + ext);
+		if (fs.existsSync(possiblePath)) {
+			return possiblePath;
+		}
+	}
+
+	return undefined;
+}
+
+/**
+ * Validates files such as validating imports.
+ */
+class OptifyDiagnosticsProvider {
+	constructor(private diagnosticCollection: vscode.DiagnosticCollection) { }
+
+	updateDiagnostics(document: vscode.TextDocument): void {
+		console.debug(`Updating diagnostics for ${document.fileName} | languageId: ${document.languageId}`);
+		const diagnostics: vscode.Diagnostic[] = [];
+		const text = document.getText();
+
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return;
+		}
+
+		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
+		if (!optifyRoot) {
+			return;
+		}
+
+		const imports = ConfigParser.parseImports(text, document.languageId);
+		if (imports) {
+			for (let i = 0; i < imports.length; i++) {
+				const importName = imports[i];
+				const targetPath = resolveImportPath(importName, optifyRoot);
+				if (!targetPath) {
+					const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
+					if (range) {
+						const diagnostic = new vscode.Diagnostic(
+							range,
+							`Cannot resolve import '${importName}'`,
+							vscode.DiagnosticSeverity.Error
+						);
+						diagnostics.push(diagnostic);
+					}
+				}
+			}
+		}
+
+		this.diagnosticCollection.set(document.uri, diagnostics);
+	}
+}
+
+export function deactivate() { }

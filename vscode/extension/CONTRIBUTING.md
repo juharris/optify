@@ -1,0 +1,22 @@
+# Publishing
+
+## VS Code
+
+URL: https://marketplace.visualstudio.com/items?itemName=optify-config.optify
+
+A GitHub action will publish automatically.
+
+Azure DevOps org: https://dev.azure.com/optify-config
+
+Publisher: https://marketplace.visualstudio.com/manage/publishers/optify-config
+
+## Open VSX
+
+For Cursor use https://open-vsx.org/extension/optify-config/optify
+
+Manually package:
+```shell
+npm run package
+```
+
+Publish at https://open-vsx.org/user-settings/extensions

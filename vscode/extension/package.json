@@ -1,0 +1,94 @@
+{
+  "name": "optify",
+  "displayName": "Optify",
+  "description": "Helps manage Optify feature files.",
+  "version": "0.2.2",
+  "publisher": "optify-config",
+  "license": "MIT",
+  "repository": "https://github.com/juharris/optify",
+  "homepage": "https://github.com/juharris/optify/tree/main/vscode/extension",
+  "icon": "./assets/logo.png",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:json",
+    "onLanguage:yaml",
+    "onLanguage:json5"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "optify.previewFeature",
+        "title": "(Optify) Preview",
+        "category": "Optify",
+        "icon": "$(preview)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "optify.previewFeature",
+          "when": "optify.isOptifyFile",
+          "group": "optify"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "optify.previewFeature",
+          "when": "optify.isOptifyFile",
+          "group": "navigation"
+        }
+      ]
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          "**/*.json",
+          "**/*.json5"
+        ],
+        "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
+      }
+    ],
+    "yamlValidation": [
+      {
+        "fileMatch": [
+          "**/*.yaml",
+          "**/*.yml"
+        ],
+        "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+		"package": "vsce package",
+    "pretest": "npm run compile && npm run lint",
+    "publish": "vsce publish",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.96.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.0",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@optify/config": "^0.2.0",
+    "js-yaml": "^4.1.0"
+  }
+}
