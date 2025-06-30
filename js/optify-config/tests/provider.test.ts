@@ -1,14 +1,12 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
-import { OptionsProviderBuilder } from "../index";
+import { OptionsProvider } from "../index";
 
 const configsPath = path.join(__dirname, '../../../tests/test_suites/simple/configs')
 const expectationsPath = path.join(configsPath, '../expectations')
 const getProvider = () => {
-  const builder = new OptionsProviderBuilder()
-  builder.addDirectory(configsPath)
-  return builder.build()
+  return OptionsProvider.buildFromDirectories([configsPath])
 };
 
 describe('Provider', () => {

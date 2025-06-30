@@ -1,12 +1,10 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
-import { OptionsProviderBuilder } from "../index";
+import { OptionsProvider } from "../index";
 
 const runSuite = (suitePath: string) => {
-  const builder = new OptionsProviderBuilder();
-  builder.addDirectory(path.join(suitePath, 'configs'));
-  const provider = builder.build();
+  const provider = OptionsProvider.build(path.join(suitePath, 'configs'));
   const expectationsPath = path.join(suitePath, 'expectations');
   for (const testCase of fs.readdirSync(expectationsPath)) {
     const expectationPath = path.join(expectationsPath, testCase);

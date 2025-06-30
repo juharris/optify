@@ -1,6 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 
-use crate::schema::metadata::OptionsMetadata;
+use crate::{
+    builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
+    schema::metadata::OptionsMetadata,
+};
 
 use super::OptionsRegistry;
 
@@ -71,6 +74,22 @@ impl OptionsProvider {
             features: features.clone(),
             sources: sources.clone(),
         }
+    }
+
+    pub fn build(directory: &Path) -> Result<OptionsProvider, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        builder.add_directory(directory)?;
+        builder.build()
+    }
+
+    pub fn build_from_directories(
+        directories: &[impl AsRef<Path>],
+    ) -> Result<OptionsProvider, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.build()
     }
 
     fn get_entire_config(

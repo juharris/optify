@@ -76,6 +76,20 @@ module Optify
   class OptionsRegistry
     abstract!
 
+    class << self
+      # Build using just one directory.
+      # @param directory The directory to build the provider from.
+      # @return The instance.
+      sig { params(directory: String).returns(OptionsRegistry) }
+      def build(directory); end
+
+      # Build from multiple directories.
+      # @param directories The directories to build the provider from.
+      # @return The instance.
+      sig { params(directories: T::Array[String]).returns(OptionsRegistry) }
+      def build_from_directories(directories); end
+    end
+
     # @return All of the aliases.
     sig { returns(T::Array[String]) }
     def aliases; end
