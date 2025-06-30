@@ -1,0 +1,6 @@
+{
+	"imports": [
+		"parent1",
+		"parent2"
+	]
+}

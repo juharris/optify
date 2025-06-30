@@ -1,7 +1,0 @@
-metadata:
-    owners: p1
-imports:
-    - base1
-options:
-    myConfig:
-        key2: "parent1 value"
