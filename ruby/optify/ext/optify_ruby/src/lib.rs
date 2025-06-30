@@ -8,6 +8,7 @@ use optify::provider::OptionsRegistry;
 use optify::provider::OptionsWatcher;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
+use std::path::Path;
 
 #[derive(Clone)]
 #[wrap(class = "Optify::GetOptionsPreferences")]
@@ -52,6 +53,23 @@ fn convert_metadata(metadata: &OptionsMetadata) -> String {
 }
 
 impl WrappedOptionsProvider {
+    fn build(ruby: &Ruby, directory: String) -> Result<WrappedOptionsProvider, magnus::Error> {
+        match OptionsProvider::build(Path::new(&directory)) {
+            Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn build_from_directories(
+        ruby: &Ruby,
+        directories: Vec<String>,
+    ) -> Result<WrappedOptionsProvider, magnus::Error> {
+        match OptionsProvider::build_from_directories(&directories) {
+            Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.0.borrow().get_aliases()
     }
@@ -196,6 +214,23 @@ impl WrappedOptionsProviderBuilder {
 struct WrappedOptionsWatcher(RefCell<OptionsWatcher>);
 
 impl WrappedOptionsWatcher {
+    fn build(ruby: &Ruby, directory: String) -> Result<WrappedOptionsWatcher, magnus::Error> {
+        match OptionsWatcher::build(Path::new(&directory)) {
+            Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn build_from_directories(
+        ruby: &Ruby,
+        directories: Vec<String>,
+    ) -> Result<WrappedOptionsWatcher, magnus::Error> {
+        match OptionsWatcher::build_from_directories(&directories) {
+            Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.0.borrow().get_aliases()
     }
@@ -344,6 +379,11 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     builder_class.define_method("build", method!(WrappedOptionsProviderBuilder::build, 0))?;
 
     let provider_class = module.define_class("OptionsProvider", ruby.class_object())?;
+    provider_class.define_singleton_method("build", function!(WrappedOptionsProvider::build, 1))?;
+    provider_class.define_singleton_method(
+        "build_from_directories",
+        function!(WrappedOptionsProvider::build_from_directories, 1),
+    )?;
     provider_class.define_method("aliases", method!(WrappedOptionsProvider::get_aliases, 0))?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
     provider_class.define_method(
@@ -419,6 +459,11 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         .define_method("build", method!(WrappedOptionsWatcherBuilder::build, 0))?;
 
     let watcher_class = module.define_class("OptionsWatcher", ruby.class_object())?;
+    watcher_class.define_singleton_method("build", function!(WrappedOptionsWatcher::build, 1))?;
+    watcher_class.define_singleton_method(
+        "build_from_directories",
+        function!(WrappedOptionsWatcher::build_from_directories, 1),
+    )?;
     watcher_class.define_method("aliases", method!(WrappedOptionsWatcher::get_aliases, 0))?;
     watcher_class.define_method("features", method!(WrappedOptionsWatcher::get_features, 0))?;
     watcher_class.define_method(

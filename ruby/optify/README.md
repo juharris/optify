@@ -42,10 +42,8 @@ Use a provider:
 ```ruby
 require 'optify'
 
-# Create a new OptionsProviderBuilder
-provider = Optify::OptionsProviderBuilder.new
-    .add_directory('configs')
-    .build
+# Create a new OptionsProvider
+provider = Optify::OptionsProvider.build('path/to/configs')
 
 # Get the configuration for "myConfig" when the features "feature1" and "feature2" are enabled
 config = provider.get_options("myConfig", ['feature1', 'feature2'], MyConfig)
@@ -57,9 +55,7 @@ puts config.object.number
 
 To watch for changes and automatically reload those changes into the provider when the configuration files change, use `OptionsWatcherBuilder` to create an `OptionsWatcher` which has the same interface as `OptionsProvider`:
 ```Ruby
-provider = Optify::OptionsWatcherBuilder.new
-    .add_directory('configs')
-    .build
+provider = Optify::OptionsWatcher.build('path/to/configs')
 ```
 
 See [optify_test.rb](test/optify_test.rb) for more examples.
