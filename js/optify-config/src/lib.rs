@@ -24,6 +24,19 @@ impl JsOptionsProvider {
   }
 
   #[napi]
+  pub fn get_all_options_json(&self, feature_names: Vec<String>) -> napi::Result<String> {
+    match self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_all_options(&feature_names, None, None)
+    {
+      Ok(json) => Ok(json.to_string()),
+      Err(e) => Err(napi::Error::from_reason(e.to_string())),
+    }
+  }
+
+  #[napi]
   pub fn get_options_json(&self, key: String, feature_names: Vec<String>) -> napi::Result<String> {
     self
       .inner
