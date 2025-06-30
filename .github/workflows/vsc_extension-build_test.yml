@@ -4,12 +4,12 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - ".github/workflows/vsc_extension_test.yml"
+      - ".github/workflows/vsc_extension-build_test.yml"
       - "vscode/extension/**"
   pull_request:
     branches: [ "main" ]
     paths:
-      - ".github/workflows/vsc_extension_test.yml"
+      - ".github/workflows/vsc_extension-build_test.yml"
       - "vscode/extension/**"
 
   # Allows you to run this workflow manually from the Actions tab.
@@ -51,3 +51,12 @@ jobs:
       run: npm test
       if: runner.os != 'Linux'
       working-directory: ./vscode/extension
+    - name: "Publish"
+      if: github.ref == 'refs/heads/main'
+      # It probably just fails if the extension is already published.
+      continue-on-error: true
+      shell: bash
+      run: npm run deploy
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    

@@ -45,7 +45,7 @@ Users appreciate release notes as you update your extension.
 ## Development
 
 ### Publishing
-Azure DevOps org: https://dev.azure.com/optify-config-org
+Azure DevOps org: https://dev.azure.com/optify-config
 
 Publisher: https://marketplace.visualstudio.com/manage/publishers/optify-config
 

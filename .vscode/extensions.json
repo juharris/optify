@@ -1,6 +1,7 @@
 {
 	"recommendations": [
+		"optify-config.optify",
 		"rust-lang.rust-analyzer",
-		"redhat.vscode-yaml",
+		"redhat.vscode-yaml"
 	]
 }
