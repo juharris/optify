@@ -4,12 +4,9 @@
 # Usage
 
 ```TypeScript
-import { OptionsProviderBuilder } from '@optify/config'
+import { OptionsProvider } from '@optify/config'
 
-const builder = new OptionsProviderBuilder()
-builder.addDirectory('<configs folder path>')
-const provider = builder.build()
-
+const provider = OptionsProvider.build('<configs folder path>')
 const options = JSON.parse(provider.getOptionsJson('myConfig', ['feature_A', 'feature_B']))
 console.log(JSON.stringify(options, null, 2))
 ```
@@ -32,8 +29,15 @@ Outputs:
 }
 ```
 
+Multiple directories can be used as well:
 
+```TypeScript
+import { OptionsProvider } from '@optify/config'
 
+const provider = OptionsProvider.buildFromDirectories(['<configs folder path>', '<another folder path>'])
+const options = JSON.parse(provider.getOptionsJson('myConfig', ['feature_A', 'feature_B']))
+console.log(JSON.stringify(options, null, 2))
+```
 
 # Development
 
