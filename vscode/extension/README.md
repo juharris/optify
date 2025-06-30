@@ -21,7 +21,7 @@ See [here](https://github.com/juharris/optify?tab=readme-ov-file#schema-help) fo
 
 ## Release Notes
 
-### 0.2.1: **Add gif**
+### 0.2.2: **Add gif**
 
 ### 0.2.0: **Publish for Cursor**
 
