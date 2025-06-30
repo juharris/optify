@@ -1,5 +1,5 @@
 use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
-use optify::provider::OptionsRegistry;
+use optify::provider::{OptionsRegistry, OptionsWatcher};
 use std::fs::File;
 use std::io::Write;
 use std::thread;
@@ -16,9 +16,7 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
     let mut file = File::create(&options_file)?;
     file.write_all(b"{\"options\":{\"test\":42}}")?;
 
-    let mut builder = OptionsWatcherBuilder::new();
-    builder.add_directory(test_dir)?;
-    let provider = builder.build()?;
+    let provider = OptionsWatcher::build(test_dir)?;
     let created_at = provider.last_modified();
 
     let options = provider.get_options("test", &["modifiable_test"])?;
@@ -55,10 +53,7 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     let subdir2 = temp_dir2.path().join("dir2");
     std::fs::create_dir_all(&subdir2)?;
 
-    let mut builder = OptionsWatcherBuilder::new();
-    builder.add_directory(subdir1.as_path())?;
-    builder.add_directory(subdir2.as_path())?;
-    let provider = builder.build()?;
+    let provider = OptionsWatcher::build_from_directories(&[subdir1.as_path(), subdir2.as_path()])?;
     let created_at = provider.last_modified();
 
     let options1 = provider.get_options("test1", &["test1"])?;

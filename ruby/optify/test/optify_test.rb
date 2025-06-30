@@ -8,6 +8,7 @@ require_relative 'my_config'
 
 class OptifyTest < Test::Unit::TestCase
   BUILDERS = [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].freeze
+  PROVIDERS = [Optify::OptionsProvider, Optify::OptionsWatcher].freeze
 
   def test_empty_build
     BUILDERS.each do |klass|
@@ -157,10 +158,8 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_features
-    BUILDERS.each do |klass|
-      provider = klass.new
-                      .add_directory('../../tests/test_suites/simple/configs')
-                      .build
+    PROVIDERS.each do |klass|
+      provider = klass.build('../../tests/test_suites/simple/configs')
       all_features = provider.features
       all_features.sort!
       assert_equal(['A_with_comments', 'feature_A', 'feature_B/initial'], all_features)
@@ -168,10 +167,8 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_features_and_aliases
-    BUILDERS.each do |klass|
-      provider = klass.new
-                      .add_directory('../../tests/test_suites/simple/configs')
-                      .build
+    PROVIDERS.each do |klass|
+      provider = klass.build_from_directories(['../../tests/test_suites/simple/configs'])
       features_and_aliases = provider.features_and_aliases.sort!
       assert_equal(
         ['A_with_comments',

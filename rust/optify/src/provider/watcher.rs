@@ -1,9 +1,9 @@
 use notify_debouncer_full::{new_debouncer, notify::RecommendedWatcher, DebounceEventResult};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
-use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
+use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::provider::{
     CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry,
 };
@@ -146,6 +146,22 @@ impl OptionsWatcher {
         });
 
         self_
+    }
+
+    pub fn build(directory: &Path) -> Result<OptionsWatcher, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.add_directory(directory)?;
+        builder.build()
+    }
+
+    pub fn build_from_directories(
+        directories: &[impl AsRef<Path>],
+    ) -> Result<OptionsWatcher, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.build()
     }
 
     /// Returns the time when the provider was finished building.

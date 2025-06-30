@@ -1,13 +1,12 @@
 use optify::{
-    builder::OptionsProviderBuilder, builder::OptionsRegistryBuilder, provider::OptionsRegistry,
+    builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
+    provider::{OptionsProvider, OptionsRegistry},
 };
 
 #[test]
 fn test_builder_circular_imports() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::path::Path::new("tests/circular_imports");
-    let mut builder = OptionsProviderBuilder::new();
-    builder.add_directory(path)?;
-    match builder.build() {
+    match OptionsProvider::build(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
             // Just use a big regex instead of being consistent slowing down the builder to keep ordered maps or sets.
@@ -24,9 +23,7 @@ fn test_builder_circular_imports() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_builder_cycle_in_imports() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::path::Path::new("tests/cycle_in_imports");
-    let mut builder = OptionsProviderBuilder::new();
-    builder.add_directory(path)?;
-    match builder.build() {
+    match OptionsProvider::build_from_directories(&[path]) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
             let pattern = r#"Error when resolving imports for '[abc]': Cycle detected with import '[abc]'. The features in the path \(not in order\): \{("([abc]|start)", ){2,3}"([abc]|start)"}"#;

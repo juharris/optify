@@ -9,7 +9,7 @@ cargo test
 popd
 
 pushd js/optify-config
-yarn build
+yarn build:debug
 yarn test
 popd
 
