@@ -21,13 +21,15 @@ See [here](https://github.com/juharris/optify?tab=readme-ov-file#schema-help) fo
 
 ## Release Notes
 
-### 0.2.2: **Add gif**
+### 0.3.0 Ignore .optify folder
 
-### 0.2.0: **Publish for Cursor**
+### 0.2.2: Add gif
+
+### 0.2.0: Publish for Cursor
 
 * Drop VS Code required version to 1.96.0.
 
-### 0.1.0: **Initial release**
+### 0.1.0: Initial release
 
 * Show preview of built feature file.
 * Click on an import to open the file.
