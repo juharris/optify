@@ -19,7 +19,7 @@
     "commands": [
       {
         "command": "optify.previewFeature",
-        "title": "Preview Built Feature File",
+        "title": "(Optify) Preview",
         "category": "Optify",
         "icon": "$(preview)"
       }
@@ -80,7 +80,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@optify/config": "^0.0.3",
+    "@optify/config": "^0.2.0",
     "js-yaml": "^4.1.0"
   }
 }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { OptionsProviderBuilder } from '@optify/config';
+import { OptionsProvider } from '@optify/config';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Optify extension is now active!');
@@ -42,15 +42,9 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			const canonicalName = getCanonicalName(filePath, optifyRoot);
-			console.log(`[Optify] DEBUG: filePath=${filePath}, optifyRoot=${optifyRoot}, canonicalName=${canonicalName}`);
 
-			const builder = new OptionsProviderBuilder();
-			builder.addDirectory(optifyRoot);
-			const provider = builder.build();
-			console.log(`[Optify] DEBUG: Built provider for Optify root: ${optifyRoot}`);
-			console.debug("[Optify] Debug test: Built provider for Optify root");
-			// FIXME Get the entire configuration.
-			const builtConfigJson = provider.getOptionsJson('myConfig', [canonicalName]);
+			const provider = OptionsProvider.build(optifyRoot);
+			const builtConfigJson = provider.getAllOptionsJson([canonicalName]);
 			const builtConfig = JSON.parse(builtConfigJson);
 
 			const panel = vscode.window.createWebviewPanel(
@@ -176,7 +170,7 @@ function getPreviewHtml(canonicalName: string, config: any): string {
 			</style>
 		</head>
 		<body>
-			<h1>Built Feature: ${canonicalName}</h1>
+			<h1>Features: [${canonicalName}]</h1>
 			<pre><code>${configJson}</code></pre>
 		</body>
 		</html>
