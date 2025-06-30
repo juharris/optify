@@ -129,15 +129,14 @@ function findOptifyRoot(filePath: string, workspaceRoot: string): string | undef
 	let currentDir = path.dirname(filePath);
 
 	const configDirs = new Set(['options', 'configs', 'configurations']);
+	const markerDirName = '.optify';
 	while (currentDir !== path.dirname(currentDir)) {
-		// Check for configuration directories
 		const currentDirName = path.basename(currentDir);
 		if (configDirs.has(currentDirName)) {
 			return currentDir;
 		}
 
-		// Look for some kind of marker file, but it shouldn't be a suffix for a feature file.
-		const optifyConfigPath = path.join(currentDir, '.optify');
+		const optifyConfigPath = path.join(currentDir, markerDirName);
 		if (fs.existsSync(optifyConfigPath)) {
 			return currentDir;
 		}
