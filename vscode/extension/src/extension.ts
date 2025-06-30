@@ -102,7 +102,6 @@ function isOptifyFeatureFile(filePath: string, optifyRoot: string | undefined = 
 	}
 
 	optifyRoot ||= findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
-	console.debug(`Optify root for ${filePath}: ${optifyRoot}`);
 	return optifyRoot !== undefined;
 }
 
@@ -117,7 +116,7 @@ function findOptifyRoot(filePath: string, workspaceRoot: string): string | undef
 			return currentDir;
 		}
 
-		// Look for some kind of marker file, but we shouldn't use .YAML.
+		// Look for some kind of marker file, but it shouldn't be a suffix for a feature file.
 		const optifyConfigPath = path.join(currentDir, '.optify');
 		if (fs.existsSync(optifyConfigPath)) {
 			return currentDir;
@@ -149,13 +148,13 @@ function getPreviewHtml(features: string[], config: any): string {
 			<title>Optify Preview: ${featuresString}</title>
 			<style>
 				body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
-				h1 { border-bottom: 2px solid #007acc; padding-bottom: 10px; }
-				pre { padding: 1rem; overflow-x: auto; }
-				code { background-color: none; }
+				h2 { border-bottom: 2px solid #007acc; padding-bottom: 10px; }
+				pre { padding: 1rem; overflow-x: auto; background-color: #383838; color: #d8d8d8; border-radius: 4px; }
+				code { background-color: transparent; font-family: 'Courier New', Courier, monospace; }
 			</style>
 		</head>
 		<body>
-			<h1>Features: ${featuresString}</h1>
+			<h2>Features: <code>${featuresString}</code></h1>
 			<pre><code>${configJson}</code></pre>
 		</body>
 		</html>
@@ -183,28 +182,33 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 		console.debug(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
 
-		try {
-			const config = JSON.parse(text);
-			if (config.imports && Array.isArray(config.imports)) {
-				if (!workspaceFolder) {
-					return links;
-				}
-				for (let i = 0; i < config.imports.length; ++i) {
-					const importName = config.imports[i];
-					if (typeof importName === 'string') {
-						const range = this.findImportRange(text, importName, i);
-						if (range) {
-							const targetPath = this.resolveImportPath(importName, optifyRoot);
-							if (targetPath) {
-								const link = new vscode.DocumentLink(range, vscode.Uri.file(targetPath));
-								links.push(link);
+		switch (document.languageId) {
+			case 'json':
+				try {
+					const config = JSON.parse(text);
+					if (config.imports && Array.isArray(config.imports)) {
+						if (!workspaceFolder) {
+							return links;
+						}
+						for (let i = 0; i < config.imports.length; ++i) {
+							const importName = config.imports[i];
+							if (typeof importName === 'string') {
+								const range = this.findImportRange(text, importName, i);
+								if (range) {
+									const targetPath = this.resolveImportPath(importName, optifyRoot);
+									if (targetPath) {
+										const link = new vscode.DocumentLink(range, vscode.Uri.file(targetPath));
+										links.push(link);
+									}
+								}
 							}
 						}
 					}
+				} catch (error) {
+					// Ignore JSON parse errors
 				}
-			}
-		} catch (error) {
-			// Ignore JSON parse errors
+			case 'yaml':
+			// TODO
 		}
 
 		return links;

@@ -4,6 +4,14 @@ Helps manage [Optify] feature files.
 
 ## Features
 
+* Show a preview of the built feature file.
+* Click on an import to open the file.
+* Validate imports.
+
+### Future Plans
+
+* Syntax highlighting and coloring in the preview.
+* Build a configuration for multiple features.
 
 <!--
 ## Requirements
