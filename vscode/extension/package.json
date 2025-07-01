@@ -88,7 +88,7 @@
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@optify/config": "^0.2.0",
+		"@optify/config": "^0.3.0",
 		"js-yaml": "^4.1.0"
 	}
 }
