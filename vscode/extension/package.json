@@ -2,7 +2,7 @@
 	"name": "optify",
 	"displayName": "Optify",
 	"description": "Helps manage Optify feature files.",
-	"version": "0.2.2",
+	"version": "0.3.0",
 	"publisher": "optify-config",
 	"license": "MIT",
 	"repository": "https://github.com/juharris/optify",
@@ -44,25 +44,7 @@
 					"group": "navigation"
 				}
 			]
-		},
-		"jsonValidation": [
-			{
-				"fileMatch": [
-					"**/*.json",
-					"**/*.json5"
-				],
-				"url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
-			}
-		],
-		"yamlValidation": [
-			{
-				"fileMatch": [
-					"**/*.yaml",
-					"**/*.yml"
-				],
-				"url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
-			}
-		]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -85,10 +67,11 @@
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.6.0",
 		"eslint": "^9.25.1",
+		"ovsx": "^0.10.4",
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@optify/config": "^0.2.0",
+		"@optify/config": "^0.3.0",
 		"js-yaml": "^4.1.0"
 	}
 }
