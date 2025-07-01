@@ -51,7 +51,7 @@ jobs:
       run: npm test
       if: runner.os != 'Linux'
       working-directory: ./vscode/extension
-    - name: "Publish"
+    - name: "[VS] Publish"
       if: github.ref == 'refs/heads/main'
       # It probably just fails if the extension is already published.
       continue-on-error: true
@@ -60,4 +60,11 @@ jobs:
       working-directory: ./vscode/extension
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    - name: "[Open VSX] Publish"
+      if: github.ref == 'refs/heads/main'
+      shell: bash
+      run: |
+        npm run package
+        npx ovsx publish *.vsix --skip-duplicate --pat ${{ secrets.OPEN_VSX_TOKEN }}
+      working-directory: ./vscode/extension
     

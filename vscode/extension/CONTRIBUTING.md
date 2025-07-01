@@ -2,7 +2,7 @@
 
 ## VS Code
 
-URL: https://marketplace.visualstudio.com/items?itemName=optify-config.optify
+Published to https://marketplace.visualstudio.com/items?itemName=optify-config.optify
 
 A GitHub action will publish automatically.
 
@@ -14,9 +14,6 @@ Publisher: https://marketplace.visualstudio.com/manage/publishers/optify-config
 
 For Cursor use https://open-vsx.org/extension/optify-config/optify
 
-Manually package:
-```shell
-npm run package
-```
+A GitHub action will publish automatically.
 
-Publish at https://open-vsx.org/user-settings/extensions
+Can publish manually at https://open-vsx.org/user-settings/extensions
