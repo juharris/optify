@@ -4,11 +4,23 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { ConfigParser } from './configparser';
 
+function buildOptifyPreview(canonicalName: string, optifyRoot: string): string {
+	const provider = OptionsProvider.build(optifyRoot);
+	const preferences = new GetOptionsPreferences();
+	preferences.setSkipFeatureNameConversion(true);
+	const builtConfigJson = provider.getAllOptionsJson([canonicalName], preferences);
+	const builtConfig = JSON.parse(builtConfigJson);
+	return getPreviewHtml([canonicalName], builtConfig);
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	console.debug('Optify extension is now active!');
 
 	// Set up context for when clauses
 	updateOptifyFileContext();
+
+	// Store active preview panels and their watchers
+	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher }>();
 
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
@@ -42,11 +54,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const canonicalName = getCanonicalName(filePath, optifyRoot);
 
-			const provider = OptionsProvider.build(optifyRoot);
-			const preferences = new GetOptionsPreferences();
-			preferences.setSkipFeatureNameConversion(true);
-			const builtConfigJson = provider.getAllOptionsJson([canonicalName], preferences);
-			const builtConfig = JSON.parse(builtConfigJson);
+			// Check if preview already exists
+			const existingPreview = activePreviews.get(filePath);
+			if (existingPreview) {
+				existingPreview.panel.reveal();
+				return;
+			}
 
 			const panel = vscode.window.createWebviewPanel(
 				'optifyPreview',
@@ -55,7 +68,33 @@ export function activate(context: vscode.ExtensionContext) {
 				{ enableScripts: false }
 			);
 
-			panel.webview.html = getPreviewHtml([canonicalName], builtConfig);
+			panel.webview.html = buildOptifyPreview(canonicalName, optifyRoot);
+
+			// Create file watcher for this file
+			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
+			
+			// Update preview on file change
+			const updatePreview = async () => {
+				try {
+					panel.webview.html = buildOptifyPreview(canonicalName, optifyRoot);
+				} catch (error) {
+					console.error('Failed to update preview:', error);
+				}
+			};
+
+			watcher.onDidChange(updatePreview);
+			
+			// Store panel and watcher
+			activePreviews.set(filePath, { panel, watcher });
+
+			// Clean up when panel is closed
+			panel.onDidDispose(() => {
+				const preview = activePreviews.get(filePath);
+				if (preview) {
+					preview.watcher.dispose();
+					activePreviews.delete(filePath);
+				}
+			});
 		} catch (error) {
 			console.error('Optify build error:', error);
 			vscode.window.showErrorMessage(`Failed to build feature: ${error}`);
@@ -200,7 +239,6 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
 		console.debug(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
-
 		const imports = ConfigParser.parseImports(text, document.languageId);
 		if (imports) {
 			for (let i = 0; i < imports.length; i++) {
@@ -219,7 +257,6 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 		return links;
 	}
 }
-
 
 function resolveImportPath(importName: string, optifyRoot: string): string | undefined {
 	const extensions = ['.json', '.yaml', '.yml', '.json5'];

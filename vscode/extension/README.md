@@ -12,8 +12,13 @@ Helps manage and develop [Optify] feature files.
 
 ### Future Plans
 
-* Syntax highlighting and coloring in the preview.
 * Build a configuration for multiple features.
+* Import completion/suggestions.
+* Suggest the canonical name for an alias.
+* See files that reference the current file.
+* Syntax highlighting and coloring in the preview.
+* Suggest keys in options based on other files.
+* Email owners.
 
 ## Recommended Setup
 
@@ -28,6 +33,8 @@ You can place a file called `config.json` in the `.optify/` directory which may 
 ## Release Notes
 
 ### Next
+* Automatically refresh the preview when the file is saved.
+* Don't associate all JSON and YAML files with the Optify schema.
 * Ignore .optify folder when building provider.
 
 ### 0.2.2: Add gif
