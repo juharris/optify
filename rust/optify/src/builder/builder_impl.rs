@@ -163,8 +163,14 @@ impl OptionsProviderBuilder {
     }
 
     fn process_entry(path: &Path, directory: &Path) -> Option<Result<LoadingResult, String>> {
-        // Skip .md files because they are not handled by the `config` library and we may have README.md files in the directory.
-        if !path.is_file() || path.extension().filter(|e| *e == "md").is_some() {
+        if !path.is_file()
+            // Skip .md files because they are not handled by the `config` library, but there may be README.md files in the directory.
+            || path.extension().filter(|e| *e == "md").is_some()
+            // Skip .optify folders because they mark settings such as the root folder.
+            || path
+                .components()
+                .any(|component| component.as_os_str() == ".optify")
+        {
             return None;
         }
 
