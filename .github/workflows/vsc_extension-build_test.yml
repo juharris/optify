@@ -18,13 +18,17 @@ on:
 jobs:
   test:
     name: "Build & Test"
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.settings.os }}
     strategy:
       fail-fast: true
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
+        settings:
+          - os: ubuntu-latest
+            targets: 'alpine-arm64 alpine-x64 linux-arm64 linux-armhf linux-x64'
+            test_command: xvfb-run -a npm test
+          - os: macos-latest
+            targets: 'darwin-arm64 darwin-x64'
+            test_command: npm test
     steps:
     - uses: actions/checkout@v4
 
@@ -44,28 +48,22 @@ jobs:
       run: npm run compile
       working-directory: ./vscode/extension
     - name: "Test"
-      run: xvfb-run -a npm test
-      if: runner.os == 'Linux'
+      run: ${{ matrix.settings.test_command }}
       working-directory: ./vscode/extension
-    - name: "Test"
-      run: npm test
-      if: runner.os != 'Linux'
-      working-directory: ./vscode/extension
-    # Publish from Mac for now to ensure we only publish once and also to try to get the right dependencies for most of the main users.
     - name: "[VS] Publish"
-      if: github.ref == 'refs/heads/main' && matrix.os == 'macos-latest'
+      if: github.ref == 'refs/heads/main'
       # It probably just fails if the extension is already published.
       continue-on-error: true
       shell: bash
-      run: npm run publish
+      run: |
+        npm run publish -- --target ${{ matrix.settings.targets }}
       working-directory: ./vscode/extension
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
     - name: "[Open VSX] Publish"
-      if: github.ref == 'refs/heads/main' && matrix.os == 'macos-latest'
+      if: github.ref == 'refs/heads/main'
       shell: bash
       run: |
-        npm run package
-        npx ovsx publish *.vsix --skip-duplicate --pat ${{ secrets.OPEN_VSX_TOKEN }}
+        npx ovsx publish --target ${{ matrix.settings.targets }} --skip-duplicate --pat ${{ secrets.OPEN_VSX_TOKEN }}
       working-directory: ./vscode/extension
     
