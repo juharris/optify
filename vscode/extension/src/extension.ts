@@ -3,18 +3,32 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { ConfigParser } from './configparser';
+import { PreviewBuilder } from './preview';
 
-function buildOptifyPreview(canonicalName: string, optifyRoot: string): string {
-	const provider = OptionsProvider.build(optifyRoot);
-	const preferences = new GetOptionsPreferences();
-	preferences.setSkipFeatureNameConversion(true);
-	const builtConfigJson = provider.getAllOptionsJson([canonicalName], preferences);
-	const builtConfig = JSON.parse(builtConfigJson);
-	return getPreviewHtml([canonicalName], builtConfig);
+const outputChannel = vscode.window.createOutputChannel('Optify');
+
+export function buildOptifyPreview(canonicalName: string, optifyRoot: string): string {
+	console.debug(`Building preview for '${canonicalName}' in '${optifyRoot}'`);
+	const previewBuilder = new PreviewBuilder();
+	try {
+		// If some of the next lines fail in Rust from an unwrap or expect, then the exception is not caught.
+		const provider = OptionsProvider.build(optifyRoot);
+		const preferences = new GetOptionsPreferences();
+		preferences.setSkipFeatureNameConversion(true);
+		const builtConfigJson = provider.getAllOptionsJson([canonicalName], preferences);
+		const builtConfig = JSON.parse(builtConfigJson);
+		return previewBuilder.getPreviewHtml([canonicalName], builtConfig);
+	} catch (error) {
+		const message = `Failed to build preview: ${error}`;
+		console.error(message);
+		vscode.window.showErrorMessage(message);
+		outputChannel.appendLine(message);
+		return previewBuilder.getErrorPreviewHtml([canonicalName], `${error}`);
+	}
 }
 
 export function activate(context: vscode.ExtensionContext) {
-	console.debug('Optify extension is now active!');
+	outputChannel.appendLine('Optify extension is now active!');
 
 	// Set up context for when clauses
 	updateOptifyFileContext();
@@ -32,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const document = activeEditor.document;
 		const filePath = document.fileName;
 
-		console.debug("Trying to get preview for file: ", filePath);
+		outputChannel.appendLine(`Trying to get preview for file: ${filePath}`);
 
 		try {
 			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -72,18 +86,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 			// Create file watcher for this file
 			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
-			
+
 			// Update preview on file change
 			const updatePreview = async () => {
-				try {
-					panel.webview.html = buildOptifyPreview(canonicalName, optifyRoot);
-				} catch (error) {
-					console.error('Failed to update preview:', error);
-				}
+				console.debug(`File changed: '${filePath}'. Remaking preview.`);
+				panel.webview.html = buildOptifyPreview(canonicalName, optifyRoot);
 			};
 
 			watcher.onDidChange(updatePreview);
-			
+
 			// Store panel and watcher
 			activePreviews.set(filePath, { panel, watcher });
 
@@ -96,8 +107,11 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			});
 		} catch (error) {
-			console.error('Optify build error:', error);
-			vscode.window.showErrorMessage(`Failed to build feature: ${error}`);
+			const errorMessage = `Error building Optify preview: ${error}`;
+			console.error(errorMessage);
+			outputChannel.appendLine(errorMessage);
+			outputChannel.show();
+			vscode.window.showErrorMessage(errorMessage);
 		}
 	});
 
@@ -128,6 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(
+		outputChannel,
 		previewCommand,
 		linkProvider,
 		diagnosticCollection,
@@ -164,7 +179,7 @@ function isOptifyFeatureFile(filePath: string,
 	return optifyRoot !== undefined;
 }
 
-function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
+export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
 	let currentDir = path.dirname(filePath);
 
 	const configDirs = new Set(['options', 'configs', 'configurations']);
@@ -196,29 +211,6 @@ function getCanonicalName(filePath: string, optifyRoot: string): string {
 	return result;
 }
 
-function getPreviewHtml(features: string[], config: any): string {
-	const configJson = JSON.stringify(config, null, 2);
-	const featuresString = JSON.stringify(features);
-	return `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<title>Optify Preview: ${featuresString}</title>
-			<style>
-				body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
-				h2 { border-bottom: 2px solid #007acc; padding-bottom: 10px; }
-				pre { padding: 1rem; overflow-x: auto; background-color: #383838; color: #d8d8d8; border-radius: 4px; }
-				code { background-color: transparent; font-family: 'Courier New', Courier, monospace; }
-			</style>
-		</head>
-		<body>
-			<h2>Features: <code>${featuresString}</code></h1>
-			<pre><code>${configJson}</code></pre>
-		</body>
-		</html>
-	`;
-}
-
 /**
  * Adds links to imports.
  */
@@ -237,7 +229,7 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 			return links;
 		}
 
-		console.debug(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
+		outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
 		const imports = ConfigParser.parseImports(text, document.languageId);
 		if (imports) {
@@ -279,7 +271,7 @@ class OptifyDiagnosticsProvider {
 	constructor(private diagnosticCollection: vscode.DiagnosticCollection) { }
 
 	updateDiagnostics(document: vscode.TextDocument): void {
-		console.debug(`Updating diagnostics for ${document.fileName} | languageId: ${document.languageId}`);
+		outputChannel.appendLine(`Updating diagnostics for ${document.fileName} | languageId: ${document.languageId}`);
 		const diagnostics: vscode.Diagnostic[] = [];
 		const text = document.getText();
 

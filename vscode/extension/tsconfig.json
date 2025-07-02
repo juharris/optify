@@ -17,7 +17,6 @@
 	"exclude": [
 		"dist",
 		"out",
-		"node_modules",
-		"src/tests"
+		"node_modules"
 	]
 }
