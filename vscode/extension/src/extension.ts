@@ -117,8 +117,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const documentLinkProvider = new OptifyDocumentLinkProvider();
 	const linkProvider = vscode.languages.registerDocumentLinkProvider(
-		[{ scheme: 'file' }],
+		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
 		documentLinkProvider
+	);
+
+	const definitionProvider = vscode.languages.registerDefinitionProvider(
+		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
+		new OptifyDefinitionProvider()
 	);
 
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('optify');
@@ -145,6 +150,7 @@ export function activate(context: vscode.ExtensionContext) {
 		outputChannel,
 		previewCommand,
 		linkProvider,
+		definitionProvider,
 		diagnosticCollection,
 		onDidChangeDocument,
 		onDidOpenDocument,
@@ -262,6 +268,47 @@ function resolveImportPath(importName: string, optifyRoot: string): string | und
 	}
 
 	return undefined;
+}
+
+/**
+ * Provides "Go to Definition" functionality for imports.
+ */
+class OptifyDefinitionProvider implements vscode.DefinitionProvider {
+	provideDefinition(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		_token: vscode.CancellationToken
+	): vscode.ProviderResult<vscode.Definition> {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return null;
+		}
+
+		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
+		if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot)) {
+			return null;
+		}
+
+		const text = document.getText();
+		const imports = ConfigParser.parseImports(text, document.languageId);
+		if (!imports) {
+			return null;
+		}
+
+		// Check if the cursor is on an import
+		for (let i = 0; i < imports.length; i++) {
+			const importName = imports[i];
+			const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
+			if (range && range.contains(position)) {
+				const targetPath = resolveImportPath(importName, optifyRoot);
+				if (targetPath) {
+					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
+				}
+			}
+		}
+
+		return null;
+	}
 }
 
 /**
