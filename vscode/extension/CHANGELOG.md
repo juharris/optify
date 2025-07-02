@@ -5,6 +5,11 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.0.0
+
+* Show the build error in the preview window.
+* Add error if a file tries to import itself.
+
 ## 0.3.0:
 
 * Automatically refresh the preview when the file is saved.

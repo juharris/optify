@@ -285,10 +285,14 @@ class OptifyDiagnosticsProvider {
 			return;
 		}
 
+		// Get the canonical name of the current file for self-import detection
+		const currentFileCanonicalName = getCanonicalName(document.uri.fsPath, optifyRoot);
+
 		const imports = ConfigParser.parseImports(text, document.languageId);
 		if (imports) {
 			for (let i = 0; i < imports.length; i++) {
 				const importName = imports[i];
+
 				const targetPath = resolveImportPath(importName, optifyRoot);
 				if (!targetPath) {
 					const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
@@ -300,7 +304,19 @@ class OptifyDiagnosticsProvider {
 						);
 						diagnostics.push(diagnostic);
 					}
+				} else if (importName === currentFileCanonicalName) {
+					const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
+					if (range) {
+						const diagnostic = new vscode.Diagnostic(
+							range,
+							"A file cannot import itself",
+							vscode.DiagnosticSeverity.Error
+						);
+						diagnostics.push(diagnostic);
+					}
+					continue;
 				}
+
 			}
 		}
 

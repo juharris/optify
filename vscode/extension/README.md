@@ -6,7 +6,7 @@ Helps manage and develop [Optify] feature files.
 
 ## Features
 
-* Show a preview of the built feature file.
+* Show a preview of the built feature file or show the error in the preview window.
 * Click on an import to open the file.
 * Validate imports.
 
@@ -32,7 +32,7 @@ You can place a file called `config.json` in the `.optify/` directory which may 
 
 ## Release Notes
 
-See all changes in [CHANGELOG.md](./CHANGELOG.md).
+See all changes in [CHANGELOG.md](https://github.com/juharris/optify/blob/main/vscode/extension/CHANGELOG.md).
 
 ### 0.3.0:
 
@@ -42,6 +42,6 @@ See all changes in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Development
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to contribute to this project.
+See [CONTRIBUTING.md](https://github.com/juharris/optify/blob/main/vscode/extension/CONTRIBUTING.md) for details on how to contribute to this project.
 
 [optify]: https://github.com/juharris/optify
