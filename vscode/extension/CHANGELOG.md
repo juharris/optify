@@ -5,6 +5,9 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.0.1
+* Only publish for Mac.
+
 ## 1.0.0
 
 * Enable using Go to Definition (F12) to open the file for an import.
