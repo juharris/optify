@@ -51,8 +51,9 @@ jobs:
       run: npm test
       if: runner.os != 'Linux'
       working-directory: ./vscode/extension
+    # Publish from Mac for now to ensure we only publish once and also to try to get the right dependencies for most of the main users.
     - name: "[VS] Publish"
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' && matrix.os == 'macos-latest'
       # It probably just fails if the extension is already published.
       continue-on-error: true
       shell: bash
@@ -61,7 +62,7 @@ jobs:
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
     - name: "[Open VSX] Publish"
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' && matrix.os == 'macos-latest'
       shell: bash
       run: |
         npm run package
