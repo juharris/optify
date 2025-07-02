@@ -6,8 +6,8 @@ Helps manage and develop [Optify] feature files.
 
 ## Features
 
-* Show a preview of the built feature file.
-* Click on an import to open the file.
+* Show a preview of the built feature file or show the error in the preview window.
+* Click on an import or use Go to Definition (F12) to open the file.
 * Validate imports.
 
 ### Future Plans
@@ -32,16 +32,10 @@ You can place a file called `config.json` in the `.optify/` directory which may 
 
 ## Release Notes
 
-See all changes in [CHANGELOG.md](./CHANGELOG.md).
-
-### 0.3.0:
-
-* Automatically refresh the preview when the file is saved.
-* Don't associate all JSON and YAML files with the Optify schema.
-* Ignore .optify folder when building provider.
+See all changes in [CHANGELOG.md](https://github.com/juharris/optify/blob/main/vscode/extension/CHANGELOG.md).
 
 ## Development
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to contribute to this project.
+See [CONTRIBUTING.md](https://github.com/juharris/optify/blob/main/vscode/extension/CONTRIBUTING.md) for details on how to contribute to this project.
 
 [optify]: https://github.com/juharris/optify

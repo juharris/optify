@@ -2,7 +2,7 @@
 	"name": "optify",
 	"displayName": "Optify",
 	"description": "Helps manage Optify feature files.",
-	"version": "0.3.0",
+	"version": "1.0.0",
 	"publisher": "optify-config",
 	"license": "MIT",
 	"repository": "https://github.com/juharris/optify",
@@ -24,7 +24,7 @@
 		"commands": [
 			{
 				"command": "optify.previewFeature",
-				"title": "(Optify) Preview",
+				"title": "Preview",
 				"category": "Optify",
 				"icon": "$(preview)"
 			}

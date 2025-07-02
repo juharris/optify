@@ -10,6 +10,9 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 
+out/test/
+out/tests/
+
 .claude/
 
 assets/demo.gif

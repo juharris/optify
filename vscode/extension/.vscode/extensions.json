@@ -1,8 +1,6 @@
 {
 	"recommendations": [
 		"dbaeumer.vscode-eslint",
-		"ms-vscode.extension-test-runner",
-		"redhat.vscode-yaml",
-		"optify-config.optify"
+		"ms-vscode.extension-test-runner"
 	]
 }
