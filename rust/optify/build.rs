@@ -18,8 +18,7 @@ fn generate_test_suites() {
             if let Some(file_name) = path.file_name() {
                 if let Some(suite_name) = file_name.to_str() {
                     writeln!(f,
-                                "#[test]\nfn test_suite_{}() {{\n    test_suite(std::path::Path::new(\"../../tests/test_suites/{}\")).unwrap();\n}}\n", 
-                                suite_name, suite_name
+                                "#[test]\nfn test_suite_{suite_name}() {{\n    test_suite(std::path::Path::new(\"../../tests/test_suites/{suite_name}\")).unwrap();\n}}\n"
                             ).unwrap();
                 }
             }
