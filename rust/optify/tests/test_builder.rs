@@ -54,6 +54,18 @@ fn test_builder_duplicate_alias() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn test_builder_invalid_file() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/invalid_file");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert_eq!(e, "Error loading file 'tests/invalid_file/invalid.yaml': simple key expected at byte 31 line 4 column 1 in tests/invalid_file/invalid.yaml");
+            Ok(())
+        }
+    }
+}
+
+#[test]
 fn test_builder_name_with_no_metadata() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::path::Path::new("tests/no_metadata");
     let mut builder = OptionsProviderBuilder::new();

@@ -121,9 +121,10 @@ fn resolve_imports(
             let options_as_config_value: config::Value = match new_config.try_deserialize() {
                 Ok(v) => v,
                 Err(e) => {
+                    // Should never happen.
                     return Err(format!(
-                    "Error deserializing feature configuration for '{canonical_feature_name}': {e}"
-                ))
+                        "Error deserializing feature configuration for '{canonical_feature_name}': {e}"
+                    ));
                 }
             };
             let options_as_json: serde_json::Value = options_as_config_value
@@ -235,7 +236,7 @@ impl OptionsProviderBuilder {
         &mut self,
         loading_result: &Result<LoadingResult, String>,
     ) -> Result<(), String> {
-        let info = loading_result.as_ref().expect("the file should be loaded");
+        let info = loading_result.as_ref()?;
         let canonical_feature_name = &info.canonical_feature_name;
         if self
             .sources
