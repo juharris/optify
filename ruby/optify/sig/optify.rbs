@@ -60,6 +60,8 @@ end
 
 # A registry of features that provides configurations.
 class Optify::OptionsRegistry
+  include ProviderModule
+
   # Build using just one directory.
   # @param directory The directory to build the provider from.
   # @return The instance.
@@ -139,7 +141,6 @@ end
 
 # Provides configurations based on keys and enabled feature names.
 class Optify::OptionsProvider < OptionsRegistry
-  include ProviderModule
 end
 
 # A builder for creating an `OptionsProvider` instance.
@@ -156,8 +157,6 @@ end
 
 # Like `OptionsProvider` but also watches for changes to the files and reloads the options.
 class Optify::OptionsWatcher < OptionsRegistry
-  include ProviderModule
-
   # @return [Time] Returns the time when the provider was finished building.
   def last_modified: () -> Time
 end

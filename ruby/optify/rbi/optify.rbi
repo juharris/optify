@@ -74,6 +74,8 @@ module Optify
 
   # A registry of features that provides configurations.
   class OptionsRegistry
+    include ProviderModule
+
     abstract!
 
     class << self
@@ -209,7 +211,6 @@ module Optify
 
   # Provides configurations based on keys and enabled feature names.
   class OptionsProvider < OptionsRegistry
-    include ProviderModule
   end
 
   # A builder for creating an `OptionsProvider` instance.
@@ -228,8 +229,6 @@ module Optify
 
   # Like `OptionsProvider` but also watches for changes to the files and reloads the options.
   class OptionsWatcher < OptionsRegistry
-    include ProviderModule
-
     # @return [Time] Returns the time when the provider was finished building.
     sig { returns(Time) }
     def last_modified; end
