@@ -1,42 +1,163 @@
+export interface PreviewWhileEditingOptions {
+	features?: string[]
+	overrides?: string;
+}
+
 export class PreviewBuilder {
-	getPreviewHtml(features: string[], config: any): string {
+	private highlightJson(json: string): string {
+		return json
+			.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+				let cls = 'number';
+				if (match.startsWith('"')) {
+					if (match.endsWith(':')) {
+						cls = 'key';
+					} else {
+						cls = 'string';
+					}
+				} else if (/true|false/.test(match)) {
+					cls = 'boolean';
+				} else if (/null/.test(match)) {
+					cls = 'null';
+				}
+				return `<span class="${cls}">${match}</span>`;
+			});
+	}
+
+	getPreviewHtml(
+		features: string[],
+		config: any): string {
 		const configJson = JSON.stringify(config, null, 2);
+		const highlightedConfig = this.highlightJson(configJson);
 		const featuresString = JSON.stringify(features);
+		const highlightedFeatures = this.highlightJson(featuresString);
 		return `<!DOCTYPE html>
 <html>
 <head>
 	<title>Configuration Preview</title>
 	<style>
-		body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
-		h2 { border-bottom: 2px solid #007acc; padding-bottom: 10px; }
-		pre { padding: 1rem; overflow-x: auto; background-color: #383838; color: #d8d8d8; border-radius: 4px; }
-		code { background-color: transparent; font-family: 'Courier New', Courier, monospace; }
+		body { 
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+			padding: 1rem; 
+			background-color: var(--vscode-editor-background);
+			color: var(--vscode-editor-foreground);
+		}
+		h2 { 
+			border-bottom: 2px solid var(--vscode-focusBorder); 
+			padding-bottom: 10px;
+			color: var(--vscode-foreground);
+		}
+		h3 {
+			color: var(--vscode-foreground);
+		}
+		pre { 
+			padding: 1rem; 
+			overflow-x: auto; 
+			background-color: var(--vscode-textCodeBlock-background); 
+			border: 1px solid var(--vscode-widget-border);
+			border-radius: 4px; 
+			white-space: pre-wrap; 
+			word-wrap: break-word; 
+		}
+		code { 
+			background-color: transparent; 
+			font-family: var(--vscode-editor-font-family), 'Courier New', Courier, monospace;
+			font-size: var(--vscode-editor-font-size);
+			line-height: 1.5;
+		}
+		
+		/* JSON Syntax Highlighting */
+		.string { color: var(--vscode-debugTokenExpression-string); }
+		.number { color: var(--vscode-debugTokenExpression-number); }
+		.boolean { color: var(--vscode-debugTokenExpression-boolean); }
+		.null { color: var(--vscode-debugIcon-breakpointDisabledForeground); }
+		.key { color: var(--vscode-debugTokenExpression-name); }
+		
+		/* Fallback colors for when VS Code variables are not available */
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .string { color: #ce9178; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .number { color: #b5cea8; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .boolean { color: #569cd6; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .null { color: #569cd6; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .key { color: #9cdcfe; }
+		
+		/* Light theme overrides */
+		body.vscode-light .string { color: #a31515; }
+		body.vscode-light .number { color: #098658; }
+		body.vscode-light .boolean { color: #0000ff; }
+		body.vscode-light .null { color: #0000ff; }
+		body.vscode-light .key { color: #001080; }
 	</style>
 </head>
 <body>
 	<h2>Configuration Preview</h2>
-	<div>Features: <code>${featuresString}</code></div>
-	<pre><code>${configJson}</code></pre>
+	<div>Features:<pre><code>${highlightedFeatures}</code></pre></div>
+	<h3>Configuration:</h3>
+	<pre><code>${highlightedConfig}</code></pre>
 </body>
 </html>`;
 	}
 
-	getErrorPreviewHtml(features: string[], message: string): string {
+	getErrorPreviewHtml(
+		features: string[],
+		message: string): string {
 		const featuresString = JSON.stringify(features);
+		const highlightedFeatures = this.highlightJson(featuresString);
 		return `<!DOCTYPE html>
 <html>
 <head>
 	<title>Error Building Preview</title>
 	<style>
-		body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
-		h2 { color: red; }
-		code { background-color: transparent; font-family: 'Courier New', Courier, monospace; }
-		pre { padding: 1rem; overflow-x: auto; background-color: #f8d7da; color: #721c24; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+		body { 
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+			padding: 1rem;
+			background-color: var(--vscode-editor-background);
+			color: var(--vscode-editor-foreground);
+		}
+		h2 { 
+			color: var(--vscode-errorForeground);
+		}
+		pre { 
+			padding: 1rem; 
+			overflow-x: auto; 
+			background-color: var(--vscode-inputValidation-errorBackground); 
+			border: 1px solid var(--vscode-inputValidation-errorBorder);
+			border-radius: 4px; 
+			white-space: pre-wrap; 
+			word-wrap: break-word; 
+		}
+		code { 
+			background-color: transparent; 
+			font-family: var(--vscode-editor-font-family), 'Courier New', Courier, monospace;
+			font-size: var(--vscode-editor-font-size);
+			line-height: 1.5;
+		}
+		
+		/* JSON Syntax Highlighting */
+		.string { color: var(--vscode-debugTokenExpression-string); }
+		.number { color: var(--vscode-debugTokenExpression-number); }
+		.boolean { color: var(--vscode-debugTokenExpression-boolean); }
+		.null { color: var(--vscode-debugIcon-breakpointDisabledForeground); }
+		.key { color: var(--vscode-debugTokenExpression-name); }
+		
+		/* Fallback colors for when VS Code variables are not available */
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) h2 { color: #d73a49; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) pre { background-color: #f8d7da; border-color: #f5c6cb; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .string { color: #ce9178; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .number { color: #b5cea8; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .boolean { color: #569cd6; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .null { color: #569cd6; }
+		body:not(.vscode-dark):not(.vscode-light):not(.vscode-high-contrast) .key { color: #9cdcfe; }
+		
+		/* Light theme overrides */
+		body.vscode-light .string { color: #a31515; }
+		body.vscode-light .number { color: #098658; }
+		body.vscode-light .boolean { color: #0000ff; }
+		body.vscode-light .null { color: #0000ff; }
+		body.vscode-light .key { color: #001080; }
 	</style>
 </head>
 <body>
 	<h2>Error Building Preview</h2>
-	<div>Features: <code>${featuresString}</code></div>
+	<div>Features: <pre><code>${highlightedFeatures}</code></pre></div>
 	<pre>${message}</pre>
 </body>
 </html>`;

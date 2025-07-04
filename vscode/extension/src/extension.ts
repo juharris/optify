@@ -3,27 +3,33 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { ConfigParser } from './configparser';
-import { PreviewBuilder } from './preview';
+import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
 
 const outputChannel = vscode.window.createOutputChannel('Optify');
 
-export function buildOptifyPreview(canonicalName: string, optifyRoot: string): string {
-	console.debug(`Building preview for '${canonicalName}' in '${optifyRoot}'`);
+export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): string {
+	console.debug(`Building preview for '${canonicalFeatures}' in '${optifyRoot}'`);
 	const previewBuilder = new PreviewBuilder();
 	try {
 		// If some of the next lines fail in Rust from an unwrap or expect, then the exception is not caught.
 		const provider = OptionsProvider.build(optifyRoot);
 		const preferences = new GetOptionsPreferences();
 		preferences.setSkipFeatureNameConversion(true);
-		const builtConfigJson = provider.getAllOptionsJson([canonicalName], preferences);
+		if (editingOptions?.overrides) {
+			preferences.setOverridesJson(editingOptions.overrides);
+		}
+		const builtConfigJson = provider.getAllOptionsJson(editingOptions?.features ?? canonicalFeatures, preferences);
 		const builtConfig = JSON.parse(builtConfigJson);
-		return previewBuilder.getPreviewHtml([canonicalName], builtConfig);
+		return previewBuilder.getPreviewHtml(canonicalFeatures, builtConfig);
 	} catch (error) {
-		const message = `Failed to build preview: ${error}`;
+		const message = `Failed to build preview${editingOptions ? " while editing" : ""}: ${error}`;
 		console.error(message);
-		vscode.window.showErrorMessage(message);
+		if (!editingOptions) {
+			vscode.window.showErrorMessage(message);
+		}
 		outputChannel.appendLine(message);
-		return previewBuilder.getErrorPreviewHtml([canonicalName], `${error}`);
+		const errorMessage = `${error}` + (editingOptions ? "\n\nIf the file was saved with any issues, then correct any issues and save the file to fix the preview." : "");
+		return previewBuilder.getErrorPreviewHtml(canonicalFeatures, errorMessage);
 	}
 }
 
@@ -33,8 +39,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set up context for when clauses
 	updateOptifyFileContext();
 
-	// Store active preview panels and their watchers
-	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher }>();
+	// Store active preview panels, their watchers, and document change listeners
+	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher, documentChangeListener: vscode.Disposable }>();
 
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
@@ -82,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
 				{ enableScripts: false }
 			);
 
-			panel.webview.html = buildOptifyPreview(canonicalName, optifyRoot);
+			panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 
 			// Create file watcher for this file
 			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
@@ -90,19 +96,34 @@ export function activate(context: vscode.ExtensionContext) {
 			// Update preview on file change
 			const updatePreview = async () => {
 				console.debug(`File changed: '${filePath}'. Remaking preview.`);
-				panel.webview.html = buildOptifyPreview(canonicalName, optifyRoot);
+				panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 			};
 
 			watcher.onDidChange(updatePreview);
 
-			// Store panel and watcher
-			activePreviews.set(filePath, { panel, watcher });
+			// Also update preview on document text changes (before save)
+			const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
+				if (event.document.uri.fsPath === filePath) {
+					console.debug(`Document changed (unsaved): '${filePath}'. Updating preview.`);
+					const documentText = event.document.getText();
+					const config = ConfigParser.parse(documentText, event.document.languageId);
+					panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot, {
+						features: config.imports ?? [],
+						overrides: config.options ? JSON.stringify(config.options) : undefined
+					});
+				}
+			});
+
+			context.subscriptions.push(documentChangeListener);
+
+			activePreviews.set(filePath, { panel, watcher, documentChangeListener });
 
 			// Clean up when panel is closed
 			panel.onDidDispose(() => {
 				const preview = activePreviews.get(filePath);
 				if (preview) {
 					preview.watcher.dispose();
+					preview.documentChangeListener.dispose();
 					activePreviews.delete(filePath);
 				}
 			});

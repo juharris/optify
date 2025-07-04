@@ -1,3 +1,9 @@
+# Formatting
+
+```shell
+npm run lint:fix
+```
+
 # Publishing
 
 ## VS Code
