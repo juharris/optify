@@ -3,13 +3,11 @@
 		"and": [
 			{
 				"jsonPath": "$.info",
-				"operator": "equals",
-				"value": 3
+				"equals": 3
 			},
 			{
 				"jsonPath": "$.status",
-				"operator": "regex",
-				"value": "^(active|new)$"
+				"matches": "^(active|new)$"
 			}
 		]
 	},
