@@ -2,7 +2,7 @@
 	"name": "optify",
 	"displayName": "Optify",
 	"description": "Helps manage Optify feature files.",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"publisher": "optify-config",
 	"license": "MIT",
 	"repository": "https://github.com/juharris/optify",
@@ -54,6 +54,7 @@
 		"pretest": "npm run compile && npm run lint",
 		"publish": "vsce publish",
 		"lint": "eslint src",
+		"lint:fix": "eslint src --fix",
 		"test": "vscode-test"
 	},
 	"devDependencies": {
@@ -71,7 +72,7 @@
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@optify/config": "^0.3.0",
+		"@optify/config": "^0.4.0",
 		"js-yaml": "^4.1.0"
 	}
 }

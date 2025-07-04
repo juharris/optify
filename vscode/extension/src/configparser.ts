@@ -1,10 +1,26 @@
 import * as vscode from 'vscode';
 import * as yaml from 'js-yaml';
 
+export interface OptifyConfig {
+	imports?: string[];
+	options?: any;
+}
+
 /**
  * Utility functions for parsing configuration files
  */
-class ConfigParser {
+export class ConfigParser {
+	static parse(text: string, languageId: string): OptifyConfig {
+		switch (languageId) {
+			case 'json':
+				return this.parseJson(text);
+			case 'yaml':
+				return this.parseYaml(text);
+			default:
+				throw new Error(`Unsupported language ID: ${languageId}`);
+		}
+	}
+
 	static findImportRange(text: string, importName: string, index: number, languageId: string): vscode.Range | undefined {
 		switch (languageId) {
 			case 'json':
@@ -12,43 +28,43 @@ class ConfigParser {
 			case 'yaml':
 				return ConfigParser.findImportRangeInYaml(text, importName, index);
 			default:
-				return undefined;
+				throw new Error(`Unsupported language ID: ${languageId}`);
 		}
 	}
 
-	static parseImports(text: string, languageId: string): string[] | null {
+	static parseImports(text: string, languageId: string): string[] | undefined {
 		switch (languageId) {
 			case 'json':
-				return this.parseJsonImports(text);
+				return this.parseJson(text).imports;
 			case 'yaml':
-				return this.parseYamlImports(text);
+				return this.parseYaml(text).imports;
 			default:
-				return null;
+				throw new Error(`Unsupported language ID: ${languageId}`);
 		}
 	}
 
-	static parseJsonImports(text: string): string[] | null {
-		try {
-			const config = JSON.parse(text);
-			if (config.imports && Array.isArray(config.imports)) {
-				return config.imports.filter((imp: any) => typeof imp === 'string');
-			}
-		} catch (error) {
-			// Ignore JSON parse errors
-		}
-		return null;
+	private static parseJson(text: string): OptifyConfig {
+		const config = JSON.parse(text);
+		return this.validateConfig(config);
 	}
 
-	static parseYamlImports(text: string): string[] | null {
-		try {
-			const config = yaml.load(text) as any;
-			if (config && config.imports && Array.isArray(config.imports)) {
-				return config.imports.filter((imp: any) => typeof imp === 'string');
-			}
-		} catch (error) {
-			// Ignore YAML parse errors
+	private static validateConfig(config: any): OptifyConfig {
+		if (!config || typeof config !== 'object') {
+			throw new Error(`Text must be a valid JSON object. Got: ${JSON.stringify(config)}`);
 		}
-		return null;
+		if (Array.isArray(config.imports) && !config.imports.every((imp: any) => typeof imp === 'string')) {
+			throw new Error(`Expected "imports" to be an array of strings. Got: "${JSON.stringify(config.imports)}"`);
+		}
+
+		if (config.options && typeof config.options !== 'object') {
+			throw new Error(`Expected "options" to be an object. Got: "${JSON.stringify(config.options)}"`);
+		}
+		return config as OptifyConfig;
+	}
+
+	private static parseYaml(text: string): OptifyConfig {
+		const config = yaml.load(text) as any;
+		return this.validateConfig(config);
 	}
 
 	static findImportRangeInJson(text: string, importName: string, index: number): vscode.Range | undefined {
@@ -159,7 +175,3 @@ class ConfigParser {
 		return new vscode.Position(lines.length - 1, lines[lines.length - 1].length);
 	}
 }
-
-export {
-	ConfigParser,
-};
