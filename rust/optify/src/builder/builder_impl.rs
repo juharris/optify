@@ -136,8 +136,7 @@ fn resolve_imports(
         }
         Err(e) => {
             return Err(format!(
-                "Error building configuration for feature {:?}: {:?}",
-                canonical_feature_name, e
+                "Error building configuration for feature {canonical_feature_name:?}: {e:?}"
             ))
         }
     }

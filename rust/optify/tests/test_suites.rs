@@ -22,17 +22,12 @@ fn test_suite(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> 
         expected_options.iter().for_each(|(key, expected_value)| {
             let config = provider.get_options(key, &features);
             if let Err(e) = &config {
-                panic!(
-                    "Error in {:?} with key: {:?}: {:?}",
-                    expectation_path, key, e
-                );
+                panic!("Error in {expectation_path:?} with key: {key:?}: {e:?}");
             }
             assert_eq!(
                 config.unwrap(),
                 *expected_value,
-                "in {:?} with key: {:?}",
-                expectation_path,
-                key
+                "in {expectation_path:?} with key: {key:?}"
             );
         });
     }
