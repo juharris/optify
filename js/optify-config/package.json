@@ -1,6 +1,6 @@
 {
 	"name": "@optify/config",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"description": "Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.",
 	"repository": {
 		"type": "git",

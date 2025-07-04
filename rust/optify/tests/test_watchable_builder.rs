@@ -30,7 +30,7 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
     while provider.last_modified() == created_at {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
         if start_time.elapsed().as_millis() > max_sleep_time {
-            panic!("Provider did not update after {}ms.", max_sleep_time);
+            panic!("Provider did not update after {max_sleep_time}ms.");
         }
     }
 
@@ -74,7 +74,7 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     while provider.last_modified() == created_at {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
         if start_time.elapsed().as_millis() > max_sleep_time {
-            panic!("Provider did not update after {}ms.", max_sleep_time);
+            panic!("Provider did not update after {max_sleep_time}ms.");
         }
     }
 
@@ -154,7 +154,7 @@ fn test_watchable_builder_error_rebuilding_provider() -> Result<(), Box<dyn std:
     while provider.last_modified() == last_modified {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
         if start_time.elapsed().as_millis() > max_sleep_time {
-            panic!("Provider did not update after {}ms.", max_sleep_time);
+            panic!("Provider did not update after {max_sleep_time}ms.");
         }
     }
 

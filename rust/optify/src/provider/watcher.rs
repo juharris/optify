@@ -58,8 +58,7 @@ impl OptionsWatcher {
                     }
 
                     eprintln!(
-                        "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {:?}",
-                        paths
+                        "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {paths:?}"
                     );
 
                     tx.send(()).unwrap();
@@ -103,10 +102,7 @@ impl OptionsWatcher {
                     for dir in &watched_directories {
                         if dir.exists() {
                             if let Err(e) = builder.add_directory(dir) {
-                                eprintln!(
-                                    "\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m",
-                                    e
-                                );
+                                eprintln!("\x1b[31m[optify] Error rebuilding provider: {e}\x1b[0m");
                                 skip_rebuild = true;
                                 break;
                             }
@@ -128,13 +124,12 @@ impl OptionsWatcher {
                             }
                             Err(err) => {
                                 eprintln!(
-                                    "\x1b[31m[optify] Error rebuilding provider: {}\nWill not change the provider until the files are fixed.\x1b[0m",
-                                    err
+                                    "\x1b[31m[optify] Error rebuilding provider: {err}\nWill not change the provider until the files are fixed.\x1b[0m"
                                 );
                             }
                         },
                         Err(err) => {
-                            eprintln!("\x1b[31m[optify] Error rebuilding provider: {}\x1b[0m", err);
+                            eprintln!("\x1b[31m[optify] Error rebuilding provider: {err}\x1b[0m");
                         }
                     }
                 });

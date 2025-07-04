@@ -22,4 +22,11 @@ describe('Provider', () => {
     const expectedOptions = JSON.parse(fs.readFileSync(path.join(expectationsPath, 'aliases.json'), 'utf8'))['options']
     expect(options).toEqual(expectedOptions)
   })
+
+  test('invalid file', () => {
+    const configDir = path.relative(__dirname, path.join(__dirname, '../../rust/optify/tests/invalid_file'))
+    const filePath = path.join(configDir, 'invalid.yaml')
+    expect(() => OptionsProvider.build(configDir))
+      .toThrow(`Error loading file '${filePath}': simple key expected at byte 31 line 4 column 1 in ${filePath}`)
+  })
 })

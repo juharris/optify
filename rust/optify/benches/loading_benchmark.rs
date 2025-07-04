@@ -26,14 +26,14 @@ fn create_test_files(dir: &Path, num_files: usize) {
     fs::create_dir_all(dir).unwrap();
 
     for i in 0..num_files / 2 {
-        let file_path = dir.join(format!("test_{}.json", i));
+        let file_path = dir.join(format!("test_{i}.json"));
         let mut file = fs::File::create(&file_path).unwrap();
 
         // Create a test configuration file with some realistic content
         let content = format!(
             r#"{{
     "metadata": {{
-        "aliases": ["alias_{}_1", "alias_{}_2"]
+        "aliases": ["alias_{i}_1", "alias_{i}_2"]
     }},
     "options": {{
         "setting1": "value1",
@@ -45,21 +45,20 @@ fn create_test_files(dir: &Path, num_files: usize) {
         }}
     }}
 }}"#,
-            i, i,
         );
 
         file.write_all(content.as_bytes()).unwrap();
     }
 
     for i in num_files / 2..num_files {
-        let file_path = dir.join(format!("test_{}.yaml", i));
+        let file_path = dir.join(format!("test_{i}.yaml"));
         let mut file = fs::File::create(&file_path).unwrap();
 
         let content = format!(
             r#"metadata:
     aliases:
-        - alias_y_{}_1
-        - alias_y_{}_2
+        - alias_y_{i}_1
+        - alias_y_{i}_2
 options:
     setting1: value1
     setting2: 42
@@ -68,7 +67,6 @@ options:
       field1: nested_value
       field2: [1, 2, 3]
 "#,
-            i, i,
         );
         file.write_all(content.as_bytes()).unwrap();
     }
@@ -86,7 +84,7 @@ fn benchmark_loading(c: &mut Criterion) {
 
     create_test_files(test_dir, num_files);
 
-    let mut group = c.benchmark_group(format!("file_loading-{}", num_files));
+    let mut group = c.benchmark_group(format!("file_loading-{num_files}"));
 
     group.bench_function("parallel loading", |b| {
         b.iter(|| {

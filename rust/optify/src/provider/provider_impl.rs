@@ -127,8 +127,7 @@ impl OptionsProvider {
                 // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                 None => {
                     return Err(format!(
-                        "Feature name {:?} was not found.",
-                        canonical_feature_name
+                        "Feature name {canonical_feature_name:?} was not found."
                     ))
                 }
             };
@@ -186,10 +185,7 @@ impl OptionsRegistry for OptionsProvider {
         let feature_name = unicase::UniCase::new(feature_name.to_owned());
         match self.aliases.get(&feature_name) {
             Some(canonical_name) => Ok(canonical_name.to_owned()),
-            None => Err(format!(
-                "The given feature {:?} was not found.",
-                feature_name
-            )),
+            None => Err(format!("The given feature {feature_name:?} was not found.")),
         }
     }
 
