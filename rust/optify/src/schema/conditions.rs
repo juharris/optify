@@ -4,16 +4,22 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub enum ConditionOperator {
     Equals,
-    Regex,
+    Matches,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum OperatorValue {
+    Equals { equals: serde_json::Value },
+    Matches { matches: String },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Condition {
-    pub json_path: Option<String>,
-    pub operator: ConditionOperator,
-    // TODO Think of a name other than "value".
-    pub value: Option<serde_json::Value>,
+    pub json_path: String,
+    #[serde(flatten)]
+    pub operator_value: OperatorValue,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -12,6 +12,9 @@ pub(crate) type ConfigurationOptions = config::Value;
 pub(crate) struct FeatureConfiguration {
     pub imports: Option<Vec<String>>,
     pub metadata: Option<OptionsMetadata>,
+    /// Conditions to automatically enable this feature file when constraints are given when getting configuration options.
+    ///
+    /// More details in the JSON schema.
     pub conditions: Option<ConditionExpression>,
     pub options: Option<ConfigurationOptions>,
 }

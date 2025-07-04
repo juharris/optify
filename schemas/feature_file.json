@@ -28,6 +28,10 @@
 				}
 			}
 		},
+		"conditions": {
+			"$ref": "#/definitions/conditionExpression",
+			"description": "Conditions to automatically enable this feature file when constraints are given when getting configuration options. These are meant for temporary experimental features that should only be enabled in some requests.\n\nIf no constraints are given, then these conditions are ignored. Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.\n\nConditions cannot be used in imported features. This helps keep retrieving and building configuration options fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario."
+		},
 		"imports": {
 			"type": "array",
 			"description": "List of canonical feature names to import or inherit from. Canonical feature names are derived from the relative path to the file, but without the file extension in order to keep canonical feature names clear.",
@@ -48,5 +52,96 @@
 			"type": "object"
 		}
 	},
-	"minProperties": 1
+	"minProperties": 1,
+	"definitions": {
+		"condition": {
+			"type": "object",
+			"properties": {
+				"jsonPath": {
+					"type": "string",
+					"description": "JSONPath expression to evaluate against the context"
+				},
+				"equals": {
+					"description": "Value to compare for equality"
+				},
+				"matches": {
+					"type": "string",
+					"description": "Regular expression pattern to match against"
+				}
+			},
+			"required": [
+				"jsonPath"
+			],
+			"oneOf": [
+				{
+					"required": [
+						"equals"
+					]
+				},
+				{
+					"required": [
+						"matches"
+					]
+				}
+			],
+			"additionalProperties": false
+		},
+		"conditionGroup": {
+			"type": "object",
+			"oneOf": [
+				{
+					"properties": {
+						"and": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/conditionExpression"
+							},
+							"minItems": 1
+						}
+					},
+					"required": [
+						"and"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
+						"or": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/conditionExpression"
+							},
+							"minItems": 1
+						}
+					},
+					"required": [
+						"or"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
+						"not": {
+							"$ref": "#/definitions/conditionExpression"
+						}
+					},
+					"required": [
+						"not"
+					],
+					"additionalProperties": false
+				}
+			]
+		},
+		"conditionExpression": {
+			"default": {},
+			"oneOf": [
+				{
+					"$ref": "#/definitions/condition"
+				},
+				{
+					"$ref": "#/definitions/conditionGroup"
+				}
+			]
+		}
+	}
 }

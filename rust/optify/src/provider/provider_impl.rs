@@ -23,6 +23,7 @@ pub struct GetOptionsPreferences {
     /// It also makes it simpler and maybe faster to get from other programming languages.
     pub overrides_json: Option<String>,
     pub skip_feature_name_conversion: bool,
+    pub constraints: Option<serde_json::Value>,
 }
 
 impl Clone for GetOptionsPreferences {
@@ -30,6 +31,7 @@ impl Clone for GetOptionsPreferences {
         Self {
             overrides_json: self.overrides_json.clone(),
             skip_feature_name_conversion: self.skip_feature_name_conversion,
+            constraints: self.constraints.clone(),
         }
     }
 }
@@ -45,6 +47,7 @@ impl GetOptionsPreferences {
         Self {
             overrides_json: None,
             skip_feature_name_conversion: false,
+            constraints: None,
         }
     }
 
