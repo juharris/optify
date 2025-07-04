@@ -182,10 +182,8 @@ class OptifyTest < Test::Unit::TestCase
   end
 
   def test_get_options_with_cache_and_overrides
-    BUILDERS.each do |klass|
-      provider = klass.new
-                      .add_directory('../../tests/test_suites/simple/configs')
-                      .build
+    PROVIDERS.each do |klass|
+      provider = klass.build('../../tests/test_suites/simple/configs')
                       .init
       cache_options = Optify::CacheOptions.new
       feature_names = %w[A B]
