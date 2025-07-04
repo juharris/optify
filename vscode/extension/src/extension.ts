@@ -25,9 +25,9 @@ export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: stri
 		const message = `Failed to build preview${editingOptions ? " while editing" : ""}: ${error}`;
 		console.error(message);
 		if (!editingOptions) {
-			vscode.window.showErrorMessage("ERRORMSG" + message);
+			vscode.window.showErrorMessage(message);
 		}
-		outputChannel.appendLine("OUTPUTCHANNEL" + message);
+		outputChannel.appendLine(message);
 		const errorMessage = `${error}` + (editingOptions ? "\n\nIf the file was saved with any issues, then correct any issues and save the file to fix the preview." : "");
 		return previewBuilder.getErrorPreviewHtml(canonicalFeatures, errorMessage);
 	}
