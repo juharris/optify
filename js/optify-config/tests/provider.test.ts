@@ -25,7 +25,8 @@ describe('Provider', () => {
 
   test('invalid file', () => {
     const configDir = path.relative(__dirname, path.join(__dirname, '../../rust/optify/tests/invalid_file'))
+    const filePath = path.join(configDir, 'invalid.yaml')
     expect(() => OptionsProvider.build(configDir))
-      .toThrow("Error loading file '../../rust/optify/tests/invalid_file/invalid.yaml': simple key expected at byte 31 line 4 column 1 in ../../rust/optify/tests/invalid_file/invalid.yaml")
+      .toThrow(`Error loading file '${filePath}': simple key expected at byte 31 line 4 column 1 in ${filePath}`)
   })
 })
