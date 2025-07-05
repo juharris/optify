@@ -2,11 +2,11 @@
 	"conditions": {
 		"and": [
 			{
-				"jsonPointer": "$.info",
+				"jsonPointer": "/info",
 				"equals": 3
 			},
 			{
-				"jsonPointer": "$.status",
+				"jsonPointer": "/status",
 				"matches": "^(active|new)$"
 			}
 		]
