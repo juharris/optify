@@ -54,7 +54,7 @@ impl GetOptionsPreferences {
     }
 
     pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
-        self.constraints = constraints.map(|c| Constraints { constraint: c });
+        self.constraints = constraints.map(|c| Constraints { constraints: c });
     }
 
     pub fn set_overrides_json(&mut self, overrides: Option<String>) {

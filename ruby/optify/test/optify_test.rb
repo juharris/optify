@@ -33,8 +33,11 @@ class OptifyTest < Test::Unit::TestCase
         expected_info = JSON.parse(File.read(expectation_path))
         expected_options = expected_info['options']
         features = expected_info['features']
+        constraints = expected_info['constraints']
+        preferences = Optify::GetOptionsPreferences.new
+        preferences.constraints = constraints if constraints
         expected_options.each do |key, expected_value|
-          expected_json = provider.get_options_json(key, features)
+          expected_json = provider.get_options_json_with_preferences(key, features, preferences)
           options = JSON.parse(expected_json, object_class: Hash)
           expected_json = expected_value.to_json
           expected_open_struct = JSON.parse(expected_json, object_class: Hash)

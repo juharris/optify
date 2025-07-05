@@ -1,8 +1,8 @@
 use crate::schema::conditions::{ConditionExpression, ConditionGroup, OperatorValue};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Constraints {
-    pub constraint: serde_json::Value,
+    pub constraints: serde_json::Value,
 }
 
 impl Constraints {
@@ -15,12 +15,12 @@ impl Constraints {
             },
             ConditionExpression::Condition(condition) => match &condition.operator_value {
                 OperatorValue::Equals { equals } => self
-                    .constraint
+                    .constraints
                     .pointer(condition.json_pointer.as_str())
                     .map(|value| value == equals)
                     .unwrap_or(false),
                 OperatorValue::Matches { matches } => self
-                    .constraint
+                    .constraints
                     .pointer(condition.json_pointer.as_str())
                     .and_then(|value| value.as_str())
                     .map(|value| matches.0.is_match(value))
