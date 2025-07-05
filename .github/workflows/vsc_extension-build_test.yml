@@ -16,19 +16,33 @@ on:
   workflow_dispatch:
 
 jobs:
+  setup:
+    # Drafts: Only run on Ubuntu.
+    # Non-drafts: Run on both Ubuntu and macOS.
+    name: "Setup Build Matrix"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setup.outputs.matrix }}
+    steps:
+      - id: setup
+        run: |
+          matrix='[{"os": "ubuntu-latest", "targets": "alpine-arm64 alpine-x64 linux-arm64 linux-armhf linux-x64", "test_command": "xvfb-run -a npm test"}'
+          
+          if [[ "${{ github.event.pull_request.draft }}" != "true" ]]; then
+            matrix+=', {"os": "macos-latest", "targets": "darwin-arm64 darwin-x64", "test_command": "npm test"}'
+          fi
+          
+          matrix+=']'
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
   test:
     name: "Build & Test"
+    needs: setup
     runs-on: ${{ matrix.settings.os }}
     strategy:
       fail-fast: true
       matrix:
-        settings:
-          - os: ubuntu-latest
-            targets: 'alpine-arm64 alpine-x64 linux-arm64 linux-armhf linux-x64'
-            test_command: xvfb-run -a npm test
-          - os: macos-latest
-            targets: 'darwin-arm64 darwin-x64'
-            test_command: npm test
+        settings: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v4
 
