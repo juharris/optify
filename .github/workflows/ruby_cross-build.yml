@@ -9,6 +9,7 @@ on:
       - "rust/**"
   pull_request:
     branches: [ "main" ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
     paths:
       - ".github/workflows/ruby_cross-build.yml"
       - "ruby/**"
@@ -25,6 +26,7 @@ jobs:
   # Following example from https://github.com/oxidize-rb/actions/blob/main/cross-gem
   ci-data:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     outputs:
       result: ${{ steps.fetch.outputs.result }}
     steps:
@@ -40,6 +42,7 @@ jobs:
   cross-gem:
     name: "Build"
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     needs: ci-data
     strategy:
       fail-fast: true
@@ -112,6 +115,7 @@ jobs:
   # This allows future versions of Ruby to be used that aren't explicitly supported by this action.
   source-gem:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     steps:
     - uses: actions/checkout@v4
 
