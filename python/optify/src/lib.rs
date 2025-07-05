@@ -8,7 +8,7 @@ struct PyGetOptionsPreferences(GetOptionsPreferences);
 
 #[pymethods]
 impl PyGetOptionsPreferences {
-     #[new]
+    #[new]
     fn new() -> Self {
         Self(GetOptionsPreferences::new())
     }
@@ -62,13 +62,10 @@ impl PyOptionsProvider {
         preferences: Option<&PyGetOptionsPreferences>,
     ) -> PyResult<String> {
         let preferences = preferences.map(|p| &p.0);
-        let result = &self.0.get_options_with_preferences(
-            &key,
-            &feature_names,
-            None,
-            preferences,
-        )
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e))?;
+        let result = &self
+            .0
+            .get_options_with_preferences(&key, &feature_names, None, preferences)
+            .map_err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>)?;
         Ok(result.to_string())
     }
 }
