@@ -3,7 +3,7 @@ use std::fs;
 use optify::provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry};
 
 fn test_suite(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
-    let provider = OptionsProvider::build(&path.join("configs"))?;
+    let provider = OptionsProvider::build(path.join("configs"))?;
 
     let expectations = fs::read_dir(path.join("expectations"))?;
     for expectation_entry in expectations {

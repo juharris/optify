@@ -287,6 +287,12 @@ impl OptionsProviderBuilder {
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+        if !directory.is_dir() {
+            return Err(format!(
+                "Error adding directory: {directory:?} is not a directory"
+            ));
+        }
+
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .par_bridge()
