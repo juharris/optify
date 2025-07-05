@@ -82,13 +82,13 @@ module Optify
       # Build using just one directory.
       # @param directory The directory to build the provider from.
       # @return The instance.
-      sig { params(directory: String).returns(OptionsRegistry) }
+      sig { params(directory: String).returns(T.attached_class) }
       def build(directory); end
 
       # Build from multiple directories.
       # @param directories The directories to build the provider from.
       # @return The instance.
-      sig { params(directories: T::Array[String]).returns(OptionsRegistry) }
+      sig { params(directories: T::Array[String]).returns(T.attached_class) }
       def build_from_directories(directories); end
     end
 
