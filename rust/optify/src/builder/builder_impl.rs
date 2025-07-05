@@ -53,6 +53,7 @@ fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
         .replace(std::path::MAIN_SEPARATOR, "/")
 }
 
+#[allow(clippy::too_many_arguments)]
 fn resolve_imports(
     canonical_feature_name: &str,
     imports_for_feature: &[String],
