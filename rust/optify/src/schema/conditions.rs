@@ -17,7 +17,7 @@ pub enum OperatorValue {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Condition {
-    pub json_path: String,
+    pub json_pointer: String,
     #[serde(flatten)]
     pub operator_value: OperatorValue,
 }

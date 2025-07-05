@@ -1,4 +1,4 @@
 # This optifile is imported so it cannot contain conditions.
 conditions:
-  jsonPath: "$.key"
+  jsonPointer: "$.key"
   equals: "anything"
