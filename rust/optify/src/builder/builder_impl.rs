@@ -61,6 +61,7 @@ fn resolve_imports(
     aliases: &Aliases,
     all_imports: &Imports,
     sources: &mut Sources,
+    conditions: &Conditions,
 ) -> Result<(), String> {
     // Build full configuration for the feature so that we don't need to traverse imports for the feature when configurations are requested from the provider.
     let mut config_builder = config::Config::builder();
@@ -72,6 +73,13 @@ fn resolve_imports(
                     "Error when resolving imports for '{canonical_feature_name}': Cycle detected with import '{import}'. The features in the path (not in order): {features_in_resolution_path:?}"
                 ));
         }
+
+        if conditions.contains_key(import) {
+            return Err(format!(
+                "Error when resolving imports for '{canonical_feature_name}': The import '{import}' has conditions. Conditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario."
+            ));
+        }
+
         // Get the source so that we can build the configuration.
         // Getting the source also ensures the import is a canonical feature name.
         let mut source = match sources.get(import) {
@@ -102,6 +110,7 @@ fn resolve_imports(
                     aliases,
                     all_imports,
                     sources,
+                    conditions,
                 )?
             }
 
@@ -313,6 +322,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     &self.aliases,
                     &self.imports,
                     &mut self.sources,
+                    &self.conditions,
                 )?;
             }
         }

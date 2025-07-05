@@ -66,6 +66,18 @@ fn test_builder_invalid_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn test_builder_conditions_in_imported_feature() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("../../tests/invalid_suites/conditions_in_import/configs");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert_eq!(e, "Error when resolving imports for 'parent': The import 'invalid' has conditions. Conditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.");
+            Ok(())
+        }
+    }
+}
+
+#[test]
 fn test_builder_name_with_no_metadata() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::path::Path::new("tests/no_metadata");
     let mut builder = OptionsProviderBuilder::new();
