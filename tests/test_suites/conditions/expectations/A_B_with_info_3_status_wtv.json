@@ -1,12 +1,15 @@
 {
 	"features": [
-		"a",
-		"b"
+		"A",
+		"B"
 	],
+	"constraints": {
+		"info": 3,
+		"status": "wtv"
+	},
 	"options": {
 		"config": {
 			"key": "from B",
-			"key_a": "only in A",
 			"key_b": "only in B"
 		}
 	}

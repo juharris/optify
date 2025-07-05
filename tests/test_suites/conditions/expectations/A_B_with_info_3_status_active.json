@@ -1,8 +1,12 @@
 {
 	"features": [
-		"a",
-		"b"
+		"A",
+		"B"
 	],
+	"constraints": {
+		"info": 3,
+		"status": "active"
+	},
 	"options": {
 		"config": {
 			"key": "from B",

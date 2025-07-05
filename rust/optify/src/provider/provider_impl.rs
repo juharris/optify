@@ -2,6 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
+    provider::constraints::Constraints,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
@@ -24,7 +25,7 @@ pub struct GetOptionsPreferences {
     /// It also makes it simpler and maybe faster to get from other programming languages.
     pub overrides_json: Option<String>,
     pub skip_feature_name_conversion: bool,
-    pub constraints: Option<serde_json::Value>,
+    pub constraints: Option<Constraints>,
 }
 
 impl Clone for GetOptionsPreferences {
@@ -46,10 +47,14 @@ impl Default for GetOptionsPreferences {
 impl GetOptionsPreferences {
     pub fn new() -> Self {
         Self {
+            constraints: None,
             overrides_json: None,
             skip_feature_name_conversion: false,
-            constraints: None,
         }
+    }
+
+    pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
+        self.constraints = constraints.map(|c| Constraints { constraint: c });
     }
 
     pub fn set_overrides_json(&mut self, overrides: Option<String>) {
@@ -58,10 +63,6 @@ impl GetOptionsPreferences {
 
     pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
         self.skip_feature_name_conversion = skip_feature_name_conversion;
-    }
-
-    pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
-        self.constraints = constraints;
     }
 }
 
@@ -139,8 +140,11 @@ impl OptionsProvider {
 
             if let Some(constraints) = constraints {
                 let conditions = self.conditions.get(canonical_feature_name);
-                if conditions.is_some() {
-                    // TODO Evaluate the condition in another class.
+                if !conditions
+                    .map(|conditions| constraints.evaluate(conditions))
+                    .unwrap_or(true)
+                {
+                    continue;
                 }
             }
 
