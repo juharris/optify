@@ -8,6 +8,7 @@ on:
       - "vscode/extension/**"
   pull_request:
     branches: [ "main" ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
     paths:
       - ".github/workflows/vsc_extension-build_test.yml"
       - "vscode/extension/**"
