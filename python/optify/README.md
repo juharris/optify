@@ -10,7 +10,35 @@ This is just meant to be minimal to get started and help build a Python library.
 See the [homepage] for details.
 
 ## Usage
-See the [tests directory](./tests/) for examples.
+```Python
+import json
+from optify import OptionsProvider
+
+provider = OptionsProvider.build('path/to/configs')
+config = provider.get_options_json('key', ['feature_A', 'feature_B'])
+print(config)
+```
+
+Outputs:
+```JSON
+{
+  "myArray": [
+    "item 1",
+    "item 2"
+  ],
+  "myObject": {
+    "deeper": {
+      "new": "new value",
+      "num": 3333
+    },
+    "key": "val",
+  },
+  "rootString": "root string same"
+}
+```
+
+
+See the [tests directory](./tests/) for more examples.
 
 ## Development
 

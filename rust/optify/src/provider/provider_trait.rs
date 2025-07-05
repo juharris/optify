@@ -36,6 +36,7 @@ pub trait OptionsRegistry {
 
     fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<OptionsMetadata>;
 
+    /// @return All of the canonical feature names.
     fn get_features(&self) -> Vec<String>;
 
     fn get_features_with_metadata(&self) -> Features;

@@ -46,7 +46,7 @@ fn test_provider_get_features_and_aliases() -> Result<(), Box<dyn std::error::Er
 fn test_provider_get_options_with_overrides() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let mut preferences = GetOptionsPreferences::new();
-    preferences.set_overrides_json(Some(
+    preferences.overrides_json = Some(
         serde_json::json!({
             "myConfig": {
                 "new key": 33,
@@ -58,7 +58,7 @@ fn test_provider_get_options_with_overrides() -> Result<(), Box<dyn std::error::
             }
         })
         .to_string(),
-    ));
+    );
     let opts = provider.get_options_with_preferences("myConfig", &["a"], None, Some(&preferences));
 
     let expected = serde_json::json!({
