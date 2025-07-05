@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
-use optify::provider::constraints::Constraints;
 use optify::provider::{OptionsProvider, OptionsRegistry};
 
 #[macro_use]
@@ -24,9 +23,7 @@ impl JsGetOptionsPreferences {
 
   #[napi]
   pub fn set_constraints_json(&mut self, constraints_json: Option<String>) {
-    self.inner.constraints = constraints_json.map(|c| Constraints {
-      constraints: serde_json::from_str(&c).expect("constraints must be valid JSON"),
-    });
+    self.inner.set_constraints_json(constraints_json.as_deref());
   }
 
   #[napi]

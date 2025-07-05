@@ -90,9 +90,9 @@ impl OptionsProvider {
         }
     }
 
-    pub fn build(directory: &Path) -> Result<OptionsProvider, String> {
+    pub fn build(directory: impl AsRef<Path>) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
-        builder.add_directory(directory)?;
+        builder.add_directory(directory.as_ref())?;
         builder.build()
     }
 

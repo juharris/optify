@@ -2,7 +2,6 @@ use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
 use optify::builder::OptionsWatcherBuilder;
-use optify::provider::constraints::Constraints;
 use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
 use optify::provider::OptionsRegistry;
@@ -31,10 +30,10 @@ impl MutGetOptionsPreferences {
     }
 
     // Constraints Section
-    fn set_constraints_json(&self, constraints: Option<String>) {
-        self.0.borrow_mut().constraints = constraints.map(|c| Constraints {
-            constraints: serde_json::from_str(&c).expect("constraints must be valid JSON"),
-        });
+    fn set_constraints_json(&self, constraints_json: Option<String>) {
+        self.0
+            .borrow_mut()
+            .set_constraints_json(constraints_json.as_deref());
     }
 
     fn get_constraints_json(&self) -> Option<String> {
