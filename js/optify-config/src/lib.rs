@@ -7,12 +7,12 @@ use optify::provider::{OptionsProvider, OptionsRegistry};
 #[macro_use]
 extern crate napi_derive;
 
+/// Preferences when getting options.
 #[napi(js_name = "GetOptionsPreferences")]
 pub struct JsGetOptionsPreferences {
   inner: optify::provider::GetOptionsPreferences,
 }
 
-/// Preferences when getting options.
 #[napi]
 impl JsGetOptionsPreferences {
   #[napi(constructor)]
@@ -73,6 +73,7 @@ impl JsOptionsProvider {
     }
   }
 
+  /// @return All of the canonical feature names.
   #[napi]
   pub fn features(&self) -> Vec<String> {
     self.inner.as_ref().unwrap().get_features()

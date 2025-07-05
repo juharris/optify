@@ -56,6 +56,12 @@ impl GetOptionsPreferences {
     pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
         self.constraints = constraints.map(|c| Constraints { constraints: c });
     }
+
+    pub fn set_constraints_json(&mut self, constraints: Option<&str>) {
+        self.constraints = constraints.map(|c| Constraints {
+            constraints: serde_json::from_str(c).expect("constraints should be valid JSON"),
+        });
+    }
 }
 
 pub struct CacheOptions {}

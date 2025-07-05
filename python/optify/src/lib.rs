@@ -1,7 +1,22 @@
 use pyo3::prelude::*;
 
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
-use optify::provider::{OptionsProvider, OptionsRegistry};
+use optify::provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry};
+
+#[pyclass(name = "GetOptionsPreferences")]
+struct PyGetOptionsPreferences(GetOptionsPreferences);
+
+#[pymethods]
+impl PyGetOptionsPreferences {
+     #[new]
+    fn new() -> Self {
+        Self(GetOptionsPreferences::new())
+    }
+
+    fn set_constraints_json(&mut self, constraints: Option<String>) {
+        self.0.set_constraints_json(constraints.as_deref());
+    }
+}
 
 #[pyclass(name = "OptionsProviderBuilder")]
 // TODO Try to use inheritance, maybe?
@@ -12,6 +27,7 @@ struct PyOptionsProvider(OptionsProvider);
 
 #[pymethods]
 impl PyOptionsProvider {
+    /// @return All of the canonical feature names.
     fn features(&self) -> Vec<String> {
         self.0
             .get_features()
@@ -37,6 +53,23 @@ impl PyOptionsProvider {
             .get_options(key, &feature_names)
             .expect("key and feature names should be valid")
             .to_string()
+    }
+
+    fn get_options_json_with_preferences(
+        &self,
+        key: String,
+        feature_names: Vec<String>,
+        preferences: Option<&PyGetOptionsPreferences>,
+    ) -> PyResult<String> {
+        let preferences = preferences.map(|p| &p.0);
+        let result = &self.0.get_options_with_preferences(
+            &key,
+            &feature_names,
+            None,
+            preferences,
+        )
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e))?;
+        Ok(result.to_string())
     }
 }
 
@@ -67,6 +100,9 @@ impl PyOptionsProviderBuilder {
 
 #[pymodule(name = "optify")]
 mod optify_python {
+    #[pymodule_export]
+    use super::PyGetOptionsPreferences;
+
     #[pymodule_export]
     use super::PyOptionsProviderBuilder;
 
