@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
+use optify::provider::constraints::Constraints;
 use optify::provider::{OptionsProvider, OptionsRegistry};
 
 #[macro_use]
@@ -11,6 +12,7 @@ pub struct JsGetOptionsPreferences {
   inner: optify::provider::GetOptionsPreferences,
 }
 
+/// Preferences when getting options.
 #[napi]
 impl JsGetOptionsPreferences {
   #[napi(constructor)]
@@ -21,15 +23,20 @@ impl JsGetOptionsPreferences {
   }
 
   #[napi]
+  pub fn set_constraints_json(&mut self, constraints_json: Option<String>) {
+    self.inner.constraints = constraints_json.map(|c| Constraints {
+      constraints: serde_json::from_str(&c).expect("constraints must be valid JSON"),
+    });
+  }
+
+  #[napi]
   pub fn set_overrides_json(&mut self, overrides_json: Option<String>) {
-    self.inner.set_overrides_json(overrides_json);
+    self.inner.overrides_json = overrides_json;
   }
 
   #[napi]
   pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
-    self
-      .inner
-      .set_skip_feature_name_conversion(skip_feature_name_conversion);
+    self.inner.skip_feature_name_conversion = skip_feature_name_conversion;
   }
 }
 

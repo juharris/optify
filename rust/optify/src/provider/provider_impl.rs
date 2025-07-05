@@ -56,14 +56,6 @@ impl GetOptionsPreferences {
     pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
         self.constraints = constraints.map(|c| Constraints { constraints: c });
     }
-
-    pub fn set_overrides_json(&mut self, overrides: Option<String>) {
-        self.overrides_json = overrides;
-    }
-
-    pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
-        self.skip_feature_name_conversion = skip_feature_name_conversion;
-    }
 }
 
 pub struct CacheOptions {}
