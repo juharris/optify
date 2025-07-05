@@ -62,8 +62,13 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
+          ~/.cargo/bin
           ~/.cargo/registry
           ~/.cargo/git
+          ./rust/optify/target/release/deps
+          ./js/optify-config/target/release/deps
+          ./ruby/optify/target/release/deps
+          ./python/optify/target/release/deps
         key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
         restore-keys: |
           ${{ matrix.os }}-cargo-
