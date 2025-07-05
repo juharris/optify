@@ -4,7 +4,8 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use crate::builder::OptionsRegistryBuilder;
-use crate::provider::{Aliases, Features, OptionsProvider, Sources};
+use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
+use crate::schema::conditions::ConditionExpression;
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
@@ -17,6 +18,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    conditions: Conditions,
     features: Features,
     imports: Imports,
     sources: Sources,
@@ -147,6 +149,7 @@ fn resolve_imports(
 /// The result of loading a feature configuration file.
 struct LoadingResult {
     canonical_feature_name: String,
+    conditions: Option<ConditionExpression>,
     source: config::File<config::FileSourceString, config::FileFormat>,
     imports: Option<Vec<String>>,
     metadata: OptionsMetadata,
@@ -156,6 +159,7 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
+            conditions: Conditions::new(),
             features: Features::new(),
             imports: HashMap::new(),
             sources: Sources::new(),
@@ -225,6 +229,7 @@ impl OptionsProviderBuilder {
 
         Some(Ok(LoadingResult {
             canonical_feature_name,
+            conditions: feature_config.conditions,
             source,
             imports: feature_config.imports,
             metadata,
@@ -245,6 +250,10 @@ impl OptionsProviderBuilder {
             return Err(format!(
                 "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
             ));
+        }
+        if let Some(conditions) = &info.conditions {
+            self.conditions
+                .insert(canonical_feature_name.clone(), conditions.clone());
         }
         if let Some(imports) = &info.imports {
             self.imports
@@ -310,6 +319,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
 
         Ok(OptionsProvider::new(
             &self.aliases,
+            &self.conditions,
             &self.features,
             &self.sources,
         ))
