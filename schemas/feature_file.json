@@ -57,9 +57,9 @@
 		"condition": {
 			"type": "object",
 			"properties": {
-				"jsonPath": {
+				"jsonPointer": {
 					"type": "string",
-					"description": "JSONPath expression to evaluate against the context"
+					"description": "A JSON Pointer to a value in the constraints of a request.\n\nFor example, `/domain` or `/myFlags/1`. See https://datatracker.ietf.org/doc/html/rfc6901 for details."
 				},
 				"equals": {
 					"description": "Value to compare for equality"
@@ -70,7 +70,7 @@
 				}
 			},
 			"required": [
-				"jsonPath"
+				"jsonPointer"
 			],
 			"oneOf": [
 				{
