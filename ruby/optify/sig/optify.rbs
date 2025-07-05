@@ -65,12 +65,12 @@ class Optify::OptionsRegistry
   # Build using just one directory.
   # @param directory The directory to build the provider from.
   # @return The instance.
-  def build: (String directory) -> OptionsRegistry
+  def build: (String directory) -> instance
 
   # Build from multiple directories.
   # @param directories The directories to build the provider from.
   # @return The instance.
-  def build_from_directories: (::Array[String] directories) -> OptionsRegistry
+  def build_from_directories: (::Array[String] directories) -> instance
 
   # @return All of the aliases.
   def aliases: () -> ::Array[String]
