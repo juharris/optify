@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
-    schema::metadata::OptionsMetadata,
+    schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
 use super::OptionsRegistry;
@@ -14,6 +14,7 @@ use super::OptionsRegistry;
 pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
+pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -58,6 +59,10 @@ impl GetOptionsPreferences {
     pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
         self.skip_feature_name_conversion = skip_feature_name_conversion;
     }
+
+    pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
+        self.constraints = constraints;
+    }
 }
 
 pub struct CacheOptions {}
@@ -66,14 +71,21 @@ pub struct CacheOptions {}
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
     aliases: Aliases,
+    conditions: Conditions,
     features: Features,
     sources: Sources,
 }
 
 impl OptionsProvider {
-    pub(crate) fn new(aliases: &Aliases, features: &Features, sources: &Sources) -> Self {
+    pub(crate) fn new(
+        aliases: &Aliases,
+        conditions: &Conditions,
+        features: &Features,
+        sources: &Sources,
+    ) -> Self {
         OptionsProvider {
             aliases: aliases.clone(),
+            conditions: conditions.clone(),
             features: features.clone(),
             sources: sources.clone(),
         }
@@ -111,8 +123,10 @@ impl OptionsProvider {
         };
         let mut config_builder = config::Config::builder();
         let mut skip_feature_name_conversion = false;
+        let mut constraints = None;
         if let Some(_preferences) = preferences {
             skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
+            constraints = _preferences.constraints.as_ref();
         }
         for feature_name in feature_names {
             // Check for an alias.
@@ -122,6 +136,13 @@ impl OptionsProvider {
             } else {
                 &self.get_canonical_feature_name(feature_name.as_ref())?
             };
+
+            if let Some(constraints) = constraints {
+                let conditions = self.conditions.get(canonical_feature_name);
+                if conditions.is_some() {
+                    // TODO Evaluate the condition in another class.
+                }
+            }
 
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
