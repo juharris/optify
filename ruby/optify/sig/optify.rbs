@@ -40,6 +40,12 @@ end
 
 # Preferences when getting options.
 class Optify::GetOptionsPreferences
+  def constraints=: (::Hash[untyped, untyped]? value) -> void
+
+  def constraints_json=: (String? value) -> void
+
+  def constraints_json: () -> String?
+
   # Indicates if overrides are set.
   def overrides?: () -> bool
 
@@ -52,6 +58,8 @@ class Optify::GetOptionsPreferences
   # Do not provide overrides when requesting cached options.
   # @param value The overrides to apply as serialized JSON.
   def overrides_json=: (String? value) -> void
+
+  def overrides_json: () -> String?
 
   def skip_feature_name_conversion=: (bool value) -> void
 

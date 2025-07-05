@@ -6,7 +6,7 @@ use regex::Regex;
 use serde_json::json;
 
 fn create_constraints(value: serde_json::Value) -> Constraints {
-    Constraints { constraint: value }
+    Constraints { constraints: value }
 }
 
 #[test]
