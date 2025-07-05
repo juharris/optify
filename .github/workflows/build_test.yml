@@ -29,15 +29,31 @@ env:
   RB_SYS_CROSS_COMPILE: true
 
 jobs:
+  setup:
+    # Drafts: Only run on Ubuntu.
+    # Non-drafts: Run on both Ubuntu and macOS.
+    name: "Setup Build Matrix"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setup.outputs.matrix }}
+    steps:
+      - id: setup
+        run: |
+          if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            matrix='["ubuntu-latest"]'
+          else
+            matrix='["ubuntu-latest", "macos-latest"]'
+          fi
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
   test:
     name: "Build & Test"
+    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v4
 
@@ -46,8 +62,13 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
+          ~/.cargo/bin
           ~/.cargo/registry
           ~/.cargo/git
+          ./rust/optify/target/release/deps
+          ./js/optify-config/target/release/deps
+          ./ruby/optify/target/release/deps
+          ./python/optify/target/release/deps
         key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
         restore-keys: |
           ${{ matrix.os }}-cargo-
