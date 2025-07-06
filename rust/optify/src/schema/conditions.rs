@@ -16,7 +16,7 @@ impl<'de> Deserialize<'de> for RegexWrapper {
             })
             .and_then(|s| {
                 Regex::new(&s).map(RegexWrapper).map_err(|e| {
-                    // It seems like this error is swallowed when deserializing, so we'll print it here.
+                    // It seems like this error is swallowed when deserializing, so we'll print and hope someone sees it.
                     eprintln!("Error compiling regex: {e}");
                     serde::de::Error::custom(e.to_string())
                 })

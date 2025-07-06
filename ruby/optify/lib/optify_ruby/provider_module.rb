@@ -95,7 +95,7 @@ module Optify
       init unless @cache
       feature_names = get_canonical_feature_names(feature_names) unless preferences&.skip_feature_name_conversion
 
-      cache_key = [key, feature_names, config_class]
+      cache_key = [key, feature_names, preferences&.constraints_json, config_class]
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
