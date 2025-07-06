@@ -1,0 +1,38 @@
+{
+	"conditions": {
+		"and": [
+			{
+				"jsonPointer": "/user/name",
+				"equals": "Justin"
+			},
+			{
+				"jsonPointer": "/user",
+				"matches": "^\\{\"id\":2,\"name\":\"Justin\"\\}$"
+			},
+			{
+				"jsonPointer": "/status",
+				"matches": "^(active|new)$"
+			},
+			{
+				"not": {
+					"or": [
+						{
+							"jsonPointer": "/date",
+							"matches": "^2024"
+						},
+						{
+							"jsonPointer": "/city",
+							"matches": "^Toronto$"
+						}
+					]
+				}
+			}
+		]
+	},
+	"options": {
+		"config": {
+			"key": "from C",
+			"key_c": "only in C"
+		}
+	}
+}

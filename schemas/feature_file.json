@@ -97,7 +97,10 @@
 								"$ref": "#/definitions/conditionExpression"
 							},
 							"minItems": 1,
-							"uniqueItems": true
+							"uniqueItems": true,
+							"default": [
+								{}
+							]
 						}
 					},
 					"required": [
@@ -113,7 +116,10 @@
 								"$ref": "#/definitions/conditionExpression"
 							},
 							"minItems": 1,
-							"uniqueItems": true
+							"uniqueItems": true,
+							"default": [
+								{}
+							]
 						}
 					},
 					"required": [

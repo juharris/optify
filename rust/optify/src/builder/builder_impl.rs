@@ -207,7 +207,7 @@ impl OptionsProviderBuilder {
             Ok(v) => v,
             Err(e) => {
                 return Some(Err(format!(
-                    "Error deserializing configuration for file '{:?}': {e}",
+                    "Error deserializing configuration for file {:?}: {e}",
                     path.to_string_lossy(),
                 )))
             }
@@ -218,7 +218,7 @@ impl OptionsProviderBuilder {
                 Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
                 Err(e) => {
                     return Some(Err(format!(
-                        "Error deserializing options for '{:?}': {e}",
+                        "Error deserializing options for '{}': {e}",
                         path.to_string_lossy()
                     )))
                 }

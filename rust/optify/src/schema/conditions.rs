@@ -9,10 +9,18 @@ impl<'de> Deserialize<'de> for RegexWrapper {
     where
         D: serde::Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        Regex::new(&s)
-            .map(RegexWrapper)
-            .map_err(serde::de::Error::custom)
+        String::deserialize(deserializer)
+            .map_err(|e| {
+                eprintln!("Error deserializing pattern: {e}");
+                serde::de::Error::custom(e.to_string())
+            })
+            .and_then(|s| {
+                Regex::new(&s).map(RegexWrapper).map_err(|e| {
+                    // It seems like this error is swallowed when deserializing, so we'll print it here.
+                    eprintln!("Error compiling regex: {e}");
+                    serde::de::Error::custom(e.to_string())
+                })
+            })
     }
 }
 
