@@ -22,8 +22,10 @@ impl Constraints {
                 OperatorValue::Matches { matches } => self
                     .constraints
                     .pointer(condition.json_pointer.as_str())
-                    .and_then(|value| value.as_str())
-                    .map(|value| matches.0.is_match(value))
+                    .map(|value| match value {
+                        serde_json::Value::String(value) => matches.0.is_match(value),
+                        _ => matches.0.is_match(&serde_json::to_string(value).unwrap()),
+                    })
                     .unwrap_or(false),
             },
         }

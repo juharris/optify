@@ -71,7 +71,6 @@ fn test_evaluate_equals_boolean() {
         "disabled": false
     });
 
-    // Test matching boolean true
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
         operator_value: OperatorValue::Equals {
@@ -80,7 +79,6 @@ fn test_evaluate_equals_boolean() {
     });
     assert!(constraints.evaluate(&condition));
 
-    // Test matching boolean false
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/disabled".to_string(),
         operator_value: OperatorValue::Equals {
@@ -89,7 +87,6 @@ fn test_evaluate_equals_boolean() {
     });
     assert!(constraints.evaluate(&condition));
 
-    // Test non-matching boolean
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
         operator_value: OperatorValue::Equals {
@@ -271,6 +268,107 @@ fn test_evaluate_matches_regex_patterns() {
         },
     });
     assert!(constraints.evaluate(&condition));
+}
+
+#[test]
+fn test_evaluate_matches_regex_patterns_with_array() {
+    let constraints = create_constraints!({
+        "numbers": [1, 2, 3],
+    });
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/numbers".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(Regex::new(r"1").unwrap()),
+        },
+    });
+    assert!(constraints.evaluate(&condition));
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/numbers/1".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(Regex::new(r"^2$").unwrap()),
+        },
+    });
+    assert!(constraints.evaluate(&condition));
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/numbers/1".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(Regex::new(r"^1$").unwrap()),
+        },
+    });
+    assert!(!constraints.evaluate(&condition));
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/numbers".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(Regex::new(r"4").unwrap()),
+        },
+    });
+    assert!(!constraints.evaluate(&condition));
+}
+
+#[test]
+fn test_evaluate_matches_regex_patterns_with_boolean() {
+    let constraints = create_constraints!({
+        "active": true
+    });
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/active".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(Regex::new(r"^tr..$").unwrap()),
+        },
+    });
+    assert!(constraints.evaluate(&condition));
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/active".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(Regex::new(r"false").unwrap()),
+        },
+    });
+    assert!(!constraints.evaluate(&condition));
+}
+
+#[test]
+fn test_evaluate_matches_regex_patterns_with_object() {
+    let constraints = create_constraints!({
+        "user": {
+            "age": 30,
+            "city": "New York",
+            "name": "John",
+        }
+    });
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/user".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(Regex::new(r"John").unwrap()),
+        },
+    });
+    assert!(constraints.evaluate(&condition));
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/user".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(
+                Regex::new(r#"^\{"age":30,"city":"New York","name":"John"\}$"#).unwrap(),
+            ),
+        },
+    });
+    assert!(constraints.evaluate(&condition));
+
+    let condition = ConditionExpression::Condition(Condition {
+        json_pointer: "/user".to_string(),
+        operator_value: OperatorValue::Matches {
+            matches: RegexWrapper(
+                Regex::new(r#"\{"blah":"John","age":30,"city":"New York"\}"#).unwrap(),
+            ),
+        },
+    });
+    assert!(!constraints.evaluate(&condition));
 }
 
 #[test]
