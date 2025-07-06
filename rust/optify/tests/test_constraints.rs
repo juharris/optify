@@ -1,7 +1,5 @@
 use optify::provider::constraints::Constraints;
-use optify::schema::conditions::{
-    Condition, ConditionExpression, ConditionGroup, OperatorValue, RegexWrapper,
-};
+use optify::schema::conditions::{Condition, ConditionExpression, OperatorValue, RegexWrapper};
 use regex::Regex;
 use serde_json::json;
 
@@ -178,9 +176,9 @@ fn test_evaluate_equals_object() {
     });
     assert!(constraints.evaluate(&condition));
 
-    let condition = ConditionExpression::Group(ConditionGroup::Not {
+    let condition = ConditionExpression::Not {
         not: Box::new(condition),
-    });
+    };
     assert!(!constraints.evaluate(&condition));
 }
 
@@ -380,7 +378,7 @@ fn test_evaluate_and_group() {
     });
 
     // Test all conditions true (should return true)
-    let condition = ConditionExpression::Group(ConditionGroup::And {
+    let condition = ConditionExpression::And {
         and: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/name".to_string(),
@@ -395,11 +393,11 @@ fn test_evaluate_and_group() {
                 },
             }),
         ],
-    });
+    };
     assert!(constraints.evaluate(&condition));
 
     // Test one condition false (should return false)
-    let condition = ConditionExpression::Group(ConditionGroup::And {
+    let condition = ConditionExpression::And {
         and: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/name".to_string(),
@@ -414,7 +412,7 @@ fn test_evaluate_and_group() {
                 },
             }),
         ],
-    });
+    };
     assert!(!constraints.evaluate(&condition));
 }
 
@@ -426,7 +424,7 @@ fn test_evaluate_or_group() {
     });
 
     // Test at least one condition true (should return true)
-    let condition = ConditionExpression::Group(ConditionGroup::Or {
+    let condition = ConditionExpression::Or {
         or: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/status".to_string(),
@@ -441,11 +439,11 @@ fn test_evaluate_or_group() {
                 },
             }),
         ],
-    });
+    };
     assert!(constraints.evaluate(&condition));
 
     // Test all conditions false (should return false)
-    let condition = ConditionExpression::Group(ConditionGroup::Or {
+    let condition = ConditionExpression::Or {
         or: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/status".to_string(),
@@ -460,7 +458,7 @@ fn test_evaluate_or_group() {
                 },
             }),
         ],
-    });
+    };
     assert!(!constraints.evaluate(&condition));
 }
 
@@ -471,25 +469,25 @@ fn test_evaluate_not_group() {
     });
 
     // Test NOT with true condition (should return false)
-    let condition = ConditionExpression::Group(ConditionGroup::Not {
+    let condition = ConditionExpression::Not {
         not: Box::new(ConditionExpression::Condition(Condition {
             json_pointer: "/enabled".to_string(),
             operator_value: OperatorValue::Equals {
                 equals: json!("true"),
             },
         })),
-    });
+    };
     assert!(!constraints.evaluate(&condition));
 
     // Test NOT with false condition (should return true)
-    let condition = ConditionExpression::Group(ConditionGroup::Not {
+    let condition = ConditionExpression::Not {
         not: Box::new(ConditionExpression::Condition(Condition {
             json_pointer: "/enabled".to_string(),
             operator_value: OperatorValue::Equals {
                 equals: json!("false"),
             },
         })),
-    });
+    };
     assert!(constraints.evaluate(&condition));
 }
 
@@ -504,9 +502,9 @@ fn test_evaluate_nested_groups() {
     });
 
     // Test: (role = admin AND active = true) OR department = HR
-    let condition = ConditionExpression::Group(ConditionGroup::Or {
+    let condition = ConditionExpression::Or {
         or: vec![
-            ConditionExpression::Group(ConditionGroup::And {
+            ConditionExpression::And {
                 and: vec![
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/user/role".to_string(),
@@ -521,7 +519,7 @@ fn test_evaluate_nested_groups() {
                         },
                     }),
                 ],
-            }),
+            },
             ConditionExpression::Condition(Condition {
                 json_pointer: "/department".to_string(),
                 operator_value: OperatorValue::Equals {
@@ -529,12 +527,12 @@ fn test_evaluate_nested_groups() {
                 },
             }),
         ],
-    });
+    };
     assert!(constraints.evaluate(&condition)); // First AND group is true
 
     // Test: NOT((role = admin OR department = IT))
-    let condition = ConditionExpression::Group(ConditionGroup::Not {
-        not: Box::new(ConditionExpression::Group(ConditionGroup::Or {
+    let condition = ConditionExpression::Not {
+        not: Box::new(ConditionExpression::Or {
             or: vec![
                 ConditionExpression::Condition(Condition {
                     json_pointer: "/user/role".to_string(),
@@ -549,9 +547,9 @@ fn test_evaluate_nested_groups() {
                     },
                 }),
             ],
-        })),
-    });
-    assert!(!constraints.evaluate(&condition)); // Both conditions in OR are true, so NOT makes it false
+        }),
+    };
+    assert!(!constraints.evaluate(&condition));
 }
 
 #[test]
@@ -559,11 +557,11 @@ fn test_evaluate_empty_groups() {
     let constraints = create_constraints!({});
 
     // Empty AND should return true (all of nothing is true)
-    let condition = ConditionExpression::Group(ConditionGroup::And { and: vec![] });
+    let condition = ConditionExpression::And { and: vec![] };
     assert!(constraints.evaluate(&condition));
 
     // Empty OR should return false (none of nothing is true)
-    let condition = ConditionExpression::Group(ConditionGroup::Or { or: vec![] });
+    let condition = ConditionExpression::Or { or: vec![] };
     assert!(!constraints.evaluate(&condition));
 }
 
@@ -575,7 +573,7 @@ fn test_evaluate_array_elements() {
     });
 
     // Test accessing array element
-    let condition = ConditionExpression::Group(ConditionGroup::And {
+    let condition = ConditionExpression::And {
         and: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/tags/0".to_string(),
@@ -588,7 +586,7 @@ fn test_evaluate_array_elements() {
                 operator_value: OperatorValue::Equals { equals: json!(2) },
             }),
         ],
-    });
+    };
     assert!(constraints.evaluate(&condition));
 
     // Test accessing out of bounds array element
@@ -642,9 +640,9 @@ fn test_evaluate_complex_nested_conditions() {
     });
 
     // Complex condition: (method = POST AND path matches /api/.*) AND (content-type = json OR authorization matches Bearer.*)
-    let condition = ConditionExpression::Group(ConditionGroup::And {
+    let condition = ConditionExpression::And {
         and: vec![
-            ConditionExpression::Group(ConditionGroup::And {
+            ConditionExpression::And {
                 and: vec![
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/request/method".to_string(),
@@ -659,8 +657,8 @@ fn test_evaluate_complex_nested_conditions() {
                         },
                     }),
                 ],
-            }),
-            ConditionExpression::Group(ConditionGroup::Or {
+            },
+            ConditionExpression::Or {
                 or: vec![
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/request/headers/content-type".to_string(),
@@ -675,8 +673,8 @@ fn test_evaluate_complex_nested_conditions() {
                         },
                     }),
                 ],
-            }),
+            },
         ],
-    });
+    };
     assert!(constraints.evaluate(&condition));
 }

@@ -11,7 +11,7 @@
 			},
 			{
 				"jsonPointer": "/status",
-				"matches": "^(active|new)$"
+				"matches": "^(?:active|new)$"
 			},
 			{
 				"not": {

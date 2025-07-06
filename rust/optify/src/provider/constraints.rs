@@ -1,4 +1,4 @@
-use crate::schema::conditions::{ConditionExpression, ConditionGroup, OperatorValue};
+use crate::schema::conditions::{ConditionExpression, OperatorValue};
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
@@ -8,11 +8,11 @@ pub struct Constraints {
 impl Constraints {
     pub fn evaluate(&self, conditions: &ConditionExpression) -> bool {
         match conditions {
-            ConditionExpression::Group(group) => match group {
-                ConditionGroup::And { and } => and.iter().all(|condition| self.evaluate(condition)),
-                ConditionGroup::Or { or } => or.iter().any(|condition| self.evaluate(condition)),
-                ConditionGroup::Not { not } => !self.evaluate(not),
-            },
+            ConditionExpression::And { and } => {
+                and.iter().all(|condition| self.evaluate(condition))
+            }
+            ConditionExpression::Or { or } => or.iter().any(|condition| self.evaluate(condition)),
+            ConditionExpression::Not { not } => !self.evaluate(not),
             ConditionExpression::Condition(condition) => match &condition.operator_value {
                 OperatorValue::Equals { equals } => self
                     .constraints
