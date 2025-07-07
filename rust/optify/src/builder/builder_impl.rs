@@ -77,7 +77,13 @@ fn resolve_imports(
 
         if conditions.contains_key(import) {
             return Err(format!(
-                "Error when resolving imports for '{canonical_feature_name}': The import '{import}' has conditions. Conditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario."
+                "Error when resolving imports for '{canonical_feature_name}': The import '{import}' \
+                 has conditions. Conditions cannot be used in imported features. This helps keep \
+                 retrieving and building configuration options for a list of features fast and more \
+                 predictable because imports do not need to be re-evaluated. Instead, keep each \
+                 feature file as granular and self-contained as possible, then use conditions and \
+                 import the required granular features in a feature file that defines a common \
+                 scenario."
             ));
         }
 
@@ -207,8 +213,8 @@ impl OptionsProviderBuilder {
             Ok(v) => v,
             Err(e) => {
                 return Some(Err(format!(
-                    "Error deserializing configuration for file {:?}: {e}",
-                    path.to_string_lossy(),
+                    "Error deserializing configuration for file '{}': {e}",
+                    path.display(),
                 )))
             }
         };
@@ -219,7 +225,7 @@ impl OptionsProviderBuilder {
                 Err(e) => {
                     return Some(Err(format!(
                         "Error deserializing options for '{}': {e}",
-                        path.to_string_lossy()
+                        path.display()
                     )))
                 }
             },
