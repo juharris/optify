@@ -1,0 +1,22 @@
+{
+	"features": [
+		"B",
+		"array_condition"
+	],
+	"constraints": {
+		"array": [
+			1,
+			"3",
+			{
+				"k": "v"
+			}
+		]
+	},
+	"options": {
+		"config": {
+			"key": "from array_condition",
+			"key_array_condition": "only in array_condition",
+			"key_b": "only in B"
+		}
+	}
+}
