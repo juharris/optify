@@ -67,6 +67,38 @@
 			"oneOf": [
 				{
 					"properties": {
+						"jsonPointer": {
+							"$ref": "#/definitions/jsonPointer"
+						},
+						"equals": {
+							"description": "Value to compare for equality. It can be any JSON value."
+						}
+					},
+					"required": [
+						"jsonPointer",
+						"equals"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
+						"jsonPointer": {
+							"$ref": "#/definitions/jsonPointer"
+						},
+						"matches": {
+							"type": "string",
+							"description": "Regular expression pattern to match against.",
+							"default": "^(?:value)$"
+						}
+					},
+					"required": [
+						"jsonPointer",
+						"matches"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
 						"and": {
 							"description": "All conditions must be true for the group to be true.",
 							"type": "array",
@@ -114,38 +146,6 @@
 					},
 					"required": [
 						"not"
-					],
-					"additionalProperties": false
-				},
-				{
-					"properties": {
-						"jsonPointer": {
-							"$ref": "#/definitions/jsonPointer"
-						},
-						"equals": {
-							"description": "Value to compare for equality. It can be any JSON value."
-						}
-					},
-					"required": [
-						"jsonPointer",
-						"equals"
-					],
-					"additionalProperties": false
-				},
-				{
-					"properties": {
-						"jsonPointer": {
-							"$ref": "#/definitions/jsonPointer"
-						},
-						"matches": {
-							"type": "string",
-							"description": "Regular expression pattern to match against.",
-							"default": "^(?:value)$"
-						}
-					},
-					"required": [
-						"jsonPointer",
-						"matches"
 					],
 					"additionalProperties": false
 				}

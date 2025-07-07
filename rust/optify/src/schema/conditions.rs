@@ -51,8 +51,8 @@ pub struct Condition {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ConditionExpression {
+    Condition(Condition),
     And { and: Vec<ConditionExpression> },
     Or { or: Vec<ConditionExpression> },
     Not { not: Box<ConditionExpression> },
-    Condition(Condition),
 }
