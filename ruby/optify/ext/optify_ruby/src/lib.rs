@@ -260,7 +260,7 @@ impl WrappedOptionsWatcher {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = &preferences.0.borrow();
+        let preferences = convert_preferences!(preferences);
         match rb_self
             .0
             .borrow()
