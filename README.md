@@ -372,17 +372,38 @@ See [tests](./tests/) for more examples.
 
 # Conditions
 Conditions can be used to enable a feature file when it is requested and when constraints are given in the request.
-Conditions are meant for temporary experimental features that should only be enabled in some requests.
-
-If no constraints are given, then these conditions are ignored.
-Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.
-
+If no constraints are given for a request, then the conditions in a feature file are are ignored.
 Conditions cannot be used in imported features.
-This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated.
-Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.
 
-## Conditions Examples
-<!-- TODO -->
+For more details and examples, see [here](./docs/Conditions.md).
+
+## Conditions Example
+Suppose that a feature file has the following conditions:
+```JSON
+{
+    "conditions": {
+        "or": [
+            {
+                "jsonPointer": "/clientId",
+                "equals": 1234
+            },
+            {
+                "jsonPointer": "/page",
+                "matches": "^https://mysite.com/"
+            }
+        ]
+    }
+}
+```
+
+Then a request to get options with the following constraints will enable the feature file:
+
+```JSON
+{
+    "page": "https://mysite.com/page",
+    "clientId": 9876
+}
+```
 
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.

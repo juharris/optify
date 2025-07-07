@@ -1,0 +1,20 @@
+{
+	"conditions": {
+		"or": [
+			{
+				"jsonPointer": "/clientId",
+				"equals": 1234
+			},
+			{
+				"jsonPointer": "/page",
+				"matches": "^https://mysite.com/"
+			}
+		]
+	},
+	"options": {
+		"config": {
+			"key": "from docs_example",
+			"key_docs_example": "only in docs_example"
+		}
+	}
+}

@@ -1,0 +1,14 @@
+{
+	"features": [
+		"docs_example"
+	],
+	"constraints": {
+		"page": "https://mysite.com/page"
+	},
+	"options": {
+		"config": {
+			"key": "from docs_example",
+			"key_docs_example": "only in docs_example"
+		}
+	}
+}
