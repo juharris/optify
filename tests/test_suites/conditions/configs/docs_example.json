@@ -1,4 +1,9 @@
 {
+	"metadata": {
+		"aliases": [
+			"D"
+		]
+	},
 	"conditions": {
 		"or": [
 			{

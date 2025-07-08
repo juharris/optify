@@ -4,6 +4,7 @@
 	"title": "Optify Feature Configuration",
 	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats. See https://github.com/juharris/optify for more information.",
 	"type": "object",
+	"additionalProperties": false,
 	"properties": {
 		"metadata": {
 			"type": "object",
