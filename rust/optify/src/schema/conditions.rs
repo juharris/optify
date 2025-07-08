@@ -93,8 +93,6 @@ pub enum ConditionExpression {
     Not { not: Box<Self> },
 }
 
-// TODO REVIEW: Claude Code generated this.
-
 // Implement a custom deserializer to ensure that errors, such as an invalid regex,
 // are propagated up properly.
 impl<'de> Deserialize<'de> for ConditionExpression {
@@ -148,7 +146,6 @@ impl<'de> Deserialize<'de> for ConditionExpression {
             }
         }
 
-        // If nothing matched, return generic error
         Err(D::Error::custom(
             "data did not match any variant of ConditionExpression",
         ))

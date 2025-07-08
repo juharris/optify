@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-VERSION = '1.11.0'
+VERSION = '1.12.0'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-config'
