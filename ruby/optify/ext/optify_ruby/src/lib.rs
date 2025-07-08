@@ -10,10 +10,10 @@ use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 use std::path::Path;
 
-macro_rules! convert_preferences {
-    ($preferences:expr) => {
-        &($preferences.0.borrow())
-    };
+fn convert_preferences(
+    preferences: &MutGetOptionsPreferences,
+) -> std::cell::Ref<'_, GetOptionsPreferences> {
+    preferences.0.borrow()
 }
 
 #[derive(Clone)]
@@ -108,7 +108,7 @@ impl WrappedOptionsProvider {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences!(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self
             .0
             .borrow()
@@ -183,7 +183,7 @@ impl WrappedOptionsProvider {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences!(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self.0.borrow().get_options_with_preferences(
             &key,
             &feature_names,
@@ -260,7 +260,7 @@ impl WrappedOptionsWatcher {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences!(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self
             .0
             .borrow()
@@ -333,7 +333,7 @@ impl WrappedOptionsWatcher {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences!(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self.0.borrow().get_options_with_preferences(
             &key,
             &feature_names,
