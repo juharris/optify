@@ -4,7 +4,6 @@ set -e
 # major, minor, or patch
 strategy=$1
 
-# Function to get current version and bump it
 get_next_version() {
     local current_version=$1
     local strategy=$2
@@ -26,42 +25,53 @@ get_next_version() {
     esac
 }
 
-replace_version_in_toml() {
+bump_version_in_toml() {
+    local file="$1"
+    local strategy="$2"
+    local current_version=$(grep -m 1 '^version = ' $file | sed -E 's/version = "(.+)"/\1/')
+    local next_version=$(get_next_version $current_version $strategy)
+    sed -i "" 's/^version = "'$current_version'"/version = "'$next_version'"/' "$file"
+}
+
+bump_version_gemspec() {
+    local file="$1"
+    local strategy="$2"
+    local current_version=$(grep -m 1 "^VERSION = '" $file | sed -E "s/VERSION = '(.+)'/\1/")
+    local next_version=$(get_next_version $current_version $strategy)
+    sed -i "" "s/^VERSION = '${current_version}'/VERSION = '${next_version}'/" "$file"
+}
+
+bump_dependency_in_toml() {
     local file="$1"
     local current_version=$2
     local next_version=$3
-    sed -i "" "s/^version = \"$current_version\"/version = \"$next_version\"/" "$file"
+    sed -i "" -E 's/^(optify = \{ path = ".+", version = ")'${current_version}'(" \}$)/\1'${next_version}'\2/' "$file"
 }
 
 # Go to the root directory of the project.
 cd "$(dirname "$0")/.."
 
-
 pushd rust/optify
-current_version=$(grep '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
-echo "Current version: $current_version"
+current_version=$(grep -m 1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
 next_version=$(get_next_version $current_version $strategy)
-echo "Next version: $next_version"
-replace_version_in_toml "Cargo.toml" $current_version $next_version
+bump_version_in_toml "Cargo.toml" $strategy
 popd
 
 pushd python/optify
-# TODO Bump in Cargo.toml
-# TODO Bump dependency in Cargo.toml, like 'optify = { path = "../../rust/optify", version = "0.13.0" }'.
-replace_version_in_toml "Cargo.toml" $current_version $next_version
-# TODO bump in pyproject.toml (both version = "..." in the 2 sections)
-# Bump in Cargo.lock
+bump_version_in_toml "pyproject.toml" $strategy
+bump_version_in_toml "Cargo.toml" $strategy
+bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 maturin build
 popd
 
 pushd ruby/optify
-# TODO bump in optify.gemspec
-# TODO bump in ext/optify_ruby/Cargo.toml
-# TODO Bump dependency in Cargo.toml
+bump_version_gemspec "optify.gemspec" $strategy
+bump_version_in_toml "ext/optify_ruby/Cargo.toml" $strategy
+bump_dependency_in_toml "ext/optify_ruby/Cargo.toml" $current_version $next_version
 popd
 
 pushd js/optify-config
-# TODO Bump dependency in Cargo.toml
+bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 yarn version $strategy
 yarn install
 popd
