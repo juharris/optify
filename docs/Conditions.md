@@ -61,9 +61,13 @@ A condition expression can be:
 - `{ "or": [ <condition expression>, ...] }`
 - `{ "not": <condition expression> }`
 - `{ "jsonPointer": <json pointer>, "equals": <JSON value> }`
-- `{ "jsonPointer": <json pointer>, "matches": <regex> }`
+- `{ "jsonPointer": <json pointer>, "matches": "<regex>" }`
 
 `"equals"` can use any JSON value, including objects and arrays.
+
+`"matches"` accepts a regular expression as a string.
+This can be useful to determine if an array contains a value.
+It can match any JSON value, even a object, but be careful because there are no guarantees on the order of the keys in an object.
 
 See the [schema file](../schemas/feature_file.json) for more details.
 
