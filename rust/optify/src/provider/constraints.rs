@@ -1,4 +1,4 @@
-use crate::schema::conditions::{ConditionExpression, OperatorValue};
+use crate::schema::conditions::{ConditionExpression, Predicate};
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
@@ -14,12 +14,12 @@ impl Constraints {
             ConditionExpression::Or { or } => or.iter().any(|condition| self.evaluate(condition)),
             ConditionExpression::Not { not } => !self.evaluate(not),
             ConditionExpression::Condition(condition) => match &condition.operator_value {
-                OperatorValue::Equals { equals } => self
+                Predicate::Equals { equals } => self
                     .constraints
                     .pointer(condition.json_pointer.as_str())
                     .map(|value| value == equals)
                     .unwrap_or(false),
-                OperatorValue::Matches { matches } => self
+                Predicate::Matches { matches } => self
                     .constraints
                     .pointer(condition.json_pointer.as_str())
                     .map(|value| match value {

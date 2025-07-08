@@ -35,7 +35,7 @@ impl Serialize for RegexWrapper {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
-pub enum OperatorValue {
+pub enum Predicate {
     Equals { equals: serde_json::Value },
     Matches { matches: RegexWrapper },
 }
@@ -45,14 +45,14 @@ pub enum OperatorValue {
 pub struct Condition {
     pub json_pointer: String,
     #[serde(flatten)]
-    pub operator_value: OperatorValue,
+    pub operator_value: Predicate,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ConditionExpression {
     Condition(Condition),
-    And { and: Vec<ConditionExpression> },
-    Or { or: Vec<ConditionExpression> },
-    Not { not: Box<ConditionExpression> },
+    And { and: Vec<Self> },
+    Or { or: Vec<Self> },
+    Not { not: Box<Self> },
 }
