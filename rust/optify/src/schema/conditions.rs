@@ -1,6 +1,8 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
+use crate::provider::constraints::Constraints;
+
 #[derive(Clone, Debug)]
 pub struct RegexWrapper(pub Regex);
 
@@ -40,12 +42,35 @@ pub enum Predicate {
     Matches { matches: RegexWrapper },
 }
 
+impl Predicate {
+    pub fn evaluate(&self, value: &serde_json::Value) -> bool {
+        match (self, value) {
+            (Self::Equals { equals }, value) => value == equals,
+            (Self::Matches { matches }, serde_json::Value::String(value)) => {
+                matches.0.is_match(value)
+            }
+            (Self::Matches { matches }, value) => {
+                matches.0.is_match(&serde_json::to_string(value).unwrap())
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Condition {
     pub json_pointer: String,
     #[serde(flatten)]
     pub operator_value: Predicate,
+}
+
+impl Condition {
+    pub fn evaluate(&self, constraints: &Constraints) -> bool {
+        constraints
+            .constraints
+            .pointer(&self.json_pointer)
+            .map_or(false, |value| self.operator_value.evaluate(&value))
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -55,4 +80,21 @@ pub enum ConditionExpression {
     And { and: Vec<Self> },
     Or { or: Vec<Self> },
     Not { not: Box<Self> },
+}
+
+impl ConditionExpression {
+    pub fn evaluate(&self, data: &Constraints) -> bool {
+        match self {
+            Self::Condition(condition) => condition.evaluate(data),
+            Self::And { and } => and.iter().all(|expr| expr.evaluate(data)),
+            Self::Or { or } => or.iter().any(|expr| expr.evaluate(data)),
+            Self::Not { not } => !not.evaluate(data),
+        }
+    }
+
+    pub fn evaluate_with(&self, data: &serde_json::Value) -> bool {
+        self.evaluate(&Constraints {
+            constraints: data.clone(),
+        })
+    }
 }

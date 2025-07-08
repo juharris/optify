@@ -139,7 +139,7 @@ impl OptionsProvider {
             if let Some(constraints) = constraints {
                 let conditions = self.conditions.get(canonical_feature_name);
                 if !conditions
-                    .map(|conditions| constraints.evaluate(conditions))
+                    .map(|conditions| conditions.evaluate(constraints))
                     .unwrap_or(true)
                 {
                     continue;

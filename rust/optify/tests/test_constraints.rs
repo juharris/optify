@@ -1,19 +1,10 @@
-use optify::provider::constraints::Constraints;
 use optify::schema::conditions::{Condition, ConditionExpression, Predicate, RegexWrapper};
 use regex::Regex;
 use serde_json::json;
 
-macro_rules! create_constraints {
-    ($value:tt) => {
-        Constraints {
-            constraints: json!($value),
-        }
-    };
-}
-
 #[test]
 fn test_evaluate_equals_string() {
-    let constraints = create_constraints!({
+    let data = json!({
         "name": "John",
         "age": 30,
         "city": "New York"
@@ -26,7 +17,7 @@ fn test_evaluate_equals_string() {
             equals: json!("John"),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test non-matching string
     let condition = ConditionExpression::Condition(Condition {
@@ -35,12 +26,12 @@ fn test_evaluate_equals_string() {
             equals: json!("Jane"),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_equals_number() {
-    let constraints = create_constraints!({
+    let data = json!({
         "age": 30,
         "score": 95.5
     });
@@ -50,7 +41,7 @@ fn test_evaluate_equals_number() {
         json_pointer: "/age".to_string(),
         operator_value: Predicate::Equals { equals: json!(30) },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test matching float
     let condition = ConditionExpression::Condition(Condition {
@@ -59,12 +50,12 @@ fn test_evaluate_equals_number() {
             equals: json!(95.5),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_equals_boolean() {
-    let constraints = create_constraints!({
+    let data = json!({
         "active": true,
         "disabled": false
     });
@@ -75,7 +66,7 @@ fn test_evaluate_equals_boolean() {
             equals: json!(true),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/disabled".to_string(),
@@ -83,7 +74,7 @@ fn test_evaluate_equals_boolean() {
             equals: json!(false),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
@@ -91,12 +82,12 @@ fn test_evaluate_equals_boolean() {
             equals: json!(false),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_equals_null() {
-    let constraints = create_constraints!({
+    let data = json!({
         "value": null,
         "name": "test"
     });
@@ -108,7 +99,7 @@ fn test_evaluate_equals_null() {
             equals: json!(null),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test non-null value against null
     let condition = ConditionExpression::Condition(Condition {
@@ -117,12 +108,12 @@ fn test_evaluate_equals_null() {
             equals: json!(null),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_equals_array() {
-    let constraints = create_constraints!({
+    let data = json!({
         "tags": ["rust", "programming", "systems"],
         "numbers": [1, 2, 3]
     });
@@ -133,7 +124,7 @@ fn test_evaluate_equals_array() {
             equals: json!(["rust", "programming", "systems"]),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers".to_string(),
@@ -141,7 +132,7 @@ fn test_evaluate_equals_array() {
             equals: json!([1, 2, 3]),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers".to_string(),
@@ -149,12 +140,12 @@ fn test_evaluate_equals_array() {
             equals: json!([1, 2, 3, 4]),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_equals_object() {
-    let constraints = create_constraints!({
+    let data = json!({
         "user": {
             "name": "John",
             "age": 30,
@@ -174,17 +165,17 @@ fn test_evaluate_equals_object() {
             }),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Not {
         not: Box::new(condition),
     };
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_equals_nested_path() {
-    let constraints = create_constraints!({
+    let data = json!({
         "user": {
             "profile": {
                 "name": "Alice"
@@ -198,12 +189,12 @@ fn test_evaluate_equals_nested_path() {
             equals: json!("Alice"),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_equals_missing_path() {
-    let constraints = create_constraints!({
+    let data = json!({
         "name": "John"
     });
 
@@ -213,12 +204,12 @@ fn test_evaluate_equals_missing_path() {
             equals: json!("value"),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_matches_basic() {
-    let constraints = create_constraints!({
+    let data = json!({
         "email": "john@example.com",
         "phone": "+1-555-1234"
     });
@@ -230,7 +221,7 @@ fn test_evaluate_matches_basic() {
             matches: RegexWrapper(Regex::new(r".*@example\.com").unwrap()),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test non-matching pattern
     let condition = ConditionExpression::Condition(Condition {
@@ -239,12 +230,12 @@ fn test_evaluate_matches_basic() {
             matches: RegexWrapper(Regex::new(r".*@gmail\.com").unwrap()),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_matches_regex_patterns() {
-    let constraints = create_constraints!({
+    let data = json!({
         "version": "v1.2.3",
         "id": "ABC123"
     });
@@ -256,7 +247,7 @@ fn test_evaluate_matches_regex_patterns() {
             matches: RegexWrapper(Regex::new(r"^v\d+\.\d+\.\d+$").unwrap()),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test alphanumeric pattern
     let condition = ConditionExpression::Condition(Condition {
@@ -265,12 +256,12 @@ fn test_evaluate_matches_regex_patterns() {
             matches: RegexWrapper(Regex::new(r"^[A-Z]+\d+$").unwrap()),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_matches_regex_patterns_with_array() {
-    let constraints = create_constraints!({
+    let data = json!({
         "numbers": [1, 2, 3],
     });
 
@@ -280,7 +271,7 @@ fn test_evaluate_matches_regex_patterns_with_array() {
             matches: RegexWrapper(Regex::new(r"1").unwrap()),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers/1".to_string(),
@@ -288,7 +279,7 @@ fn test_evaluate_matches_regex_patterns_with_array() {
             matches: RegexWrapper(Regex::new(r"^2$").unwrap()),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers/1".to_string(),
@@ -296,7 +287,7 @@ fn test_evaluate_matches_regex_patterns_with_array() {
             matches: RegexWrapper(Regex::new(r"^1$").unwrap()),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers".to_string(),
@@ -304,12 +295,12 @@ fn test_evaluate_matches_regex_patterns_with_array() {
             matches: RegexWrapper(Regex::new(r"4").unwrap()),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_matches_regex_patterns_with_boolean() {
-    let constraints = create_constraints!({
+    let data = json!({
         "active": true
     });
 
@@ -319,7 +310,7 @@ fn test_evaluate_matches_regex_patterns_with_boolean() {
             matches: RegexWrapper(Regex::new(r"^tr..$").unwrap()),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
@@ -327,12 +318,12 @@ fn test_evaluate_matches_regex_patterns_with_boolean() {
             matches: RegexWrapper(Regex::new(r"false").unwrap()),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_matches_regex_patterns_with_object() {
-    let constraints = create_constraints!({
+    let data = json!({
         "user": {
             "age": 30,
             "city": "New York",
@@ -346,7 +337,7 @@ fn test_evaluate_matches_regex_patterns_with_object() {
             matches: RegexWrapper(Regex::new(r"John").unwrap()),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/user".to_string(),
@@ -356,7 +347,7 @@ fn test_evaluate_matches_regex_patterns_with_object() {
             ),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/user".to_string(),
@@ -366,12 +357,12 @@ fn test_evaluate_matches_regex_patterns_with_object() {
             ),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_and_group() {
-    let constraints = create_constraints!({
+    let data = json!({
         "name": "John",
         "age": "30",
         "city": "New York"
@@ -394,7 +385,7 @@ fn test_evaluate_and_group() {
             }),
         ],
     };
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test one condition false (should return false)
     let condition = ConditionExpression::And {
@@ -413,12 +404,12 @@ fn test_evaluate_and_group() {
             }),
         ],
     };
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_or_group() {
-    let constraints = create_constraints!({
+    let data = json!({
         "status": "active",
         "type": "premium"
     });
@@ -440,7 +431,7 @@ fn test_evaluate_or_group() {
             }),
         ],
     };
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test all conditions false (should return false)
     let condition = ConditionExpression::Or {
@@ -459,12 +450,12 @@ fn test_evaluate_or_group() {
             }),
         ],
     };
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_not_group() {
-    let constraints = create_constraints!({
+    let data = json!({
         "enabled": "true"
     });
 
@@ -477,7 +468,7 @@ fn test_evaluate_not_group() {
             },
         })),
     };
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 
     // Test NOT with false condition (should return true)
     let condition = ConditionExpression::Not {
@@ -488,12 +479,12 @@ fn test_evaluate_not_group() {
             },
         })),
     };
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_nested_groups() {
-    let constraints = create_constraints!({
+    let data = json!({
         "user": {
             "role": "admin",
             "active": "true"
@@ -528,7 +519,7 @@ fn test_evaluate_nested_groups() {
             }),
         ],
     };
-    assert!(constraints.evaluate(&condition)); // First AND group is true
+    assert!(condition.evaluate_with(&data)); // First AND group is true
 
     // Test: NOT((role = admin OR department = IT))
     let condition = ConditionExpression::Not {
@@ -549,25 +540,25 @@ fn test_evaluate_nested_groups() {
             ],
         }),
     };
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_empty_groups() {
-    let constraints = create_constraints!({});
+    let data = json!({});
 
     // Empty AND should return true (all of nothing is true)
     let condition = ConditionExpression::And { and: vec![] };
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Empty OR should return false (none of nothing is true)
     let condition = ConditionExpression::Or { or: vec![] };
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_array_elements() {
-    let constraints = create_constraints!({
+    let data = json!({
         "tags": ["rust", "programming", "systems"],
         "numbers": [1, 2, 3]
     });
@@ -587,7 +578,7 @@ fn test_evaluate_array_elements() {
             }),
         ],
     };
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     // Test accessing out of bounds array element
     let condition = ConditionExpression::Condition(Condition {
@@ -596,12 +587,12 @@ fn test_evaluate_array_elements() {
             equals: json!("rust"),
         },
     });
-    assert!(!constraints.evaluate(&condition));
+    assert!(!condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_special_characters_in_path() {
-    let constraints = create_constraints!({
+    let data = json!({
         "key/with/slashes": "value1",
         "key~with~tildes": "value2",
         "key.with.dots": "value3"
@@ -614,7 +605,7 @@ fn test_evaluate_special_characters_in_path() {
             equals: json!("value1"),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/key~0with~0tildes".to_string(),
@@ -622,12 +613,12 @@ fn test_evaluate_special_characters_in_path() {
             equals: json!("value2"),
         },
     });
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 }
 
 #[test]
 fn test_evaluate_complex_nested_conditions() {
-    let constraints = create_constraints!({
+    let data = json!({
         "request": {
             "method": "POST",
             "path": "/api/users",
@@ -676,5 +667,5 @@ fn test_evaluate_complex_nested_conditions() {
             },
         ],
     };
-    assert!(constraints.evaluate(&condition));
+    assert!(condition.evaluate_with(&data));
 }
