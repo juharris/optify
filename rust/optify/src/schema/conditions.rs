@@ -11,18 +11,14 @@ impl<'de> Deserialize<'de> for RegexWrapper {
     where
         D: serde::Deserializer<'de>,
     {
-        String::deserialize(deserializer)
-            .map_err(|e| {
-                eprintln!("Error deserializing pattern: {e}");
-                serde::de::Error::custom(e.to_string())
-            })
-            .and_then(|s| {
-                Regex::new(&s).map(RegexWrapper).map_err(|e| {
-                    // It seems like this error is swallowed when deserializing, so we'll print and hope someone sees it.
-                    eprintln!("Error compiling regex: {e}");
-                    serde::de::Error::custom(e.to_string())
-                })
-            })
+        let pattern = String::deserialize(deserializer)?;
+        match Regex::new(&pattern) {
+            Ok(regex) => Ok(RegexWrapper(regex)),
+            Err(e) => {
+                let error_msg = format!("Invalid regex pattern '{pattern}': {e}");
+                Err(serde::de::Error::custom(error_msg))
+            }
+        }
     }
 }
 
@@ -89,13 +85,74 @@ impl Condition {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(untagged)]
+#[derive(Clone, Debug, Serialize)]
 pub enum ConditionExpression {
     Condition(Condition),
     And { and: Vec<Self> },
     Or { or: Vec<Self> },
     Not { not: Box<Self> },
+}
+
+// TODO REVIEW: Claude Code generated this.
+
+// Implement a custom deserializer to ensure that errors, such as an invalid regex,
+// are propagated up properly.
+impl<'de> Deserialize<'de> for ConditionExpression {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error;
+
+        // Try to deserialize as a raw Value first
+        let value = serde_json::Value::deserialize(deserializer)?;
+
+        if let serde_json::Value::Object(map) = &value {
+            if map.contains_key("jsonPointer") {
+                // Check for regex errors early to provide better error messages
+                if let Some(serde_json::Value::String(pattern)) = map.get("matches") {
+                    if let Err(e) = regex::Regex::new(pattern) {
+                        return Err(D::Error::custom(e.to_string()));
+                    }
+                }
+
+                match serde_json::from_value::<Condition>(value) {
+                    Ok(condition) => return Ok(Self::Condition(condition)),
+                    Err(e) => {
+                        return Err(D::Error::custom(e.to_string()));
+                    }
+                }
+            }
+
+            // Try logical operators
+            if let Some(and_val) = map.get("and") {
+                if let Ok(vec) = serde_json::from_value::<Vec<ConditionExpression>>(and_val.clone())
+                {
+                    return Ok(Self::And { and: vec });
+                }
+            }
+
+            if let Some(or_val) = map.get("or") {
+                if let Ok(vec) = serde_json::from_value::<Vec<ConditionExpression>>(or_val.clone())
+                {
+                    return Ok(Self::Or { or: vec });
+                }
+            }
+
+            if let Some(not_val) = map.get("not") {
+                if let Ok(boxed) =
+                    serde_json::from_value::<Box<ConditionExpression>>(not_val.clone())
+                {
+                    return Ok(Self::Not { not: boxed });
+                }
+            }
+        }
+
+        // If nothing matched, return generic error
+        Err(D::Error::custom(
+            "data did not match any variant of ConditionExpression",
+        ))
+    }
 }
 
 impl ConditionExpression {

@@ -86,14 +86,11 @@ fn test_builder_invalid_condition_pattern() -> Result<(), Box<dyn std::error::Er
     match OptionsProvider::build(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
-            // It would be nice if the error message showed the problem with the regex.
-            assert_eq!(
-                e,
-                format!(
-                    "Error deserializing configuration for file '{}': data did not match any variant of untagged enum ConditionExpression for key `conditions`",
-                    feature_file.display()
-                )
+            let expected = format!(
+                "Error deserializing configuration for file '{}': regex parse error:\n    {{invalid}}\n    ^\nerror: repetition operator missing expression for key `conditions`",
+                feature_file.display()
             );
+            assert_eq!(e, expected);
             Ok(())
         }
     }
