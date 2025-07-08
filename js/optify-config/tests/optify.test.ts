@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
-import { OptionsProvider } from "../index";
+import { GetOptionsPreferences, OptionsProvider } from "../index";
 
 const runSuite = (suitePath: string) => {
   const provider = OptionsProvider.build(path.join(suitePath, 'configs'));
@@ -10,9 +10,13 @@ const runSuite = (suitePath: string) => {
     const expectationPath = path.join(expectationsPath, testCase);
     test(`${testCase}`, () => {
       const expectedInfo = JSON.parse(fs.readFileSync(expectationPath, 'utf8'));
-      const { options: expectedOptions, features } = expectedInfo;
+      const { constraints, options: expectedOptions, features } = expectedInfo;
+      const preferences = new GetOptionsPreferences();
+      if (constraints) {
+        preferences.setConstraintsJson(JSON.stringify(constraints));
+      }
       for (const [key, expectedValue] of Object.entries(expectedOptions)) {
-        const actualJson = provider.getOptionsJson(key, features);
+        const actualJson = provider.getOptionsJson(key, features, preferences);
         const actualOptions = JSON.parse(actualJson);
         expect(actualOptions).toEqual(expectedValue);
       }

@@ -4,7 +4,8 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use crate::builder::OptionsRegistryBuilder;
-use crate::provider::{Aliases, Features, OptionsProvider, Sources};
+use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
+use crate::schema::conditions::ConditionExpression;
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
@@ -17,6 +18,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    conditions: Conditions,
     features: Features,
     imports: Imports,
     sources: Sources,
@@ -51,6 +53,7 @@ fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
         .replace(std::path::MAIN_SEPARATOR, "/")
 }
 
+#[allow(clippy::too_many_arguments)]
 fn resolve_imports(
     canonical_feature_name: &str,
     imports_for_feature: &[String],
@@ -59,6 +62,7 @@ fn resolve_imports(
     aliases: &Aliases,
     all_imports: &Imports,
     sources: &mut Sources,
+    conditions: &Conditions,
 ) -> Result<(), String> {
     // Build full configuration for the feature so that we don't need to traverse imports for the feature when configurations are requested from the provider.
     let mut config_builder = config::Config::builder();
@@ -70,6 +74,19 @@ fn resolve_imports(
                     "Error when resolving imports for '{canonical_feature_name}': Cycle detected with import '{import}'. The features in the path (not in order): {features_in_resolution_path:?}"
                 ));
         }
+
+        if conditions.contains_key(import) {
+            return Err(format!(
+                "Error when resolving imports for '{canonical_feature_name}': The import '{import}' \
+                 has conditions. Conditions cannot be used in imported features. This helps keep \
+                 retrieving and building configuration options for a list of features fast and more \
+                 predictable because imports do not need to be re-evaluated. Instead, keep each \
+                 feature file as granular and self-contained as possible, then use conditions and \
+                 import the required granular features in a feature file that defines a common \
+                 scenario."
+            ));
+        }
+
         // Get the source so that we can build the configuration.
         // Getting the source also ensures the import is a canonical feature name.
         let mut source = match sources.get(import) {
@@ -100,6 +117,7 @@ fn resolve_imports(
                     aliases,
                     all_imports,
                     sources,
+                    conditions,
                 )?
             }
 
@@ -147,6 +165,7 @@ fn resolve_imports(
 /// The result of loading a feature configuration file.
 struct LoadingResult {
     canonical_feature_name: String,
+    conditions: Option<ConditionExpression>,
     source: config::File<config::FileSourceString, config::FileFormat>,
     imports: Option<Vec<String>>,
     metadata: OptionsMetadata,
@@ -156,6 +175,7 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
+            conditions: Conditions::new(),
             features: Features::new(),
             imports: HashMap::new(),
             sources: Sources::new(),
@@ -193,8 +213,8 @@ impl OptionsProviderBuilder {
             Ok(v) => v,
             Err(e) => {
                 return Some(Err(format!(
-                    "Error deserializing configuration for file '{:?}': {e}",
-                    path.to_string_lossy(),
+                    "Error deserializing configuration for file '{}': {e}",
+                    path.display(),
                 )))
             }
         };
@@ -204,8 +224,8 @@ impl OptionsProviderBuilder {
                 Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
                 Err(e) => {
                     return Some(Err(format!(
-                        "Error deserializing options for '{:?}': {e}",
-                        path.to_string_lossy()
+                        "Error deserializing options for '{}': {e}",
+                        path.display()
                     )))
                 }
             },
@@ -225,6 +245,7 @@ impl OptionsProviderBuilder {
 
         Some(Ok(LoadingResult {
             canonical_feature_name,
+            conditions: feature_config.conditions,
             source,
             imports: feature_config.imports,
             metadata,
@@ -245,6 +266,10 @@ impl OptionsProviderBuilder {
             return Err(format!(
                 "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
             ));
+        }
+        if let Some(conditions) = &info.conditions {
+            self.conditions
+                .insert(canonical_feature_name.clone(), conditions.clone());
         }
         if let Some(imports) = &info.imports {
             self.imports
@@ -268,6 +293,12 @@ impl OptionsProviderBuilder {
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+        if !directory.is_dir() {
+            return Err(format!(
+                "Error adding directory: {directory:?} is not a directory"
+            ));
+        }
+
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .par_bridge()
@@ -304,12 +335,14 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     &self.aliases,
                     &self.imports,
                     &mut self.sources,
+                    &self.conditions,
                 )?;
             }
         }
 
         Ok(OptionsProvider::new(
             &self.aliases,
+            &self.conditions,
             &self.features,
             &self.sources,
         ))

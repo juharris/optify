@@ -1,0 +1,15 @@
+{
+	"features": [
+		"B",
+		"docs_example"
+	],
+	"constraints": {
+		"page": "https://anothersite.com/slug"
+	},
+	"options": {
+		"config": {
+			"key": "from B",
+			"key_b": "only in B"
+		}
+	}
+}

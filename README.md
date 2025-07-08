@@ -60,6 +60,7 @@ Core Features:
   This should be done when your application starts to ensure that files are only read once and issues are found early.
 * **Inheritance**: Features can import or depend on other features.
   This keeps your list of enabled features smaller at runtime by allowing you to group related configurations while keeping most files small, focused, and like granular building blocks.
+* **Conditions**: Features can be enabled or disabled based on conditions defined in feature files and constraints given when requesting configuration options.
 
 # Ethos
 The main idea behind Optify is **configuration driven development**.
@@ -368,6 +369,41 @@ There is no limit on the depth for imports; imports can import other features th
 Circular imports are not allowed and will result in an error at build time.
 
 See [tests](./tests/) for more examples.
+
+# Conditions
+Conditions can be used to enable a feature file when it is requested and when constraints are given in the request.
+If no constraints are given for a request, then the conditions in a feature file are are ignored.
+Conditions cannot be used in imported features.
+
+For more details and examples, see [here](./docs/Conditions.md).
+
+## Conditions Example
+Suppose that a feature file has the following conditions:
+```JSON
+{
+    "conditions": {
+        "or": [
+            {
+                "jsonPointer": "/clientId",
+                "equals": 1234
+            },
+            {
+                "jsonPointer": "/page",
+                "matches": "^https://mysite.com/"
+            }
+        ]
+    }
+}
+```
+
+Then a request to get options with the following constraints will enable the feature file:
+
+```JSON
+{
+    "page": "https://mysite.com/page",
+    "clientId": 9876
+}
+```
 
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.

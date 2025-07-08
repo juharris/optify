@@ -49,6 +49,16 @@ module Optify
 
   # Preferences when getting options.
   class GetOptionsPreferences
+    # Set constraints for the current request to limit the features that can be enabled.
+    sig { params(value: T.nilable(T::Hash[T.untyped, T.untyped])).void }
+    def constraints=(value); end
+
+    sig { params(value: T.nilable(String)).void }
+    def constraints_json=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def constraints_json; end
+
     # Indicates if overrides are set.
     sig { returns(T::Boolean) }
     def overrides?; end
@@ -64,6 +74,9 @@ module Optify
     # @param value The overrides to apply as serialized JSON.
     sig { params(value: T.nilable(String)).void }
     def overrides_json=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def overrides_json; end
 
     sig { params(value: T::Boolean).void }
     def skip_feature_name_conversion=(value); end
@@ -82,13 +95,13 @@ module Optify
       # Build using just one directory.
       # @param directory The directory to build the provider from.
       # @return The instance.
-      sig { params(directory: String).returns(OptionsRegistry) }
+      sig { params(directory: String).returns(T.attached_class) }
       def build(directory); end
 
       # Build from multiple directories.
       # @param directories The directories to build the provider from.
       # @return The instance.
-      sig { params(directories: T::Array[String]).returns(OptionsRegistry) }
+      sig { params(directories: T::Array[String]).returns(T.attached_class) }
       def build_from_directories(directories); end
     end
 

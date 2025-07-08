@@ -1,0 +1,17 @@
+{
+	"features": [
+		"A",
+		"B"
+	],
+	"constraints": {
+		"info": 3,
+		"status": "active"
+	},
+	"options": {
+		"config": {
+			"key": "from B",
+			"key_a": "only in A",
+			"key_b": "only in B"
+		}
+	}
+}

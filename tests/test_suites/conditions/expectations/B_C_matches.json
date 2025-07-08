@@ -1,0 +1,22 @@
+{
+	"features": [
+		"B",
+		"C"
+	],
+	"constraints": {
+		"user": {
+			"id": 2,
+			"name": "Justin"
+		},
+		"status": "active",
+		"date": "2025-01-01",
+		"city": "not Toronto"
+	},
+	"options": {
+		"config": {
+			"key": "from C",
+			"key_b": "only in B",
+			"key_c": "only in C"
+		}
+	}
+}

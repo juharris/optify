@@ -1,0 +1,20 @@
+{
+	"conditions": {
+		"and": [
+			{
+				"jsonPointer": "/info",
+				"equals": 3
+			},
+			{
+				"jsonPointer": "/status",
+				"matches": "^(active|new)$"
+			}
+		]
+	},
+	"options": {
+		"config": {
+			"key": "from A",
+			"key_a": "only in A"
+		}
+	}
+}

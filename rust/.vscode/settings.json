@@ -11,6 +11,7 @@
 	},
 	"cSpell.words": [
 		"debouncer",
+		"optifile",
 		"serde",
 		"unicase",
 		"walkdir"

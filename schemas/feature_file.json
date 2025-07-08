@@ -2,20 +2,24 @@
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json",
 	"title": "Optify Feature Configuration",
-	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats.",
+	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats. See https://github.com/juharris/optify for more information.",
 	"type": "object",
+	"additionalProperties": false,
 	"properties": {
 		"metadata": {
 			"type": "object",
-			"description": "Information about the feature configuration",
+			"description": "Information about the feature configuration.",
 			"properties": {
 				"aliases": {
 					"type": "array",
-					"description": "Alternative names for the group of options. Helpful for using custom short names or obfuscating the feature name in production.",
+					"description": "Alternative names for the group of options. Helpful for using custom short names or obfuscating the feature name in production.\n\nAlias names must be unique across all feature files.\n\nAliases cannot be use to refer to an imported feature. The canonical feature name (file path without extension) must be used instead.",
 					"items": {
 						"type": "string",
 						"minLength": 1
 					},
+					"default": [
+						"alias"
+					],
 					"uniqueItems": true
 				},
 				"details": {
@@ -24,13 +28,18 @@
 				"owners": {
 					"type": "string",
 					"description": "The creators or maintainers of this group of options. For example, emails separated by semicolons.",
-					"minLength": 1
+					"minLength": 1,
+					"default": "owner@company.com"
 				}
 			}
 		},
+		"conditions": {
+			"$ref": "#/definitions/condition",
+			"description": "Conditions to enable this feature file when it is requested and when constraints are given. These conditions are meant for temporary experimental features that should only be enabled in some requests.\n\nIf no constraints are given, then these conditions are ignored. Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.\n\nConditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.\n\n See https://github.com/juharris/optify?tab=readme-ov-file#conditions for more information and examples."
+		},
 		"imports": {
 			"type": "array",
-			"description": "List of canonical feature names to import or inherit from. Canonical feature names are derived from the relative path to the file, but without the file extension in order to keep canonical feature names clear.",
+			"description": "List of canonical feature names to import or inherit from.\n\nCanonical feature names are derived from the relative path to the file, but without the file extension in order to keep canonical feature names clear.\n\nImports are applied in order. I.e., later imports override earlier imports.\n\nAliases cannot be use to refer to an imported feature.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#inheritance for more information and examples.",
 			"items": {
 				"type": "string",
 				"minLength": 1,
@@ -40,13 +49,108 @@
 			"default": [
 				"<path/to/file without extension>"
 			],
-			"minItems": 1,
-			"uniqueItems": true
+			"minItems": 1
 		},
 		"options": {
 			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
 			"type": "object"
 		}
 	},
-	"minProperties": 1
+	"minProperties": 1,
+	"definitions": {
+		"jsonPointer": {
+			"type": "string",
+			"description": "A JSON Pointer to a value in the constraints of a request.\n\nFor example, `/domain` or `/myFlags/1`. See https://datatracker.ietf.org/doc/html/rfc6901 for details.",
+			"default": "/path/to/value"
+		},
+		"condition": {
+			"type": "object",
+			"oneOf": [
+				{
+					"properties": {
+						"jsonPointer": {
+							"$ref": "#/definitions/jsonPointer"
+						},
+						"equals": {
+							"description": "Value to compare for equality. It can be any JSON value."
+						}
+					},
+					"required": [
+						"jsonPointer",
+						"equals"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
+						"jsonPointer": {
+							"$ref": "#/definitions/jsonPointer"
+						},
+						"matches": {
+							"type": "string",
+							"description": "Regular expression pattern to match against.",
+							"default": "^(?:value)$"
+						}
+					},
+					"required": [
+						"jsonPointer",
+						"matches"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
+						"and": {
+							"description": "All conditions must be true for the group to be true.",
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/condition"
+							},
+							"minItems": 1,
+							"uniqueItems": true,
+							"default": [
+								{}
+							]
+						}
+					},
+					"required": [
+						"and"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
+						"or": {
+							"description": "At least one condition must be true for the group to be true.",
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/condition"
+							},
+							"minItems": 1,
+							"uniqueItems": true,
+							"default": [
+								{}
+							]
+						}
+					},
+					"required": [
+						"or"
+					],
+					"additionalProperties": false
+				},
+				{
+					"properties": {
+						"not": {
+							"description": "The condition must be false for the group to be true.",
+							"$ref": "#/definitions/condition"
+						}
+					},
+					"required": [
+						"not"
+					],
+					"additionalProperties": false
+				}
+			]
+		}
+	}
 }

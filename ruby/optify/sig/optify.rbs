@@ -40,6 +40,13 @@ end
 
 # Preferences when getting options.
 class Optify::GetOptionsPreferences
+  # Set constraints for the current request to limit the features that can be enabled.
+  def constraints=: (::Hash[untyped, untyped]? value) -> void
+
+  def constraints_json=: (String? value) -> void
+
+  def constraints_json: () -> String?
+
   # Indicates if overrides are set.
   def overrides?: () -> bool
 
@@ -53,6 +60,8 @@ class Optify::GetOptionsPreferences
   # @param value The overrides to apply as serialized JSON.
   def overrides_json=: (String? value) -> void
 
+  def overrides_json: () -> String?
+
   def skip_feature_name_conversion=: (bool value) -> void
 
   def skip_feature_name_conversion: () -> bool
@@ -65,12 +74,12 @@ class Optify::OptionsRegistry
   # Build using just one directory.
   # @param directory The directory to build the provider from.
   # @return The instance.
-  def build: (String directory) -> OptionsRegistry
+  def build: (String directory) -> instance
 
   # Build from multiple directories.
   # @param directories The directories to build the provider from.
   # @return The instance.
-  def build_from_directories: (::Array[String] directories) -> OptionsRegistry
+  def build_from_directories: (::Array[String] directories) -> instance
 
   # @return All of the aliases.
   def aliases: () -> ::Array[String]

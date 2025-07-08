@@ -21,14 +21,16 @@ pub trait OptionsRegistry {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Value, String>;
 
-    /// Gets the canonical feature name for a given feature name or alias
+    /// Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+    /// Canonical feature names map to themselves.
+    ///
+    /// Returns the canonical feature name.
     fn get_canonical_feature_name(&self, feature_name: &str) -> Result<String, String>;
 
-    // Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
-    // Canonical feature names map to themselves.
-    //
-    // @param feature_names The names of aliases or features.
-    // @return The canonical feature names.
+    /// Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+    /// Canonical feature names map to themselves.
+    ///
+    /// Returns the canonical feature names.
     fn get_canonical_feature_names(
         &self,
         feature_names: &[impl AsRef<str>],
@@ -36,6 +38,7 @@ pub trait OptionsRegistry {
 
     fn get_feature_metadata(&self, canonical_feature_name: &str) -> Option<OptionsMetadata>;
 
+    /// Returns all of the canonical feature names.
     fn get_features(&self) -> Vec<String>;
 
     fn get_features_with_metadata(&self) -> Features;

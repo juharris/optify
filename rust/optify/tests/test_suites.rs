@@ -1,9 +1,9 @@
 use std::fs;
 
-use optify::provider::{OptionsProvider, OptionsRegistry};
+use optify::provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry};
 
 fn test_suite(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
-    let provider = OptionsProvider::build(&path.join("configs"))?;
+    let provider = OptionsProvider::build(path.join("configs"))?;
 
     let expectations = fs::read_dir(path.join("expectations"))?;
     for expectation_entry in expectations {
@@ -19,8 +19,12 @@ fn test_suite(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> 
             .iter()
             .map(|v| v.as_str().unwrap())
             .collect::<Vec<&str>>();
+        let mut preferences = GetOptionsPreferences::new();
+        let constraints = expected_info.get("constraints");
+        preferences.set_constraints(constraints.cloned());
         expected_options.iter().for_each(|(key, expected_value)| {
-            let config = provider.get_options(key, &features);
+            let config =
+                provider.get_options_with_preferences(key, &features, None, Some(&preferences));
             if let Err(e) = &config {
                 panic!("Error in {expectation_path:?} with key: {key:?}: {e:?}");
             }

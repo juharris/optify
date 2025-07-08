@@ -2,7 +2,8 @@ use std::{collections::HashMap, path::Path};
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
-    schema::metadata::OptionsMetadata,
+    provider::constraints::Constraints,
+    schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
 use super::OptionsRegistry;
@@ -14,6 +15,7 @@ use super::OptionsRegistry;
 pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
+pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -23,6 +25,7 @@ pub struct GetOptionsPreferences {
     /// It also makes it simpler and maybe faster to get from other programming languages.
     pub overrides_json: Option<String>,
     pub skip_feature_name_conversion: bool,
+    pub constraints: Option<Constraints>,
 }
 
 impl Clone for GetOptionsPreferences {
@@ -30,6 +33,7 @@ impl Clone for GetOptionsPreferences {
         Self {
             overrides_json: self.overrides_json.clone(),
             skip_feature_name_conversion: self.skip_feature_name_conversion,
+            constraints: self.constraints.clone(),
         }
     }
 }
@@ -43,17 +47,20 @@ impl Default for GetOptionsPreferences {
 impl GetOptionsPreferences {
     pub fn new() -> Self {
         Self {
+            constraints: None,
             overrides_json: None,
             skip_feature_name_conversion: false,
         }
     }
 
-    pub fn set_overrides_json(&mut self, overrides: Option<String>) {
-        self.overrides_json = overrides;
+    pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
+        self.constraints = constraints.map(|c| Constraints { constraints: c });
     }
 
-    pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
-        self.skip_feature_name_conversion = skip_feature_name_conversion;
+    pub fn set_constraints_json(&mut self, constraints: Option<&str>) {
+        self.constraints = constraints.map(|c| Constraints {
+            constraints: serde_json::from_str(c).expect("constraints should be valid JSON"),
+        });
     }
 }
 
@@ -63,22 +70,29 @@ pub struct CacheOptions {}
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
     aliases: Aliases,
+    conditions: Conditions,
     features: Features,
     sources: Sources,
 }
 
 impl OptionsProvider {
-    pub(crate) fn new(aliases: &Aliases, features: &Features, sources: &Sources) -> Self {
+    pub(crate) fn new(
+        aliases: &Aliases,
+        conditions: &Conditions,
+        features: &Features,
+        sources: &Sources,
+    ) -> Self {
         OptionsProvider {
             aliases: aliases.clone(),
+            conditions: conditions.clone(),
             features: features.clone(),
             sources: sources.clone(),
         }
     }
 
-    pub fn build(directory: &Path) -> Result<OptionsProvider, String> {
+    pub fn build(directory: impl AsRef<Path>) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
-        builder.add_directory(directory)?;
+        builder.add_directory(directory.as_ref())?;
         builder.build()
     }
 
@@ -108,8 +122,10 @@ impl OptionsProvider {
         };
         let mut config_builder = config::Config::builder();
         let mut skip_feature_name_conversion = false;
+        let mut constraints = None;
         if let Some(_preferences) = preferences {
             skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
+            constraints = _preferences.constraints.as_ref();
         }
         for feature_name in feature_names {
             // Check for an alias.
@@ -119,6 +135,16 @@ impl OptionsProvider {
             } else {
                 &self.get_canonical_feature_name(feature_name.as_ref())?
             };
+
+            if let Some(constraints) = constraints {
+                let conditions = self.conditions.get(canonical_feature_name);
+                if !conditions
+                    .map(|conditions| conditions.evaluate(constraints))
+                    .unwrap_or(true)
+                {
+                    continue;
+                }
+            }
 
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
@@ -175,11 +201,6 @@ impl OptionsRegistry for OptionsProvider {
         }
     }
 
-    // Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
-    // Canonical feature names map to themselves.
-    //
-    // @param feature_name The name of an alias or a feature.
-    // @return The canonical feature name.
     fn get_canonical_feature_name(&self, feature_name: &str) -> Result<String, String> {
         // Canonical feature names are also included as keys in the aliases map.
         let feature_name = unicase::UniCase::new(feature_name.to_owned());

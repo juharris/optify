@@ -66,6 +66,37 @@ fn test_builder_invalid_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn test_builder_conditions_in_imported_feature() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("../../tests/invalid_suites/conditions_in_import/configs");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(e.starts_with(
+                "Error when resolving imports for 'parent': The import 'invalid' has conditions. Conditions cannot be used in imported features."
+            ));
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_invalid_condition_pattern() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("../../tests/invalid_suites/invalid_condition_pattern/configs");
+    let feature_file = path.join("invalid.yaml");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            let expected = format!(
+                "Error deserializing configuration for file '{}': regex parse error:\n    {{invalid}}\n    ^\nerror: repetition operator missing expression for key `conditions`",
+                feature_file.display()
+            );
+            assert_eq!(e, expected);
+            Ok(())
+        }
+    }
+}
+
+#[test]
 fn test_builder_name_with_no_metadata() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::path::Path::new("tests/no_metadata");
     let mut builder = OptionsProviderBuilder::new();

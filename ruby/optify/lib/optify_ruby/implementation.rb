@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 # typed: strict
 
-require 'json'
-
 require 'sorbet-runtime'
 
 require_relative './base_config'

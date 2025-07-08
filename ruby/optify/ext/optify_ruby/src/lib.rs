@@ -10,6 +10,12 @@ use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 use std::path::Path;
 
+fn convert_preferences(
+    preferences: &MutGetOptionsPreferences,
+) -> std::cell::Ref<'_, GetOptionsPreferences> {
+    preferences.0.borrow()
+}
+
 #[derive(Clone)]
 #[wrap(class = "Optify::GetOptionsPreferences")]
 struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
@@ -17,9 +23,25 @@ struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 impl MutGetOptionsPreferences {
     fn new() -> Self {
         Self(RefCell::new(GetOptionsPreferences {
+            constraints: None,
             overrides_json: None,
             skip_feature_name_conversion: false,
         }))
+    }
+
+    // Constraints Section
+    fn set_constraints_json(&self, constraints_json: Option<String>) {
+        self.0
+            .borrow_mut()
+            .set_constraints_json(constraints_json.as_deref());
+    }
+
+    fn get_constraints_json(&self) -> Option<String> {
+        self.0
+            .borrow()
+            .constraints
+            .as_ref()
+            .map(|c| serde_json::to_string(&c.constraints).unwrap())
     }
 
     // Overrides Section
@@ -86,11 +108,11 @@ impl WrappedOptionsProvider {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self
             .0
             .borrow()
-            .get_all_options(&feature_names, None, Some(&preferences))
+            .get_all_options(&feature_names, None, Some(preferences))
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
@@ -161,23 +183,16 @@ impl WrappedOptionsProvider {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self.0.borrow().get_options_with_preferences(
             &key,
             &feature_names,
             None,
-            Some(&preferences),
+            Some(preferences),
         ) {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
-    }
-}
-
-fn convert_preferences(preferences: &MutGetOptionsPreferences) -> GetOptionsPreferences {
-    GetOptionsPreferences {
-        overrides_json: preferences.get_overrides_json(),
-        skip_feature_name_conversion: preferences.skip_feature_name_conversion(),
     }
 }
 
@@ -245,11 +260,11 @@ impl WrappedOptionsWatcher {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self
             .0
             .borrow()
-            .get_all_options(&feature_names, None, Some(&preferences))
+            .get_all_options(&feature_names, None, Some(preferences))
         {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
@@ -318,12 +333,12 @@ impl WrappedOptionsWatcher {
         feature_names: Vec<String>,
         preferences: &MutGetOptionsPreferences,
     ) -> Result<String, magnus::Error> {
-        let preferences = convert_preferences(preferences);
+        let preferences = &convert_preferences(preferences);
         match rb_self.0.borrow().get_options_with_preferences(
             &key,
             &feature_names,
             None,
-            Some(&preferences),
+            Some(preferences),
         ) {
             Ok(options) => Ok(options.to_string()),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
@@ -423,6 +438,14 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
 
     let get_options_preferences_class =
         module.define_class("GetOptionsPreferences", ruby.class_object())?;
+    get_options_preferences_class.define_method(
+        "constraints_json=",
+        method!(MutGetOptionsPreferences::set_constraints_json, 1),
+    )?;
+    get_options_preferences_class.define_method(
+        "constraints_json",
+        method!(MutGetOptionsPreferences::get_constraints_json, 0),
+    )?;
     get_options_preferences_class
         .define_singleton_method("new", function!(MutGetOptionsPreferences::new, 0))?;
     get_options_preferences_class
@@ -434,6 +457,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     get_options_preferences_class.define_method(
         "overrides_json=",
         method!(MutGetOptionsPreferences::set_overrides_json, 1),
+    )?;
+    get_options_preferences_class.define_method(
+        "overrides_json",
+        method!(MutGetOptionsPreferences::get_overrides_json, 0),
     )?;
     get_options_preferences_class.define_method(
         "skip_feature_name_conversion=",
