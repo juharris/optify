@@ -19,11 +19,9 @@ fn test_suite(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> 
             .iter()
             .map(|v| v.as_str().unwrap())
             .collect::<Vec<&str>>();
-        let constraints = expected_info.get("constraints");
         let mut preferences = GetOptionsPreferences::new();
-        if constraints.is_some() {
-            preferences.set_constraints(constraints.cloned());
-        }
+        let constraints = expected_info.get("constraints");
+        preferences.set_constraints(constraints.cloned());
         expected_options.iter().for_each(|(key, expected_value)| {
             let config =
                 provider.get_options_with_preferences(key, &features, None, Some(&preferences));
