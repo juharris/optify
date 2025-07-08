@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::provider::constraints::Constraints;
 
 #[derive(Clone, Debug)]
-pub struct RegexWrapper(pub Regex);
+pub(crate) struct RegexWrapper(Regex);
 
 impl<'de> Deserialize<'de> for RegexWrapper {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -37,12 +37,28 @@ impl Serialize for RegexWrapper {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
+#[allow(private_interfaces)]
 pub enum Predicate {
-    Equals { equals: serde_json::Value },
-    Matches { matches: RegexWrapper },
+    Equals {
+        equals: serde_json::Value,
+    },
+    #[doc(hidden)]
+    Matches {
+        matches: RegexWrapper,
+    },
 }
 
 impl Predicate {
+    pub fn equals(value: serde_json::Value) -> Self {
+        Self::Equals { equals: value }
+    }
+
+    pub fn matches(pattern: &str) -> Result<Self, regex::Error> {
+        Ok(Self::Matches {
+            matches: RegexWrapper(Regex::new(pattern)?),
+        })
+    }
+
     pub fn evaluate(&self, value: &serde_json::Value) -> bool {
         match (self, value) {
             (Self::Equals { equals }, value) => value == equals,
@@ -69,7 +85,7 @@ impl Condition {
         constraints
             .constraints
             .pointer(&self.json_pointer)
-            .map_or(false, |value| self.operator_value.evaluate(&value))
+            .is_some_and(|value| self.operator_value.evaluate(value))
     }
 }
 

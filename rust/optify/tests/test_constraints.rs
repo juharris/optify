@@ -1,5 +1,4 @@
-use optify::schema::conditions::{Condition, ConditionExpression, Predicate, RegexWrapper};
-use regex::Regex;
+use optify::schema::conditions::{Condition, ConditionExpression, Predicate};
 use serde_json::json;
 
 #[test]
@@ -13,18 +12,14 @@ fn test_evaluate_equals_string() {
     // Test matching string
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/name".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!("John"),
-        },
+        operator_value: Predicate::equals(json!("John")),
     });
     assert!(condition.evaluate_with(&data));
 
     // Test non-matching string
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/name".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!("Jane"),
-        },
+        operator_value: Predicate::equals(json!("Jane")),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -39,16 +34,14 @@ fn test_evaluate_equals_number() {
     // Test matching number
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/age".to_string(),
-        operator_value: Predicate::Equals { equals: json!(30) },
+        operator_value: Predicate::equals(json!(30)),
     });
     assert!(condition.evaluate_with(&data));
 
     // Test matching float
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/score".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!(95.5),
-        },
+        operator_value: Predicate::equals(json!(95.5)),
     });
     assert!(condition.evaluate_with(&data));
 }
@@ -62,25 +55,19 @@ fn test_evaluate_equals_boolean() {
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!(true),
-        },
+        operator_value: Predicate::equals(json!(true)),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/disabled".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!(false),
-        },
+        operator_value: Predicate::equals(json!(false)),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!(false),
-        },
+        operator_value: Predicate::equals(json!(false)),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -95,18 +82,14 @@ fn test_evaluate_equals_null() {
     // Test matching null
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/value".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!(null),
-        },
+        operator_value: Predicate::equals(json!(null)),
     });
     assert!(condition.evaluate_with(&data));
 
     // Test non-null value against null
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/name".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!(null),
-        },
+        operator_value: Predicate::equals(json!(null)),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -185,9 +168,7 @@ fn test_evaluate_equals_nested_path() {
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/user/profile/name".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!("Alice"),
-        },
+        operator_value: Predicate::equals(json!("Alice")),
     });
     assert!(condition.evaluate_with(&data));
 }
@@ -200,9 +181,7 @@ fn test_evaluate_equals_missing_path() {
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/missing/path".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!("value"),
-        },
+        operator_value: Predicate::equals(json!("value")),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -217,18 +196,14 @@ fn test_evaluate_matches_basic() {
     // Test matching email pattern
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/email".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r".*@example\.com").unwrap()),
-        },
+        operator_value: Predicate::matches(r".*@example\.com").unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 
     // Test non-matching pattern
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/email".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r".*@gmail\.com").unwrap()),
-        },
+        operator_value: Predicate::matches(r".*@gmail\.com").unwrap(),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -243,18 +218,14 @@ fn test_evaluate_matches_regex_patterns() {
     // Test version pattern
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/version".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"^v\d+\.\d+\.\d+$").unwrap()),
-        },
+        operator_value: Predicate::matches(r"^v\d+\.\d+\.\d+$").unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 
     // Test alphanumeric pattern
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/id".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"^[A-Z]+\d+$").unwrap()),
-        },
+        operator_value: Predicate::matches(r"^[A-Z]+\d+$").unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 }
@@ -267,33 +238,25 @@ fn test_evaluate_matches_regex_patterns_with_array() {
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"1").unwrap()),
-        },
+        operator_value: Predicate::matches(r"1").unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers/1".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"^2$").unwrap()),
-        },
+        operator_value: Predicate::matches(r"^2$").unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers/1".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"^1$").unwrap()),
-        },
+        operator_value: Predicate::matches(r"^1$").unwrap(),
     });
     assert!(!condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/numbers".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"4").unwrap()),
-        },
+        operator_value: Predicate::matches(r"4").unwrap(),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -306,17 +269,13 @@ fn test_evaluate_matches_regex_patterns_with_boolean() {
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"^tr..$").unwrap()),
-        },
+        operator_value: Predicate::matches(r"^tr..$").unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/active".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"false").unwrap()),
-        },
+        operator_value: Predicate::matches(r"false").unwrap(),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -333,29 +292,21 @@ fn test_evaluate_matches_regex_patterns_with_object() {
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/user".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(Regex::new(r"John").unwrap()),
-        },
+        operator_value: Predicate::matches(r"John").unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/user".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(
-                Regex::new(r#"^\{"age":30,"city":"New York","name":"John"\}$"#).unwrap(),
-            ),
-        },
+        operator_value: Predicate::matches(r#"^\{"age":30,"city":"New York","name":"John"\}$"#)
+            .unwrap(),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/user".to_string(),
-        operator_value: Predicate::Matches {
-            matches: RegexWrapper(
-                Regex::new(r#"\{"blah":"John","age":30,"city":"New York"\}"#).unwrap(),
-            ),
-        },
+        operator_value: Predicate::matches(r#"\{"blah":"John","age":30,"city":"New York"\}"#)
+            .unwrap(),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -373,15 +324,11 @@ fn test_evaluate_and_group() {
         and: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/name".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("John"),
-                },
+                operator_value: Predicate::equals(json!("John")),
             }),
             ConditionExpression::Condition(Condition {
                 json_pointer: "/city".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("New York"),
-                },
+                operator_value: Predicate::equals(json!("New York")),
             }),
         ],
     };
@@ -392,15 +339,11 @@ fn test_evaluate_and_group() {
         and: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/name".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("John"),
-                },
+                operator_value: Predicate::equals(json!("John")),
             }),
             ConditionExpression::Condition(Condition {
                 json_pointer: "/city".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("Los Angeles"),
-                },
+                operator_value: Predicate::equals(json!("Los Angeles")),
             }),
         ],
     };
@@ -419,15 +362,11 @@ fn test_evaluate_or_group() {
         or: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/status".to_string(),
-                operator_value: Predicate::Matches {
-                    matches: RegexWrapper(Regex::new(r"^(active|new)$").unwrap()),
-                },
+                operator_value: Predicate::matches(r"^(active|new)$").unwrap(),
             }),
             ConditionExpression::Condition(Condition {
                 json_pointer: "/type".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("basic"),
-                },
+                operator_value: Predicate::equals(json!("basic")),
             }),
         ],
     };
@@ -438,15 +377,11 @@ fn test_evaluate_or_group() {
         or: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/status".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("inactive"),
-                },
+                operator_value: Predicate::equals(json!("inactive")),
             }),
             ConditionExpression::Condition(Condition {
                 json_pointer: "/type".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("basic"),
-                },
+                operator_value: Predicate::equals(json!("basic")),
             }),
         ],
     };
@@ -463,9 +398,7 @@ fn test_evaluate_not_group() {
     let condition = ConditionExpression::Not {
         not: Box::new(ConditionExpression::Condition(Condition {
             json_pointer: "/enabled".to_string(),
-            operator_value: Predicate::Equals {
-                equals: json!("true"),
-            },
+            operator_value: Predicate::equals(json!("true")),
         })),
     };
     assert!(!condition.evaluate_with(&data));
@@ -474,9 +407,7 @@ fn test_evaluate_not_group() {
     let condition = ConditionExpression::Not {
         not: Box::new(ConditionExpression::Condition(Condition {
             json_pointer: "/enabled".to_string(),
-            operator_value: Predicate::Equals {
-                equals: json!("false"),
-            },
+            operator_value: Predicate::equals(json!("false")),
         })),
     };
     assert!(condition.evaluate_with(&data));
@@ -499,23 +430,17 @@ fn test_evaluate_nested_groups() {
                 and: vec![
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/user/role".to_string(),
-                        operator_value: Predicate::Equals {
-                            equals: json!("admin"),
-                        },
+                        operator_value: Predicate::equals(json!("admin")),
                     }),
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/user/active".to_string(),
-                        operator_value: Predicate::Equals {
-                            equals: json!("true"),
-                        },
+                        operator_value: Predicate::equals(json!("true")),
                     }),
                 ],
             },
             ConditionExpression::Condition(Condition {
                 json_pointer: "/department".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("HR"),
-                },
+                operator_value: Predicate::equals(json!("HR")),
             }),
         ],
     };
@@ -527,15 +452,11 @@ fn test_evaluate_nested_groups() {
             or: vec![
                 ConditionExpression::Condition(Condition {
                     json_pointer: "/user/role".to_string(),
-                    operator_value: Predicate::Equals {
-                        equals: json!("admin"),
-                    },
+                    operator_value: Predicate::equals(json!("admin")),
                 }),
                 ConditionExpression::Condition(Condition {
                     json_pointer: "/department".to_string(),
-                    operator_value: Predicate::Equals {
-                        equals: json!("IT"),
-                    },
+                    operator_value: Predicate::equals(json!("IT")),
                 }),
             ],
         }),
@@ -568,13 +489,11 @@ fn test_evaluate_array_elements() {
         and: vec![
             ConditionExpression::Condition(Condition {
                 json_pointer: "/tags/0".to_string(),
-                operator_value: Predicate::Equals {
-                    equals: json!("rust"),
-                },
+                operator_value: Predicate::equals(json!("rust")),
             }),
             ConditionExpression::Condition(Condition {
                 json_pointer: "/numbers/1".to_string(),
-                operator_value: Predicate::Equals { equals: json!(2) },
+                operator_value: Predicate::equals(json!(2)),
             }),
         ],
     };
@@ -583,9 +502,7 @@ fn test_evaluate_array_elements() {
     // Test accessing out of bounds array element
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/tags/10".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!("rust"),
-        },
+        operator_value: Predicate::equals(json!("rust")),
     });
     assert!(!condition.evaluate_with(&data));
 }
@@ -601,17 +518,13 @@ fn test_evaluate_special_characters_in_path() {
     // JSON Pointer escapes: / -> ~1, ~ -> ~0
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/key~1with~1slashes".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!("value1"),
-        },
+        operator_value: Predicate::equals(json!("value1")),
     });
     assert!(condition.evaluate_with(&data));
 
     let condition = ConditionExpression::Condition(Condition {
         json_pointer: "/key~0with~0tildes".to_string(),
-        operator_value: Predicate::Equals {
-            equals: json!("value2"),
-        },
+        operator_value: Predicate::equals(json!("value2")),
     });
     assert!(condition.evaluate_with(&data));
 }
@@ -637,15 +550,11 @@ fn test_evaluate_complex_nested_conditions() {
                 and: vec![
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/request/method".to_string(),
-                        operator_value: Predicate::Equals {
-                            equals: json!("POST"),
-                        },
+                        operator_value: Predicate::equals(json!("POST")),
                     }),
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/request/path".to_string(),
-                        operator_value: Predicate::Matches {
-                            matches: RegexWrapper(Regex::new(r"^/api/.*").unwrap()),
-                        },
+                        operator_value: Predicate::matches(r"^/api/.*").unwrap(),
                     }),
                 ],
             },
@@ -653,15 +562,11 @@ fn test_evaluate_complex_nested_conditions() {
                 or: vec![
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/request/headers/content-type".to_string(),
-                        operator_value: Predicate::Equals {
-                            equals: json!("application/json"),
-                        },
+                        operator_value: Predicate::equals(json!("application/json")),
                     }),
                     ConditionExpression::Condition(Condition {
                         json_pointer: "/request/headers/authorization".to_string(),
-                        operator_value: Predicate::Matches {
-                            matches: RegexWrapper(Regex::new(r"^Bearer .*").unwrap()),
-                        },
+                        operator_value: Predicate::matches(r"^Bearer .*").unwrap(),
                     }),
                 ],
             },
