@@ -35,7 +35,7 @@ class OptifyTest < Test::Unit::TestCase
         features = expected_info['features']
         constraints = expected_info['constraints']
         preferences = Optify::GetOptionsPreferences.new
-        preferences.constraints = constraints if constraints
+        preferences.constraints = constraints
         expected_options.each do |key, expected_value|
           expected_json = provider.get_options_json_with_preferences(key, features, preferences)
           options = JSON.parse(expected_json, object_class: Hash)
@@ -235,6 +235,7 @@ class OptifyTest < Test::Unit::TestCase
                       .build
       feature_names = %w[A B]
       preferences = Optify::GetOptionsPreferences.new
+      preferences.overrides = nil
       preferences.skip_feature_name_conversion = false
       options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       assert_equal('root string same', options.rootString)
