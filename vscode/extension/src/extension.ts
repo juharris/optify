@@ -5,6 +5,8 @@ import * as vscode from 'vscode';
 import { ConfigParser } from './configparser';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
 
+const EDIT_DEBOUNCE_MILLISECONDS = 250;
+
 const outputChannel = vscode.window.createOutputChannel('Optify');
 
 export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): string {
@@ -40,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
 	updateOptifyFileContext();
 
 	// Store active preview panels, their watchers, and document change listeners
-	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher, documentChangeListener: vscode.Disposable }>();
+	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher, documentChangeListener: vscode.Disposable, debounceTimer?: NodeJS.Timeout }>();
 
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
@@ -85,32 +87,43 @@ export function activate(context: vscode.ExtensionContext) {
 				'optifyPreview',
 				`Optify Preview: ${canonicalName}`,
 				vscode.ViewColumn.Beside,
-				{ enableScripts: false }
+				{
+					enableScripts: false,
+					enableFindWidget: true
+				}
 			);
 
 			panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 
-			// Create file watcher for this file
-			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
-
-			// Update preview on file change
-			const updatePreview = async () => {
-				console.debug(`File changed: '${filePath}'. Remaking preview.`);
+			// Update the preview when the changes to the file are saved.
+			const updatePreview = () => {
+				// console.debug(`File changed: '${filePath}'. Remaking preview.`);
 				panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 			};
-
+			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
 			watcher.onDidChange(updatePreview);
 
 			// Also update preview on document text changes (before save)
 			const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 				if (event.document.uri.fsPath === filePath) {
-					console.debug(`Document changed (unsaved): '${filePath}'. Updating preview.`);
-					const documentText = event.document.getText();
-					const config = ConfigParser.parse(documentText, event.document.languageId);
-					panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot, {
-						features: config.imports ?? [],
-						overrides: config.options ? JSON.stringify(config.options) : undefined
-					});
+					const preview = activePreviews.get(filePath);
+					if (!preview) {
+						return;
+					}
+
+					if (preview.debounceTimer) {
+						clearTimeout(preview.debounceTimer);
+					}
+
+					preview.debounceTimer = setTimeout(() => {
+						// console.debug(`Document changed (unsaved): '${filePath}'. Updating preview.`);
+						const documentText = event.document.getText();
+						const config = ConfigParser.parse(documentText, event.document.languageId);
+						panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot, {
+							features: config.imports ?? [],
+							overrides: config.options ? JSON.stringify(config.options) : undefined
+						});
+					}, EDIT_DEBOUNCE_MILLISECONDS);
 				}
 			});
 
@@ -124,6 +137,10 @@ export function activate(context: vscode.ExtensionContext) {
 				if (preview) {
 					preview.watcher.dispose();
 					preview.documentChangeListener.dispose();
+					// Clear any pending debounce timer
+					if (preview.debounceTimer) {
+						clearTimeout(preview.debounceTimer);
+					}
 					activePreviews.delete(filePath);
 				}
 			});
@@ -258,18 +275,13 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
 		outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
-		const imports = ConfigParser.parseImports(text, document.languageId);
-		if (imports) {
-			for (let i = 0; i < imports.length; i++) {
-				const importName = imports[i];
-				const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-				if (range) {
-					const targetPath = resolveImportPath(importName, optifyRoot);
-					if (targetPath) {
-						const link = new vscode.DocumentLink(range, vscode.Uri.file(targetPath));
-						links.push(link);
-					}
-				}
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
+		
+		for (const importInfo of importInfos) {
+			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
+			if (targetPath) {
+				const link = new vscode.DocumentLink(importInfo.range, vscode.Uri.file(targetPath));
+				links.push(link);
 			}
 		}
 
@@ -311,17 +323,12 @@ class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 		}
 
 		const text = document.getText();
-		const imports = ConfigParser.parseImports(text, document.languageId);
-		if (!imports) {
-			return null;
-		}
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
 
 		// Check if the cursor is on an import
-		for (let i = 0; i < imports.length; i++) {
-			const importName = imports[i];
-			const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-			if (range && range.contains(position)) {
-				const targetPath = resolveImportPath(importName, optifyRoot);
+		for (const importInfo of importInfos) {
+			if (importInfo.range.contains(position)) {
+				const targetPath = resolveImportPath(importInfo.name, optifyRoot);
 				if (targetPath) {
 					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
 				}
@@ -356,35 +363,23 @@ class OptifyDiagnosticsProvider {
 		// Get the canonical name of the current file for self-import detection
 		const currentFileCanonicalName = getCanonicalName(document.uri.fsPath, optifyRoot);
 
-		const imports = ConfigParser.parseImports(text, document.languageId);
-		if (imports) {
-			for (let i = 0; i < imports.length; i++) {
-				const importName = imports[i];
-
-				const targetPath = resolveImportPath(importName, optifyRoot);
-				if (!targetPath) {
-					const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-					if (range) {
-						const diagnostic = new vscode.Diagnostic(
-							range,
-							`Cannot resolve import '${importName}'`,
-							vscode.DiagnosticSeverity.Error
-						);
-						diagnostics.push(diagnostic);
-					}
-				} else if (importName === currentFileCanonicalName) {
-					const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-					if (range) {
-						const diagnostic = new vscode.Diagnostic(
-							range,
-							"A file cannot import itself",
-							vscode.DiagnosticSeverity.Error
-						);
-						diagnostics.push(diagnostic);
-					}
-					continue;
-				}
-
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
+		for (const importInfo of importInfos) {
+			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
+			if (!targetPath) {
+				const diagnostic = new vscode.Diagnostic(
+					importInfo.range,
+					`Cannot resolve import '${importInfo.name}'`,
+					vscode.DiagnosticSeverity.Error
+				);
+				diagnostics.push(diagnostic);
+			} else if (importInfo.name === currentFileCanonicalName) {
+				const diagnostic = new vscode.Diagnostic(
+					importInfo.range,
+					"A file cannot import itself",
+					vscode.DiagnosticSeverity.Error
+				);
+				diagnostics.push(diagnostic);
 			}
 		}
 
