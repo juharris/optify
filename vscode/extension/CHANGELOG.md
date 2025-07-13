@@ -9,6 +9,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 * Enable find in preview.
 * Bump to Optify to 0.5.0 to read conditions in files.
+* Preview while editing: add 250ms edit debounce
+* Optimize parsing imports
 
 ## 1.1.0
 

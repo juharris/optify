@@ -275,18 +275,13 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
 		outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
-		const imports = ConfigParser.parseImports(text, document.languageId);
-		if (imports) {
-			for (let i = 0; i < imports.length; i++) {
-				const importName = imports[i];
-				const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-				if (range) {
-					const targetPath = resolveImportPath(importName, optifyRoot);
-					if (targetPath) {
-						const link = new vscode.DocumentLink(range, vscode.Uri.file(targetPath));
-						links.push(link);
-					}
-				}
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
+		
+		for (const importInfo of importInfos) {
+			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
+			if (targetPath) {
+				const link = new vscode.DocumentLink(importInfo.range, vscode.Uri.file(targetPath));
+				links.push(link);
 			}
 		}
 
@@ -328,17 +323,12 @@ class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 		}
 
 		const text = document.getText();
-		const imports = ConfigParser.parseImports(text, document.languageId);
-		if (!imports) {
-			return null;
-		}
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
 
 		// Check if the cursor is on an import
-		for (let i = 0; i < imports.length; i++) {
-			const importName = imports[i];
-			const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-			if (range && range.contains(position)) {
-				const targetPath = resolveImportPath(importName, optifyRoot);
+		for (const importInfo of importInfos) {
+			if (importInfo.range.contains(position)) {
+				const targetPath = resolveImportPath(importInfo.name, optifyRoot);
 				if (targetPath) {
 					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
 				}
@@ -373,35 +363,23 @@ class OptifyDiagnosticsProvider {
 		// Get the canonical name of the current file for self-import detection
 		const currentFileCanonicalName = getCanonicalName(document.uri.fsPath, optifyRoot);
 
-		const imports = ConfigParser.parseImports(text, document.languageId);
-		if (imports) {
-			for (let i = 0; i < imports.length; i++) {
-				const importName = imports[i];
-
-				const targetPath = resolveImportPath(importName, optifyRoot);
-				if (!targetPath) {
-					const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-					if (range) {
-						const diagnostic = new vscode.Diagnostic(
-							range,
-							`Cannot resolve import '${importName}'`,
-							vscode.DiagnosticSeverity.Error
-						);
-						diagnostics.push(diagnostic);
-					}
-				} else if (importName === currentFileCanonicalName) {
-					const range = ConfigParser.findImportRange(text, importName, i, document.languageId);
-					if (range) {
-						const diagnostic = new vscode.Diagnostic(
-							range,
-							"A file cannot import itself",
-							vscode.DiagnosticSeverity.Error
-						);
-						diagnostics.push(diagnostic);
-					}
-					continue;
-				}
-
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
+		for (const importInfo of importInfos) {
+			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
+			if (!targetPath) {
+				const diagnostic = new vscode.Diagnostic(
+					importInfo.range,
+					`Cannot resolve import '${importInfo.name}'`,
+					vscode.DiagnosticSeverity.Error
+				);
+				diagnostics.push(diagnostic);
+			} else if (importInfo.name === currentFileCanonicalName) {
+				const diagnostic = new vscode.Diagnostic(
+					importInfo.range,
+					"A file cannot import itself",
+					vscode.DiagnosticSeverity.Error
+				);
+				diagnostics.push(diagnostic);
 			}
 		}
 
