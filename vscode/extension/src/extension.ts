@@ -5,6 +5,8 @@ import * as vscode from 'vscode';
 import { ConfigParser } from './configparser';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
 
+const EDIT_DEBOUNCE_MILLISECONDS = 250;
+
 const outputChannel = vscode.window.createOutputChannel('Optify');
 
 export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): string {
@@ -40,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
 	updateOptifyFileContext();
 
 	// Store active preview panels, their watchers, and document change listeners
-	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher, documentChangeListener: vscode.Disposable }>();
+	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher, documentChangeListener: vscode.Disposable, debounceTimer?: NodeJS.Timeout }>();
 
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
@@ -93,27 +95,35 @@ export function activate(context: vscode.ExtensionContext) {
 
 			panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 
-			// Create file watcher for this file
-			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
-
-			// Update preview on file change
-			const updatePreview = async () => {
-				console.debug(`File changed: '${filePath}'. Remaking preview.`);
+			// Update the preview when the changes to the file are saved.
+			const updatePreview = () => {
+				// console.debug(`File changed: '${filePath}'. Remaking preview.`);
 				panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 			};
-
+			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
 			watcher.onDidChange(updatePreview);
 
 			// Also update preview on document text changes (before save)
 			const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 				if (event.document.uri.fsPath === filePath) {
-					console.debug(`Document changed (unsaved): '${filePath}'. Updating preview.`);
-					const documentText = event.document.getText();
-					const config = ConfigParser.parse(documentText, event.document.languageId);
-					panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot, {
-						features: config.imports ?? [],
-						overrides: config.options ? JSON.stringify(config.options) : undefined
-					});
+					const preview = activePreviews.get(filePath);
+					if (!preview) {
+						return;
+					}
+
+					if (preview.debounceTimer) {
+						clearTimeout(preview.debounceTimer);
+					}
+
+					preview.debounceTimer = setTimeout(() => {
+						// console.debug(`Document changed (unsaved): '${filePath}'. Updating preview.`);
+						const documentText = event.document.getText();
+						const config = ConfigParser.parse(documentText, event.document.languageId);
+						panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot, {
+							features: config.imports ?? [],
+							overrides: config.options ? JSON.stringify(config.options) : undefined
+						});
+					}, EDIT_DEBOUNCE_MILLISECONDS);
 				}
 			});
 
@@ -127,6 +137,10 @@ export function activate(context: vscode.ExtensionContext) {
 				if (preview) {
 					preview.watcher.dispose();
 					preview.documentChangeListener.dispose();
+					// Clear any pending debounce timer
+					if (preview.debounceTimer) {
+						clearTimeout(preview.debounceTimer);
+					}
 					activePreviews.delete(filePath);
 				}
 			});
