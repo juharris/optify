@@ -85,7 +85,10 @@ export function activate(context: vscode.ExtensionContext) {
 				'optifyPreview',
 				`Optify Preview: ${canonicalName}`,
 				vscode.ViewColumn.Beside,
-				{ enableScripts: false }
+				{
+					enableScripts: false,
+					enableFindWidget: true
+				}
 			);
 
 			panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
