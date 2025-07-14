@@ -5,6 +5,11 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.2.2
+
+* Required VS Code version 1.99.3
+* Use a sharper logo
+
 ## 1.2.1
 
 Optimization: Use OptionsWatcher to more natively watch for changes and cache the OptionsProvider.
