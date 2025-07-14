@@ -12,11 +12,11 @@ Helps manage and develop [Optify] feature files.
 
 ### Future Plans
 
+* Refresh when an import changes.
 * Build a configuration for multiple features.
 * Import completion/suggestions.
 * Suggest the canonical name for an alias.
-* See files that reference the current file.
-* Syntax highlighting and coloring in the preview.
+* See files that import the current file.
 * Suggest keys in options based on other files.
 * Email owners.
 

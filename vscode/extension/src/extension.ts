@@ -1,4 +1,4 @@
-import { GetOptionsPreferences, OptionsProvider } from '@optify/config';
+import { GetOptionsPreferences, OptionsWatcher } from '@optify/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -9,12 +9,31 @@ const EDIT_DEBOUNCE_MILLISECONDS = 250;
 
 const outputChannel = vscode.window.createOutputChannel('Optify');
 
+interface ActivePreview {
+	panel: vscode.WebviewPanel
+	watcher: vscode.FileSystemWatcher
+	documentChangeListener: vscode.Disposable
+	debounceTimer?: NodeJS.Timeout
+}
+
+const providerCache = new Map<string, OptionsWatcher>();
+
+function getOptionsProvider(optifyRoot: string): OptionsWatcher {
+	let result = providerCache.get(optifyRoot);
+	if (result === undefined) {
+		result = OptionsWatcher.build(optifyRoot);
+		providerCache.set(optifyRoot, result);
+	}
+
+	return result;
+}
+
 export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): string {
-	console.debug(`Building preview for '${canonicalFeatures}' in '${optifyRoot}'`);
+	// console.debug(`Building preview for '${canonicalFeatures}' in '${optifyRoot}'`);
 	const previewBuilder = new PreviewBuilder();
 	try {
 		// If some of the next lines fail in Rust from an unwrap or expect, then the exception is not caught.
-		const provider = OptionsProvider.build(optifyRoot);
+		const provider = getOptionsProvider(optifyRoot);
 		const preferences = new GetOptionsPreferences();
 		preferences.setSkipFeatureNameConversion(true);
 		if (editingOptions?.overrides) {
@@ -41,8 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set up context for when clauses
 	updateOptifyFileContext();
 
-	// Store active preview panels, their watchers, and document change listeners
-	const activePreviews = new Map<string, { panel: vscode.WebviewPanel, watcher: vscode.FileSystemWatcher, documentChangeListener: vscode.Disposable, debounceTimer?: NodeJS.Timeout }>();
+	const activePreviews = new Map<string, ActivePreview>();
 
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
@@ -276,7 +294,7 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 		outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
 		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
-		
+
 		for (const importInfo of importInfos) {
 			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
 			if (targetPath) {
