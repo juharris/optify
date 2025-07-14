@@ -47,7 +47,7 @@ impl PyOptionsProvider {
         }
     }
 
-    /// @return All of the canonical feature names.
+    /// All of the canonical feature names.
     fn features(&self) -> Vec<String> {
         self.0
             .get_features()
