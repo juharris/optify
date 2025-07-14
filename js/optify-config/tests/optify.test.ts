@@ -1,26 +1,34 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
-import { GetOptionsPreferences, OptionsProvider } from "../index";
+import { GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../index";
 
 const runSuite = (suitePath: string) => {
-  const provider = OptionsProvider.build(path.join(suitePath, 'configs'));
+  const providers = [{
+    name: "OptionsProvider",
+    provider: OptionsProvider.build(path.join(suitePath, 'configs')),
+  }, {
+    name: "OptionsWatcher",
+    provider: OptionsWatcher.build(path.join(suitePath, 'configs')),
+  }]
   const expectationsPath = path.join(suitePath, 'expectations');
   for (const testCase of fs.readdirSync(expectationsPath)) {
     const expectationPath = path.join(expectationsPath, testCase);
-    test(`${testCase}`, () => {
-      const expectedInfo = JSON.parse(fs.readFileSync(expectationPath, 'utf8'));
-      const { constraints, options: expectedOptions, features } = expectedInfo;
-      const preferences = new GetOptionsPreferences();
-      if (constraints) {
-        preferences.setConstraintsJson(JSON.stringify(constraints));
-      }
-      for (const [key, expectedValue] of Object.entries(expectedOptions)) {
-        const actualJson = provider.getOptionsJson(key, features, preferences);
-        const actualOptions = JSON.parse(actualJson);
-        expect(actualOptions).toEqual(expectedValue);
-      }
-    });
+    const expectedInfo = JSON.parse(fs.readFileSync(expectationPath, 'utf8'));
+    const { constraints, options: expectedOptions, features } = expectedInfo;
+    const preferences = new GetOptionsPreferences();
+    if (constraints) {
+      preferences.setConstraintsJson(JSON.stringify(constraints));
+    }
+    for (const { name, provider } of providers) {
+      test(`${name} ${testCase}`, () => {
+        for (const [key, expectedValue] of Object.entries(expectedOptions)) {
+          const actualJson = provider.getOptionsJson(key, features, preferences);
+          const actualOptions = JSON.parse(actualJson);
+          expect(actualOptions).toEqual(expectedValue);
+        }
+      });
+    }
   }
 }
 
