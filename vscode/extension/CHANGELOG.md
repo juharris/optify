@@ -5,6 +5,10 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.2.1
+
+Optimization: Use OptionsWatcher to more natively watch for changes and cache the OptionsProvider.
+
 ## 1.2.0
 
 * Enable find in preview.
