@@ -12,6 +12,8 @@ use crate::schema::metadata::OptionsMetadata;
 /// The duration to wait before triggering a rebuild after file changes.
 pub const DEFAULT_DEBOUNCE_DURATION: std::time::Duration = std::time::Duration::from_secs(1);
 
+pub type OptionsWatcherListener = Box<dyn Fn(OptionsProvider) + Send>;
+
 /// A registry which changes the underlying when files are changed.
 /// This is mainly meant to use for local development.
 ///
@@ -27,6 +29,7 @@ pub struct OptionsWatcher {
         RecommendedWatcher,
         notify_debouncer_full::RecommendedCache,
     >,
+    listeners: Vec<OptionsWatcherListener>,
 }
 
 impl OptionsWatcher {
@@ -88,6 +91,7 @@ impl OptionsWatcher {
             last_modified,
             watched_directories,
             debouncer_watcher,
+            listeners: Vec::new(),
         };
 
         let current_provider = self_.current_provider.clone();
@@ -141,6 +145,10 @@ impl OptionsWatcher {
         });
 
         self_
+    }
+
+    pub fn add_listener(&mut self, listener: OptionsWatcherListener) {
+        self.listeners.push(listener);
     }
 
     pub fn build(directory: &Path) -> Result<OptionsWatcher, String> {
