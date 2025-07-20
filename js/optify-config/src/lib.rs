@@ -149,14 +149,16 @@ impl JsOptionsProviderBuilder {
   }
 }
 
-// It sucks to duplicate the code for the watcher, but using a macro didn't work, possibly because of the napi macro.
-
 #[napi(js_name = "OptionsWatcher")]
 pub struct JsOptionsWatcher {
   inner: Option<OptionsWatcher>,
 }
 
-// type JsOptionsWatcherListener = Fn(String) -> u32;
+/// Input to a watcher listener.
+#[napi(js_name = "OptionsWatcherListenerEvent")]
+pub struct JsOptionsWatcherListenerEvent {
+  pub changed_paths: Vec<String>,
+}
 
 #[napi]
 impl JsOptionsWatcher {
@@ -165,20 +167,28 @@ impl JsOptionsWatcher {
     Self { inner: None }
   }
 
-  #[napi(ts_args_type = "listener: () => void")]
+  #[napi]
   pub fn add_listener(
     &mut self,
-    listener: napi::threadsafe_function::ThreadsafeFunction<()>,
+    listener: napi::threadsafe_function::ThreadsafeFunction<JsOptionsWatcherListenerEvent>,
   ) -> napi::Result<()> {
     let tsfn = Arc::new(listener);
 
-    let listener_fn = Arc::new(move || {
-      // Call the JavaScript function from the Rust thread
-      tsfn.call(
-        Ok(()),
-        napi::threadsafe_function::ThreadsafeFunctionCallMode::Blocking,
-      );
-    });
+    let listener_fn = Arc::new(
+      move |paths: &std::collections::HashSet<std::path::PathBuf>| {
+        let path_strings: Vec<String> = paths
+          .iter()
+          .map(|p| p.to_string_lossy().to_string())
+          .collect();
+
+        tsfn.call(
+          Ok(JsOptionsWatcherListenerEvent {
+            changed_paths: path_strings,
+          }),
+          napi::threadsafe_function::ThreadsafeFunctionCallMode::Blocking,
+        );
+      },
+    );
 
     self.inner.as_mut().unwrap().add_listener(listener_fn);
     Ok(())
