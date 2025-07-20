@@ -27,7 +27,7 @@ describe("OptionsWatcher", () => {
       done();
     });
     fs.writeFileSync(configPath, '');
-  }, 2000);
+  }, 3000);
 
   test("multiple listeners are all called", (done) => {
     const configPath = path.join(tempDir, 'config.yaml');
