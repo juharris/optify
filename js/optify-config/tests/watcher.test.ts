@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeEach, afterEach } from '@jest/globals';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { OptionsWatcher, OptionsWatcherListenerEvent } from '../index';
 
