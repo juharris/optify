@@ -2,6 +2,7 @@
 
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::{OptionsProvider, OptionsRegistry, OptionsWatcher};
+use std::sync::Arc;
 
 #[macro_use]
 extern crate napi_derive;
@@ -155,11 +156,32 @@ pub struct JsOptionsWatcher {
   inner: Option<OptionsWatcher>,
 }
 
+// type JsOptionsWatcherListener = Fn(String) -> u32;
+
 #[napi]
 impl JsOptionsWatcher {
   #[napi(constructor)]
   pub fn new() -> Self {
     Self { inner: None }
+  }
+
+  #[napi(ts_args_type = "listener: () => void")]
+  pub fn add_listener(
+    &mut self,
+    listener: napi::threadsafe_function::ThreadsafeFunction<()>,
+  ) -> napi::Result<()> {
+    let tsfn = Arc::new(listener);
+
+    let listener_fn = Arc::new(move || {
+      // Call the JavaScript function from the Rust thread
+      tsfn.call(
+        Ok(()),
+        napi::threadsafe_function::ThreadsafeFunctionCallMode::Blocking,
+      );
+    });
+
+    self.inner.as_mut().unwrap().add_listener(listener_fn);
+    Ok(())
   }
 
   #[napi]
