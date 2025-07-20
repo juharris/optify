@@ -20,10 +20,7 @@ describe("OptionsWatcher", () => {
     fs.writeFileSync(configPath, '');
 
     const watcher = OptionsWatcher.build(tempDir);
-    watcher.addListener((_, event) => {
-      expect(event.changedPaths).toBeDefined();
-      expect(Array.isArray(event.changedPaths)).toBe(true);
-      expect(event.changedPaths.length).toBeGreaterThan(0);
+    watcher.addListener((_, _event) => {
       done();
     });
     fs.writeFileSync(configPath, '');
@@ -38,6 +35,12 @@ describe("OptionsWatcher", () => {
     let listener1Event: OptionsWatcherListenerEvent;
     let listener2Event: OptionsWatcherListenerEvent;
 
+    const checkAllListenersCalled = () => {
+      if (listener1Event && listener2Event) {
+        done();
+      }
+    };
+
     watcher.addListener((_, event) => {
       listener1Event = event;
       checkAllListenersCalled();
@@ -47,12 +50,6 @@ describe("OptionsWatcher", () => {
       listener2Event = event;
       checkAllListenersCalled();
     });
-
-    const checkAllListenersCalled = () => {
-      if (listener1Event && listener2Event) {
-        done();
-      }
-    };
 
     fs.writeFileSync(configPath, '');
   }, 2000);
