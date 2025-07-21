@@ -258,13 +258,17 @@ impl JsOptionsWatcher {
 
   /// Returns the time when the provider was finished building.
   #[napi]
-  pub fn last_modified(&self) -> Option<f64> {
-    self.inner.as_ref().and_then(|w| {
-      w.last_modified()
-        .duration_since(std::time::UNIX_EPOCH)
-        .ok()
-        .map(|duration| duration.as_millis() as f64)
-    })
+  pub fn last_modified(&self) -> napi::Result<i64> {
+    self
+      .inner
+      .as_ref()
+      .map(|w| {
+        w.last_modified()
+          .duration_since(std::time::UNIX_EPOCH)
+          .unwrap()
+          .as_millis() as i64
+      })
+      .ok_or_else(|| napi::Error::from_reason("Watcher not built yet"))
   }
 }
 
