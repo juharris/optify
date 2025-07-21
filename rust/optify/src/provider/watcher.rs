@@ -12,6 +12,8 @@ use crate::schema::metadata::OptionsMetadata;
 /// The duration to wait before triggering a rebuild after file changes.
 pub const DEFAULT_DEBOUNCE_DURATION: std::time::Duration = std::time::Duration::from_secs(1);
 
+pub type OptionsWatcherListener = Arc<dyn Fn(&HashSet<PathBuf>) + Send + Sync>;
+
 /// A registry which changes the underlying when files are changed.
 /// This is mainly meant to use for local development.
 ///
@@ -27,6 +29,7 @@ pub struct OptionsWatcher {
         RecommendedWatcher,
         notify_debouncer_full::RecommendedCache,
     >,
+    listeners: Arc<Mutex<Vec<OptionsWatcherListener>>>,
 }
 
 impl OptionsWatcher {
@@ -61,7 +64,7 @@ impl OptionsWatcher {
                         "[optify] Rebuilding OptionsProvider because contents at these path(s) changed: {paths:?}"
                     );
 
-                    tx.send(()).unwrap();
+                    tx.send(paths).unwrap();
                 }
                 Err(errors) => errors
                     .iter()
@@ -88,14 +91,16 @@ impl OptionsWatcher {
             last_modified,
             watched_directories,
             debouncer_watcher,
+            listeners: Arc::new(Mutex::new(Vec::new())),
         };
 
         let current_provider = self_.current_provider.clone();
         let watched_directories = self_.watched_directories.clone();
         let last_modified = self_.last_modified.clone();
+        let listeners = self_.listeners.clone();
 
         std::thread::spawn(move || {
-            for _ in rx {
+            for paths in rx {
                 let result = std::panic::catch_unwind(|| {
                     let mut skip_rebuild = false;
                     let mut builder = OptionsProviderBuilder::new();
@@ -121,6 +126,10 @@ impl OptionsWatcher {
                                 *provider = new_provider;
                                 *last_modified.lock().unwrap() = std::time::SystemTime::now();
                                 eprintln!("\x1b[32m[optify] Successfully rebuilt the OptionsProvider.\x1b[0m");
+                                let listeners_guard = listeners.lock().unwrap();
+                                for listener in listeners_guard.iter() {
+                                    listener(&paths);
+                                }
                             }
                             Err(err) => {
                                 eprintln!(
@@ -141,6 +150,10 @@ impl OptionsWatcher {
         });
 
         self_
+    }
+
+    pub fn add_listener(&mut self, listener: OptionsWatcherListener) {
+        self.listeners.lock().unwrap().push(listener);
     }
 
     pub fn build(directory: &Path) -> Result<OptionsWatcher, String> {

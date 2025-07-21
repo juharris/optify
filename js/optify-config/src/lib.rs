@@ -2,6 +2,7 @@
 
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::{OptionsProvider, OptionsRegistry, OptionsWatcher};
+use std::sync::Arc;
 
 #[macro_use]
 extern crate napi_derive;
@@ -148,11 +149,15 @@ impl JsOptionsProviderBuilder {
   }
 }
 
-// It sucks to duplicate the code for the watcher, but using a macro didn't work, possibly because of the napi macro.
-
 #[napi(js_name = "OptionsWatcher")]
 pub struct JsOptionsWatcher {
   inner: Option<OptionsWatcher>,
+}
+
+/// Input to a watcher listener.
+#[napi(js_name = "OptionsWatcherListenerEvent")]
+pub struct JsOptionsWatcherListenerEvent {
+  pub changed_paths: Vec<String>,
 }
 
 #[napi]
@@ -160,6 +165,33 @@ impl JsOptionsWatcher {
   #[napi(constructor)]
   pub fn new() -> Self {
     Self { inner: None }
+  }
+
+  #[napi]
+  pub fn add_listener(
+    &mut self,
+    listener: napi::threadsafe_function::ThreadsafeFunction<JsOptionsWatcherListenerEvent>,
+  ) -> napi::Result<()> {
+    let tsfn = Arc::new(listener);
+
+    let listener_fn = Arc::new(
+      move |paths: &std::collections::HashSet<std::path::PathBuf>| {
+        let path_strings: Vec<String> = paths
+          .iter()
+          .map(|p| p.to_string_lossy().to_string())
+          .collect();
+
+        tsfn.call(
+          Ok(JsOptionsWatcherListenerEvent {
+            changed_paths: path_strings,
+          }),
+          napi::threadsafe_function::ThreadsafeFunctionCallMode::Blocking,
+        );
+      },
+    );
+
+    self.inner.as_mut().unwrap().add_listener(listener_fn);
+    Ok(())
   }
 
   #[napi]
@@ -226,13 +258,17 @@ impl JsOptionsWatcher {
 
   /// Returns the time when the provider was finished building.
   #[napi]
-  pub fn last_modified(&self) -> Option<f64> {
-    self.inner.as_ref().and_then(|w| {
-      w.last_modified()
-        .duration_since(std::time::UNIX_EPOCH)
-        .ok()
-        .map(|duration| duration.as_millis() as f64)
-    })
+  pub fn last_modified(&self) -> napi::Result<i64> {
+    self
+      .inner
+      .as_ref()
+      .map(|w| {
+        w.last_modified()
+          .duration_since(std::time::UNIX_EPOCH)
+          .unwrap()
+          .as_millis() as i64
+      })
+      .ok_or_else(|| napi::Error::from_reason("Watcher not built yet"))
   }
 }
 
