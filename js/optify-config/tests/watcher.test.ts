@@ -28,6 +28,8 @@ describe("OptionsWatcher", () => {
     });
     fs.writeFileSync(configPath, '');
     setTimeout(() => console.log("I/O time"),100);
+    // Try again.
+    fs.writeFileSync(configPath, '');
   }, 3000);
 
   test("multiple listeners are all called", (done) => {
