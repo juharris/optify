@@ -21,10 +21,10 @@ describe("OptionsWatcher", () => {
 
     const watcher = OptionsWatcher.build(tempDir);
     watcher.addListener((_, event) => {
-        expect(event.changedPaths).toBeDefined()
-        expect(Array.isArray(event.changedPaths)).toBe(true);
-        expect(event.changedPaths.length). toBeGreaterThan(0);
-        done();
+      expect(event.changedPaths).toBeDefined();
+      expect(Array.isArray(event.changedPaths)).toBe(true);
+      expect(event.changedPaths.length). toBeGreaterThan(0);
+      done();
     });
     fs.writeFileSync(configPath, '');
     setTimeout(() => console.log("I/O time"),100);
@@ -49,6 +49,9 @@ describe("OptionsWatcher", () => {
 
     watcher.addListener((_, event) => {
       listener1Event = event;
+      expect(event.changedPaths).toBeDefined();
+        expect(Array.isArray(event.changedPaths)).toBe(true);
+      expect(event.changedPaths.length). toBeGreaterThan(0);
       checkAllListenersCalled();
     });
 
