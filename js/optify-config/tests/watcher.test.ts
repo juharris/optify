@@ -5,7 +5,7 @@ import path from 'path';
 import { OptionsWatcher, OptionsWatcherListenerEvent } from '../index';
 
 const MODIFICATION_DEBOUNCE_MS = 1000;
-const RETRY_DELAY = MODIFICATION_DEBOUNCE_MS + 500;
+const RETRY_DELAY = MODIFICATION_DEBOUNCE_MS * 2 + 100;
 const MAX_RETRY_ATTEMPTS = 10;
 
 describe("OptionsWatcher", () => {
@@ -39,15 +39,16 @@ describe("OptionsWatcher", () => {
     setTimeout(() => {
       let attempts = 0;
       const tryModification = () => {
-        if (listenerCalled || attempts >= MAX_RETRY_ATTEMPTS) {
-          if (!listenerCalled && attempts >= MAX_RETRY_ATTEMPTS) {
-            done(new Error('Listener was not called after maximum retry attempts'));
-          }
+        if (listenerCalled) {
+          return;
+        }
+        if (attempts >= MAX_RETRY_ATTEMPTS) {
+          done(new Error('Listener was not called after maximum retry attempts'));
           return;
         }
 
         ++attempts;
-        fs.writeFileSync(configPath, 'options:\n  key: value');
+        fs.writeFileSync(configPath, `options:\n  key: value-${Date.now()}`);
 
         setTimeout(tryModification, RETRY_DELAY);
       };
@@ -93,15 +94,16 @@ describe("OptionsWatcher", () => {
     setTimeout(() => {
       let attempts = 0;
       const tryModification = () => {
-        if (allListenersCalled || attempts >= MAX_RETRY_ATTEMPTS) {
-          if (!allListenersCalled && attempts >= MAX_RETRY_ATTEMPTS) {
-            done(new Error('Not all listeners were called after maximum retry attempts'));
-          }
+        if (allListenersCalled) {
+          return;
+        }
+        if (attempts >= MAX_RETRY_ATTEMPTS) {
+          done(new Error('Not all listeners were called after maximum retry attempts'));
           return;
         }
 
         attempts++;
-        fs.writeFileSync(configPath, `key: value-${Date.now()}`);
+        fs.writeFileSync(configPath, `options:\n  key: value-${Date.now()}`);
 
         setTimeout(tryModification, RETRY_DELAY);
       };
