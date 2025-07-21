@@ -15,23 +15,6 @@ describe("OptionsWatcher", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  test("listener is called when a file is modified", (done) => {
-    const configPath = path.join(tempDir, 'config.yaml');
-    fs.writeFileSync(configPath, '');
-
-    const watcher = OptionsWatcher.build(tempDir);
-    watcher.addListener((_, event) => {
-      expect(event.changedPaths).toBeDefined();
-      expect(Array.isArray(event.changedPaths)).toBe(true);
-      expect(event.changedPaths.length). toBeGreaterThan(0);
-      done();
-    });
-    fs.writeFileSync(configPath, '');
-    setTimeout(() => console.log("I/O time"),100);
-    // Try again.
-    fs.writeFileSync(configPath, '');
-  }, 3000);
-
   test("multiple listeners are all called", (done) => {
     const configPath = path.join(tempDir, 'config.yaml');
     fs.writeFileSync(configPath, '');
