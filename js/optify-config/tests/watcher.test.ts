@@ -20,10 +20,14 @@ describe("OptionsWatcher", () => {
     fs.writeFileSync(configPath, '');
 
     const watcher = OptionsWatcher.build(tempDir);
-    watcher.addListener((_, _event) => {
-      done();
+    watcher.addListener((_, event) => {
+        expect(event.changedPaths).toBeDefined()
+        expect(Array.isArray(event.changedPaths)).toBe(true);
+        expect(event.changedPaths.length). toBeGreaterThan(0);
+        done();
     });
     fs.writeFileSync(configPath, '');
+    setTimeout(() => console.log("I/O time"),100);
   }, 3000);
 
   test("multiple listeners are all called", (done) => {
