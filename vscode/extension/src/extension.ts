@@ -14,14 +14,22 @@ interface ActivePreview {
 	watcher: vscode.FileSystemWatcher
 	documentChangeListener: vscode.Disposable
 	debounceTimer?: NodeJS.Timeout
+	updatePreview: () => void
 }
 
+const activePreviews = new Map<string, ActivePreview>();
 const providerCache = new Map<string, OptionsWatcher>();
 
 function getOptionsProvider(optifyRoot: string): OptionsWatcher {
 	let result = providerCache.get(optifyRoot);
 	if (result === undefined) {
 		result = OptionsWatcher.build(optifyRoot);
+		result.addListener(() => {
+			for (const preview of activePreviews.values()) {
+				preview.updatePreview();
+			}
+		});
+
 		providerCache.set(optifyRoot, result);
 	}
 
@@ -60,8 +68,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set up context for when clauses
 	updateOptifyFileContext();
 
-	const activePreviews = new Map<string, ActivePreview>();
-
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
 		if (!activeEditor) {
@@ -94,7 +100,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const canonicalName = getCanonicalName(filePath, optifyRoot);
 
-			// Check if preview already exists
 			const existingPreview = activePreviews.get(filePath);
 			if (existingPreview) {
 				existingPreview.panel.reveal();
@@ -147,20 +152,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 			context.subscriptions.push(documentChangeListener);
 
-			activePreviews.set(filePath, { panel, watcher, documentChangeListener });
+			activePreviews.set(filePath, { panel, watcher, documentChangeListener, updatePreview, });
 
 			// Clean up when panel is closed
 			panel.onDidDispose(() => {
-				const preview = activePreviews.get(filePath);
-				if (preview) {
-					preview.watcher.dispose();
-					preview.documentChangeListener.dispose();
-					// Clear any pending debounce timer
-					if (preview.debounceTimer) {
-						clearTimeout(preview.debounceTimer);
-					}
-					activePreviews.delete(filePath);
-				}
+				cleanPreview(filePath);
 			});
 		} catch (error) {
 			const errorMessage = `Error building Optify preview: ${error}`;
@@ -212,6 +208,19 @@ export function activate(context: vscode.ExtensionContext) {
 		onDidOpenDocument,
 		onDidChangeActiveEditor
 	);
+}
+
+function cleanPreview(filePath: string) {
+	const preview = activePreviews.get(filePath);
+	if (preview) {
+		preview.watcher.dispose();
+		preview.documentChangeListener.dispose();
+		// Clear any pending debounce timer
+		if (preview.debounceTimer) {
+			clearTimeout(preview.debounceTimer);
+		}
+		activePreviews.delete(filePath);
+	}
 }
 
 function updateOptifyFileContext() {
@@ -405,4 +414,12 @@ class OptifyDiagnosticsProvider {
 	}
 }
 
-export function deactivate() { }
+export function deactivate() {
+	console.debug("Deactivating Optify extension");
+	for (const filePath of activePreviews.keys()) {
+		cleanPreview(filePath);
+	}
+	// It should already be empty, but we'll clear it just in case.
+	activePreviews.clear();
+	providerCache.clear();
+}
