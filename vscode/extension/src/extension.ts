@@ -11,7 +11,6 @@ const outputChannel = vscode.window.createOutputChannel('Optify');
 
 interface ActivePreview {
 	panel: vscode.WebviewPanel
-	watcher: vscode.FileSystemWatcher
 	documentChangeListener: vscode.Disposable
 	debounceTimer?: NodeJS.Timeout
 	updatePreview: () => void
@@ -123,10 +122,8 @@ export function activate(context: vscode.ExtensionContext) {
 				// console.debug(`File changed: '${filePath}'. Remaking preview.`);
 				panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 			};
-			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
-			watcher.onDidChange(updatePreview);
 
-			// Also update preview on document text changes (before save)
+			// Update preview on document text changes (before save)
 			const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 				if (event.document.uri.fsPath === filePath) {
 					const preview = activePreviews.get(filePath);
@@ -152,7 +149,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			context.subscriptions.push(documentChangeListener);
 
-			activePreviews.set(filePath, { panel, watcher, documentChangeListener, updatePreview, });
+			activePreviews.set(filePath, { panel, documentChangeListener, updatePreview, });
 
 			// Clean up when panel is closed
 			panel.onDidDispose(() => {
@@ -213,7 +210,6 @@ export function activate(context: vscode.ExtensionContext) {
 function cleanPreview(filePath: string) {
 	const preview = activePreviews.get(filePath);
 	if (preview) {
-		preview.watcher.dispose();
 		preview.documentChangeListener.dispose();
 		// Clear any pending debounce timer
 		if (preview.debounceTimer) {

@@ -12,7 +12,6 @@ Helps manage and develop [Optify] feature files.
 
 ### Future Plans
 
-* Refresh when an import changes.
 * Build a configuration for multiple features.
 * Import completion/suggestions.
 * Suggest the canonical name for an alias.
