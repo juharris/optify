@@ -1,6 +1,6 @@
 # Optify VSCode Extension
 
-After making changes, use `npm run lint:fix` to fix linting issues, and `npm test` to run tests.
+After making changes, use `npm run lint:fix` to fix linting issues, and when necessary, run `npm test` for the specific test for code that changed.
 
 ## Development Commands
 
