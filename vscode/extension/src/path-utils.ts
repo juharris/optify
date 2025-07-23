@@ -54,3 +54,17 @@ export function getCanonicalName(filePath: string, optifyRoot: string): string {
 
 	return result;
 }
+
+export function resolveImportPath(importName: string, optifyRoot: string): string | undefined {
+	const extensions = ['.json', '.yaml', '.yml', '.json5'];
+
+	// Try resolving relative to the optify root
+	for (const ext of extensions) {
+		const possiblePath = path.resolve(optifyRoot, importName + ext);
+		if (fs.existsSync(possiblePath)) {
+			return possiblePath;
+		}
+	}
+
+	return undefined;
+}

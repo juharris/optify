@@ -10,11 +10,11 @@ Helps manage and develop [Optify] feature files.
 * Click on an import or use Go to Definition (F12) to open the file.
 * Validate imports.
 * Completions for imports.
+* Suggest the canonical name for an alias.
 
 ### Future Plans
 
 * Build a configuration for multiple features.
-* Suggest the canonical name for an alias.
 * See files that import the current file.
 * Suggest keys in options based on other files.
 * Email owners.

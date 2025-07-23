@@ -9,6 +9,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 * Update previews when option files change.
 * Add completions for imports.
+* Suggest the canonical name for an alias.
 
 ## 1.2.2
 

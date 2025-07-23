@@ -115,8 +115,6 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 			const provider = getOptionsProvider(optifyRoot);
 			const features = provider.features();
 
-			this.outputChannel.appendLine(`  => Found ${features.length} features to suggest`);
-
 			const currentLineTrimmed = lineText.trim();
 			const needsSpaceAfterDash = /^\s*-$/.test(linePrefix);
 
@@ -224,7 +222,6 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 				return item;
 			});
 
-			this.outputChannel.appendLine(`  => Returning ${completionItems.length} completion items`);
 			return completionItems;
 		} catch (error) {
 			this.outputChannel.appendLine(`Error getting completions: ${error}`);

@@ -1,13 +1,12 @@
 import { GetOptionsPreferences } from '@optify/config';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as vscode from 'vscode';
-import { ConfigParser } from './config-parser';
-import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
 import { OptifyCompletionProvider } from './completion';
-import { findOptifyRoot, isOptifyFeatureFile, getCanonicalName } from './path-utils';
-import { getOptionsProvider, clearProviderCache, registerUpdateCallback } from './providers';
-
+import { ConfigParser } from './config-parser';
+import { OptifyDefinitionProvider } from './definitions';
+import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveImportPath } from './path-utils';
+import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
+import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
 const outputChannel = vscode.window.createOutputChannel('Optify');
 
@@ -195,6 +194,14 @@ export function activate(context: vscode.ExtensionContext) {
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('optify');
 	const diagnosticsProvider = new OptifyDiagnosticsProvider(diagnosticCollection);
 
+	const codeActionProvider = vscode.languages.registerCodeActionsProvider(
+		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
+		new OptifyCodeActionProvider(),
+		{
+			providedCodeActionKinds: OptifyCodeActionProvider.providedCodeActionKinds
+		}
+	);
+
 	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
 		if (isOptifyFeatureFile(event.document.fileName)) {
 			diagnosticsProvider.updateDiagnostics(event.document);
@@ -219,6 +226,7 @@ export function activate(context: vscode.ExtensionContext) {
 		definitionProvider,
 		completionProvider,
 		diagnosticCollection,
+		codeActionProvider,
 		onDidChangeDocument,
 		onDidOpenDocument,
 		onDidChangeActiveEditor
@@ -261,7 +269,7 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 			return links;
 		}
 
-		outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
+		// outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
 		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
 
@@ -274,118 +282,6 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 		}
 
 		return links;
-	}
-}
-
-function resolveImportPath(importName: string, optifyRoot: string): string | undefined {
-	const extensions = ['.json', '.yaml', '.yml', '.json5'];
-
-	// Try resolving relative to the optify root
-	for (const ext of extensions) {
-		const possiblePath = path.resolve(optifyRoot, importName + ext);
-		if (fs.existsSync(possiblePath)) {
-			return possiblePath;
-		}
-	}
-
-	return undefined;
-}
-
-/**
- * Provides "Go to Definition" functionality for imports.
- */
-class OptifyDefinitionProvider implements vscode.DefinitionProvider {
-	provideDefinition(
-		document: vscode.TextDocument,
-		position: vscode.Position,
-		_token: vscode.CancellationToken
-	): vscode.ProviderResult<vscode.Definition> {
-		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-		if (!workspaceFolder) {
-			return null;
-		}
-
-		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-		if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot)) {
-			return null;
-		}
-
-		const text = document.getText();
-		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
-
-		// Check if the cursor is on an import (including quotes)
-		for (const importInfo of importInfos) {
-			// Expand the range to include potential quotes around the import
-			const line = document.lineAt(importInfo.range.start.line).text;
-			const beforeChar = importInfo.range.start.character > 0 ? line.charAt(importInfo.range.start.character - 1) : '';
-			const afterChar = importInfo.range.end.character < line.length ? line.charAt(importInfo.range.end.character) : '';
-
-			let expandedRange = importInfo.range;
-			if ((beforeChar === '"' || beforeChar === "'") && afterChar === beforeChar) {
-				// Expand range to include quotes
-				expandedRange = new vscode.Range(
-					new vscode.Position(importInfo.range.start.line, importInfo.range.start.character - 1),
-					new vscode.Position(importInfo.range.end.line, importInfo.range.end.character + 1)
-				);
-			}
-
-			if (expandedRange.contains(position)) {
-				const targetPath = resolveImportPath(importInfo.name, optifyRoot);
-				if (targetPath) {
-					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
-				}
-			}
-		}
-
-		return null;
-	}
-}
-
-/**
- * Validates files such as validating imports.
- */
-class OptifyDiagnosticsProvider {
-	constructor(private diagnosticCollection: vscode.DiagnosticCollection) { }
-
-	updateDiagnostics(document: vscode.TextDocument): void {
-		outputChannel.appendLine(`Updating diagnostics for ${document.fileName} | languageId: ${document.languageId}`);
-		const diagnostics: vscode.Diagnostic[] = [];
-		const text = document.getText();
-
-		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-		if (!workspaceFolder) {
-			return;
-		}
-
-		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-		if (!optifyRoot) {
-			return;
-		}
-
-		// Get the canonical name of the current file for self-import detection
-		const currentFileCanonicalName = getCanonicalName(document.uri.fsPath, optifyRoot);
-
-		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
-		for (const importInfo of importInfos) {
-			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
-			if (!targetPath) {
-				const diagnostic = new vscode.Diagnostic(
-					importInfo.range,
-					`Cannot resolve import '${importInfo.name}'`,
-					vscode.DiagnosticSeverity.Error
-				);
-				diagnostics.push(diagnostic);
-			} else if (importInfo.name === currentFileCanonicalName) {
-				const diagnostic = new vscode.Diagnostic(
-					importInfo.range,
-					"A file cannot import itself",
-					vscode.DiagnosticSeverity.Error
-				);
-				diagnostics.push(diagnostic);
-			}
-		}
-
-		this.diagnosticCollection.set(document.uri, diagnostics);
 	}
 }
 
