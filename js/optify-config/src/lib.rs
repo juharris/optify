@@ -4,6 +4,10 @@ use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWat
 use optify::provider::{OptionsProvider, OptionsRegistry, OptionsWatcher};
 use std::sync::Arc;
 
+use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
+
+mod metadata;
+
 #[macro_use]
 extern crate napi_derive;
 
@@ -71,10 +75,23 @@ impl JsOptionsProvider {
     }
   }
 
-  /// All of the canonical feature names.
+  /// Returns all of the canonical feature names.
   #[napi]
   pub fn features(&self) -> Vec<String> {
     self.inner.as_ref().unwrap().get_features()
+  }
+
+  /// Returns a map of all the canonical feature names to their metadata.
+  #[napi]
+  pub fn features_with_metadata(&self) -> std::collections::HashMap<String, JsOptionsMetadata> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_features_with_metadata()
+      .into_iter()
+      .map(|(k, v)| (k, to_js_options_metadata(v)))
+      .collect()
   }
 
   #[napi]
@@ -215,10 +232,23 @@ impl JsOptionsWatcher {
     }
   }
 
-  /// All of the canonical feature names.
+  /// Returns all of the canonical feature names.
   #[napi]
   pub fn features(&self) -> Vec<String> {
     self.inner.as_ref().unwrap().get_features()
+  }
+
+  /// Returns a map of all the canonical feature names to their metadata.
+  #[napi]
+  pub fn features_with_metadata(&self) -> std::collections::HashMap<String, JsOptionsMetadata> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_features_with_metadata()
+      .into_iter()
+      .map(|(k, v)| (k, to_js_options_metadata(v)))
+      .collect()
   }
 
   #[napi]
