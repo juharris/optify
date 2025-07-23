@@ -8,7 +8,6 @@ import { OptifyCompletionProvider } from './completion';
 import { findOptifyRoot, isOptifyFeatureFile, getCanonicalName } from './path-utils';
 import { getOptionsProvider, clearProviderCache, registerUpdateCallback } from './providers';
 
-const EDIT_DEBOUNCE_MILLISECONDS = 250;
 
 const outputChannel = vscode.window.createOutputChannel('Optify');
 
@@ -49,6 +48,25 @@ export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: stri
 
 export function activate(context: vscode.ExtensionContext) {
 	outputChannel.appendLine('Optify extension is now active!');
+
+	const EDIT_DEBOUNCE_MILLISECONDS = 250;
+
+	// Generate all printable ASCII characters as trigger characters for completions
+	const COMPLETION_TRIGGER_CHARACTERS: string[] = (() => {
+		const triggers: string[] = [];
+		// Add quotes and special characters
+		triggers.push('"', "'", ' ', '-', '_', '/', '.', ':');
+		// Add all letters (a-z, A-Z)
+		for (let i = 65; i <= 90; i++) {
+			triggers.push(String.fromCharCode(i)); // A-Z
+			triggers.push(String.fromCharCode(i + 32)); // a-z
+		}
+		// Add all digits (0-9)
+		for (let i = 48; i <= 57; i++) {
+			triggers.push(String.fromCharCode(i));
+		}
+		return triggers;
+	})();
 
 	// Set up context for when clauses
 	updateOptifyFileContext();
@@ -171,8 +189,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const completionProvider = vscode.languages.registerCompletionItemProvider(
 		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
 		new OptifyCompletionProvider(outputChannel),
-		// Trigger characters
-		'"', "'"
+		...COMPLETION_TRIGGER_CHARACTERS
 	);
 
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('optify');

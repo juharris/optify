@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## 1.3.0
 
 * Update previews when option files change.
+* Add completions for imports.
 
 ## 1.2.2
 

@@ -49,7 +49,6 @@ export function isOptifyFeatureFile(filePath: string,
 }
 
 export function getCanonicalName(filePath: string, optifyRoot: string): string {
-	// TODO Ensure that the path uses "/"s on Windows.
 	const relativePath = path.relative(optifyRoot, filePath);
 	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
 
