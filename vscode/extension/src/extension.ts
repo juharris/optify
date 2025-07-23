@@ -1,9 +1,12 @@
-import { GetOptionsPreferences, OptionsWatcher } from '@optify/config';
+import { GetOptionsPreferences } from '@optify/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { ConfigParser } from './configparser';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
+import { OptifyCompletionProvider } from './completion';
+import { findOptifyRoot, isOptifyFeatureFile, getCanonicalName } from './path-utils';
+import { getOptionsProvider, clearProviderCache, registerUpdateCallback } from './providers';
 
 const EDIT_DEBOUNCE_MILLISECONDS = 250;
 
@@ -17,23 +20,6 @@ interface ActivePreview {
 }
 
 const activePreviews = new Map<string, ActivePreview>();
-const providerCache = new Map<string, OptionsWatcher>();
-
-function getOptionsProvider(optifyRoot: string): OptionsWatcher {
-	let result = providerCache.get(optifyRoot);
-	if (result === undefined) {
-		result = OptionsWatcher.build(optifyRoot);
-		result.addListener(() => {
-			for (const preview of activePreviews.values()) {
-				preview.updatePreview();
-			}
-		});
-
-		providerCache.set(optifyRoot, result);
-	}
-
-	return result;
-}
 
 export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): string {
 	// console.debug(`Building preview for '${canonicalFeatures}' in '${optifyRoot}'`);
@@ -66,6 +52,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Set up context for when clauses
 	updateOptifyFileContext();
+
+	// Register callback to update previews when options change
+	registerUpdateCallback(() => {
+		for (const preview of activePreviews.values()) {
+			preview.updatePreview();
+		}
+	});
 
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
@@ -175,6 +168,13 @@ export function activate(context: vscode.ExtensionContext) {
 		new OptifyDefinitionProvider()
 	);
 
+	const completionProvider = vscode.languages.registerCompletionItemProvider(
+		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
+		new OptifyCompletionProvider(outputChannel),
+		// Trigger characters
+		'"', "'"
+	);
+
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('optify');
 	const diagnosticsProvider = new OptifyDiagnosticsProvider(diagnosticCollection);
 
@@ -200,6 +200,7 @@ export function activate(context: vscode.ExtensionContext) {
 		previewCommand,
 		linkProvider,
 		definitionProvider,
+		completionProvider,
 		diagnosticCollection,
 		onDidChangeDocument,
 		onDidOpenDocument,
@@ -223,59 +224,6 @@ function updateOptifyFileContext() {
 	const activeEditor = vscode.window.activeTextEditor;
 	const isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
 	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
-}
-
-function isOptifyFeatureFile(filePath: string,
-	optifyRoot: string | undefined = undefined,
-	workspaceFolder: vscode.WorkspaceFolder | undefined = undefined): boolean {
-	const ext = path.extname(filePath).toLowerCase();
-	// We only support a few types of files in this extension and the config Rust crate only supports a few file types.
-	if (!['.json', '.yaml', '.yml', '.json5'].includes(ext)) {
-		return false;
-	}
-
-	// Check if file is in an Optify project by looking for root directory.
-	if (!optifyRoot) {
-		workspaceFolder ||= vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
-		if (!workspaceFolder) {
-			return false;
-		}
-
-		optifyRoot = findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
-	}
-	return optifyRoot !== undefined;
-}
-
-export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
-	let currentDir = path.dirname(filePath);
-
-	const configDirs = new Set(['options', 'configs', 'configurations']);
-	const markerDirName = '.optify';
-	while (currentDir !== path.dirname(currentDir)) {
-		const currentDirName = path.basename(currentDir);
-		if (configDirs.has(currentDirName)) {
-			return currentDir;
-		}
-
-		const optifyConfigPath = path.join(currentDir, markerDirName);
-		if (fs.existsSync(optifyConfigPath)) {
-			return currentDir;
-		}
-
-		currentDir = path.dirname(currentDir);
-		if (currentDir === workspaceRoot) {
-			return undefined;
-		}
-	}
-
-	return undefined;
-}
-
-function getCanonicalName(filePath: string, optifyRoot: string): string {
-	const relativePath = path.relative(optifyRoot, filePath);
-	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
-
-	return result;
 }
 
 /**
@@ -417,5 +365,5 @@ export function deactivate() {
 	}
 	// It should already be empty, but we'll clear it just in case.
 	activePreviews.clear();
-	providerCache.clear();
+	clearProviderCache();
 }
