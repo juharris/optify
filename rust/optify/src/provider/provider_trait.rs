@@ -41,6 +41,7 @@ pub trait OptionsRegistry {
     /// Returns all of the canonical feature names.
     fn get_features(&self) -> Vec<String>;
 
+    /// Returns a map of all the canonical feature names to their metadata.
     fn get_features_with_metadata(&self) -> Features;
 
     /// Gets options for a specific key and feature names

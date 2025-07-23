@@ -37,6 +37,35 @@ describe('Provider', () => {
 			expect(() => OptionsProvider.build(configDir))
 				.toThrow(`Error loading file '${filePath}': simple key expected at byte 31 line 4 column 1 in ${filePath}`)
 		})
+
+		test(`${name} features`, () => {
+			const features = provider.features()
+			features.sort()
+			expect(features).toEqual(['A_with_comments', 'feature_A', 'feature_B/initial'])
+		})
+
+		test(`${name} features with metadata`, () => {
+			const featuresWithMetadata = provider.featuresWithMetadata()
+			const keys = Object.keys(featuresWithMetadata)
+			keys.sort()
+			expect(keys).toEqual(['A_with_comments', 'feature_A', 'feature_B/initial'])
+			const metadataA = featuresWithMetadata['feature_A']
+			expect(metadataA.name()).toEqual('feature_A')
+			expect(metadataA.aliases()).toEqual(['a'])
+			expect(metadataA.owners()).toEqual("a-team@company.com")
+		})
+
+		test(`${name} get_canonical_feature_name`, () => {
+			expect(provider.getCanonicalFeatureName('a')).toEqual('feature_A')
+			expect(provider.getCanonicalFeatureName('A')).toEqual('feature_A')
+			expect(provider.getCanonicalFeatureName('feature_A')).toEqual('feature_A')
+			expect(provider.getCanonicalFeatureName('feAture_B/InItiAl')).toEqual('feature_B/initial')
+			expect(provider.getCanonicalFeatureName('B')).toEqual('feature_B/initial')
+		})
+
+		test(`${name} get_canonical_feature_names does not exist`, () => {
+			expect(provider.getCanonicalFeatureName('does_not_exist')).toBeNull()
+		})
 	}
 
 	test("last modified", () => {

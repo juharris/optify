@@ -4,6 +4,10 @@ use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWat
 use optify::provider::{OptionsProvider, OptionsRegistry, OptionsWatcher};
 use std::sync::Arc;
 
+use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
+
+mod metadata;
+
 #[macro_use]
 extern crate napi_derive;
 
@@ -71,10 +75,23 @@ impl JsOptionsProvider {
     }
   }
 
-  /// All of the canonical feature names.
+  /// Returns all of the canonical feature names.
   #[napi]
   pub fn features(&self) -> Vec<String> {
     self.inner.as_ref().unwrap().get_features()
+  }
+
+  /// Returns a map of all the canonical feature names to their metadata.
+  #[napi]
+  pub fn features_with_metadata(&self) -> std::collections::HashMap<String, JsOptionsMetadata> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_features_with_metadata()
+      .into_iter()
+      .map(|(k, v)| (k, to_js_options_metadata(v)))
+      .collect()
   }
 
   #[napi]
@@ -93,6 +110,20 @@ impl JsOptionsProvider {
       Ok(json) => Ok(json.to_string()),
       Err(e) => Err(napi::Error::from_reason(e.to_string())),
     }
+  }
+
+  /// Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+  /// Canonical feature names map to themselves.
+  ///
+  /// Returns the canonical feature name or `null` if the feature name is not found.
+  #[napi]
+  pub fn get_canonical_feature_name(&self, feature_name: String) -> Option<String> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_canonical_feature_name(&feature_name)
+      .ok()
   }
 
   #[napi]
@@ -215,10 +246,23 @@ impl JsOptionsWatcher {
     }
   }
 
-  /// All of the canonical feature names.
+  /// Returns all of the canonical feature names.
   #[napi]
   pub fn features(&self) -> Vec<String> {
     self.inner.as_ref().unwrap().get_features()
+  }
+
+  /// Returns a map of all the canonical feature names to their metadata.
+  #[napi]
+  pub fn features_with_metadata(&self) -> std::collections::HashMap<String, JsOptionsMetadata> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_features_with_metadata()
+      .into_iter()
+      .map(|(k, v)| (k, to_js_options_metadata(v)))
+      .collect()
   }
 
   #[napi]
@@ -237,6 +281,20 @@ impl JsOptionsWatcher {
       Ok(json) => Ok(json.to_string()),
       Err(e) => Err(napi::Error::from_reason(e.to_string())),
     }
+  }
+
+  /// Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+  /// Canonical feature names map to themselves.
+  ///
+  /// Returns the canonical feature name or `null` if the feature name is not found.
+  #[napi]
+  pub fn get_canonical_feature_name(&self, feature_name: String) -> Option<String> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_canonical_feature_name(&feature_name)
+      .ok()
   }
 
   #[napi]
