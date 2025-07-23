@@ -1,14 +1,14 @@
 import * as assert from 'assert';
 
 import * as vscode from 'vscode';
-import { buildOptifyPreview, findOptifyRoot } from '../extension';
+import { buildOptifyPreview } from '../extension';
+import { findOptifyRoot } from '../path-utils';
 import path from 'path';
 
 suite('Extension Test Suite', () => {
 	vscode.window.showInformationMessage('Start all tests.');
 
 	test('buildOptifyPreview', () => {
-		console.log('__dirname:', __dirname);
 		const expectedRoot = path.join(__dirname, '../../src/test/configs');
 		const featurePath = path.join(expectedRoot, 'feature.json');
 		const optifyRoot = findOptifyRoot(featurePath, 'wtv');

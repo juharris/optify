@@ -9,13 +9,12 @@ Helps manage and develop [Optify] feature files.
 * Show a preview of the built feature file or show the error in the preview window.
 * Click on an import or use Go to Definition (F12) to open the file.
 * Validate imports.
+* Completions for imports.
+* Suggest the canonical name for an alias.
 
 ### Future Plans
 
-* Refresh when an import changes.
 * Build a configuration for multiple features.
-* Import completion/suggestions.
-* Suggest the canonical name for an alias.
 * See files that import the current file.
 * Suggest keys in options based on other files.
 * Email owners.

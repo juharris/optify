@@ -1,32 +1,23 @@
-import { GetOptionsPreferences, OptionsWatcher } from '@optify/config';
-import * as fs from 'fs';
-import * as path from 'path';
+import { GetOptionsPreferences } from '@optify/config';
 import * as vscode from 'vscode';
-import { ConfigParser } from './configparser';
+import { OptifyCompletionProvider } from './completion';
+import { ConfigParser } from './config-parser';
+import { OptifyDefinitionProvider } from './definitions';
+import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveImportPath } from './path-utils';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
-
-const EDIT_DEBOUNCE_MILLISECONDS = 250;
+import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
 const outputChannel = vscode.window.createOutputChannel('Optify');
 
 interface ActivePreview {
 	panel: vscode.WebviewPanel
-	watcher: vscode.FileSystemWatcher
 	documentChangeListener: vscode.Disposable
 	debounceTimer?: NodeJS.Timeout
+	updatePreview: () => void
 }
 
-const providerCache = new Map<string, OptionsWatcher>();
-
-function getOptionsProvider(optifyRoot: string): OptionsWatcher {
-	let result = providerCache.get(optifyRoot);
-	if (result === undefined) {
-		result = OptionsWatcher.build(optifyRoot);
-		providerCache.set(optifyRoot, result);
-	}
-
-	return result;
-}
+const activePreviews = new Map<string, ActivePreview>();
 
 export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): string {
 	// console.debug(`Building preview for '${canonicalFeatures}' in '${optifyRoot}'`);
@@ -57,10 +48,34 @@ export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: stri
 export function activate(context: vscode.ExtensionContext) {
 	outputChannel.appendLine('Optify extension is now active!');
 
+	const EDIT_DEBOUNCE_MILLISECONDS = 250;
+
+	// Generate all printable ASCII characters as trigger characters for completions
+	const COMPLETION_TRIGGER_CHARACTERS: string[] = (() => {
+		const triggers: string[] = [];
+		// Add quotes and special characters
+		triggers.push('"', "'", ' ', '-', '_', '/', '.', ':');
+		// Add all letters (a-z, A-Z)
+		for (let i = 65; i <= 90; i++) {
+			triggers.push(String.fromCharCode(i)); // A-Z
+			triggers.push(String.fromCharCode(i + 32)); // a-z
+		}
+		// Add all digits (0-9)
+		for (let i = 48; i <= 57; i++) {
+			triggers.push(String.fromCharCode(i));
+		}
+		return triggers;
+	})();
+
 	// Set up context for when clauses
 	updateOptifyFileContext();
 
-	const activePreviews = new Map<string, ActivePreview>();
+	// Register callback to update previews when options change
+	registerUpdateCallback(() => {
+		for (const preview of activePreviews.values()) {
+			preview.updatePreview();
+		}
+	});
 
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
 		const activeEditor = vscode.window.activeTextEditor;
@@ -94,7 +109,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const canonicalName = getCanonicalName(filePath, optifyRoot);
 
-			// Check if preview already exists
 			const existingPreview = activePreviews.get(filePath);
 			if (existingPreview) {
 				existingPreview.panel.reveal();
@@ -118,10 +132,8 @@ export function activate(context: vscode.ExtensionContext) {
 				// console.debug(`File changed: '${filePath}'. Remaking preview.`);
 				panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
 			};
-			const watcher = vscode.workspace.createFileSystemWatcher(filePath);
-			watcher.onDidChange(updatePreview);
 
-			// Also update preview on document text changes (before save)
+			// Update preview on document text changes (before save)
 			const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 				if (event.document.uri.fsPath === filePath) {
 					const preview = activePreviews.get(filePath);
@@ -147,20 +159,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 			context.subscriptions.push(documentChangeListener);
 
-			activePreviews.set(filePath, { panel, watcher, documentChangeListener });
+			activePreviews.set(filePath, { panel, documentChangeListener, updatePreview, });
 
 			// Clean up when panel is closed
 			panel.onDidDispose(() => {
-				const preview = activePreviews.get(filePath);
-				if (preview) {
-					preview.watcher.dispose();
-					preview.documentChangeListener.dispose();
-					// Clear any pending debounce timer
-					if (preview.debounceTimer) {
-						clearTimeout(preview.debounceTimer);
-					}
-					activePreviews.delete(filePath);
-				}
+				cleanPreview(filePath);
 			});
 		} catch (error) {
 			const errorMessage = `Error building Optify preview: ${error}`;
@@ -182,8 +185,22 @@ export function activate(context: vscode.ExtensionContext) {
 		new OptifyDefinitionProvider()
 	);
 
+	const completionProvider = vscode.languages.registerCompletionItemProvider(
+		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
+		new OptifyCompletionProvider(outputChannel),
+		...COMPLETION_TRIGGER_CHARACTERS
+	);
+
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('optify');
 	const diagnosticsProvider = new OptifyDiagnosticsProvider(diagnosticCollection);
+
+	const codeActionProvider = vscode.languages.registerCodeActionsProvider(
+		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
+		new OptifyCodeActionProvider(),
+		{
+			providedCodeActionKinds: OptifyCodeActionProvider.providedCodeActionKinds
+		}
+	);
 
 	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
 		if (isOptifyFeatureFile(event.document.fileName)) {
@@ -207,70 +224,31 @@ export function activate(context: vscode.ExtensionContext) {
 		previewCommand,
 		linkProvider,
 		definitionProvider,
+		completionProvider,
 		diagnosticCollection,
+		codeActionProvider,
 		onDidChangeDocument,
 		onDidOpenDocument,
 		onDidChangeActiveEditor
 	);
 }
 
+function cleanPreview(filePath: string) {
+	const preview = activePreviews.get(filePath);
+	if (preview) {
+		preview.documentChangeListener.dispose();
+		// Clear any pending debounce timer
+		if (preview.debounceTimer) {
+			clearTimeout(preview.debounceTimer);
+		}
+		activePreviews.delete(filePath);
+	}
+}
+
 function updateOptifyFileContext() {
 	const activeEditor = vscode.window.activeTextEditor;
 	const isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
 	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
-}
-
-function isOptifyFeatureFile(filePath: string,
-	optifyRoot: string | undefined = undefined,
-	workspaceFolder: vscode.WorkspaceFolder | undefined = undefined): boolean {
-	const ext = path.extname(filePath).toLowerCase();
-	// We only support a few types of files in this extension and the config Rust crate only supports a few file types.
-	if (!['.json', '.yaml', '.yml', '.json5'].includes(ext)) {
-		return false;
-	}
-
-	// Check if file is in an Optify project by looking for root directory.
-	if (!optifyRoot) {
-		workspaceFolder ||= vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
-		if (!workspaceFolder) {
-			return false;
-		}
-
-		optifyRoot = findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
-	}
-	return optifyRoot !== undefined;
-}
-
-export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
-	let currentDir = path.dirname(filePath);
-
-	const configDirs = new Set(['options', 'configs', 'configurations']);
-	const markerDirName = '.optify';
-	while (currentDir !== path.dirname(currentDir)) {
-		const currentDirName = path.basename(currentDir);
-		if (configDirs.has(currentDirName)) {
-			return currentDir;
-		}
-
-		const optifyConfigPath = path.join(currentDir, markerDirName);
-		if (fs.existsSync(optifyConfigPath)) {
-			return currentDir;
-		}
-
-		currentDir = path.dirname(currentDir);
-		if (currentDir === workspaceRoot) {
-			return undefined;
-		}
-	}
-
-	return undefined;
-}
-
-function getCanonicalName(filePath: string, optifyRoot: string): string {
-	const relativePath = path.relative(optifyRoot, filePath);
-	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
-
-	return result;
 }
 
 /**
@@ -291,7 +269,7 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 			return links;
 		}
 
-		outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
+		// outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
 		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
 
@@ -307,102 +285,12 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 	}
 }
 
-function resolveImportPath(importName: string, optifyRoot: string): string | undefined {
-	const extensions = ['.json', '.yaml', '.yml', '.json5'];
-
-	// Try resolving relative to the optify root
-	for (const ext of extensions) {
-		const possiblePath = path.resolve(optifyRoot, importName + ext);
-		if (fs.existsSync(possiblePath)) {
-			return possiblePath;
-		}
+export function deactivate() {
+	console.debug("Deactivating Optify extension");
+	for (const filePath of activePreviews.keys()) {
+		cleanPreview(filePath);
 	}
-
-	return undefined;
+	// It should already be empty, but we'll clear it just in case.
+	activePreviews.clear();
+	clearProviderCache();
 }
-
-/**
- * Provides "Go to Definition" functionality for imports.
- */
-class OptifyDefinitionProvider implements vscode.DefinitionProvider {
-	provideDefinition(
-		document: vscode.TextDocument,
-		position: vscode.Position,
-		_token: vscode.CancellationToken
-	): vscode.ProviderResult<vscode.Definition> {
-		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-		if (!workspaceFolder) {
-			return null;
-		}
-
-		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-		if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot)) {
-			return null;
-		}
-
-		const text = document.getText();
-		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
-
-		// Check if the cursor is on an import
-		for (const importInfo of importInfos) {
-			if (importInfo.range.contains(position)) {
-				const targetPath = resolveImportPath(importInfo.name, optifyRoot);
-				if (targetPath) {
-					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
-				}
-			}
-		}
-
-		return null;
-	}
-}
-
-/**
- * Validates files such as validating imports.
- */
-class OptifyDiagnosticsProvider {
-	constructor(private diagnosticCollection: vscode.DiagnosticCollection) { }
-
-	updateDiagnostics(document: vscode.TextDocument): void {
-		outputChannel.appendLine(`Updating diagnostics for ${document.fileName} | languageId: ${document.languageId}`);
-		const diagnostics: vscode.Diagnostic[] = [];
-		const text = document.getText();
-
-		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-		if (!workspaceFolder) {
-			return;
-		}
-
-		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-		if (!optifyRoot) {
-			return;
-		}
-
-		// Get the canonical name of the current file for self-import detection
-		const currentFileCanonicalName = getCanonicalName(document.uri.fsPath, optifyRoot);
-
-		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
-		for (const importInfo of importInfos) {
-			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
-			if (!targetPath) {
-				const diagnostic = new vscode.Diagnostic(
-					importInfo.range,
-					`Cannot resolve import '${importInfo.name}'`,
-					vscode.DiagnosticSeverity.Error
-				);
-				diagnostics.push(diagnostic);
-			} else if (importInfo.name === currentFileCanonicalName) {
-				const diagnostic = new vscode.Diagnostic(
-					importInfo.range,
-					"A file cannot import itself",
-					vscode.DiagnosticSeverity.Error
-				);
-				diagnostics.push(diagnostic);
-			}
-		}
-
-		this.diagnosticCollection.set(document.uri, diagnostics);
-	}
-}
-
-export function deactivate() { }

@@ -5,6 +5,12 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.3.0
+
+* Update previews when option files change.
+* Add completions for imports.
+* Suggest the canonical name for an alias.
+
 ## 1.2.2
 
 * Required VS Code version 1.99.3
