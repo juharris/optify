@@ -1,6 +1,6 @@
 # Optify VSCode Extension
 
-After making changes, use `npm run lint:fix` to fix linting issues, and when necessary, run `npm test` for the specific test for code that changed.
+After making significant changes, run `npm test` for the specific test for code that changed.
 
 ## Development Commands
 
@@ -14,7 +14,3 @@ After making changes, use `npm run lint:fix` to fix linting issues, and when nec
 ### Building
 - Compile TypeScript: `npm run compile`
 - Watch mode: `npm run watch`
-
-### Publishing
-- Package extension: `npm run package`
-- Publish extension: `npm run publish`
