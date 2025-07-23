@@ -95,6 +95,7 @@ export class ConfigParser {
 			while ((match = stringLiteralPattern.exec(importsContent)) !== null) {
 				if (index < config.imports.length) {
 					const importName = match[1];
+					// Exclude the quotes from the range (only underline the import name)
 					const startPos = importsArrayStartIndex + match.index! + 1;
 					const endPos = startPos + importName.length;
 
@@ -142,16 +143,23 @@ export class ConfigParser {
 
 			// Look for import items
 			if (inImportsSection && trimmedLine.startsWith('-')) {
-				const importMatch = trimmedLine.match(/^-\s*["']?([^"'\n]+?)["']?\s*$/);
+				// Match the import with optional quotes, capturing both the full match and just the import name
+				const importMatch = trimmedLine.match(/^-\s*(["']?)([^"'\n]+?)\1\s*$/);
 				if (importMatch) {
-					const importName = importMatch[1].trim();
-					const startCol = line.indexOf(importName);
-					if (startCol >= 0) {
+					const quote = importMatch[1];  // Empty string if no quotes, otherwise " or '
+					const importName = importMatch[2].trim();
+
+					// Find where the import name starts (excluding quote)
+					let startCol = line.indexOf(quote + importName) + quote.length;
+					if (startCol >= quote.length) {
+						// Range covers only the import name, not the quotes
+						const endCol = startCol + importName.length;
+
 						results.push({
 							name: importName,
 							range: new vscode.Range(
 								new vscode.Position(i, startCol),
-								new vscode.Position(i, startCol + importName.length)
+								new vscode.Position(i, endCol)
 							)
 						});
 					}

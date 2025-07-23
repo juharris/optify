@@ -2,7 +2,7 @@ import { GetOptionsPreferences } from '@optify/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { ConfigParser } from './configparser';
+import { ConfigParser } from './config-parser';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
 import { OptifyCompletionProvider } from './completion';
 import { findOptifyRoot, isOptifyFeatureFile, getCanonicalName } from './path-utils';
@@ -313,9 +313,23 @@ class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 		const text = document.getText();
 		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
 
-		// Check if the cursor is on an import
+		// Check if the cursor is on an import (including quotes)
 		for (const importInfo of importInfos) {
-			if (importInfo.range.contains(position)) {
+			// Expand the range to include potential quotes around the import
+			const line = document.lineAt(importInfo.range.start.line).text;
+			const beforeChar = importInfo.range.start.character > 0 ? line.charAt(importInfo.range.start.character - 1) : '';
+			const afterChar = importInfo.range.end.character < line.length ? line.charAt(importInfo.range.end.character) : '';
+
+			let expandedRange = importInfo.range;
+			if ((beforeChar === '"' || beforeChar === "'") && afterChar === beforeChar) {
+				// Expand range to include quotes
+				expandedRange = new vscode.Range(
+					new vscode.Position(importInfo.range.start.line, importInfo.range.start.character - 1),
+					new vscode.Position(importInfo.range.end.line, importInfo.range.end.character + 1)
+				);
+			}
+
+			if (expandedRange.contains(position)) {
 				const targetPath = resolveImportPath(importInfo.name, optifyRoot);
 				if (targetPath) {
 					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));

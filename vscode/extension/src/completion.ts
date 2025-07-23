@@ -130,6 +130,17 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 					if (needsQuotes) {
 						item.insertText = `"${feature}"`;
 					}
+
+					// Check for partial text that needs replacing
+					const jsonPartialMatch = linePrefix.match(/(\w+)$/);
+					if (jsonPartialMatch) {
+						const partialText = jsonPartialMatch[1];
+						const startCol = linePrefix.length - partialText.length;
+						item.range = new vscode.Range(
+							new vscode.Position(position.line, startCol),
+							new vscode.Position(position.line, position.character)
+						);
+					}
 				}
 				// For YAML files, check if we need to add list item prefix
 				else if (isYamlFile) {
@@ -138,6 +149,19 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 					if (isTypingQuotedValue) {
 						// Don't add quotes, just the feature name
 						item.insertText = feature;
+
+						// Check if we have partial text inside quotes that needs replacing
+						const quotedMatch = linePrefix.match(/^\s*-\s*(["'])(\w*)$/);
+						if (quotedMatch) {
+							const partialText = quotedMatch[2];
+							if (partialText.length > 0) {
+								const startCol = linePrefix.length - partialText.length;
+								item.range = new vscode.Range(
+									new vscode.Position(position.line, startCol),
+									new vscode.Position(position.line, position.character)
+								);
+							}
+						}
 					} else {
 						// Check if we're on an empty line after imports: or after a comment
 						const needsListPrefix = currentLineTrimmed === '' ||
@@ -179,6 +203,17 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 								// Just a dash, add space before feature
 								item.insertText = ` ${feature}`;
 							} else {
+								// Check if we're typing a partial word after "- "
+								const afterDashMatch = linePrefix.match(/^\s*-\s+(\w*)$/);
+								if (afterDashMatch) {
+									// We have partial text after dash+space, need to replace it
+									const partialText = afterDashMatch[1];
+									const startCol = linePrefix.length - partialText.length;
+									item.range = new vscode.Range(
+										new vscode.Position(position.line, startCol),
+										new vscode.Position(position.line, position.character)
+									);
+								}
 								// Just insert the feature name
 								item.insertText = feature;
 							}
