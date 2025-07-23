@@ -54,6 +54,18 @@ describe('Provider', () => {
 			expect(metadataA.aliases()).toEqual(['a'])
 			expect(metadataA.owners()).toEqual("a-team@company.com")
 		})
+
+		test(`${name} get_canonical_feature_name`, () => {
+			expect(provider.getCanonicalFeatureName('a')).toEqual('feature_A')
+			expect(provider.getCanonicalFeatureName('A')).toEqual('feature_A')
+			expect(provider.getCanonicalFeatureName('feature_A')).toEqual('feature_A')
+			expect(provider.getCanonicalFeatureName('feAture_B/InItiAl')).toEqual('feature_B/initial')
+			expect(provider.getCanonicalFeatureName('B')).toEqual('feature_B/initial')
+		})
+
+		test(`${name} get_canonical_feature_names does not exist`, () => {
+			expect(provider.getCanonicalFeatureName('does_not_exist')).toBeNull()
+		})
 	}
 
 	test("last modified", () => {

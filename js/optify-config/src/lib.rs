@@ -94,6 +94,20 @@ impl JsOptionsProvider {
       .collect()
   }
 
+  /// Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+  /// Canonical feature names map to themselves.
+  ///
+  /// Returns the canonical feature name or `null` if the feature name is not found.
+  #[napi]
+  pub fn get_canonical_feature_name(&self, feature_name: String) -> Option<String> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_canonical_feature_name(&feature_name)
+      .ok()
+  }
+
   #[napi]
   pub fn get_all_options_json(
     &self,
@@ -249,6 +263,20 @@ impl JsOptionsWatcher {
       .into_iter()
       .map(|(k, v)| (k, to_js_options_metadata(v)))
       .collect()
+  }
+
+  /// Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+  /// Canonical feature names map to themselves.
+  ///
+  /// Returns the canonical feature name or `null` if the feature name is not found.
+  #[napi]
+  pub fn get_canonical_feature_name(&self, feature_name: String) -> Option<String> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_canonical_feature_name(&feature_name)
+      .ok()
   }
 
   #[napi]
