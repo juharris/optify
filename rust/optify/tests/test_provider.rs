@@ -144,6 +144,13 @@ fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(serde_json::json!("The file is for testing."), *details);
     assert_eq!("feature_A", a_metadata.name.as_ref().unwrap());
     assert_eq!("a-team@company.com", a_metadata.owners.as_ref().unwrap());
+    let expected_path =
+        std::path::Path::new("../../tests/test_suites/simple/configs/feature_A.json")
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+    assert_eq!(expected_path, a_metadata.path.as_ref().unwrap().to_string());
 
     Ok(())
 }
