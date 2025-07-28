@@ -113,7 +113,7 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     );
     assert_eq!(
         options1.err().unwrap(),
-        "The given feature \"test1\" was not found."
+        "Feature name \"test1\" is not a known feature."
     );
 
     Ok(())

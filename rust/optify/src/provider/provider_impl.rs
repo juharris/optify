@@ -111,7 +111,7 @@ impl OptionsProvider {
         feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
-    ) -> Result<Result<config::Config, config::ConfigError>, String> {
+    ) -> Result<config::Config, String> {
         if let Some(_cache_options) = cache_options {
             if let Some(preferences) = preferences {
                 if preferences.overrides_json.is_some() {
@@ -153,7 +153,7 @@ impl OptionsProvider {
                 // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                 None => {
                     return Err(format!(
-                        "Feature name {canonical_feature_name:?} was not found."
+                        "Feature name {canonical_feature_name:?} is not a known feature."
                     ))
                 }
             };
@@ -166,7 +166,12 @@ impl OptionsProvider {
             }
         }
 
-        Ok(config_builder.build())
+        match config_builder.build() {
+            Ok(cfg) => Ok(cfg),
+            Err(e) => Err(format!(
+                "Error combining features to build the configuration: {e}"
+            )),
+        }
     }
 }
 
@@ -192,11 +197,8 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<serde_json::Value, String> {
         let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
-        match config {
-            Ok(cfg) => match cfg.try_deserialize() {
-                Ok(value) => Ok(value),
-                Err(e) => Err(e.to_string()),
-            },
+        match config.try_deserialize() {
+            Ok(value) => Ok(value),
             Err(e) => Err(e.to_string()),
         }
     }
@@ -206,7 +208,9 @@ impl OptionsRegistry for OptionsProvider {
         let feature_name = unicase::UniCase::new(feature_name.to_owned());
         match self.aliases.get(&feature_name) {
             Some(canonical_name) => Ok(canonical_name.to_owned()),
-            None => Err(format!("The given feature {feature_name:?} was not found.")),
+            None => Err(format!(
+                "Feature name {feature_name:?} is not a known feature."
+            )),
         }
     }
 
@@ -249,12 +253,17 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<serde_json::Value, String> {
         let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
-        match config {
-            Ok(cfg) => match cfg.get(key) {
-                Ok(value) => Ok(value),
-                Err(e) => Err(e.to_string()),
-            },
-            Err(e) => Err(e.to_string()),
+        match config.get(key) {
+            Ok(value) => Ok(value),
+            Err(e) => {
+                let features = feature_names
+                    .iter()
+                    .map(|name| name.as_ref())
+                    .collect::<Vec<_>>();
+                Err(format!(
+                    "Error getting options with features {features:?}: {e}"
+                ))
+            }
         }
     }
 }

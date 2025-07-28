@@ -101,7 +101,7 @@ fn test_provider_get_canonical_feature_names() -> Result<(), Box<dyn std::error:
 }
 
 #[test]
-fn test_provider_get_entire_config() -> Result<(), Box<dyn std::error::Error>> {
+fn test_provider_get_all_options() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let feature_names: Vec<&str> = vec!["a"];
     let entire_config = provider.get_all_options(&feature_names, None, None)?;

@@ -18,7 +18,7 @@ def test_features():
         PROVIDER.get_options_json('key', ['A'])
         assert False, "Should have raised an error"
     except Exception as e:
-        assert str(e) == "configuration property \"key\" not found"
+        assert str(e) == "Error getting options with features [\"A\"]: configuration property \"key\" not found"
 
 
 def test_canonical_feature_name():
