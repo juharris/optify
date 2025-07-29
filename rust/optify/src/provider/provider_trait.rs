@@ -44,6 +44,10 @@ pub trait OptionsRegistry {
     /// Returns a map of all the canonical feature names to their metadata.
     fn get_features_with_metadata(&self) -> Features;
 
+    /// Returns possible keys at a specific JSON pointer.
+    /// Mainly used for IntelliSense AKA autocomplete AKA content assist AKA code completion.
+    fn get_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String>;
+
     /// Gets options for a specific key and feature names
     fn get_options(&self, key: &str, feature_names: &[impl AsRef<str>]) -> Result<Value, String>;
 
