@@ -19,5 +19,8 @@ module Optify
 
     sig { returns(T.nilable(String)) }
     attr_reader :owners
+
+    sig { returns(T.nilable(String)) }
+    attr_reader :path
   end
 end

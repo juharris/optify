@@ -45,6 +45,9 @@ module Optify
 
     sig { returns(T.nilable(String)) }
     def owners; end
+
+    sig { returns(T.nilable(String)) }
+    def path; end
   end
 
   # Preferences when getting options.

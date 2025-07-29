@@ -32,6 +32,9 @@ pub struct OptionsMetadata {
     ///
     /// For example, emails separated by ";".
     pub owners: Option<String>,
+
+    /// The path to the file that contains the options.
+    pub path: Option<String>,
 }
 
 impl OptionsMetadata {
@@ -40,12 +43,14 @@ impl OptionsMetadata {
         details: Option<Details>,
         name: Option<String>,
         owners: Option<String>,
+        path: Option<String>,
     ) -> Self {
         Self {
             aliases,
             details,
             name,
             owners,
+            path,
         }
     }
 }

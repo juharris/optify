@@ -27,6 +27,11 @@ impl JsOptionsMetadata {
   pub fn owners(&self) -> Option<String> {
     self.inner.as_ref().and_then(|m| m.owners.clone())
   }
+
+  #[napi]
+  pub fn path(&self) -> Option<String> {
+    self.inner.as_ref().and_then(|m| m.path.clone())
+  }
 }
 
 pub fn to_js_options_metadata(

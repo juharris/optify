@@ -36,6 +36,8 @@ class Optify::OptionsMetadata < BaseConfig
   def name: () -> String
 
   def owners: () -> String?
+
+  def path: () -> String?
 end
 
 # Preferences when getting options.

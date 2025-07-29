@@ -33,9 +33,10 @@ describe('Provider', () => {
 
 		test(`${name} invalid file`, () => {
 			const configDir = path.relative(__dirname, path.join(__dirname, '../../rust/optify/tests/invalid_file'))
-			const filePath = path.join(configDir, 'invalid.yaml')
+			const relativePath = path.join(configDir, 'invalid.yaml')
+			const absolutePath = path.resolve(relativePath)
 			expect(() => OptionsProvider.build(configDir))
-				.toThrow(`Error loading file '${filePath}': simple key expected at byte 31 line 4 column 1 in ${filePath}`)
+				.toThrow(`Error loading file '${absolutePath}': simple key expected at byte 31 line 4 column 1 in ${relativePath}`)
 		})
 
 		test(`${name} features`, () => {
@@ -53,6 +54,8 @@ describe('Provider', () => {
 			expect(metadataA.name()).toEqual('feature_A')
 			expect(metadataA.aliases()).toEqual(['a'])
 			expect(metadataA.owners()).toEqual("a-team@company.com")
+			const expectedPath = path.resolve(path.join(configsPath, 'feature_A.json'))
+			expect(metadataA.path()).toEqual(expectedPath)
 		})
 
 		test(`${name} get_canonical_feature_name`, () => {

@@ -2,7 +2,7 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Edit|MultiEdit|Write",
         "hooks": [
           {
             "type": "command",

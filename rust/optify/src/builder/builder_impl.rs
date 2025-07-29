@@ -198,13 +198,14 @@ impl OptionsProviderBuilder {
         // The `config` library is helpful because it handles many file types.
         // It would also be nice to support comments in .json files, even though it is not standard.
         // The `config` library does support .json5 which supports comments.
+        let absolute_path = path.canonicalize().expect("path should be valid");
         let file = config::File::from(path);
         let config_for_path = match config::Config::builder().add_source(file).build() {
             Ok(conf) => conf,
             Err(e) => {
                 return Some(Err(format!(
                     "Error loading file '{}': {e}",
-                    path.to_string_lossy(),
+                    absolute_path.to_string_lossy(),
                 )))
             }
         };
@@ -214,7 +215,7 @@ impl OptionsProviderBuilder {
             Err(e) => {
                 return Some(Err(format!(
                     "Error deserializing configuration for file '{}': {e}",
-                    path.display(),
+                    absolute_path.to_string_lossy(),
                 )))
             }
         };
@@ -225,7 +226,7 @@ impl OptionsProviderBuilder {
                 Err(e) => {
                     return Some(Err(format!(
                         "Error deserializing options for '{}': {e}",
-                        path.display()
+                        absolute_path.to_string_lossy(),
                     )))
                 }
             },
@@ -238,9 +239,16 @@ impl OptionsProviderBuilder {
         let metadata = match feature_config.metadata {
             Some(mut metadata) => {
                 metadata.name = Some(canonical_feature_name.clone());
+                metadata.path = Some(absolute_path.to_string_lossy().to_string());
                 metadata
             }
-            None => OptionsMetadata::new(None, None, Some(canonical_feature_name.clone()), None),
+            None => OptionsMetadata::new(
+                None,
+                None,
+                Some(canonical_feature_name.clone()),
+                None,
+                Some(absolute_path.to_string_lossy().to_string()),
+            ),
         };
 
         Some(Ok(LoadingResult {
