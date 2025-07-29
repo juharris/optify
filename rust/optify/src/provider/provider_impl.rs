@@ -23,17 +23,17 @@ pub struct GetOptionsPreferences {
     /// Overrides to apply after the built configuration.
     /// A string is used because it makes it easier to pass to the `config` library, but this may change in the future.
     /// It also makes it simpler and maybe faster to get from other programming languages.
+    pub constraints: Option<Constraints>,
     pub overrides_json: Option<String>,
     pub skip_feature_name_conversion: bool,
-    pub constraints: Option<Constraints>,
 }
 
 impl Clone for GetOptionsPreferences {
     fn clone(&self) -> Self {
         Self {
+            constraints: self.constraints.clone(),
             overrides_json: self.overrides_json.clone(),
             skip_feature_name_conversion: self.skip_feature_name_conversion,
-            constraints: self.constraints.clone(),
         }
     }
 }
@@ -88,22 +88,6 @@ impl OptionsProvider {
             features: features.clone(),
             sources: sources.clone(),
         }
-    }
-
-    pub fn build(directory: impl AsRef<Path>) -> Result<OptionsProvider, String> {
-        let mut builder = OptionsProviderBuilder::new();
-        builder.add_directory(directory.as_ref())?;
-        builder.build()
-    }
-
-    pub fn build_from_directories(
-        directories: &[impl AsRef<Path>],
-    ) -> Result<OptionsProvider, String> {
-        let mut builder = OptionsProviderBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
-        builder.build()
     }
 
     fn get_entire_config(
@@ -176,6 +160,20 @@ impl OptionsProvider {
 }
 
 impl OptionsRegistry for OptionsProvider {
+    fn build(directory: impl AsRef<Path>) -> Result<Self, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        builder.add_directory(directory.as_ref())?;
+        builder.build()
+    }
+
+    fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<Self, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.build()
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.features
             .values()
@@ -265,5 +263,13 @@ impl OptionsRegistry for OptionsProvider {
                 ))
             }
         }
+    }
+
+    fn get_possible_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String> {
+        todo!()
+    }
+
+    fn get_possible_values(&self, json_pointer: impl AsRef<str>) -> Vec<serde_json::Value> {
+        todo!()
     }
 }

@@ -156,22 +156,6 @@ impl OptionsWatcher {
         self.listeners.lock().unwrap().push(listener);
     }
 
-    pub fn build(directory: &Path) -> Result<OptionsWatcher, String> {
-        let mut builder = OptionsWatcherBuilder::new();
-        builder.add_directory(directory)?;
-        builder.build()
-    }
-
-    pub fn build_from_directories(
-        directories: &[impl AsRef<Path>],
-    ) -> Result<OptionsWatcher, String> {
-        let mut builder = OptionsWatcherBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
-        builder.build()
-    }
-
     /// Returns the time when the provider was finished building.
     pub fn last_modified(&self) -> std::time::SystemTime {
         *self.last_modified.lock().unwrap()
@@ -179,6 +163,20 @@ impl OptionsWatcher {
 }
 
 impl OptionsRegistry for OptionsWatcher {
+    fn build(directory: impl AsRef<Path>) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.add_directory(directory.as_ref())?;
+        builder.build()
+    }
+
+    fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.build()
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.current_provider.read().unwrap().get_aliases()
     }
@@ -263,5 +261,19 @@ impl OptionsRegistry for OptionsWatcher {
             .read()
             .unwrap()
             .get_options_with_preferences(key, feature_names, cache_options, preferences)
+    }
+
+    fn get_possible_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_possible_keys(json_pointer)
+    }
+
+    fn get_possible_values(&self, json_pointer: impl AsRef<str>) -> Vec<serde_json::Value> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_possible_values(json_pointer)
     }
 }
