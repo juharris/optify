@@ -265,11 +265,43 @@ impl OptionsRegistry for OptionsProvider {
         }
     }
 
-    fn get_possible_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String> {
-        todo!()
+    fn get_possible_keys(
+        &self,
+        json_pointer: impl AsRef<str>,
+        _cache_options: Option<&CacheOptions>,
+    ) -> Vec<String> {
+        let json_pointer = json_pointer.as_ref();
+        let mut all_keys = std::collections::HashSet::new();
+
+        for source in self.sources.values() {
+            let config = match config::Config::builder().add_source(source.clone()).build() {
+                Ok(cfg) => cfg,
+                Err(_) => continue,
+            };
+
+            let value: serde_json::Value = match config.try_deserialize() {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+
+            if let Some(serde_json::Value::Object(map)) = value.pointer(json_pointer) {
+                all_keys.extend(map.keys().cloned());
+            }
+        }
+
+        let mut result: Vec<String> = all_keys.into_iter().collect();
+        result.sort();
+
+        // TODO: Cache
+
+        result
     }
 
-    fn get_possible_values(&self, json_pointer: impl AsRef<str>) -> Vec<serde_json::Value> {
+    fn get_possible_values(
+        &self,
+        _json_pointer: impl AsRef<str>,
+        _cache_options: Option<&CacheOptions>,
+    ) -> Vec<serde_json::Value> {
         todo!()
     }
 }

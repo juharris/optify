@@ -263,17 +263,25 @@ impl OptionsRegistry for OptionsWatcher {
             .get_options_with_preferences(key, feature_names, cache_options, preferences)
     }
 
-    fn get_possible_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String> {
+    fn get_possible_keys(
+        &self,
+        json_pointer: impl AsRef<str>,
+        cache_options: Option<&CacheOptions>,
+    ) -> Vec<String> {
         self.current_provider
             .read()
             .unwrap()
-            .get_possible_keys(json_pointer)
+            .get_possible_keys(json_pointer, cache_options)
     }
 
-    fn get_possible_values(&self, json_pointer: impl AsRef<str>) -> Vec<serde_json::Value> {
+    fn get_possible_values(
+        &self,
+        json_pointer: impl AsRef<str>,
+        cache_options: Option<&CacheOptions>,
+    ) -> Vec<serde_json::Value> {
         self.current_provider
             .read()
             .unwrap()
-            .get_possible_values(json_pointer)
+            .get_possible_values(json_pointer, cache_options)
     }
 }
