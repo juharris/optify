@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use serde_json::Value;
 
 use crate::{
@@ -6,7 +8,11 @@ use crate::{
 };
 
 /// Trait defining the core functionality for an options provider
-pub trait OptionsRegistry {
+pub trait OptionsRegistry: Sized {
+    fn build(directory: impl AsRef<Path>) -> Result<Self, String>;
+
+    fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<Self, String>;
+
     /// Gets all alias names.
     fn get_aliases(&self) -> Vec<String>;
 
@@ -44,10 +50,6 @@ pub trait OptionsRegistry {
     /// Returns a map of all the canonical feature names to their metadata.
     fn get_features_with_metadata(&self) -> Features;
 
-    /// Returns possible keys at a specific JSON pointer.
-    /// Mainly used for IntelliSense AKA autocomplete AKA content assist AKA code completion.
-    fn get_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String>;
-
     /// Gets options for a specific key and feature names
     fn get_options(&self, key: &str, feature_names: &[impl AsRef<str>]) -> Result<Value, String>;
 
@@ -59,4 +61,12 @@ pub trait OptionsRegistry {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Value, String>;
+
+    /// Returns possible keys at a specific JSON pointer.
+    /// Mainly used for IntelliSense AKA autocomplete AKA code completion AKA content assist.
+    fn get_possible_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String>;
+
+    /// Returns possible values at a specific JSON pointer.
+    /// Mainly used for IntelliSense AKA autocomplete AKA code completion AKA content assist.
+    fn get_possible_values(&self, json_pointer: impl AsRef<str>) -> Vec<serde_json::Value>;
 }
