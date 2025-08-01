@@ -1,0 +1,14 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/optify_config.json",
+	"title": "Optify Configuration",
+	"description": "Schema for Optify configuration files.",
+	"type": "object",
+	"additionalProperties": true,
+	"properties": {
+		"root": {
+			"type": "boolean",
+			"description": "Whether the configuration file is the root configuration file. If true, then the configuration file is the root configuration file. If false, then the configuration file is a sub-configuration file."
+		}
+	}
+}
