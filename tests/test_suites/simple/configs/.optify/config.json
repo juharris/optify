@@ -1,3 +1,4 @@
 {
-    "root": true
+	"$schema": "../../../../../schemas/optify_config.json",
+	"root": true
 }
