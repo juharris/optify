@@ -7,62 +7,20 @@
 	"additionalProperties": false,
 	"properties": {
 		"metadata": {
-			"type": "object",
-			"description": "Information about the feature configuration.",
-			"properties": {
-				"aliases": {
-					"type": "array",
-					"description": "Alternative names for the group of options. Helpful for using custom short names or obfuscating the feature name in production.\n\nAlias names must be unique across all feature files.\n\nAliases cannot be use to refer to an imported feature. The canonical feature name (file path without extension) must be used instead.",
-					"items": {
-						"type": "string",
-						"minLength": 1
-					},
-					"default": [
-						"alias"
-					],
-					"uniqueItems": true
-				},
-				"details": {
-					"description": "Other metadata that may be custom and application specific. Good place for information that should be available to the application programmatically."
-				},
-				"owners": {
-					"type": "string",
-					"description": "The creators or maintainers of this group of options. For example, emails separated by semicolons.",
-					"minLength": 1,
-					"default": "owner@company.com"
-				}
-			}
+			"$ref": "#/definitions/metadata"
 		},
 		"conditions": {
-			"$ref": "#/definitions/condition",
-			"description": "Conditions to enable this feature file when it is requested and when constraints are given. These conditions are meant for temporary experimental features that should only be enabled in some requests.\n\nIf no constraints are given, then these conditions are ignored. Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.\n\nConditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.\n\n See https://github.com/juharris/optify?tab=readme-ov-file#conditions for more information and examples."
+			"$ref": "#/definitions/conditions"
 		},
 		"imports": {
-			"type": "array",
-			"description": "List of canonical feature names to import or inherit from.\n\nCanonical feature names are derived from the relative path to the file, but without the file extension in order to keep canonical feature names clear.\n\nImports are applied in order. I.e., later imports override earlier imports.\n\nAliases cannot be use to refer to an imported feature.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#inheritance for more information and examples.",
-			"items": {
-				"type": "string",
-				"minLength": 1,
-				"pattern": "^(?!.*\\.(json|yaml|yml)$).*$",
-				"errorMessage": "Import paths should not include file extensions because the builder does not allow two files with the same relative path but different extensions in order to keep canonical feature names clear."
-			},
-			"default": [
-				"<path/to/file without extension>"
-			],
-			"minItems": 1
+			"$ref": "#/definitions/imports"
 		},
 		"options": {
-			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
-			"type": "object"
+			"$ref": "#/definitions/options"
 		}
 	},
 	"minProperties": 1,
 	"definitions": {
-		"jsonPointer": {
-			"type": "string",
-			"description": "A JSON Pointer to a value in the constraints of a request.\n\nFor example, `/domain` or `/myFlags/1`. See https://datatracker.ietf.org/doc/html/rfc6901 for details.",
-			"default": "/path/to/value"
-		},
 		"condition": {
 			"type": "object",
 			"oneOf": [
@@ -151,6 +109,60 @@
 					"additionalProperties": false
 				}
 			]
+		},
+		"conditions": {
+			"$ref": "#/definitions/condition",
+			"description": "Conditions to enable this feature file when it is requested and when constraints are given. These conditions are meant for temporary experimental features that should only be enabled in some requests.\n\nIf no constraints are given, then these conditions are ignored. Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.\n\nConditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#conditions for more information and examples."
+		},
+		"imports": {
+			"type": "array",
+			"description": "List of canonical feature names to import or inherit from.\n\nCanonical feature names are derived from the relative path to the file, but without the file extension in order to keep canonical feature names clear.\n\nImports are applied in order. I.e., later imports override earlier imports.\n\nAliases cannot be use to refer to an imported feature.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#inheritance for more information and examples.",
+			"items": {
+				"type": "string",
+				"minLength": 1,
+				"pattern": "^(?!.*\\.(json|yaml|yml)$).*$",
+				"errorMessage": "Import paths should not include file extensions because the builder does not allow two files with the same relative path but different extensions in order to keep canonical feature names clear."
+			},
+			"default": [
+				"<path/to/file without extension>"
+			],
+			"minItems": 1
+		},
+		"jsonPointer": {
+			"type": "string",
+			"description": "A JSON Pointer to a value in the constraints of a request.\n\nFor example, `/domain` or `/myFlags/1`. See https://datatracker.ietf.org/doc/html/rfc6901 for details.",
+			"default": "/path/to/value"
+		},
+		"metadata": {
+			"type": "object",
+			"description": "Information about the feature configuration.",
+			"properties": {
+				"aliases": {
+					"type": "array",
+					"description": "Alternative names for the group of options. Helpful for using custom short names or obfuscating the feature name in production.\n\nAlias names must be unique across all feature files.\n\nAliases cannot be use to refer to an imported feature. The canonical feature name (file path without extension) must be used instead.",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					},
+					"default": [
+						"alias"
+					],
+					"uniqueItems": true
+				},
+				"details": {
+					"description": "Other metadata that may be custom and application specific. Good place for information that should be available to the application programmatically."
+				},
+				"owners": {
+					"type": "string",
+					"description": "The creators or maintainers of this group of options. For example, emails separated by semicolons.",
+					"minLength": 1,
+					"default": "owner@company.com"
+				}
+			}
+		},
+		"options": {
+			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
+			"type": "object"
 		}
 	}
 }
