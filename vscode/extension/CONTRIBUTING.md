@@ -1,3 +1,13 @@
+# Starting
+
+F5 in VS Code.
+
+# Testing
+
+```shell
+npm run test
+```
+
 # Formatting
 
 ```shell
