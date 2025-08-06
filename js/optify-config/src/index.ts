@@ -19,10 +19,12 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
 // Augment the native class interfaces to include our new method
 declare module '../index' {
   interface OptionsProvider {
+    /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
   }
 
   interface OptionsWatcher {
+    /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
   }
 }
