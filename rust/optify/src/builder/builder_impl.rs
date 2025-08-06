@@ -205,7 +205,7 @@ impl OptionsProviderBuilder {
             Err(e) => {
                 return Some(Err(format!(
                     "Error loading file '{}': {e}",
-                    absolute_path.to_string_lossy(),
+                    absolute_path.display(),
                 )))
             }
         };
@@ -215,7 +215,7 @@ impl OptionsProviderBuilder {
             Err(e) => {
                 return Some(Err(format!(
                     "Error deserializing configuration for file '{}': {e}",
-                    absolute_path.to_string_lossy(),
+                    absolute_path.display(),
                 )))
             }
         };
@@ -226,7 +226,7 @@ impl OptionsProviderBuilder {
                 Err(e) => {
                     return Some(Err(format!(
                         "Error deserializing options for '{}': {e}",
-                        absolute_path.to_string_lossy(),
+                        absolute_path.display(),
                     )))
                 }
             },
