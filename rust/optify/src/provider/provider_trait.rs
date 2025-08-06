@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use serde_json::Value;
 
 use crate::{
@@ -7,6 +9,14 @@ use crate::{
 
 /// Trait defining the core functionality for an options provider
 pub trait OptionsRegistry {
+    fn build(directory: impl AsRef<Path>) -> Result<Self, String>
+    where
+        Self: Sized;
+
+    fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<Self, String>
+    where
+        Self: Sized;
+
     /// Gets all alias names.
     fn get_aliases(&self) -> Vec<String>;
 
