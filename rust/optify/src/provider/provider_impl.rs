@@ -90,22 +90,6 @@ impl OptionsProvider {
         }
     }
 
-    pub fn build(directory: impl AsRef<Path>) -> Result<OptionsProvider, String> {
-        let mut builder = OptionsProviderBuilder::new();
-        builder.add_directory(directory.as_ref())?;
-        builder.build()
-    }
-
-    pub fn build_from_directories(
-        directories: &[impl AsRef<Path>],
-    ) -> Result<OptionsProvider, String> {
-        let mut builder = OptionsProviderBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
-        builder.build()
-    }
-
     fn get_entire_config(
         &self,
         feature_names: &[impl AsRef<str>],
@@ -176,6 +160,20 @@ impl OptionsProvider {
 }
 
 impl OptionsRegistry for OptionsProvider {
+    fn build(directory: impl AsRef<Path>) -> Result<OptionsProvider, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        builder.add_directory(directory.as_ref())?;
+        builder.build()
+    }
+
+    fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsProvider, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.build()
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.features
             .values()
