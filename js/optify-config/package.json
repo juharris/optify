@@ -14,8 +14,8 @@
 		"url": "https://github.com/juharris/optify/issues"
 	},
 	"homepage": "https://github.com/juharris/optify",
-	"main": "index.js",
-	"types": "index.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"napi": {
 		"name": "config",
 		"triples": {

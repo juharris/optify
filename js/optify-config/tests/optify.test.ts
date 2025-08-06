@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
-import { GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../index";
+import { GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../dist/index";
 
 const runSuite = (suitePath: string) => {
   const providers = [{

@@ -82,7 +82,7 @@ impl JsOptionsProvider {
   }
 
   /// Returns a map of all the canonical feature names to their metadata.
-  #[napi]
+  #[napi(js_name = "_featuresWithMetadata")]
   pub fn features_with_metadata(&self) -> std::collections::HashMap<String, JsOptionsMetadata> {
     self
       .inner
@@ -253,7 +253,7 @@ impl JsOptionsWatcher {
   }
 
   /// Returns a map of all the canonical feature names to their metadata.
-  #[napi]
+  #[napi(js_name = "_featuresWithMetadata")]
   pub fn features_with_metadata(&self) -> std::collections::HashMap<String, JsOptionsMetadata> {
     self
       .inner

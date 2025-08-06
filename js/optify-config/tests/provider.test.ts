@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
-import { OptionsProvider, OptionsWatcher } from "../index";
+import { OptionsProvider, OptionsWatcher } from "../dist/index";
 
 const configsPath = path.join(__dirname, '../../../tests/test_suites/simple/configs')
 const expectationsPath = path.join(configsPath, '../expectations')
@@ -56,6 +56,9 @@ describe('Provider', () => {
 			expect(metadataA.owners()).toEqual("a-team@company.com")
 			const expectedPath = path.resolve(path.join(configsPath, 'feature_A.json'))
 			expect(metadataA.path()).toEqual(expectedPath)
+
+			const secondCall = provider.featuresWithMetadata()
+			expect(secondCall).toBe(featuresWithMetadata)
 		})
 
 		test(`${name} get_canonical_feature_name`, () => {

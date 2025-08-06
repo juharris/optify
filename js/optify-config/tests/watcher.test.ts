@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, afterEach } from '@jest/globals';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { OptionsWatcher } from '../index';
+import { OptionsWatcher } from '../dist/index';
 
 const MODIFICATION_DEBOUNCE_MS = 1000;
 const RETRY_DELAY = MODIFICATION_DEBOUNCE_MS * 2 + 100;
@@ -19,12 +19,17 @@ describe("OptionsWatcher", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  test("listener is called when a file is modified", (done) => {
+  test("listener is called when a file is modified and cache is invalidated", (done) => {
     const configPath = path.join(tempDir, 'config.yaml');
     fs.writeFileSync(configPath, '');
 
     const watcher = OptionsWatcher.build(tempDir);
     const builtTime = watcher.lastModified();
+
+    const initialFeatures = watcher.featuresWithMetadata();
+    const secondCall = watcher.featuresWithMetadata();
+    expect(secondCall).toBe(initialFeatures);
+
     let listenerCalled = false;
 
     watcher.addListener((_, event) => {
@@ -35,6 +40,13 @@ describe("OptionsWatcher", () => {
       expect(event.changedPaths).toBeDefined();
       expect(Array.isArray(event.changedPaths)).toBe(true);
       expect(event.changedPaths.length).toBeGreaterThan(0);
+
+      const afterRebuild = watcher.featuresWithMetadata();
+      expect(afterRebuild).not.toBe(initialFeatures);
+
+      const afterRebuild2 = watcher.featuresWithMetadata();
+      expect(afterRebuild2).toBe(afterRebuild);
+
       done();
     });
 
