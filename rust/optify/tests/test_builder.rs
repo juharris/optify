@@ -59,8 +59,7 @@ fn test_builder_invalid_file() -> Result<(), Box<dyn std::error::Error>> {
     match OptionsProvider::build(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
-            let expected_path = std::path::Path::new("tests/invalid_file/invalid.yaml")
-                .canonicalize()
+            let expected_path = dunce::canonicalize("tests/invalid_file/invalid.yaml")
                 .unwrap()
                 .to_string_lossy()
                 .to_string();
@@ -91,8 +90,7 @@ fn test_builder_invalid_condition_pattern() -> Result<(), Box<dyn std::error::Er
     match OptionsProvider::build(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
-            let expected_path = feature_file
-                .canonicalize()
+            let expected_path = dunce::canonicalize(feature_file)
                 .unwrap()
                 .to_string_lossy()
                 .to_string();

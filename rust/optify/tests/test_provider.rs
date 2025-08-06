@@ -145,8 +145,7 @@ fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!("feature_A", a_metadata.name.as_ref().unwrap());
     assert_eq!("a-team@company.com", a_metadata.owners.as_ref().unwrap());
     let expected_path =
-        std::path::Path::new("../../tests/test_suites/simple/configs/feature_A.json")
-            .canonicalize()
+        dunce::canonicalize("../../tests/test_suites/simple/configs/feature_A.json")
             .unwrap()
             .to_string_lossy()
             .to_string();
