@@ -46,6 +46,7 @@ Use Node >= 22.
 ```Shell
 yarn install
 yarn build:debug
+yarn build:ts
 yarn test
 ```
 
@@ -54,6 +55,7 @@ yarn test
 Run:
 ```shell
 yarn build:debug
+yarn build:ts
 yarn test
 ```
 

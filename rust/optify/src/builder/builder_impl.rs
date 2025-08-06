@@ -198,7 +198,7 @@ impl OptionsProviderBuilder {
         // The `config` library is helpful because it handles many file types.
         // It would also be nice to support comments in .json files, even though it is not standard.
         // The `config` library does support .json5 which supports comments.
-        let absolute_path = path.canonicalize().expect("path should be valid");
+        let absolute_path = dunce::canonicalize(path).expect("path should be valid");
         let file = config::File::from(path);
         let config_for_path = match config::Config::builder().add_source(file).build() {
             Ok(conf) => conf,

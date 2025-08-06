@@ -200,6 +200,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dunce"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -470,9 +476,10 @@ checksum = "945462a4b81e43c4e3ba96bd7b49d834c6f61198356aa858733bc4acf3cbe62e"
 
 [[package]]
 name = "optify"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "config",
+ "dunce",
  "notify",
  "notify-debouncer-full",
  "rayon",
@@ -486,7 +493,7 @@ dependencies = [
 
 [[package]]
 name = "optify-python"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "optify",
  "pyo3",
