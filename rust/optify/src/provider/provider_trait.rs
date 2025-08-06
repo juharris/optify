@@ -64,9 +64,17 @@ pub trait OptionsRegistry: Sized {
 
     /// Returns possible keys at a specific JSON pointer.
     /// Mainly used for IntelliSense AKA autocomplete AKA code completion AKA content assist.
-    fn get_possible_keys(&self, json_pointer: impl AsRef<str>) -> Vec<String>;
+    fn get_possible_keys(
+        &self,
+        json_pointer: impl AsRef<str>,
+        cache_options: Option<&CacheOptions>,
+    ) -> Vec<String>;
 
     /// Returns possible values at a specific JSON pointer.
     /// Mainly used for IntelliSense AKA autocomplete AKA code completion AKA content assist.
-    fn get_possible_values(&self, json_pointer: impl AsRef<str>) -> Vec<serde_json::Value>;
+    fn get_possible_values(
+        &self,
+        json_pointer: impl AsRef<str>,
+        cache_options: Option<&CacheOptions>,
+    ) -> Vec<serde_json::Value>;
 }
