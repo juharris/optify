@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { getOptionsProvider } from './providers';
 
 export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
 	let currentDir = path.dirname(filePath);
@@ -56,15 +57,7 @@ export function getCanonicalName(filePath: string, optifyRoot: string): string {
 }
 
 export function resolveImportPath(importName: string, optifyRoot: string): string | undefined {
-	const extensions = ['.json', '.yaml', '.yml', '.json5'];
-
-	// Try resolving relative to the optify root
-	for (const ext of extensions) {
-		const possiblePath = path.resolve(optifyRoot, importName + ext);
-		if (fs.existsSync(possiblePath)) {
-			return possiblePath;
-		}
-	}
-
-	return undefined;
+	const provider = getOptionsProvider(optifyRoot);
+	const featuresWithMetadata = provider.featuresWithMetadata();
+	return featuresWithMetadata[importName]?.path() ?? undefined;
 }
