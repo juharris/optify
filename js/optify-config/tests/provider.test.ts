@@ -18,6 +18,16 @@ describe('Provider', () => {
 		provider: watcher
 	}]
 
+	test('as type', () => {
+		// Ensure that we can use the overridden type in generics.
+		const providerCache = new Map<string, OptionsProvider>();
+		providerCache.set('a', providers[0].provider);
+		const provider = providerCache.get('a');
+		expect(provider).toBe(providers[0].provider);
+		const features = provider!.features();
+		expect(features).toHaveLength(3);
+	})
+
 	for (const { name, provider } of providers) {
 		test(`${name} get_all_options_json feature_A`, () => {
 			const options = JSON.parse(provider.getAllOptionsJson(['feature_A']))
