@@ -13,8 +13,8 @@ export {
 } from '../index';
 
 // Re-export the native classes directly
-export const OptionsProvider = nativeBinding.OptionsProvider;
-export const OptionsWatcher = nativeBinding.OptionsWatcher;
+export type OptionsProvider = nativeBinding.OptionsProvider;
+export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
 // Augment the native class interfaces to include our new method
 declare module '../index' {
@@ -33,7 +33,8 @@ declare module '../index' {
 const CACHE_KEY = Symbol('featuresWithMetadataCache');
 const CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 
-// Extend OptionsProvider prototype with caching method
+// Extend OptionsProvider prototype with extra methods.
+export const OptionsProvider = nativeBinding.OptionsProvider;
 (OptionsProvider.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
   const cachedResult = this[CACHE_KEY];
   if (cachedResult) {
@@ -43,7 +44,8 @@ const CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
   return this[CACHE_KEY] = this._featuresWithMetadata();
 };
 
-// Extend OptionsWatcher prototype with caching method that invalidates based on lastModified
+// Extend OptionsWatcher prototype with extra methods.
+export const OptionsWatcher = nativeBinding.OptionsWatcher;
 (OptionsWatcher.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
   const cachedTime = this[CACHE_TIME_KEY];
   const lastModifiedTime = this.lastModified();
