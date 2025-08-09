@@ -10,6 +10,10 @@ pub trait OptionsRegistryBuilder<T: OptionsRegistry> {
     /// Adds a directory containing feature configurations.
     fn add_directory(&mut self, directory: &Path) -> Result<&Self, String>;
 
+    /// Sets a JSON schema for validation.
+    /// When provided, files will be validated against this schema during loading.
+    fn with_schema(&mut self, schema_path: &Path) -> Result<&Self, String>;
+
     /// Builds the options provider.
     fn build(&mut self) -> Result<T, String>;
 }

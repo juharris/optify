@@ -1,7 +1,9 @@
 use config;
+use jsonschema::{Draft, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::builder::OptionsRegistryBuilder;
 use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
@@ -21,6 +23,7 @@ pub struct OptionsProviderBuilder {
     conditions: Conditions,
     features: Features,
     imports: Imports,
+    schema: Option<Arc<Validator>>,
     sources: Sources,
 }
 
@@ -169,6 +172,7 @@ struct LoadingResult {
     source: config::File<config::FileSourceString, config::FileFormat>,
     imports: Option<Vec<String>>,
     metadata: OptionsMetadata,
+    original_config: serde_json::Value,
 }
 
 impl OptionsProviderBuilder {
@@ -178,7 +182,26 @@ impl OptionsProviderBuilder {
             conditions: Conditions::new(),
             features: Features::new(),
             imports: HashMap::new(),
+            schema: None,
             sources: Sources::new(),
+        }
+    }
+
+    fn validate_with_schema(&self, json_value: &serde_json::Value) -> Result<(), String> {
+        let validator = match &self.schema {
+            Some(v) => v,
+            None => return Ok(()),
+        };
+
+        if validator.is_valid(json_value) {
+            Ok(())
+        } else {
+            let errors = validator.iter_errors(json_value);
+            let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
+            Err(format!(
+                "Schema validation failed: {}",
+                error_messages.join(", ")
+            ))
         }
     }
 
@@ -210,7 +233,20 @@ impl OptionsProviderBuilder {
             }
         };
 
-        let feature_config: FeatureConfiguration = match config_for_path.try_deserialize() {
+        // First get the raw JSON for validation
+        let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
+            Ok(v) => v,
+            Err(e) => {
+                return Some(Err(format!(
+                    "Error deserializing configuration for file '{}': {e}",
+                    absolute_path.to_string_lossy(),
+                )))
+            }
+        };
+
+        // Now deserialize to FeatureConfiguration
+        let feature_config: FeatureConfiguration = match serde_json::from_value(raw_config.clone())
+        {
             Ok(v) => v,
             Err(e) => {
                 return Some(Err(format!(
@@ -257,6 +293,7 @@ impl OptionsProviderBuilder {
             source,
             imports: feature_config.imports,
             metadata,
+            original_config: raw_config,
         }))
     }
 
@@ -266,6 +303,10 @@ impl OptionsProviderBuilder {
     ) -> Result<(), String> {
         let info = loading_result.as_ref()?;
         let canonical_feature_name = &info.canonical_feature_name;
+
+        if self.schema.is_some() {
+            self.validate_with_schema(&info.original_config)?;
+        }
         if self
             .sources
             .insert(canonical_feature_name.clone(), info.source.clone())
@@ -324,6 +365,30 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         for loading_result in loading_results {
             self.process_loading_result(&loading_result)?;
         }
+
+        Ok(self)
+    }
+
+    fn with_schema(&mut self, schema_path: &Path) -> Result<&Self, String> {
+        if !schema_path.is_file() {
+            return Err(format!(
+                "Error adding schema: {schema_path:?} is not a file"
+            ));
+        }
+
+        let schema_content = std::fs::read_to_string(schema_path)
+            .map_err(|e| format!("Failed to read schema file: {e}"))?;
+
+        let schema_json: serde_json::Value = serde_json::from_str(&schema_content)
+            .map_err(|e| format!("Failed to parse schema JSON: {e}"))?;
+
+        // Compile the schema once
+        let validator = Validator::options()
+            .with_draft(Draft::Draft7)
+            .build(&schema_json)
+            .map_err(|e| format!("Invalid schema: {e}"))?;
+
+        self.schema = Some(Arc::new(validator));
 
         Ok(self)
     }

@@ -20,6 +20,7 @@ exclude = [
 [dependencies]
 config = "0.15.6"
 dunce = "1.0.5"
+jsonschema = "0.32.1"
 notify = "8.0.0"
 notify-debouncer-full = "0.5.0"
 rayon = "1.10.0"
