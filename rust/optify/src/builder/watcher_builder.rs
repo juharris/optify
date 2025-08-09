@@ -36,6 +36,13 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
         Ok(self)
     }
 
+    fn with_schema(&mut self, _schema_path: &Path) -> Result<&Self, String> {
+        // Schema validation is not currently supported for OptionsWatcher
+        // This is a no-op to satisfy the trait requirements
+        // FIXME
+        Ok(self)
+    }
+
     fn build(&mut self) -> Result<OptionsWatcher, String> {
         Ok(OptionsWatcher::new(self.watched_directories.clone()))
     }
