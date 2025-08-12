@@ -33,7 +33,7 @@ pub struct OptionsWatcher {
 }
 
 impl OptionsWatcher {
-    pub(crate) fn new(watched_directories: Vec<PathBuf>) -> Self {
+    pub(crate) fn new(watched_directories: Vec<PathBuf>, schema: Option<PathBuf>) -> Self {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut debouncer_watcher = new_debouncer(
@@ -78,6 +78,9 @@ impl OptionsWatcher {
                 .expect("directory to be watched");
         }
         let mut builder = OptionsProviderBuilder::new();
+        if let Some(schema) = schema {
+            builder.with_schema(&schema).expect("schema to be valid");
+        }
         for dir in &watched_directories {
             builder
                 .add_directory(dir)

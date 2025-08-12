@@ -12,6 +12,7 @@ use super::OptionsRegistryBuilder;
 /// Not truly considered public yet and mainly available to support bindings for other languages.
 #[derive(Clone)]
 pub struct OptionsWatcherBuilder {
+    schema: Option<PathBuf>,
     watched_directories: Vec<PathBuf>,
 }
 
@@ -24,6 +25,7 @@ impl Default for OptionsWatcherBuilder {
 impl OptionsWatcherBuilder {
     pub fn new() -> Self {
         OptionsWatcherBuilder {
+            schema: None,
             watched_directories: Vec::new(),
         }
     }
@@ -36,14 +38,15 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
         Ok(self)
     }
 
-    fn with_schema(&mut self, _schema_path: &Path) -> Result<&Self, String> {
-        // Schema validation is not currently supported for OptionsWatcher
-        // This is a no-op to satisfy the trait requirements
-        // FIXME
+    fn with_schema(&mut self, schema_path: &Path) -> Result<&Self, String> {
+        self.schema = Some(schema_path.to_path_buf());
         Ok(self)
     }
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
-        Ok(OptionsWatcher::new(self.watched_directories.clone()))
+        Ok(OptionsWatcher::new(
+            self.watched_directories.clone(),
+            self.schema.clone(),
+        ))
     }
 }
