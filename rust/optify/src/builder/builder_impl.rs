@@ -187,19 +187,22 @@ impl OptionsProviderBuilder {
         }
     }
 
-    fn validate_with_schema(&self, json_value: &serde_json::Value) -> Result<(), String> {
+    fn validate_with_schema(&self, info: &LoadingResult) -> Result<(), String> {
         let validator = match &self.schema {
             Some(v) => v,
             None => return Ok(()),
         };
 
+        let json_value = &info.original_config;
         if validator.is_valid(json_value) {
             Ok(())
         } else {
             let errors = validator.iter_errors(json_value);
             let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
+            let path = info.metadata.path.as_ref().unwrap();
             Err(format!(
-                "Schema validation failed: {}",
+                "Schema validation failed for {} : {}",
+                path,
                 error_messages.join(", ")
             ))
         }
@@ -305,7 +308,7 @@ impl OptionsProviderBuilder {
         let canonical_feature_name = &info.canonical_feature_name;
 
         if self.schema.is_some() {
-            self.validate_with_schema(&info.original_config)?;
+            self.validate_with_schema(info)?;
         }
         if self
             .sources
@@ -382,7 +385,6 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         let schema_json: serde_json::Value = serde_json::from_str(&schema_content)
             .map_err(|e| format!("Failed to parse schema JSON: {e}"))?;
 
-        // Compile the schema once
         let validator = Validator::options()
             .with_draft(Draft::Draft7)
             .build(&schema_json)
