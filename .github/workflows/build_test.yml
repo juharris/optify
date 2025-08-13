@@ -59,20 +59,16 @@ jobs:
     - uses: actions/checkout@v4
 
     # Rust
-    - name: "[Rust] Cache dependencies"
-      uses: actions/cache@v4
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/bin
-          ~/.cargo/registry
-          ~/.cargo/git
-          ./rust/optify/target/release/deps
-          ./js/optify-config/target/release/deps
-          ./ruby/optify/target/release/deps
-          ./python/optify/target/release/deps
-        key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
-        restore-keys: |
-          ${{ matrix.os }}-cargo-
+        workspaces: |
+          rust/optify
+          js/optify-config
+          ruby/optify
+          python/optify
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-rust
     - name: "[Rust] Build"
       run: cargo build --release
       working-directory: ./rust/optify
