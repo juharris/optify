@@ -56,6 +56,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          python/optify
+          rust/optify
+        cache-on-failure: true
+        shared-key: ${{ matrix.ruby_platform }}-rust
+
     # This is file is mainly for local development and to help Sorbet.
     # It should not be needed for the build as we'll set a specific version of Ruby.
     - name: "rm .ruby-version"
@@ -118,6 +127,15 @@ jobs:
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     steps:
     - uses: actions/checkout@v4
+
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          python/optify
+          rust/optify
+        cache-on-failure: true
+        shared-key: source-gem-rust
 
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.

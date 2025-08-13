@@ -77,6 +77,14 @@ jobs:
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: ${{ matrix.settings.host }}-rust
       - name: Install corepack
         if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
         run: npm install -g corepack
@@ -156,6 +164,14 @@ jobs:
     name: "[FreeBSD] Build"
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: freebsd-rust
       - name: "Build & Test"
         id: build
         uses: cross-platform-actions/action@v0.24.0
@@ -220,6 +236,14 @@ jobs:
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: ${{ matrix.settings.host }}-rust
       - name: Install corepack
         if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
         run: npm install -g corepack
@@ -263,6 +287,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: linux-x64-gnu-rust
       - name: Install corepack
         run: npm install -g corepack
       - name: Setup node
@@ -299,6 +331,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: linux-aarch64-gnu-rust
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -340,6 +380,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: linux-aarch64-musl-rust
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -382,6 +430,14 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: universal-macOS-rust
       - name: Install corepack
         run: npm install -g corepack
       - name: Setup node
