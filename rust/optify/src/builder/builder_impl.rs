@@ -201,7 +201,7 @@ impl OptionsProviderBuilder {
             let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
             let path = info.metadata.path.as_ref().unwrap();
             Err(format!(
-                "Schema validation failed for {} : {}",
+                "Schema validation failed for {:?} : {}",
                 path,
                 error_messages.join(", ")
             ))
