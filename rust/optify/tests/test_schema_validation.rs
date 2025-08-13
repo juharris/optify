@@ -1,14 +1,12 @@
-use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
+use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use std::path::Path;
 
 #[test]
-fn test_simple_configs_adhere_to_schema() {
-    let mut builder = OptionsProviderBuilder::new();
+fn test_simple_configs_adhere_to_schema() -> Result<(), String> {
+    let mut builder = OptionsWatcherBuilder::new();
 
     let schema_path = Path::new("../../schemas/feature_file.json");
-    builder
-        .with_schema(schema_path)
-        .expect("Failed to load schema");
+    builder.with_schema(schema_path)?;
 
     let configs_dir = Path::new("../../tests/test_suites/simple/configs");
     let result = builder.add_directory(configs_dir);
@@ -25,33 +23,34 @@ fn test_simple_configs_adhere_to_schema() {
         "Failed to build provider: {:?}",
         provider.err()
     );
+
+    Ok(())
 }
 
 #[test]
-fn test_invalid_file_fails_schema_validation() {
+fn test_invalid_file_fails_schema_validation() -> Result<(), String> {
     use std::fs;
     use tempfile::TempDir;
 
-    let mut builder = OptionsProviderBuilder::new();
+    let mut builder = OptionsWatcherBuilder::new();
 
-    // Load the schema
     let schema_path = Path::new("../../schemas/feature_file.json");
-    builder
-        .with_schema(schema_path)
-        .expect("Failed to load schema");
+    builder.with_schema(schema_path)?;
 
     // Create a temporary directory with an invalid config file
-    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let temp_dir = TempDir::new().expect("temp dir to be created");
     let invalid_file_path = temp_dir.path().join("invalid.json");
 
     // Write an invalid config (missing required properties based on schema)
     let invalid_config = r#"{
             "invalidProperty": "this property is not allowed by the schema"
         }"#;
-    fs::write(&invalid_file_path, invalid_config).expect("Failed to write invalid file");
+    fs::write(&invalid_file_path, invalid_config).expect("invalid file to be written");
 
     // Try to load the directory - this should fail schema validation
-    let result = builder.add_directory(temp_dir.path());
+    builder.add_directory(temp_dir.path())?;
+
+    let result = builder.build();
 
     assert!(
         result.is_err(),
@@ -63,4 +62,6 @@ fn test_invalid_file_fails_schema_validation() {
         error_message.contains("Schema validation failed"),
         "Expected error message to mention schema validation, got: {error_message}"
     );
+
+    Ok(())
 }

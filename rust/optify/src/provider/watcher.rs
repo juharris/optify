@@ -33,7 +33,10 @@ pub struct OptionsWatcher {
 }
 
 impl OptionsWatcher {
-    pub(crate) fn new(watched_directories: Vec<PathBuf>, schema: Option<PathBuf>) -> Self {
+    pub(crate) fn new(
+        watched_directories: Vec<PathBuf>,
+        schema: Option<PathBuf>,
+    ) -> Result<Self, String> {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut debouncer_watcher = new_debouncer(
@@ -71,22 +74,26 @@ impl OptionsWatcher {
                     .for_each(|error| eprintln!("\x1b[31m[optify] {error:?}\x1b[0m")),
             },
         )
-        .unwrap();
+        .map_err(|e| format!("Failed to create debouncer: {}", e))?;
         for dir in &watched_directories {
             debouncer_watcher
                 .watch(dir, notify::RecursiveMode::Recursive)
-                .expect("directory to be watched");
+                .map_err(|e| format!("Failed to watch directory {:?}: {}", dir, e))?;
         }
         let mut builder = OptionsProviderBuilder::new();
         if let Some(schema) = schema {
-            builder.with_schema(&schema).expect("schema to be valid");
+            builder
+                .with_schema(&schema)
+                .map_err(|e| format!("Invalid schema: {}", e))?;
         }
         for dir in &watched_directories {
             builder
                 .add_directory(dir)
-                .expect("directory and contents to be valid");
+                .map_err(|e| format!("Failed to add directory {:?}: {}", dir, e))?;
         }
-        let provider = builder.build().expect("provider to be built");
+        let provider = builder
+            .build()
+            .map_err(|e| format!("Failed to build provider: {}", e))?;
         let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
 
         let self_ = Self {
@@ -152,7 +159,7 @@ impl OptionsWatcher {
             }
         });
 
-        self_
+        Ok(self_)
     }
 
     pub fn add_listener(&mut self, listener: OptionsWatcherListener) {

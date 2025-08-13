@@ -44,9 +44,6 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
     }
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
-        Ok(OptionsWatcher::new(
-            self.watched_directories.clone(),
-            self.schema.clone(),
-        ))
+        OptionsWatcher::new(self.watched_directories.clone(), self.schema.clone())
     }
 }
