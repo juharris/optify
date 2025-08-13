@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 use pyo3::types::PyType;
 
-use optify::builder::{OptionsWatcherBuilder, OptionsRegistryBuilder};
-use optify::provider::{OptionsWatcher, OptionsRegistry};
+use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
+use optify::provider::{OptionsRegistry, OptionsWatcher};
 
 use crate::preferences::PyGetOptionsPreferences;
 

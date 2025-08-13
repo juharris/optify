@@ -4,12 +4,12 @@ mod preferences;
 use preferences::PyGetOptionsPreferences;
 
 mod provider;
-use provider::PyOptionsProviderBuilder;
 use provider::PyOptionsProvider;
+use provider::PyOptionsProviderBuilder;
 
 mod watcher;
-use watcher::PyOptionsWatcherBuilder;
 use watcher::PyOptionsWatcher;
+use watcher::PyOptionsWatcherBuilder;
 
 #[pymodule(name = "optify")]
 mod optify_python {
