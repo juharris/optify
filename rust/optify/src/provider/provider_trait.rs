@@ -13,7 +13,21 @@ pub trait OptionsRegistry {
     where
         Self: Sized;
 
+    fn build_with_schema(
+        directory: impl AsRef<Path>,
+        schema: impl AsRef<Path>,
+    ) -> Result<Self, String>
+    where
+        Self: Sized;
+
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<Self, String>
+    where
+        Self: Sized;
+
+    fn build_from_directories_with_schema(
+        directories: &[impl AsRef<Path>],
+        schema: impl AsRef<Path>,
+    ) -> Result<Self, String>
     where
         Self: Sized;
 

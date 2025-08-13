@@ -1,27 +1,19 @@
-use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
+use optify::{
+    builder::{OptionsRegistryBuilder, OptionsWatcherBuilder},
+    provider::{OptionsRegistry, OptionsWatcher},
+};
 use std::path::Path;
 
 #[test]
 fn test_simple_configs_adhere_to_schema() -> Result<(), String> {
-    let mut builder = OptionsWatcherBuilder::new();
-
-    let schema_path = Path::new("../../schemas/feature_file.json");
-    builder.with_schema(schema_path)?;
-
     let configs_dir = Path::new("../../tests/test_suites/simple/configs");
-    let result = builder.add_directory(configs_dir);
+    let schema_path = Path::new("../../schemas/feature_file.json");
+    let result = OptionsWatcher::build_with_schema(configs_dir, schema_path);
 
     assert!(
         result.is_ok(),
         "Schema validation failed: {:?}",
         result.err()
-    );
-
-    let provider = builder.build();
-    assert!(
-        provider.is_ok(),
-        "Failed to build provider: {:?}",
-        provider.err()
     );
 
     Ok(())
