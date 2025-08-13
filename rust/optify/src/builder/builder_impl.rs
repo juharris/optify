@@ -236,7 +236,7 @@ impl OptionsProviderBuilder {
             }
         };
 
-        // First get the raw JSON for validation
+        // We need the raw JSON for validation.
         let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
             Ok(v) => v,
             Err(e) => {
@@ -247,7 +247,6 @@ impl OptionsProviderBuilder {
             }
         };
 
-        // Now deserialize to FeatureConfiguration
         let feature_config: FeatureConfiguration = match serde_json::from_value(raw_config.clone())
         {
             Ok(v) => v,

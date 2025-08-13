@@ -11,7 +11,8 @@ pub trait OptionsRegistryBuilder<T: OptionsRegistry> {
     fn add_directory(&mut self, directory: &Path) -> Result<&Self, String>;
 
     /// Sets a JSON schema for validation.
-    /// When provided, files will be validated against this schema during loading.
+    /// When provided, files will be validated against this schema during loading when `add_directory` is called.
+    /// Must be called before `add_directory` to take effect.
     fn with_schema(&mut self, schema_path: &Path) -> Result<&Self, String>;
 
     /// Builds the options provider.
