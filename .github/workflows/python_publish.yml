@@ -43,6 +43,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: ${{ matrix.platform.runner }}-rust
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -71,6 +79,14 @@ jobs:
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: ${{ matrix.platform.runner }}-rust
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -97,6 +113,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: ${{ matrix.platform.runner }}-rust
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -114,6 +138,14 @@ jobs:
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            python/optify
+            rust/optify
+          cache-on-failure: true
+          shared-key: sdist-rust
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
