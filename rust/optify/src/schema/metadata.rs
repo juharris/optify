@@ -21,6 +21,9 @@ pub struct OptionsMetadata {
     /// but some comments are useful to have here because they can be accessed programmatically.
     pub details: Option<Details>,
 
+    /// The canonical names of features that depend on this one.
+    pub dependents: Option<Vec<String>>,
+
     /// The name of the group of options.
     ///
     /// This may be derived from the file name including subdirectories.
@@ -41,6 +44,7 @@ impl OptionsMetadata {
     pub fn new(
         aliases: Option<Vec<String>>,
         details: Option<Details>,
+        dependents: Option<Vec<String>>,
         name: Option<String>,
         owners: Option<String>,
         path: Option<String>,
@@ -48,6 +52,7 @@ impl OptionsMetadata {
         Self {
             aliases,
             details,
+            dependents,
             name,
             owners,
             path,
