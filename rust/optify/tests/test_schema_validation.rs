@@ -1,6 +1,6 @@
 use optify::{
     builder::{OptionsRegistryBuilder, OptionsWatcherBuilder},
-    provider::{OptionsRegistry, OptionsWatcher},
+    provider::{OptionsProvider, OptionsRegistry, OptionsWatcher},
 };
 
 #[test]
@@ -19,11 +19,10 @@ fn test_simple_configs_adhere_to_schema() -> Result<(), String> {
 }
 
 #[test]
-#[ignore]
-fn test_schema_with_urls() -> Result<(), String> {
+fn test_schema_with_urns() -> Result<(), String> {
     let configs_dir = "../../tests/test_suites/inheritance/configs";
     let schema_path = "../../tests/test_suites/inheritance/configs/.optify/schema.json";
-    let result = OptionsWatcher::build_with_schema(configs_dir, schema_path);
+    let result = OptionsProvider::build_with_schema(configs_dir, schema_path);
 
     assert!(
         result.is_ok(),

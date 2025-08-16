@@ -292,6 +292,56 @@ options:
     ...
 ```
 
+### Custom Schemas
+
+If you want to use a custom schema for your files, it is recommended put one in the folder with your configuration files in `.optify/schema.json`.
+Use `urn:optify:schema` to reference the standard Optify schema.
+
+For example,
+
+```JSON
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Optify Feature Configuration",
+	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats. See https://github.com/juharris/optify for more information.",
+	"type": "object",
+	"additionalProperties": false,
+	"minProperties": 1,
+	"properties": {
+		"imports": {
+			"$ref": "urn:optify:schema#/definitions/imports"
+		},
+		"metadata": {
+			"$ref": "urn:optify:schema#/definitions/metadata"
+		},
+        // ...
+		"options": {
+			"type": "object",
+			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
+			"minProperties": 1,
+			"properties": {
+				"myConfig": {
+					"type": "object",
+					"description": "Custom configuration",
+					"minProperties": 1,
+					"properties": {
+						"myArray": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					}
+				},
+                // Add more properties here...
+			}
+		}
+	}
+}
+
+```
+
+See the [here](./tests/test_suites/inheritance/configs/.optify/schema.json) for an example.
 
 # Inheritance
 Feature files can list ordered dependencies to declare other files to eagerly import.

@@ -374,20 +374,20 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
 
     fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
         let schema_path = schema_path.as_ref();
-        if !schema_path.is_file() {
-            return Err(format!(
-                "Error adding schema: {schema_path:?} is not a file"
-            ));
-        }
-
-        let schema_content = std::fs::read_to_string(schema_path)
+        let schema_json = crate::json::reader::read_json_from_file(schema_path)
             .map_err(|e| format!("Failed to read schema file: {e}"))?;
 
-        let schema_json: serde_json::Value = serde_json::from_str(&schema_content)
-            .map_err(|e| format!("Failed to parse schema JSON: {e}"))?;
+        // Load the embedded schema file (this is resolved at compile time).
+        const EMBEDDED_SCHEMA: &[u8] =
+            include_bytes!(concat!(env!("OUT_DIR"), "/schemas/feature_file.json"));
+        let optify_schema_json: serde_json::Value = serde_json::from_slice(EMBEDDED_SCHEMA)
+            .map_err(|e| format!("Failed to parse embedded schema: {e}"))?;
+        let optify_schema = jsonschema::Resource::from_contents(optify_schema_json)
+            .map_err(|e| format!("Failed to load schema resource: {e}"))?;
 
         let validator = Validator::options()
             .with_draft(Draft::Draft7)
+            .with_resource("urn:optify:schema", optify_schema)
             .build(&schema_json)
             .map_err(|e| format!("Invalid schema: {e}"))?;
 
