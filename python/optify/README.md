@@ -4,10 +4,10 @@
 ](https://pypi.org/project/optify)
 
 ⚠️ Development in progress ⚠️\
-APIs are not final and may change, for example, interfaces may be used and names may change.
+APIs are not final and may change, for example, interfaces may be used in the future or method names may change.
 This is just meant to be minimal to get started and help build a Python library.
 
-See the [homepage] for details.
+See the [homepage] for details about how feature files are combined to build the options to process at runtime.
 
 ## Usage
 ```Python
@@ -37,8 +37,17 @@ Outputs:
 }
 ```
 
-
 See the [tests directory](./tests/) for more examples.
+
+### Watching for Changes
+
+Use `OptionsWatcher` instead of `OptionsProvider` during development to have it automatically reload the options it stores when the files change:
+
+```Python
+from optify import OptionsWatcher
+
+watcher = OptionsWatcher.build('path/to/configs')
+```
 
 ## Development
 
