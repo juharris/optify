@@ -95,7 +95,7 @@ fn test_builder_invalid_condition_pattern() -> Result<(), Box<dyn std::error::Er
                 .to_string_lossy()
                 .to_string();
             let expected = format!(
-                "Error deserializing configuration for file '{expected_path}': regex parse error:\n    {{invalid}}\n    ^\nerror: repetition operator missing expression for key `conditions`"
+                "Error deserializing configuration for file '{expected_path}': regex parse error:\n    {{invalid}}\n    ^\nerror: repetition operator missing expression"
             );
             assert_eq!(e, expected);
             Ok(())

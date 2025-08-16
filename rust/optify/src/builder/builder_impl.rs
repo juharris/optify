@@ -1,7 +1,9 @@
 use config;
+use jsonschema::{Draft, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::builder::OptionsRegistryBuilder;
 use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
@@ -21,6 +23,7 @@ pub struct OptionsProviderBuilder {
     conditions: Conditions,
     features: Features,
     imports: Imports,
+    schema: Option<Arc<Validator>>,
     sources: Sources,
 }
 
@@ -169,6 +172,7 @@ struct LoadingResult {
     source: config::File<config::FileSourceString, config::FileFormat>,
     imports: Option<Vec<String>>,
     metadata: OptionsMetadata,
+    original_config: serde_json::Value,
 }
 
 impl OptionsProviderBuilder {
@@ -178,7 +182,29 @@ impl OptionsProviderBuilder {
             conditions: Conditions::new(),
             features: Features::new(),
             imports: HashMap::new(),
+            schema: None,
             sources: Sources::new(),
+        }
+    }
+
+    fn validate_with_schema(&self, info: &LoadingResult) -> Result<(), String> {
+        let validator = match &self.schema {
+            Some(v) => v,
+            None => return Ok(()),
+        };
+
+        let json_value = &info.original_config;
+        if validator.is_valid(json_value) {
+            Ok(())
+        } else {
+            let errors = validator.iter_errors(json_value);
+            let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
+            let path = info.metadata.path.as_ref().unwrap();
+            Err(format!(
+                "Schema validation failed for {:?} : {}",
+                path,
+                error_messages.join(", ")
+            ))
         }
     }
 
@@ -210,7 +236,19 @@ impl OptionsProviderBuilder {
             }
         };
 
-        let feature_config: FeatureConfiguration = match config_for_path.try_deserialize() {
+        // We need the raw JSON for validation.
+        let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
+            Ok(v) => v,
+            Err(e) => {
+                return Some(Err(format!(
+                    "Error deserializing configuration for file '{}': {e}",
+                    absolute_path.to_string_lossy(),
+                )))
+            }
+        };
+
+        let feature_config: FeatureConfiguration = match serde_json::from_value(raw_config.clone())
+        {
             Ok(v) => v,
             Err(e) => {
                 return Some(Err(format!(
@@ -257,6 +295,7 @@ impl OptionsProviderBuilder {
             source,
             imports: feature_config.imports,
             metadata,
+            original_config: raw_config,
         }))
     }
 
@@ -266,6 +305,10 @@ impl OptionsProviderBuilder {
     ) -> Result<(), String> {
         let info = loading_result.as_ref()?;
         let canonical_feature_name = &info.canonical_feature_name;
+
+        if self.schema.is_some() {
+            self.validate_with_schema(info)?;
+        }
         if self
             .sources
             .insert(canonical_feature_name.clone(), info.source.clone())
@@ -300,7 +343,8 @@ impl OptionsProviderBuilder {
 }
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
-    fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+    fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String> {
+        let directory = directory.as_ref();
         if !directory.is_dir() {
             return Err(format!(
                 "Error adding directory: {directory:?} is not a directory"
@@ -324,6 +368,30 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         for loading_result in loading_results {
             self.process_loading_result(&loading_result)?;
         }
+
+        Ok(self)
+    }
+
+    fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
+        let schema_path = schema_path.as_ref();
+        let schema_json = crate::json::reader::read_json_from_file(schema_path)
+            .map_err(|e| format!("Failed to read schema file: {e}"))?;
+
+        // Load the embedded schema file (this is resolved at compile time).
+        const EMBEDDED_SCHEMA: &[u8] =
+            include_bytes!(concat!(env!("OUT_DIR"), "/schemas/feature_file.json"));
+        let optify_schema_json: serde_json::Value = serde_json::from_slice(EMBEDDED_SCHEMA)
+            .map_err(|e| format!("Failed to parse embedded schema: {e}"))?;
+        let optify_schema = jsonschema::Resource::from_contents(optify_schema_json)
+            .map_err(|e| format!("Failed to load schema resource: {e}"))?;
+
+        let validator = Validator::options()
+            .with_draft(Draft::Draft7)
+            .with_resource("urn:optify:schema", optify_schema)
+            .build(&schema_json)
+            .map_err(|e| format!("Invalid schema: {e}"))?;
+
+        self.schema = Some(Arc::new(validator));
 
         Ok(self)
     }

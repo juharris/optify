@@ -20,7 +20,11 @@ exclude = [
 [dependencies]
 config = "0.15.6"
 dunce = "1.0.5"
+jsonschema = { version = "0.32.1" }
 notify = "8.0.0"
+# For fetching JSON schema files from the web, but it requires OpenSSL, which is tricky to install in CI environments in Docker containers.
+# Add `openssl-sys = { version = "*", features = ["vendored"] }`, helps a bit, but requires Perl which is also tricky to install.
+# reqwest = { version = "*", features = ["rustls-tls"] }
 notify-debouncer-full = "0.5.0"
 rayon = "1.10.0"
 regex = "1.11.1"

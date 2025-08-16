@@ -33,7 +33,10 @@ pub struct OptionsWatcher {
 }
 
 impl OptionsWatcher {
-    pub(crate) fn new(watched_directories: Vec<PathBuf>) -> Self {
+    pub(crate) fn new(
+        watched_directories: &[impl AsRef<Path>],
+        schema_path: Option<impl AsRef<Path>>,
+    ) -> Result<Self, String> {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut debouncer_watcher = new_debouncer(
@@ -71,25 +74,35 @@ impl OptionsWatcher {
                     .for_each(|error| eprintln!("\x1b[31m[optify] {error:?}\x1b[0m")),
             },
         )
-        .unwrap();
-        for dir in &watched_directories {
+        .map_err(|e| format!("Failed to create debouncer: {e}"))?;
+        for dir in watched_directories {
             debouncer_watcher
                 .watch(dir, notify::RecursiveMode::Recursive)
-                .expect("directory to be watched");
+                .map_err(|e| format!("Failed to watch directory {:?}: {e}", dir.as_ref()))?;
         }
         let mut builder = OptionsProviderBuilder::new();
-        for dir in &watched_directories {
+        if let Some(schema) = schema_path {
+            builder
+                .with_schema(&schema)
+                .map_err(|e| format!("Invalid schema: {e}"))?;
+        }
+        for dir in watched_directories {
             builder
                 .add_directory(dir)
-                .expect("directory and contents to be valid");
+                .map_err(|e| format!("Failed to add directory {:?}: {e}", dir.as_ref()))?;
         }
-        let provider = builder.build().expect("provider to be built");
+        let provider = builder
+            .build()
+            .map_err(|e| format!("Failed to build provider: {e}"))?;
         let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
 
         let self_ = Self {
             current_provider: Arc::new(RwLock::new(provider)),
             last_modified,
-            watched_directories,
+            watched_directories: watched_directories
+                .iter()
+                .map(|dir| dir.as_ref().to_path_buf())
+                .collect(),
             debouncer_watcher,
             listeners: Arc::new(Mutex::new(Vec::new())),
         };
@@ -149,7 +162,7 @@ impl OptionsWatcher {
             }
         });
 
-        self_
+        Ok(self_)
     }
 
     pub fn add_listener(&mut self, listener: OptionsWatcherListener) {
@@ -169,6 +182,16 @@ impl OptionsRegistry for OptionsWatcher {
         builder.build()
     }
 
+    fn build_with_schema(
+        directory: impl AsRef<Path>,
+        schema_path: impl AsRef<Path>,
+    ) -> Result<OptionsWatcher, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.with_schema(schema_path.as_ref())?;
+        builder.add_directory(directory.as_ref())?;
+        builder.build()
+    }
+
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsWatcher, String> {
         let mut builder = OptionsWatcherBuilder::new();
         for directory in directories {
@@ -176,6 +199,19 @@ impl OptionsRegistry for OptionsWatcher {
         }
         builder.build()
     }
+
+    fn build_from_directories_with_schema(
+        directories: &[impl AsRef<Path>],
+        schema_path: impl AsRef<Path>,
+    ) -> Result<OptionsWatcher, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.with_schema(schema_path.as_ref())?;
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.build()
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.current_provider.read().unwrap().get_aliases()
     }

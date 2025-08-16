@@ -101,11 +101,25 @@ module Optify
       sig { params(directory: String).returns(T.attached_class) }
       def build(directory); end
 
+      # Build using just one directory and enforce a schema for all feature files.
+      # @param directory The directory to build the provider from.
+      # @param schema_path The path to the file of the schema to enforce.
+      # @return The instance.
+      sig { params(directory: String, schema_path: String).returns(T.attached_class) }
+      def build_with_schema(directory, schema_path); end
+
       # Build from multiple directories.
       # @param directories The directories to build the provider from.
       # @return The instance.
       sig { params(directories: T::Array[String]).returns(T.attached_class) }
       def build_from_directories(directories); end
+
+      # Build from multiple directories and enforce a schema for all feature files.
+      # @param directories The directories to build the provider from.
+      # @param schema The schema to enforce.
+      # @return The instance.
+      sig { params(directories: T::Array[String], schema_path: String).returns(T.attached_class) }
+      def build_from_directories_with_schema(directories, schema_path); end
     end
 
     # @return All of the aliases.

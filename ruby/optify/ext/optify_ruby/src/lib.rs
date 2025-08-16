@@ -8,7 +8,6 @@ use optify::provider::OptionsRegistry;
 use optify::provider::OptionsWatcher;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
-use std::path::Path;
 
 fn convert_preferences(
     preferences: &MutGetOptionsPreferences,
@@ -76,7 +75,18 @@ fn convert_metadata(metadata: &OptionsMetadata) -> String {
 
 impl WrappedOptionsProvider {
     fn build(ruby: &Ruby, directory: String) -> Result<WrappedOptionsProvider, magnus::Error> {
-        match OptionsProvider::build(Path::new(&directory)) {
+        match OptionsProvider::build(&directory) {
+            Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn build_with_schema(
+        ruby: &Ruby,
+        directory: String,
+        schema_path: String,
+    ) -> Result<WrappedOptionsProvider, magnus::Error> {
+        match OptionsProvider::build_with_schema(&directory, &schema_path) {
             Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
@@ -87,6 +97,17 @@ impl WrappedOptionsProvider {
         directories: Vec<String>,
     ) -> Result<WrappedOptionsProvider, magnus::Error> {
         match OptionsProvider::build_from_directories(&directories) {
+            Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn build_from_directories_with_schema(
+        ruby: &Ruby,
+        directories: Vec<String>,
+        schema_path: String,
+    ) -> Result<WrappedOptionsProvider, magnus::Error> {
+        match OptionsProvider::build_from_directories_with_schema(&directories, &schema_path) {
             Ok(provider) => Ok(WrappedOptionsProvider(RefCell::new(provider))),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
@@ -210,8 +231,7 @@ impl WrappedOptionsProviderBuilder {
         rb_self: &Self,
         directory: String,
     ) -> Result<WrappedOptionsProviderBuilder, magnus::Error> {
-        let path = std::path::Path::new(&directory);
-        match rb_self.0.borrow_mut().add_directory(path) {
+        match rb_self.0.borrow_mut().add_directory(&directory) {
             Ok(builder) => Ok(WrappedOptionsProviderBuilder(RefCell::new(builder.clone()))),
             Err(e) => Err(magnus::Error::new(ruby.exception_arg_error(), e)),
         }
@@ -230,7 +250,18 @@ struct WrappedOptionsWatcher(RefCell<OptionsWatcher>);
 
 impl WrappedOptionsWatcher {
     fn build(ruby: &Ruby, directory: String) -> Result<WrappedOptionsWatcher, magnus::Error> {
-        match OptionsWatcher::build(Path::new(&directory)) {
+        match OptionsWatcher::build(&directory) {
+            Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn build_with_schema(
+        ruby: &Ruby,
+        directory: String,
+        schema_path: String,
+    ) -> Result<WrappedOptionsWatcher, magnus::Error> {
+        match OptionsWatcher::build_with_schema(&directory, &schema_path) {
             Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
@@ -241,6 +272,17 @@ impl WrappedOptionsWatcher {
         directories: Vec<String>,
     ) -> Result<WrappedOptionsWatcher, magnus::Error> {
         match OptionsWatcher::build_from_directories(&directories) {
+            Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn build_from_directories_with_schema(
+        ruby: &Ruby,
+        directories: Vec<String>,
+        schema_path: String,
+    ) -> Result<WrappedOptionsWatcher, magnus::Error> {
+        match OptionsWatcher::build_from_directories_with_schema(&directories, &schema_path) {
             Ok(provider) => Ok(WrappedOptionsWatcher(RefCell::new(provider))),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
@@ -364,8 +406,7 @@ impl WrappedOptionsWatcherBuilder {
         rb_self: &Self,
         directory: String,
     ) -> Result<WrappedOptionsWatcherBuilder, magnus::Error> {
-        let path = std::path::Path::new(&directory);
-        match rb_self.0.borrow_mut().add_directory(path) {
+        match rb_self.0.borrow_mut().add_directory(&directory) {
             Ok(builder) => Ok(WrappedOptionsWatcherBuilder(RefCell::new(builder.clone()))),
             Err(e) => Err(magnus::Error::new(ruby.exception_arg_error(), e)),
         }
@@ -396,8 +437,19 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let provider_class = module.define_class("OptionsProvider", ruby.class_object())?;
     provider_class.define_singleton_method("build", function!(WrappedOptionsProvider::build, 1))?;
     provider_class.define_singleton_method(
+        "build_with_schema",
+        function!(WrappedOptionsProvider::build_with_schema, 2),
+    )?;
+    provider_class.define_singleton_method(
         "build_from_directories",
         function!(WrappedOptionsProvider::build_from_directories, 1),
+    )?;
+    provider_class.define_singleton_method(
+        "build_from_directories_with_schema",
+        function!(
+            WrappedOptionsProvider::build_from_directories_with_schema,
+            2
+        ),
     )?;
     provider_class.define_method("aliases", method!(WrappedOptionsProvider::get_aliases, 0))?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
@@ -488,8 +540,16 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let watcher_class = module.define_class("OptionsWatcher", ruby.class_object())?;
     watcher_class.define_singleton_method("build", function!(WrappedOptionsWatcher::build, 1))?;
     watcher_class.define_singleton_method(
+        "build_with_schema",
+        function!(WrappedOptionsWatcher::build_with_schema, 2),
+    )?;
+    watcher_class.define_singleton_method(
         "build_from_directories",
         function!(WrappedOptionsWatcher::build_from_directories, 1),
+    )?;
+    watcher_class.define_singleton_method(
+        "build_from_directories_with_schema",
+        function!(WrappedOptionsWatcher::build_from_directories_with_schema, 2),
     )?;
     watcher_class.define_method("aliases", method!(WrappedOptionsWatcher::get_aliases, 0))?;
     watcher_class.define_method("features", method!(WrappedOptionsWatcher::get_features, 0))?;

@@ -12,10 +12,12 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - ".github/workflows/JS_build_test_publish.yml"
-      # We only really need to run this if the version is bumped.
+      - '.github/workflows/JS_build_test_publish.yml'
+      # We usually only need to run this if the version is bumped.
       # We test the code well enough in build_test.yml.
-      - "js/optify-config/package.json"
+      - 'js/optify-config/Cargo.toml'
+      - 'js/optify-config/package.json'
+      - 'rust/optify/Cargo.toml'
 
   pull_request:
     branches: [ "main" ]
@@ -144,7 +146,7 @@ jobs:
         if: ${{ matrix.settings.docker }}
         with:
           image: ${{ matrix.settings.docker }}
-          options: '--user 0:0 -v ${{ github.workspace }}/js/optify-config/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/js/optify-config/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/js/optify-config/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
+          options: '--user 0:0 -v ${{ github.workspace }}/js/optify-config/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/js/optify-config/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/js/optify-config/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}/schemas:/build/schemas -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: ${{ matrix.settings.build }}
       - name: Build
         run: ${{ matrix.settings.build }}

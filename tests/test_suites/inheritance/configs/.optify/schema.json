@@ -1,0 +1,39 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Optify Feature Configuration",
+	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats. See https://github.com/juharris/optify for more information.",
+	"type": "object",
+	"additionalProperties": false,
+	"minProperties": 1,
+	"properties": {
+		"conditions": {
+			"$ref": "urn:optify:schema#/definitions/conditions"
+		},
+		"imports": {
+			"$ref": "urn:optify:schema#/definitions/imports"
+		},
+		"metadata": {
+			"$ref": "urn:optify:schema#/definitions/metadata"
+		},
+		"options": {
+			"type": "object",
+			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
+			"minProperties": 1,
+			"properties": {
+				"myConfig": {
+					"type": "object",
+					"description": "Custom configuration",
+					"minProperties": 1,
+					"properties": {
+						"myArray": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -12,6 +12,7 @@ use super::OptionsRegistryBuilder;
 /// Not truly considered public yet and mainly available to support bindings for other languages.
 #[derive(Clone)]
 pub struct OptionsWatcherBuilder {
+    schema_path: Option<PathBuf>,
     watched_directories: Vec<PathBuf>,
 }
 
@@ -24,6 +25,7 @@ impl Default for OptionsWatcherBuilder {
 impl OptionsWatcherBuilder {
     pub fn new() -> Self {
         OptionsWatcherBuilder {
+            schema_path: None,
             watched_directories: Vec::new(),
         }
     }
@@ -31,12 +33,18 @@ impl OptionsWatcherBuilder {
 
 impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
     /// Add a directory to watch for changes.
-    fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
-        self.watched_directories.push(directory.to_path_buf());
+    fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String> {
+        self.watched_directories
+            .push(directory.as_ref().to_path_buf());
+        Ok(self)
+    }
+
+    fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
+        self.schema_path = Some(schema_path.as_ref().to_path_buf());
         Ok(self)
     }
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
-        Ok(OptionsWatcher::new(self.watched_directories.clone()))
+        OptionsWatcher::new(&self.watched_directories, self.schema_path.as_ref())
     }
 }
