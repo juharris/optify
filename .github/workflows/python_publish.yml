@@ -51,6 +51,11 @@ jobs:
             rust/optify
           cache-on-failure: true
           shared-key: ${{ matrix.platform.runner }}-rust
+      - name: "Install dependencies"
+        run: |
+          # Rust crate "openssl-sys" requires pkg-config and libssl-dev
+          # https://github.com/sfackler/rust-openssl/issues/855#issuecomment-450057552
+          sudo apt-get install --yes pkg-config libssl-dev
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
