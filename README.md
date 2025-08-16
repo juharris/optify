@@ -294,8 +294,8 @@ options:
 
 ### Custom Schemas
 
-If you want to use a custom schema for your files, it is recommended put one in the folder with your configuration files in `.optify/schema.json`.
-Use `urn:optify:schema` to reference the standard Optify schema.
+If you want to use a custom schema for your files and enable validation through a builder (such as `OptionsProvider.build_with_schema`), it is recommended put the schema in the folder with your configuration files at `.optify/schema.json`.
+The builder will use `urn:optify:schema` to reference the standard Optify schema.
 
 For example,
 
