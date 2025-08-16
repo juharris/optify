@@ -202,10 +202,10 @@ impl OptionsRegistry for OptionsWatcher {
 
     fn build_from_directories_with_schema(
         directories: &[impl AsRef<Path>],
-        schema: impl AsRef<Path>,
+        schema_path: impl AsRef<Path>,
     ) -> Result<OptionsWatcher, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        builder.with_schema(schema.as_ref())?;
+        builder.with_schema(schema_path.as_ref())?;
         for directory in directories {
             builder.add_directory(directory.as_ref())?;
         }

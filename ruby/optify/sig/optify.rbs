@@ -80,9 +80,9 @@ class Optify::OptionsRegistry
 
   # Build using just one directory and enforce a schema for all feature files.
   # @param directory The directory to build the provider from.
-  # @param schema The schema to enforce.
+  # @param schema_path The path to the file of the schema to enforce.
   # @return The instance.
-  def build_with_schema: (String directory, String schema) -> instance
+  def build_with_schema: (String directory, String schema_path) -> instance
 
   # Build from multiple directories.
   # @param directories The directories to build the provider from.
@@ -93,7 +93,7 @@ class Optify::OptionsRegistry
   # @param directories The directories to build the provider from.
   # @param schema The schema to enforce.
   # @return The instance.
-  def build_from_directories_with_schema: (::Array[String] directories, String schema) -> instance
+  def build_from_directories_with_schema: (::Array[String] directories, String schema_path) -> instance
 
   # @return All of the aliases.
   def aliases: () -> ::Array[String]
