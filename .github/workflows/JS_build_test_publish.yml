@@ -12,10 +12,12 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - ".github/workflows/JS_build_test_publish.yml"
-      # We only really need to run this if the version is bumped.
+      - '.github/workflows/JS_build_test_publish.yml'
+      # We usually only need to run this if the version is bumped.
       # We test the code well enough in build_test.yml.
-      - "js/optify-config/package.json"
+      - 'js/optify-config/Cargo.toml'
+      - 'js/optify-config/package.json'
+      - 'rust/optify/Cargo.toml'
 
   pull_request:
     branches: [ "main" ]
