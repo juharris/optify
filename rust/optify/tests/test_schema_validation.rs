@@ -2,12 +2,27 @@ use optify::{
     builder::{OptionsRegistryBuilder, OptionsWatcherBuilder},
     provider::{OptionsRegistry, OptionsWatcher},
 };
-use std::path::Path;
 
 #[test]
 fn test_simple_configs_adhere_to_schema() -> Result<(), String> {
-    let configs_dir = Path::new("../../tests/test_suites/simple/configs");
-    let schema_path = Path::new("../../schemas/feature_file.json");
+    let configs_dir = "../../tests/test_suites/simple/configs";
+    let schema_path = "../../schemas/feature_file.json";
+    let result = OptionsWatcher::build_with_schema(configs_dir, schema_path);
+
+    assert!(
+        result.is_ok(),
+        "Schema validation failed: {:?}",
+        result.err()
+    );
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn test_schema_with_urls() -> Result<(), String> {
+    let configs_dir = "../../tests/test_suites/inheritance/configs";
+    let schema_path = "../../tests/test_suites/inheritance/configs/.optify/schema.json";
     let result = OptionsWatcher::build_with_schema(configs_dir, schema_path);
 
     assert!(
@@ -26,8 +41,7 @@ fn test_invalid_file_fails_schema_validation() -> Result<(), String> {
 
     let mut builder = OptionsWatcherBuilder::new();
 
-    let schema_path = Path::new("../../schemas/feature_file.json");
-    builder.with_schema(schema_path)?;
+    builder.with_schema("../../schemas/feature_file.json")?;
 
     // Create a temporary directory with an invalid config file
     let temp_dir = TempDir::new().expect("temp dir to be created");
