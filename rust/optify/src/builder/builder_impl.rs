@@ -343,7 +343,8 @@ impl OptionsProviderBuilder {
 }
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
-    fn add_directory(&mut self, directory: &Path) -> Result<&Self, String> {
+    fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String> {
+        let directory = directory.as_ref();
         if !directory.is_dir() {
             return Err(format!(
                 "Error adding directory: {directory:?} is not a directory"
@@ -371,7 +372,8 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         Ok(self)
     }
 
-    fn with_schema(&mut self, schema_path: &Path) -> Result<&Self, String> {
+    fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
+        let schema_path = schema_path.as_ref();
         if !schema_path.is_file() {
             return Err(format!(
                 "Error adding schema: {schema_path:?} is not a file"

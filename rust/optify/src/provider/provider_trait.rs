@@ -15,7 +15,7 @@ pub trait OptionsRegistry {
 
     fn build_with_schema(
         directory: impl AsRef<Path>,
-        schema: impl AsRef<Path>,
+        schema_path: impl AsRef<Path>,
     ) -> Result<Self, String>
     where
         Self: Sized;

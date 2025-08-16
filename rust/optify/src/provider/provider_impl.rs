@@ -168,10 +168,10 @@ impl OptionsRegistry for OptionsProvider {
 
     fn build_with_schema(
         directory: impl AsRef<Path>,
-        schema: impl AsRef<Path>,
+        schema_path: impl AsRef<Path>,
     ) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
-        builder.with_schema(schema.as_ref())?;
+        builder.with_schema(schema_path.as_ref())?;
         builder.add_directory(directory.as_ref())?;
         builder.build()
     }

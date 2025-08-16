@@ -100,9 +100,10 @@ jobs:
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
         ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
 
-        # The Docker containers for tag 0.9.113 did not get published, so we'll use 0.9.111 for now.
-        # 0.9.114 will probably be the next released version, but then we should be able to remove this line that sets the tag and just use the default.
-        # tag: '0.9.111'
+        # Docker tag to override the default.
+        # Useful when the number is changed for the action, but the Docker image is not yet published.
+        # Images: https://hub.docker.com/u/rbsys
+        # tag: '0.9.117'
         working-directory: ./ruby/optify
 
     - name: "[Ruby] Publish"
