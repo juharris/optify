@@ -295,7 +295,9 @@ options:
 ### Custom Schemas
 
 If you want to use a custom schema for your files and enable validation through a builder (such as `OptionsProvider.build_with_schema`), it is recommended put the schema in the folder with your configuration files at `.optify/schema.json`.
-The builder will use `urn:optify:schema` to reference the standard Optify schema.
+The builder will use `https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json` to reference the standard Optify schema for the version of the library that you are using.
+This URL is mapped to the schema when the library is built.
+Other URLs are not supported yet.
 
 For example,
 
@@ -309,10 +311,10 @@ For example,
 	"minProperties": 1,
 	"properties": {
 		"imports": {
-			"$ref": "urn:optify:schema#/definitions/imports"
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/imports"
 		},
 		"metadata": {
-			"$ref": "urn:optify:schema#/definitions/metadata"
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/metadata"
 		},
         // ...
 		"options": {

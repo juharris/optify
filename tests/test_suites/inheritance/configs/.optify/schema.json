@@ -7,13 +7,13 @@
 	"minProperties": 1,
 	"properties": {
 		"conditions": {
-			"$ref": "urn:optify:schema#/definitions/conditions"
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/conditions"
 		},
 		"imports": {
-			"$ref": "urn:optify:schema#/definitions/imports"
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/imports"
 		},
 		"metadata": {
-			"$ref": "urn:optify:schema#/definitions/metadata"
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/metadata"
 		},
 		"options": {
 			"type": "object",
