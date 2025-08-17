@@ -17,7 +17,6 @@ export class OptifyDependentsProvider {
             before: {
                 color: new vscode.ThemeColor('editorInlayHint.foreground'),
                 fontStyle: 'italic',
-                margin: '0 0 0 0'
             },
             rangeBehavior: vscode.DecorationRangeBehavior.ClosedOpen,
         });
