@@ -387,7 +387,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
 
         let validator = Validator::options()
             .with_draft(Draft::Draft7)
-            .with_resource("urn:optify:schema", optify_schema)
+            .with_resource("https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json", optify_schema)
             .build(&schema_json)
             .map_err(|e| format!("Invalid schema: {e}"))?;
 

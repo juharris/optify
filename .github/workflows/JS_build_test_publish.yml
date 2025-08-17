@@ -83,7 +83,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            python/optify
+            js/optify-config
             rust/optify
           cache-on-failure: true
           shared-key: ${{ matrix.settings.host }}-rust
@@ -170,7 +170,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            python/optify
+            js/optify-config
             rust/optify
           cache-on-failure: true
           shared-key: freebsd-rust
@@ -242,7 +242,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            python/optify
+            js/optify-config
             rust/optify
           cache-on-failure: true
           shared-key: ${{ matrix.settings.host }}-rust
@@ -293,7 +293,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            python/optify
+            js/optify-config
             rust/optify
           cache-on-failure: true
           shared-key: linux-x64-gnu-rust
@@ -337,7 +337,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            python/optify
+            js/optify-config
             rust/optify
           cache-on-failure: true
           shared-key: linux-aarch64-gnu-rust
@@ -386,7 +386,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            python/optify
+            js/optify-config
             rust/optify
           cache-on-failure: true
           shared-key: linux-aarch64-musl-rust
@@ -436,7 +436,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            python/optify
+            js/optify-config
             rust/optify
           cache-on-failure: true
           shared-key: universal-macOS-rust

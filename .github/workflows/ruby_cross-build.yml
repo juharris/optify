@@ -60,7 +60,7 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: |
-          python/optify
+          ruby/optify
           rust/optify
         cache-on-failure: true
         shared-key: ${{ matrix.ruby_platform }}-rust
@@ -133,7 +133,7 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: |
-          python/optify
+          ruby/optify
           rust/optify
         cache-on-failure: true
         shared-key: source-gem-rust
