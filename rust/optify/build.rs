@@ -52,11 +52,16 @@ fn copy_schema_file() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Dynamically generate the tests for each folder in tests/test_suites.
 fn generate_test_suites() {
+    let test_suites_path = Path::new("../../tests/test_suites");
+    if !test_suites_path.exists() {
+        // Not found most likely because we're running `cargo publish`.
+        return;
+    }
+
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("test_suites.rs");
     let mut f = fs::File::create(&dest_path).unwrap();
-
-    for entry in fs::read_dir("../../tests/test_suites").unwrap().flatten() {
+    for entry in fs::read_dir(test_suites_path).unwrap().flatten() {
         let path = entry.path();
         if path.is_dir() && !path.starts_with(".") {
             if let Some(file_name) = path.file_name() {
