@@ -63,6 +63,7 @@ describe('Provider', () => {
 			const metadataA = featuresWithMetadata['feature_A']
 			expect(metadataA.name()).toEqual('feature_A')
 			expect(metadataA.aliases()).toEqual(['a'])
+			expect(metadataA.dependents()).toEqual(null)
 			expect(metadataA.owners()).toEqual("a-team@company.com")
 			const expectedPath = path.resolve(path.join(configsPath, 'feature_A.json'))
 			expect(metadataA.path()).toEqual(expectedPath)

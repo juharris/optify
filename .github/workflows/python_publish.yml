@@ -50,7 +50,7 @@ jobs:
             python/optify
             rust/optify
           cache-on-failure: true
-          shared-key: ${{ matrix.platform.runner }}-rust
+          shared-key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-rust
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -86,7 +86,7 @@ jobs:
             python/optify
             rust/optify
           cache-on-failure: true
-          shared-key: ${{ matrix.platform.runner }}-rust
+          shared-key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-rust
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -120,7 +120,7 @@ jobs:
             python/optify
             rust/optify
           cache-on-failure: true
-          shared-key: ${{ matrix.platform.runner }}-rust
+          shared-key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-rust
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:

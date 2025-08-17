@@ -11,6 +11,7 @@ use crate::schema::conditions::ConditionExpression;
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
+type Dependents = HashMap<String, Vec<String>>;
 type Imports = HashMap<String, Vec<String>>;
 
 /// A builder to use in production to create an `OptionsProvider`.
@@ -20,6 +21,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    dependents: Dependents,
     conditions: Conditions,
     features: Features,
     imports: Imports,
@@ -63,6 +65,7 @@ fn resolve_imports(
     resolved_imports: &mut HashSet<String>,
     features_in_resolution_path: &mut HashSet<String>,
     aliases: &Aliases,
+    all_dependents: &mut Dependents,
     all_imports: &Imports,
     sources: &mut Sources,
     conditions: &Conditions,
@@ -89,6 +92,11 @@ fn resolve_imports(
                  scenario."
             ));
         }
+
+        all_dependents
+            .entry(import.clone())
+            .or_default()
+            .push(canonical_feature_name.to_owned());
 
         // Get the source so that we can build the configuration.
         // Getting the source also ensures the import is a canonical feature name.
@@ -118,6 +126,7 @@ fn resolve_imports(
                     resolved_imports,
                     &mut _features_in_resolution_path,
                     aliases,
+                    all_dependents,
                     all_imports,
                     sources,
                     conditions,
@@ -179,6 +188,7 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
+            dependents: Dependents::new(),
             conditions: Conditions::new(),
             features: Features::new(),
             imports: HashMap::new(),
@@ -281,6 +291,7 @@ impl OptionsProviderBuilder {
                 metadata
             }
             None => OptionsMetadata::new(
+                None,
                 None,
                 None,
                 Some(canonical_feature_name.clone()),
@@ -409,11 +420,21 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     &mut resolved_imports,
                     &mut features_in_resolution_path,
                     &self.aliases,
+                    &mut self.dependents,
                     &self.imports,
                     &mut self.sources,
                     &self.conditions,
                 )?;
             }
+        }
+
+        for (canonical_feature_name, dependents) in &self.dependents {
+            let mut sorted_dependents = dependents.clone();
+            sorted_dependents.sort_unstable();
+            self.features
+                .get_mut(canonical_feature_name)
+                .unwrap()
+                .dependents = Some(sorted_dependents);
         }
 
         Ok(OptionsProvider::new(

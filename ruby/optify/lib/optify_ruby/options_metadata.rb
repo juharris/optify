@@ -11,6 +11,10 @@ module Optify
     sig { returns(T.nilable(T::Array[String])) }
     attr_reader :aliases
 
+    # The canonical names of features that depend on this one.
+    sig { returns(T.nilable(T::Array[String])) }
+    attr_reader :dependents
+
     sig { returns(T.untyped) }
     attr_reader :details
 

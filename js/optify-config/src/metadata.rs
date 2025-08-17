@@ -18,6 +18,12 @@ impl JsOptionsMetadata {
     self.inner.as_ref().and_then(|m| m.aliases.clone())
   }
 
+  /// The canonical names of features that depend on this one.
+  #[napi]
+  pub fn dependents(&self) -> Option<Vec<String>> {
+    self.inner.as_ref().and_then(|m| m.dependents.clone())
+  }
+
   #[napi]
   pub fn name(&self) -> Option<String> {
     self.inner.as_ref().and_then(|m| m.name.clone())

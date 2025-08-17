@@ -86,7 +86,7 @@ jobs:
             js/optify-config
             rust/optify
           cache-on-failure: true
-          shared-key: ${{ matrix.settings.host }}-rust
+          shared-key: ${{ matrix.settings.target }}-rust
       - name: Install corepack
         if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
         run: npm install -g corepack
@@ -245,7 +245,7 @@ jobs:
             js/optify-config
             rust/optify
           cache-on-failure: true
-          shared-key: ${{ matrix.settings.host }}-rust
+          shared-key: ${{ matrix.settings.target }}-rust
       - name: Install corepack
         if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
         run: npm install -g corepack
@@ -489,6 +489,14 @@ jobs:
       - universal-macOS
     steps:
       - uses: actions/checkout@v4
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            js/optify-config
+            rust/optify
+          cache-on-failure: true
+          shared-key: publish-rust
       - name: Install corepack
         run: npm install -g corepack
       - name: Setup node
