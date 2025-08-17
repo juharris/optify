@@ -81,6 +81,12 @@ jobs:
     - name: "[Rust] Test"
       run: cargo test --release
       working-directory: ./rust/optify
+    - name: "[Rust] Copy schema for publish"
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir schemas
+        cp ../../schemas/feature_file.json schemas/
+      working-directory: ./rust/optify
     - name: "[Rust] Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
@@ -88,9 +94,15 @@ jobs:
       # We want to only be lenient for the `cargo publish`, but we would still want to clearly see that an issue happened during the run.
       continue-on-error: true
       run: |
-        cargo publish --token ${CARGO_REGISTRY_TOKEN}
+        cargo publish --allow-dirty --token ${CARGO_REGISTRY_TOKEN}
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      working-directory: ./rust/optify
+    - name: "[Rust] Publish (dry run)"
+      if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify
 
 
