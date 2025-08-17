@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { getCanonicalName, findOptifyRoot, isOptifyFeatureFile, resolveImportPath } from '../path-utils';
 import { getOptionsProvider } from '../providers';
+import { getDecorationLineNumber } from './shared-utils';
 
 /**
  * Show dependents at the top of the feature file.
@@ -17,6 +18,7 @@ export class OptifyDependentsProvider {
             before: {
                 color: new vscode.ThemeColor('editorInlayHint.foreground'),
                 fontStyle: 'italic',
+                margin: '0 0 0 1rem',
             },
             rangeBehavior: vscode.DecorationRangeBehavior.ClosedOpen,
         });
@@ -41,15 +43,13 @@ export class OptifyDependentsProvider {
         }
 
         const canonicalName = getCanonicalName(document.fileName, optifyRoot);
-        this.outputChannel.appendLine(`Checking dependents for: ${canonicalName}`);
+        this.outputChannel.appendLine(`Checking dependents for "${canonicalName}"`);
 
         try {
             const provider = getOptionsProvider(optifyRoot);
             const featuresWithMetadata = provider.featuresWithMetadata();
             const metadata = featuresWithMetadata[canonicalName];
             const dependents = metadata?.dependents();
-
-            this.outputChannel.appendLine(`Dependents: ${dependents ? dependents.join(', ') : 'none'}`);
 
             if (!dependents || dependents.length === 0) {
                 editor.setDecorations(this.decorationType, []);
@@ -59,22 +59,18 @@ export class OptifyDependentsProvider {
             const decorations: vscode.DecorationOptions[] = [];
 
             // We can't put the dependents on multiple lines as a decoration, so we'll just put them all on one line for now.
-            const textComponents: string[] = [' "dependents": ['];
+            const textComponents: string[] = ['"dependents": ['];
             dependents.forEach((dep, index) => {
                 const isLast = index === dependents.length - 1;
                 textComponents.push(` "${dep}"${isLast ? '' : ', '}`);
             });
             textComponents.push(' ],');
 
-            // For JSON, find the opening brace and add after it
-            const firstLine = document.lineAt(0).text;
+            const lineNum = getDecorationLineNumber(document);
+            const lineRange = document.lineAt(lineNum).range;
             const contentText = textComponents.join('');
-
-            // Put at the end of the first line.
-            const index = firstLine.length;
-
             const decoration: vscode.DecorationOptions = {
-                range: new vscode.Range(0, index, 0, index),
+                range: new vscode.Range(lineNum, lineRange.end.character, lineNum + 1, lineRange.end.character),
                 renderOptions: {
                     before: {
                         contentText: contentText

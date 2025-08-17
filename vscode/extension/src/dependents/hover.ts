@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import { getCanonicalName, findOptifyRoot, isOptifyFeatureFile, resolveImportPath } from '../path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveImportPath } from '../path-utils';
 import { getOptionsProvider } from '../providers';
+import { getDecorationLineNumber } from './shared-utils';
 
 /**
  * Provides hover information for Optify dependents with links to feature files.
@@ -35,19 +36,8 @@ export class OptifyDependentsHoverProvider implements vscode.HoverProvider {
                 return undefined;
             }
 
-            // FIXME hover should only work on the decorations, but they are not real lines. Maybe this entire file has bad assumptions.
-            // Provide hover only on lines where dependents are shown.
-            // Handle title line, then each dependent, but not the closing bracket.
-            // For JSON, we need to handle the `{` at the start of the file.
-            // let offset = 0;
-            // if (document.lineAt(0).text.trim().startsWith('{')) {
-            //     offset = 1;
-            // }
-            // if (position.line > dependents.length + offset) {
-            //     return undefined;
-            // }
-            // All dependents should be on the first line.
-            if (position.line > 0) {
+            const lineNumber = getDecorationLineNumber(document);
+            if (position.line !== lineNumber) {
                 return undefined;
             }
 
