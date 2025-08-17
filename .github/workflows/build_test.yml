@@ -81,6 +81,12 @@ jobs:
     - name: "[Rust] Test"
       run: cargo test --release
       working-directory: ./rust/optify
+    - name: "[Rust] Copy schema for publish"
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir schemas
+        cp ../../schemas/feature_file.json schemas/
+      working-directory: ./rust/optify
     - name: "[Rust] Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
