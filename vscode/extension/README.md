@@ -11,11 +11,11 @@ Helps manage and develop [Optify] feature files.
 * Validate imports.
 * Completions for imports.
 * Suggest the canonical name for an alias.
+* See features that import the current file.
 
 ### Future Plans
 
 * Build a configuration for multiple features.
-* See files that import the current file.
 * Suggest keys in options based on other files.
 * Email owners.
 

@@ -1,3 +1,5 @@
+import { OptionsWatcher } from "@optify/config";
+
 export interface PreviewWhileEditingOptions {
 	features?: string[]
 	overrides?: string;
@@ -25,11 +27,29 @@ export class PreviewBuilder {
 
 	getPreviewHtml(
 		features: string[],
-		config: any): string {
+		config: any,
+		dependents: string[] | null,
+		provider: OptionsWatcher
+	): string {
 		const configJson = JSON.stringify(config, null, 2);
 		const highlightedConfig = this.highlightJson(configJson);
 		const featuresString = JSON.stringify(features);
 		const highlightedFeatures = this.highlightJson(featuresString);
+
+		const renderDependents = () => {
+			if (!dependents || dependents.length === 0) {
+				return '';
+			}
+			const featuresWithMetadata = provider.featuresWithMetadata();
+			const dependentLinks = dependents.map(dep => {
+				const path = featuresWithMetadata[dep]?.path();
+				return `<li><a href="#" class="dependent-link" data-path="${path}">${dep}</a></li>`;
+			});
+
+			return `
+			<div><h3>Dependents</h3>Features that depend on this one:\n<ul>${dependentLinks.join('\n')}</ul></div>`;
+		};
+
 		return `<!DOCTYPE html>
 <html>
 <head>
@@ -85,11 +105,38 @@ export class PreviewBuilder {
 		body.vscode-light .boolean { color: #0000ff; }
 		body.vscode-light .null { color: #0000ff; }
 		body.vscode-light .key { color: #001080; }
+		
+		/* Dependent links */
+		.dependent-link {
+			color: var(--vscode-textLink-foreground);
+			text-decoration: none;
+			cursor: pointer;
+		}
+		.dependent-link:hover {
+			text-decoration: underline;
+			color: var(--vscode-textLink-activeForeground);
+		}
 	</style>
+	<script>
+		const vscode = acquireVsCodeApi();
+		
+		document.addEventListener('DOMContentLoaded', () => {
+			document.querySelectorAll('.dependent-link').forEach(link => {
+				link.addEventListener('click', (e) => {
+					e.preventDefault();
+					vscode.postMessage({
+						command: 'openFile',
+						path: e.target.dataset.path,
+					});
+				});
+			});
+		});
+	</script>
 </head>
 <body>
 	<h2>Configuration Preview</h2>
 	<div>Features:<pre><code>${highlightedFeatures}</code></pre></div>
+	${renderDependents()}
 	<h3>Configuration:</h3>
 	<pre><code>${highlightedConfig}</code></pre>
 </body>

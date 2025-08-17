@@ -15,6 +15,6 @@ suite('Extension Test Suite', () => {
 		assert.equal(optifyRoot, expectedRoot);
 		const preview = buildOptifyPreview(['feature'], expectedRoot);
 		assert.ok(preview.startsWith('<!DOCTYPE html>'), preview);
-		assert.ok(preview.includes('<div>Features:<pre><code>[<span class="string">"feature"</span>]</code></pre></div>\n\t<h3>Configuration:</h3>\n\t<pre><code>{\n  <span class="key">"wtv":</span> <span class="number">3</span>\n}</code></pre>'), preview);
+		assert.ok(preview.includes('<div>Features:<pre><code>[<span class="string">"feature"</span>]</code></pre></div>\n\t\n\t<h3>Configuration:</h3>\n\t<pre><code>{\n  <span class="key">"wtv":</span> <span class="number">3</span>\n}</code></pre>'), preview);
 	});
 });

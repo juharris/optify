@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 import { OptifyCompletionProvider } from './completion';
 import { ConfigParser } from './config-parser';
 import { OptifyDefinitionProvider } from './definitions';
+import { OptifyDependentsHoverProvider } from './dependents/hover';
+import { OptifyDependentsProvider } from './dependents/show';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveImportPath } from './path-utils';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
@@ -32,7 +34,9 @@ export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: stri
 		}
 		const builtConfigJson = provider.getAllOptionsJson(editingOptions?.features ?? canonicalFeatures, preferences);
 		const builtConfig = JSON.parse(builtConfigJson);
-		return previewBuilder.getPreviewHtml(canonicalFeatures, builtConfig);
+		const feature = canonicalFeatures.length === 1 ? canonicalFeatures[0] : undefined;
+		const dependents = feature ? provider.featuresWithMetadata()[feature]?.dependents() : null;
+		return previewBuilder.getPreviewHtml(canonicalFeatures, builtConfig, dependents, provider);
 	} catch (error) {
 		const message = `Failed to build preview${editingOptions ? " while editing" : ""}: ${error}`;
 		console.error(message);
@@ -70,10 +74,18 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set up context for when clauses
 	updateOptifyFileContext();
 
-	// Register callback to update previews when options change
+	// Create the dependents providers
+	const dependentsProvider = new OptifyDependentsProvider(outputChannel);
+	const dependentsHoverProvider = new OptifyDependentsHoverProvider(outputChannel);
+
+	// Register callback to update previews and dependents when options change
 	registerUpdateCallback(() => {
 		for (const preview of activePreviews.values()) {
 			preview.updatePreview();
+		}
+		// Update dependents decoration for active editor
+		if (vscode.window.activeTextEditor) {
+			dependentsProvider.updateDependentsDecoration(vscode.window.activeTextEditor);
 		}
 	});
 
@@ -120,12 +132,26 @@ export function activate(context: vscode.ExtensionContext) {
 				`Optify Preview: ${canonicalName}`,
 				vscode.ViewColumn.Beside,
 				{
-					enableScripts: false,
+					enableScripts: true,
 					enableFindWidget: true
 				}
 			);
 
 			panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
+
+			// Handle messages from the webview
+			panel.webview.onDidReceiveMessage(
+				async (message) => {
+					if (message.command === 'openFile') {
+						if (message.path) {
+							const uri = vscode.Uri.file(message.path);
+							vscode.window.showTextDocument(uri);
+						}
+					}
+				},
+				undefined,
+				context.subscriptions
+			);
 
 			// Update the preview when the changes to the file are saved.
 			const updatePreview = () => {
@@ -202,6 +228,11 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
+	const hoverProvider = vscode.languages.registerHoverProvider(
+		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
+		dependentsHoverProvider
+	);
+
 	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
 		if (isOptifyFeatureFile(event.document.fileName)) {
 			diagnosticsProvider.updateDiagnostics(event.document);
@@ -211,13 +242,27 @@ export function activate(context: vscode.ExtensionContext) {
 	const onDidOpenDocument = vscode.workspace.onDidOpenTextDocument((document) => {
 		if (isOptifyFeatureFile(document.fileName)) {
 			diagnosticsProvider.updateDiagnostics(document);
+			// Update dependents decoration when opening a document
+			const editor = vscode.window.activeTextEditor;
+			if (editor && editor.document === document) {
+				dependentsProvider.updateDependentsDecoration(editor);
+			}
 		}
 		updateOptifyFileContext();
 	});
 
-	const onDidChangeActiveEditor = vscode.window.onDidChangeActiveTextEditor(() => {
+	const onDidChangeActiveEditor = vscode.window.onDidChangeActiveTextEditor((editor) => {
 		updateOptifyFileContext();
+		// Update dependents decoration when switching editors
+		if (editor) {
+			dependentsProvider.updateDependentsDecoration(editor);
+		}
 	});
+
+	// Update dependents for the active editor on activation
+	if (vscode.window.activeTextEditor) {
+		dependentsProvider.updateDependentsDecoration(vscode.window.activeTextEditor);
+	}
 
 	context.subscriptions.push(
 		outputChannel,
@@ -227,9 +272,11 @@ export function activate(context: vscode.ExtensionContext) {
 		completionProvider,
 		diagnosticCollection,
 		codeActionProvider,
+		hoverProvider,
 		onDidChangeDocument,
 		onDidOpenDocument,
-		onDidChangeActiveEditor
+		onDidChangeActiveEditor,
+		dependentsProvider
 	);
 }
 

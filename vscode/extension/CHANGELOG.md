@@ -5,6 +5,10 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.4.0
+
+* Show features that import the current file.
+
 ## 1.3.1
 
 Optimization: Get the path to an import directly from the provider instead of checking for existing files.

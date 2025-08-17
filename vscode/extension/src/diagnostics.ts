@@ -87,7 +87,7 @@ export class OptifyDiagnosticsProvider {
 }
 
 /**
- * Provides quick fixes for feature alias suggestions
+ * Provides quick fixes for feature alias suggestions.
  */
 export class OptifyCodeActionProvider implements vscode.CodeActionProvider {
 	public static readonly providedCodeActionKinds = [
