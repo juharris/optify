@@ -92,6 +92,12 @@ jobs:
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       working-directory: ./rust/optify
+    - name: "[Rust] Publish (dry run)"
+      if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        cargo publish --dry-run
+      working-directory: ./rust/optify
 
 
     # JavaScript
