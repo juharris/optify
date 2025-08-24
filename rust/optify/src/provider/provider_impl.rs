@@ -1,8 +1,8 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, sync::RwLock};
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
-    provider::constraints::Constraints,
+    provider::GetOptionsPreferences,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
@@ -19,50 +19,10 @@ pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
-pub struct GetOptionsPreferences {
-    /// Overrides to apply after the built configuration.
-    /// A string is used because it makes it easier to pass to the `config` library, but this may change in the future.
-    /// It also makes it simpler and maybe faster to get from other programming languages.
-    pub overrides_json: Option<String>,
-    pub skip_feature_name_conversion: bool,
-    pub constraints: Option<Constraints>,
-}
-
-impl Clone for GetOptionsPreferences {
-    fn clone(&self) -> Self {
-        Self {
-            overrides_json: self.overrides_json.clone(),
-            skip_feature_name_conversion: self.skip_feature_name_conversion,
-            constraints: self.constraints.clone(),
-        }
-    }
-}
-
-impl Default for GetOptionsPreferences {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl GetOptionsPreferences {
-    pub fn new() -> Self {
-        Self {
-            constraints: None,
-            overrides_json: None,
-            skip_feature_name_conversion: false,
-        }
-    }
-
-    pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
-        self.constraints = constraints.map(|c| Constraints { constraints: c });
-    }
-
-    pub fn set_constraints_json(&mut self, constraints: Option<&str>) {
-        self.constraints = constraints.map(|c| Constraints {
-            constraints: serde_json::from_str(c).expect("constraints should be valid JSON"),
-        });
-    }
-}
+pub(crate) type EntireConfigCache =
+    HashMap<(Vec<String>, Option<GetOptionsPreferences>), config::Config>;
+pub(crate) type OptionsCache =
+    HashMap<(String, Vec<String>, Option<GetOptionsPreferences>), serde_json::Value>;
 
 pub struct CacheOptions {}
 
@@ -73,9 +33,22 @@ pub struct OptionsProvider {
     conditions: Conditions,
     features: Features,
     sources: Sources,
+
+    // Caches - using RwLock for thread-safe interior mutability
+    entire_config_cache: RwLock<EntireConfigCache>,
+    options_cache: RwLock<OptionsCache>,
 }
 
 impl OptionsProvider {
+    // Helper function to efficiently convert feature names to Vec<String>
+    fn feature_names_to_vec<T: AsRef<str>>(feature_names: &[T]) -> Vec<String> {
+        // This is optimized for the common case where T is &str or String
+        feature_names
+            .iter()
+            .map(|s| s.as_ref().to_owned())
+            .collect()
+    }
+
     pub(crate) fn new(
         aliases: &Aliases,
         conditions: &Conditions,
@@ -87,6 +60,8 @@ impl OptionsProvider {
             conditions: conditions.clone(),
             features: features.clone(),
             sources: sources.clone(),
+            entire_config_cache: RwLock::new(HashMap::new()),
+            options_cache: RwLock::new(HashMap::new()),
         }
     }
 
@@ -102,7 +77,19 @@ impl OptionsProvider {
                     return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
                 }
             }
-            return Err("Caching is not supported yet.".to_owned());
+
+            let key = (
+                Self::feature_names_to_vec(feature_names),
+                preferences.cloned(),
+            );
+            if let Some(config) = self
+                .entire_config_cache
+                .read()
+                .expect("the entire config cache should be readable")
+                .get(&key)
+            {
+                return Ok(config.clone());
+            }
         };
         let mut config_builder = config::Config::builder();
         let mut skip_feature_name_conversion = false;
@@ -151,7 +138,20 @@ impl OptionsProvider {
         }
 
         match config_builder.build() {
-            Ok(cfg) => Ok(cfg),
+            Ok(cfg) => {
+                // Populate cache if caching is enabled
+                if let Some(_cache_options) = cache_options {
+                    let key = (
+                        Self::feature_names_to_vec(feature_names),
+                        preferences.cloned(),
+                    );
+                    self.entire_config_cache
+                        .write()
+                        .expect("the entire config cache lock should be held")
+                        .insert(key, cfg.clone());
+                }
+                Ok(cfg)
+            }
             Err(e) => Err(format!(
                 "Error combining features to build the configuration: {e}"
             )),
@@ -271,10 +271,41 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
+        if let Some(_cache_options) = cache_options {
+            if let Some(preferences) = preferences {
+                if preferences.overrides_json.is_some() {
+                    return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
+                }
+            }
+        }
+
+        let cache_key = (
+            key.to_owned(),
+            Self::feature_names_to_vec(feature_names),
+            preferences.cloned(),
+        );
+        if let Some(options) = self
+            .options_cache
+            .read()
+            .expect("the options cache should be readable")
+            .get(&cache_key)
+        {
+            return Ok(options.clone());
+        }
+
         let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
-        match config.get(key) {
-            Ok(value) => Ok(value),
+        match config.get::<serde_json::Value>(key) {
+            Ok(value) => {
+                // Populate options cache if caching is enabled
+                if let Some(_cache_options) = cache_options {
+                    self.options_cache
+                        .write()
+                        .expect("the options cache lock should be held")
+                        .insert(cache_key, value.clone());
+                }
+                Ok(value)
+            }
             Err(e) => {
                 let features = feature_names
                     .iter()
