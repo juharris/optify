@@ -58,8 +58,8 @@ impl OptionsProvider {
             conditions: conditions.clone(),
             features: features.clone(),
             sources: sources.clone(),
-            entire_config_cache: RwLock::new(HashMap::new()),
-            options_cache: RwLock::new(HashMap::new()),
+            entire_config_cache: RwLock::new(EntireConfigCache::new()),
+            options_cache: RwLock::new(OptionsCache::new()),
         }
     }
 
@@ -68,20 +68,18 @@ impl OptionsProvider {
         feature_names: &[impl AsRef<str>],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Vec<String>, String> {
-        let features: Vec<String>;
-        if let Some(preferences) = preferences {
-            if preferences.overrides_json.is_some() {
-                return Err("Caching when overrides are given is not supported.".to_owned());
+        match preferences {
+            Some(preferences) => {
+                if preferences.overrides_json.is_some() {
+                    return Err("Caching when overrides are given is not supported.".to_owned());
+                }
+                if preferences.skip_feature_name_conversion {
+                    return Ok(feature_names_to_vec(feature_names));
+                }
+                self.get_canonical_feature_names(feature_names)
             }
-            if preferences.skip_feature_name_conversion {
-                features = feature_names_to_vec(feature_names);
-            } else {
-                features = self.get_canonical_feature_names(feature_names)?;
-            }
-        } else {
-            features = self.get_canonical_feature_names(feature_names)?;
+            None => self.get_canonical_feature_names(feature_names),
         }
-        Ok(features)
     }
 
     fn get_entire_config(
@@ -145,7 +143,6 @@ impl OptionsProvider {
 
         match config_builder.build() {
             Ok(cfg) => {
-                // Populate cache if caching is enabled
                 if let Some(_cache_options) = cache_options {
                     let features =
                         self.convert_feature_names_for_cache(feature_names, preferences)?;
@@ -330,7 +327,6 @@ impl OptionsRegistry for OptionsProvider {
 
         match config.get::<serde_json::Value>(key) {
             Ok(value) => {
-                // Populate options cache if caching is enabled
                 if let Some(_cache_options) = cache_options {
                     let features =
                         self.convert_feature_names_for_cache(feature_names, preferences)?;
