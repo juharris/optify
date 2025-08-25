@@ -58,16 +58,16 @@ bump_version_in_toml "Cargo.toml" $strategy
 popd
 
 pushd python/optify
+bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 bump_version_in_toml "pyproject.toml" $strategy
 bump_version_in_toml "Cargo.toml" $strategy
-bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 maturin build
 popd
 
 pushd ruby/optify
-bump_version_gemspec "optify.gemspec" $strategy
-bump_version_in_toml "ext/optify_ruby/Cargo.toml" $strategy
 bump_dependency_in_toml "ext/optify_ruby/Cargo.toml" $current_version $next_version
+bump_version_in_toml "ext/optify_ruby/Cargo.toml" $strategy
+bump_version_gemspec "optify.gemspec" $strategy
 popd
 
 pushd js/optify-config

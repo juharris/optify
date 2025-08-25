@@ -16,6 +16,13 @@ class Optify::BaseConfig
   # @return The new instance.
   def self.from_hash: (::Hash[untyped, untyped] hash) -> instance
 
+  # Convert this object to a Hash recursively.
+  # This is mostly the reverse operation of `from_hash`,
+  # as keys will be symbols
+  # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
+  # @return The hash representation of this object.
+  def to_h: () -> ::Hash[Symbol, untyped]
+
   # Compare this object with another object for equality.
   # @param other The object to compare.
   # @return [Boolean] true if the objects are equal; otherwise, false.

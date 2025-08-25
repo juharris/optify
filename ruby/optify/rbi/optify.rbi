@@ -20,6 +20,14 @@ module Optify
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
     def self.from_hash(hash); end
 
+    # Convert this object to a Hash recursively.
+    # This is mostly the reverse operation of `from_hash`,
+    # as keys will be symbols
+    # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
+    # @return The hash representation of this object.
+    sig { returns(T::Hash[Symbol, T.untyped]) }
+    def to_h; end
+
     # Compare this object with another object for equality.
     # @param other The object to compare.
     # @return [Boolean] true if the objects are equal; otherwise, false.
