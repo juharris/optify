@@ -39,16 +39,14 @@ pub struct OptionsProvider {
     options_cache: RwLock<OptionsCache>,
 }
 
-impl OptionsProvider {
-    // Helper function to efficiently convert feature names to Vec<String>
-    fn feature_names_to_vec<T: AsRef<str>>(feature_names: &[T]) -> Vec<String> {
-        // This is optimized for the common case where T is &str or String
-        feature_names
-            .iter()
-            .map(|s| s.as_ref().to_owned())
-            .collect()
-    }
+fn feature_names_to_vec<T: AsRef<str>>(feature_names: &[T]) -> Vec<String> {
+    feature_names
+        .iter()
+        .map(|s| s.as_ref().to_owned())
+        .collect()
+}
 
+impl OptionsProvider {
     pub(crate) fn new(
         aliases: &Aliases,
         conditions: &Conditions,
@@ -65,6 +63,27 @@ impl OptionsProvider {
         }
     }
 
+    fn convert_feature_names_for_cache(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Vec<String>, String> {
+        let features: Vec<String>;
+        if let Some(preferences) = preferences {
+            if preferences.overrides_json.is_some() {
+                return Err("Caching when overrides are given is not supported.".to_owned());
+            }
+            if preferences.skip_feature_name_conversion {
+                features = feature_names_to_vec(feature_names);
+            } else {
+                features = self.get_canonical_feature_names(feature_names)?;
+            }
+        } else {
+            features = self.get_canonical_feature_names(feature_names)?;
+        }
+        Ok(features)
+    }
+
     fn get_entire_config(
         &self,
         feature_names: &[impl AsRef<str>],
@@ -72,23 +91,10 @@ impl OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<config::Config, String> {
         if let Some(_cache_options) = cache_options {
-            if let Some(preferences) = preferences {
-                if preferences.overrides_json.is_some() {
-                    return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
-                }
-            }
-
-            let cache_key = (
-                Self::feature_names_to_vec(feature_names),
-                preferences.cloned(),
-            );
-            if let Some(config) = self
-                .entire_config_cache
-                .read()
-                .expect("the entire config cache should be readable")
-                .get(&cache_key)
-            {
-                return Ok(config.clone());
+            match self.get_entire_config_from_cache(feature_names, preferences) {
+                Ok(Some(config)) => return Ok(config),
+                Ok(None) => (),
+                Err(e) => return Err(e),
             }
         };
         let mut config_builder = config::Config::builder();
@@ -141,10 +147,9 @@ impl OptionsProvider {
             Ok(cfg) => {
                 // Populate cache if caching is enabled
                 if let Some(_cache_options) = cache_options {
-                    let cache_key = (
-                        Self::feature_names_to_vec(feature_names),
-                        preferences.cloned(),
-                    );
+                    let features =
+                        self.convert_feature_names_for_cache(feature_names, preferences)?;
+                    let cache_key = (features, preferences.cloned());
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
@@ -156,6 +161,47 @@ impl OptionsProvider {
                 "Error combining features to build the configuration: {e}"
             )),
         }
+    }
+
+    fn get_entire_config_from_cache(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Option<config::Config>, String> {
+        let features = self.convert_feature_names_for_cache(feature_names, preferences)?;
+
+        let cache_key = (features, preferences.cloned());
+        if let Some(config) = self
+            .entire_config_cache
+            .read()
+            .expect("the entire config cache should be readable")
+            .get(&cache_key)
+        {
+            return Ok(Some(config.clone()));
+        }
+
+        Ok(None)
+    }
+
+    pub fn get_options_from_cache(
+        &self,
+        key: &str,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Option<serde_json::Value>, String> {
+        let features = self.convert_feature_names_for_cache(feature_names, preferences)?;
+
+        let cache_key = (key.to_owned(), features, preferences.cloned());
+        if let Some(options) = self
+            .options_cache
+            .read()
+            .expect("the options cache should be readable")
+            .get(&cache_key)
+        {
+            return Ok(Some(options.clone()));
+        }
+
+        Ok(None)
     }
 }
 
@@ -272,24 +318,10 @@ impl OptionsRegistry for OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
         if let Some(_cache_options) = cache_options {
-            if let Some(preferences) = preferences {
-                if preferences.overrides_json.is_some() {
-                    return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
-                }
-            }
-
-            let cache_key = (
-                key.to_owned(),
-                Self::feature_names_to_vec(feature_names),
-                preferences.cloned(),
-            );
-            if let Some(options) = self
-                .options_cache
-                .read()
-                .expect("the options cache should be readable")
-                .get(&cache_key)
-            {
-                return Ok(options.clone());
+            match self.get_options_from_cache(key, feature_names, preferences) {
+                Ok(Some(options)) => return Ok(options),
+                Ok(None) => (),
+                Err(e) => return Err(e),
             }
         }
 
@@ -299,11 +331,9 @@ impl OptionsRegistry for OptionsProvider {
             Ok(value) => {
                 // Populate options cache if caching is enabled
                 if let Some(_cache_options) = cache_options {
-                    let cache_key = (
-                        key.to_owned(),
-                        Self::feature_names_to_vec(feature_names),
-                        preferences.cloned(),
-                    );
+                    let features =
+                        self.convert_feature_names_for_cache(feature_names, preferences)?;
+                    let cache_key = (key.to_owned(), features, preferences.cloned());
                     self.options_cache
                         .write()
                         .expect("the options cache lock should be held")
