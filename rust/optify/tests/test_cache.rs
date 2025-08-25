@@ -30,7 +30,8 @@ fn test_options_cache_hit() -> Result<(), Box<dyn std::error::Error>> {
     let result1 =
         provider.get_options_with_preferences("myConfig", &["a"], Some(&cache_options), None)?;
 
-    let cached_result = provider.get_options_from_cache("myConfig", &["a"], None)?;
+    let cached_result =
+        provider.get_options_from_cache("myConfig", &["a"], Some(&cache_options), None)?;
     assert!(cached_result.is_some());
     assert_eq!(cached_result.unwrap(), result1);
 
@@ -129,7 +130,12 @@ fn test_cache_feature_name_conversion() -> Result<(), Box<dyn std::error::Error>
         Some(&cache_options),
         None,
     )?;
-    let cached_result = provider.get_options_from_cache("myConfig", &feature_names_string, None)?;
+    let cached_result = provider.get_options_from_cache(
+        "myConfig",
+        &feature_names_string,
+        Some(&cache_options),
+        None,
+    )?;
     assert!(cached_result.is_some());
     assert_eq!(cached_result.unwrap(), result1);
 
@@ -171,8 +177,12 @@ fn test_cache_multiple_features_get_options() -> Result<(), Box<dyn std::error::
         Some(&cache_options),
         None,
     )?;
-    let cached_result =
-        provider.get_options_from_cache("myConfig", &["A", "FEature_B/initial"], None)?;
+    let cached_result = provider.get_options_from_cache(
+        "myConfig",
+        &["A", "FEature_B/initial"],
+        Some(&cache_options),
+        None,
+    )?;
     assert!(cached_result.is_some());
     assert_eq!(cached_result.unwrap(), result1);
 
@@ -207,6 +217,7 @@ fn test_cache_multiple_features_get_options_with_preferences(
     let cached_miss_result = provider.get_options_from_cache(
         "myConfig",
         &["a", "FEature_B/initial"],
+        Some(&cache_options),
         Some(&preferences),
     )?;
     assert!(cached_miss_result.is_none());
@@ -214,8 +225,12 @@ fn test_cache_multiple_features_get_options_with_preferences(
     let mut preferences = GetOptionsPreferences::new();
     preferences.skip_feature_name_conversion = true;
     let feature_names = &["feature_A", "feature_B/initial"];
-    let cached_hit_result =
-        provider.get_options_from_cache("myConfig", feature_names, Some(&preferences))?;
+    let cached_hit_result = provider.get_options_from_cache(
+        "myConfig",
+        feature_names,
+        Some(&cache_options),
+        Some(&preferences),
+    )?;
     assert!(cached_hit_result.is_some());
     assert_eq!(cached_hit_result.unwrap(), result1);
 

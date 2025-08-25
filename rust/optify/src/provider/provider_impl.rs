@@ -187,6 +187,7 @@ impl OptionsProvider {
         &self,
         key: &str,
         feature_names: &[impl AsRef<str>],
+        _cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
         let features = self.convert_feature_names_for_cache(feature_names, preferences)?;
@@ -318,7 +319,7 @@ impl OptionsRegistry for OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
         if let Some(_cache_options) = cache_options {
-            match self.get_options_from_cache(key, feature_names, preferences) {
+            match self.get_options_from_cache(key, feature_names, cache_options, preferences) {
                 Ok(Some(options)) => return Ok(options),
                 Ok(None) => (),
                 Err(e) => return Err(e),
