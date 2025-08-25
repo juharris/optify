@@ -78,7 +78,7 @@ impl OptionsProvider {
                 }
             }
 
-            let key = (
+            let cache_key = (
                 Self::feature_names_to_vec(feature_names),
                 preferences.cloned(),
             );
@@ -86,7 +86,7 @@ impl OptionsProvider {
                 .entire_config_cache
                 .read()
                 .expect("the entire config cache should be readable")
-                .get(&key)
+                .get(&cache_key)
             {
                 return Ok(config.clone());
             }
@@ -141,14 +141,14 @@ impl OptionsProvider {
             Ok(cfg) => {
                 // Populate cache if caching is enabled
                 if let Some(_cache_options) = cache_options {
-                    let key = (
+                    let cache_key = (
                         Self::feature_names_to_vec(feature_names),
                         preferences.cloned(),
                     );
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
-                        .insert(key, cfg.clone());
+                        .insert(cache_key, cfg.clone());
                 }
                 Ok(cfg)
             }
@@ -277,20 +277,20 @@ impl OptionsRegistry for OptionsProvider {
                     return Err("Caching is not supported yet and caching when overrides are given will not be supported.".to_owned());
                 }
             }
-        }
 
-        let cache_key = (
-            key.to_owned(),
-            Self::feature_names_to_vec(feature_names),
-            preferences.cloned(),
-        );
-        if let Some(options) = self
-            .options_cache
-            .read()
-            .expect("the options cache should be readable")
-            .get(&cache_key)
-        {
-            return Ok(options.clone());
+            let cache_key = (
+                key.to_owned(),
+                Self::feature_names_to_vec(feature_names),
+                preferences.cloned(),
+            );
+            if let Some(options) = self
+                .options_cache
+                .read()
+                .expect("the options cache should be readable")
+                .get(&cache_key)
+            {
+                return Ok(options.clone());
+            }
         }
 
         let config = self.get_entire_config(feature_names, cache_options, preferences)?;
@@ -299,6 +299,11 @@ impl OptionsRegistry for OptionsProvider {
             Ok(value) => {
                 // Populate options cache if caching is enabled
                 if let Some(_cache_options) = cache_options {
+                    let cache_key = (
+                        key.to_owned(),
+                        Self::feature_names_to_vec(feature_names),
+                        preferences.cloned(),
+                    );
                     self.options_cache
                         .write()
                         .expect("the options cache lock should be held")
