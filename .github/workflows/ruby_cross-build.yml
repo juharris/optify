@@ -94,6 +94,8 @@ jobs:
       id: cross-build
       name: "[Ruby] Cross-Build"
       with:
+        # Temporarily disable cache to avoid issues with setting up the dependencies.
+        cargo-cache-clean: false
         cache-save-always: false
         cache-version: ${{ matrix.ruby_platform }}
         platform: ${{ matrix.ruby_platform }}
