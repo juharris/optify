@@ -21,7 +21,7 @@ pub struct OptionsMetadata {
     /// but some comments are useful to have here because they can be accessed programmatically.
     pub details: Option<Details>,
 
-    /// The canonical names of features that depend on this one.
+    /// The canonical names of features that import this one.
     pub dependents: Option<Vec<String>>,
 
     /// The name of the group of options.

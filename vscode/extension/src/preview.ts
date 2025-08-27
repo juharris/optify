@@ -47,7 +47,7 @@ export class PreviewBuilder {
 			});
 
 			return `
-			<div><h3>Dependents</h3>Features that depend on this one:\n<ul>${dependentLinks.join('\n')}</ul></div>`;
+			<div><h3>Dependents</h3>Features that import this one:\n<ul>${dependentLinks.join('\n')}</ul></div>`;
 		};
 
 		return `<!DOCTYPE html>

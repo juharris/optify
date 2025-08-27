@@ -38,7 +38,7 @@ end
 class Optify::OptionsMetadata < BaseConfig
   def aliases: () -> ::Array[String]?
 
-  # The canonical names of features that depend on this one.
+  # The canonical names of features that import this one.
   def dependents: () -> ::Array[String]?
 
   def details: () -> untyped
