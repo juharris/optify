@@ -95,6 +95,7 @@ jobs:
       name: "[Ruby] Cross-Build"
       with:
         cache-save-always: false
+        cache-version: ${{ matrix.ruby_platform }}
         platform: ${{ matrix.ruby_platform }}
         # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
         # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
