@@ -45,7 +45,7 @@ module Optify
     sig { returns(T.nilable(T::Array[String])) }
     def aliases; end
 
-    # The canonical names of features that depend on this one.
+    # The canonical names of features that import this one.
     sig { returns(T.nilable(T::Array[String])) }
     def dependents; end
 

@@ -50,7 +50,7 @@ export class OptifyDependentsHoverProvider implements vscode.HoverProvider {
                 }
                 return dep;
             });
-            const markdown = new vscode.MarkdownString(`## Dependents\nFeatures that depend on this one:\n${links.join('')}`);
+            const markdown = new vscode.MarkdownString(`## Dependents\nFeatures that import this one:\n${links.join('')}`);
             // Allow command URIs.
             markdown.isTrusted = true;
 

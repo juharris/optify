@@ -424,7 +424,7 @@ See [tests](./tests/) for more examples.
 # Conditions
 Conditions can be used to enable a feature file when it is requested and when constraints are given in the request.
 If no constraints are given for a request, then the conditions in a feature file are are ignored.
-Conditions cannot be used in imported features.
+Conditions cannot be used in imported features because it would make determining the applied features less clear and less efficient.
 
 For more details and examples, see [here](./docs/Conditions.md).
 
