@@ -6,7 +6,7 @@ import { OptifyDefinitionProvider } from './definitions';
 import { OptifyDependentsHoverProvider } from './dependents/hover';
 import { OptifyDependentsProvider } from './dependents/show';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
-import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveImportPath } from './path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
 import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
@@ -240,7 +240,8 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const onDidOpenDocument = vscode.workspace.onDidOpenTextDocument((document) => {
-		if (isOptifyFeatureFile(document.fileName)) {
+		const _isOptifyFeatureFile = isOptifyFeatureFile(document.fileName);
+		if (_isOptifyFeatureFile) {
 			diagnosticsProvider.updateDiagnostics(document);
 			// Update dependents decoration when opening a document
 			const editor = vscode.window.activeTextEditor;
@@ -248,7 +249,7 @@ export function activate(context: vscode.ExtensionContext) {
 				dependentsProvider.updateDependentsDecoration(editor);
 			}
 		}
-		updateOptifyFileContext();
+		updateOptifyFileContext(_isOptifyFeatureFile);
 	});
 
 	const onDidChangeActiveEditor = vscode.window.onDidChangeActiveTextEditor((editor) => {
@@ -292,10 +293,12 @@ function cleanPreview(filePath: string) {
 	}
 }
 
-function updateOptifyFileContext() {
+function updateOptifyFileContext(isOptifyFile?: boolean) {
 	const activeEditor = vscode.window.activeTextEditor;
-	const isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
-	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
+	const _isOptifyFile = isOptifyFile !== undefined
+		? isOptifyFile
+		: activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
+	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', _isOptifyFile);
 }
 
 /**
@@ -319,9 +322,11 @@ class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 		// outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
 		const text = document.getText();
 		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
+		const provider = getOptionsProvider(optifyRoot);
+		const featuresWithMetadata = provider.featuresWithMetadata();
 
 		for (const importInfo of importInfos) {
-			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
+			const targetPath = featuresWithMetadata[importInfo.name]?.path();
 			if (targetPath) {
 				const link = new vscode.DocumentLink(importInfo.range, vscode.Uri.file(targetPath));
 				links.push(link);

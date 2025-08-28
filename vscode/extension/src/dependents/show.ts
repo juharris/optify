@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getCanonicalName, findOptifyRoot, isOptifyFeatureFile, resolveImportPath } from '../path-utils';
+import { getCanonicalName, findOptifyRoot, isOptifyFeatureFile } from '../path-utils';
 import { getOptionsProvider } from '../providers';
 import { getDecorationLineNumber } from './shared-utils';
 
