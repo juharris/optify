@@ -9,6 +9,8 @@ Conditions cannot be used in imported features.
 This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated.
 Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.
 
+The [recommended extensions](../README.md#recommended-extensions) can help you construct and validate conditions in feature files.
+
 ## Examples
 See this [tests folder](../tests/test_suites/conditions) for more examples.
 
@@ -54,6 +56,45 @@ or
 }
 ```
 
+### Matching Mutiple Values
+
+To apply the feature for multiple values of a constraint and achieve something like a "list contains" check,
+use either a regex or `or`.
+For example, with the following constraints:
+```JSON
+{
+    "page": "https://mysite.com/page",
+}
+```
+
+Either of these conditions will match:
+```JSON
+{
+    "conditions": {
+        "jsonPointer": "/page",
+        "matches": "^https://mysite.com/"
+    }
+}
+```
+
+or use `or`:
+```JSON
+{
+    "conditions": {
+        "or": [
+            {
+                "jsonPointer": "/page",
+                "equals": "https://mysite.com/page"
+            },
+            {
+                "jsonPointer": "/page",
+                "matches": "^https://mysite.com/(about|page)$"
+            }
+        ]
+    }
+}
+```
+
 ## Condition Types
 
 A condition expression can be:
@@ -87,5 +128,3 @@ preferences.constraints = {
 
 provider.get_options('myConfig', ['feature_A'], MyConfig, cache_options, preferences)
 ```
-
-Some versions might only accept constraints as a JSON string for now.

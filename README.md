@@ -429,7 +429,15 @@ Conditions cannot be used in imported features because it would make determining
 For more details and examples, see [here](./docs/Conditions.md).
 
 ## Conditions Example
-Suppose that a feature file has the following conditions:
+Suppose that a request to get options includes the following constraints:
+```JSON
+{
+    "page": "https://mysite.com/page",
+    "clientId": 9876
+}
+```
+
+A feature file with the follow conditions will be applied:
 ```JSON
 {
     "conditions": {
@@ -444,15 +452,6 @@ Suppose that a feature file has the following conditions:
             }
         ]
     }
-}
-```
-
-Then a request to get options with the following constraints will enable the feature file:
-
-```JSON
-{
-    "page": "https://mysite.com/page",
-    "clientId": 9876
 }
 ```
 
