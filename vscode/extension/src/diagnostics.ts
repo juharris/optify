@@ -1,8 +1,8 @@
+import { OptionsWatcher } from '@optify/config';
 import * as vscode from 'vscode';
 import { ConfigParser } from './config-parser';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
 import { getOptionsProvider } from './providers';
-import { OptionsWatcher } from '@optify/config';
 
 /**
  * Validates files such as validating imports.
@@ -29,8 +29,10 @@ export class OptifyDiagnosticsProvider {
 		try {
 			const provider = getOptionsProvider(optifyRoot);
 
-			const currentFileCanonicalName = getCanonicalName(document.uri.fsPath, optifyRoot);
-			this.checkImports(text, document, provider, diagnostics, currentFileCanonicalName);
+			const currentFileCanonicalFeatureName = getCanonicalName(document.uri.fsPath, optifyRoot);
+			// TODO Parse once and get all conditions and imports.
+			this.checkConditions(currentFileCanonicalFeatureName, provider, diagnostics,);
+			this.checkImports(currentFileCanonicalFeatureName, text, document, provider, diagnostics);
 
 			this.diagnosticCollection.set(document.uri, diagnostics);
 		} catch (error) {
@@ -40,12 +42,31 @@ export class OptifyDiagnosticsProvider {
 		}
 	}
 
+	private checkConditions(
+		conicalFeatureName: string,
+		provider: OptionsWatcher,
+		diagnostics: vscode.Diagnostic[],
+	) {
+		const metadata = provider.featuresWithMetadata()[conicalFeatureName];
+		if (!metadata) {
+			// Should not happen.
+			return;
+		}
+
+		const dependents = metadata.dependents();
+		if (!dependents || dependents.length === 0) {
+			return;
+		}
+
+		// TODO Yield an error if there are conditions because there cannot be conditions when there are dependents.
+	}
+
 	private checkImports(
+		canonicalFeatureName: string,
 		text: string,
 		document: vscode.TextDocument,
 		provider: OptionsWatcher,
 		diagnostics: vscode.Diagnostic[],
-		currentFileCanonicalName: string
 	) {
 		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
 		const featuresWithMetadata = provider.featuresWithMetadata();
@@ -86,7 +107,7 @@ export class OptifyDiagnosticsProvider {
 					);
 					diagnostics.push(diagnostic);
 				}
-			} else if (importInfo.name === currentFileCanonicalName) {
+			} else if (importInfo.name === canonicalFeatureName) {
 				const diagnostic = new vscode.Diagnostic(
 					importInfo.range,
 					"A file cannot import itself",

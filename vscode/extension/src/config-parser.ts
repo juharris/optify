@@ -1,15 +1,41 @@
 import * as vscode from 'vscode';
 import * as yaml from 'js-yaml';
 
-export interface OptifyConfig {
-	imports?: string[];
-	options?: any;
+export interface ImportInfo {
+	name: string
+	range: vscode.Range
 }
 
-export interface ImportInfo {
-	name: string;
-	range: vscode.Range;
+export interface EqualsCondition {
+	jsonPointer: string
+	matches: string
 }
+
+export interface MatchesCondition {
+	jsonPointer: string
+	matches: string
+}
+
+export interface AndCondition {
+	and: Condition[]
+}
+
+export interface OrCondition {
+	or: Condition[]
+}
+
+export interface NotCondition {
+	not: Condition
+}
+
+export type Condition = EqualsCondition | MatchesCondition | AndCondition | OrCondition | NotCondition;
+
+export interface OptifyConfig {
+	conditions?: Condition
+	imports?: string[]
+	options?: any
+}
+
 
 /**
  * Utility functions for parsing configuration files
@@ -60,6 +86,10 @@ export class ConfigParser {
 
 		if (config.options && typeof config.options !== 'object') {
 			throw new Error(`Expected "options" to be an object. Got: "${JSON.stringify(config.options)}"`);
+		}
+
+		if (config.conditions && typeof config.conditions !== 'object') {
+			throw new Error(`Expected "conditions" to be an object. Got: "${JSON.stringify(config.conditions)}"`);
 		}
 		return config as OptifyConfig;
 	}
