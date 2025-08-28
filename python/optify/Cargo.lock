@@ -1059,6 +1059,8 @@ version = "0.7.0"
 dependencies = [
  "optify",
  "pyo3",
+ "serde-pyobject",
+ "serde_json",
 ]
 
 [[package]]
@@ -1461,6 +1463,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-pyobject"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c485853a65e1a5f2db72e818ec4c7548a39614fabdd988f5e3504071453b7d7"
+dependencies = [
+ "pyo3",
+ "serde",
+]
+
+[[package]]
 name = "serde-untagged"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1484,9 +1496,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.142"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "030fedb782600dcbd6f02d479bf0d817ac3bb40d644745b769d6a96bc3afc5a7"
+checksum = "d401abef1d108fbd9cbaebc3e46611f4b1021f714a0597a71f41ee463f5f4a5a"
 dependencies = [
  "itoa",
  "memchr",
