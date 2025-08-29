@@ -4,8 +4,9 @@ use optify::{
 };
 use std::sync::OnceLock;
 
-static PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
+static CONDITIONS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 static INHERITANCE_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
+static PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 
 fn get_provider() -> &'static OptionsProvider {
     PROVIDER.get_or_init(|| {
@@ -19,6 +20,15 @@ fn get_provider() -> &'static OptionsProvider {
 fn get_inheritance_provider() -> &'static OptionsProvider {
     INHERITANCE_PROVIDER.get_or_init(|| {
         let path = std::path::Path::new("../../tests/test_suites/inheritance/configs");
+        let mut builder = OptionsProviderBuilder::new();
+        builder.add_directory(path).unwrap();
+        builder.build().unwrap()
+    })
+}
+
+fn get_provider_with_conditions() -> &'static OptionsProvider {
+    CONDITIONS_PROVIDER.get_or_init(|| {
+        let path = std::path::Path::new("../../tests/test_suites/conditions/configs");
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(path).unwrap();
         builder.build().unwrap()
@@ -200,5 +210,14 @@ fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
             .to_string();
     assert_eq!(expected_path, a_metadata.path.as_ref().unwrap().to_string());
 
+    Ok(())
+}
+
+#[test]
+fn test_provider_has_conditions() -> Result<(), Box<dyn std::error::Error>> {
+    let conditions_provider = get_provider_with_conditions();
+    let provider = get_provider();
+    assert!(conditions_provider.has_conditions("A"));
+    assert!(!provider.has_conditions("feature_B/initial"));
     Ok(())
 }

@@ -349,4 +349,8 @@ impl OptionsRegistry for OptionsProvider {
             }
         }
     }
+
+    fn has_conditions(&self, canonical_feature_name: &str) -> bool {
+        self.conditions.contains_key(canonical_feature_name)
+    }
 }

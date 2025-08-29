@@ -297,4 +297,11 @@ impl OptionsRegistry for OptionsWatcher {
             .unwrap()
             .get_options_with_preferences(key, feature_names, cache_options, preferences)
     }
+
+    fn has_conditions(&self, canonical_feature_name: &str) -> bool {
+        self.current_provider
+            .read()
+            .unwrap()
+            .has_conditions(canonical_feature_name)
+    }
 }
