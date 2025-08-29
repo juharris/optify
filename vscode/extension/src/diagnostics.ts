@@ -50,14 +50,14 @@ export class OptifyDiagnosticsProvider {
 	}
 
 	private checkConditions(
-		conicalFeatureName: string,
+		canonicalFeatureName: string,
 		text: string,
 		document: vscode.TextDocument,
 		config: OptifyConfig,
 		provider: OptionsWatcher,
 		diagnostics: vscode.Diagnostic[],
 	) {
-		const metadata = provider.featuresWithMetadata()[conicalFeatureName];
+		const metadata = provider.featuresWithMetadata()[canonicalFeatureName];
 		if (!metadata) {
 			// Should not happen.
 			return;
@@ -101,14 +101,14 @@ export class OptifyDiagnosticsProvider {
 							`Use '${canonicalName}' for clarity and to help navigate to the file. '${importInfo.name}' is an alias.`,
 							vscode.DiagnosticSeverity.Error
 						);
-						// Store alias info in the code object
+						// Store alias info to add action to correct it.
 						diagnostic.code = {
 							value: `feature-alias:${importInfo.name}:${canonicalName}`,
 							target: vscode.Uri.parse('https://github.com/juharris/optify')
 						};
 						diagnostics.push(diagnostic);
 					} else {
-						// Not an alias, just unresolved
+						// Not an alias, just not found.
 						const diagnostic = new vscode.Diagnostic(
 							importInfo.range,
 							`Cannot resolve import '${importInfo.name}'`,
@@ -116,6 +116,8 @@ export class OptifyDiagnosticsProvider {
 						);
 						diagnostics.push(diagnostic);
 					}
+
+					// TODO Check if there are conditions for the import.
 				} catch {
 					// If getCanonicalFeatureName fails, treat as unresolved
 					const diagnostic = new vscode.Diagnostic(
