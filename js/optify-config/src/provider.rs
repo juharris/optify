@@ -106,6 +106,16 @@ impl JsOptionsProvider {
       .map(|json| json.to_string())
       .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
+
+  /// Indicates if the feature has conditions.
+  #[napi]
+  pub fn has_conditions(&self, canonical_feature_name: String) -> bool {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .has_conditions(&canonical_feature_name)
+  }
 }
 
 #[napi(js_name = "OptionsProviderBuilder")]

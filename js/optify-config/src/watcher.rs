@@ -141,6 +141,16 @@ impl JsOptionsWatcher {
       .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
 
+  /// Indicates if the feature has conditions.
+  #[napi]
+  pub fn has_conditions(&self, canonical_feature_name: String) -> bool {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .has_conditions(&canonical_feature_name)
+  }
+
   /// Returns the time when the provider was finished building.
   #[napi]
   pub fn last_modified(&self) -> napi::Result<i64> {
