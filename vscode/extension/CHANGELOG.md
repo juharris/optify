@@ -7,7 +7,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 1.4.1
 
-Improved support for feature files with conditions
+Improve support for working with feature files with conditions
 
 * Show an error if an imported feature has conditions.
 * Don't suggest imports for features with conditions.
