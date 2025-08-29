@@ -5,6 +5,14 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.4.1
+
+Improve support for working with feature files with conditions
+
+* Show an error if an imported feature has conditions.
+* Don't suggest imports for features with conditions.
+* Make some optimizations with checking imports
+
 ## 1.4.0
 
 * Show features that import the current file.

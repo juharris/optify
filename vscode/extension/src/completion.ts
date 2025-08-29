@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { findOptifyRoot, isOptifyFeatureFile } from './path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
 /**
@@ -12,7 +12,7 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 		document: vscode.TextDocument,
 		position: vscode.Position,
 		_token: vscode.CancellationToken,
-		context: vscode.CompletionContext
+		_context: vscode.CompletionContext
 	): vscode.ProviderResult<vscode.CompletionItem[]> {
 		/*
 		this.outputChannel.appendLine(`\n=== provideCompletionItems called for ${document.fileName} ===`);
@@ -113,12 +113,15 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 
 		try {
 			const provider = getOptionsProvider(optifyRoot);
+			const canonicalFeatureName = getCanonicalName(document.fileName, optifyRoot);
 			const features = provider.features();
+			const filteredFeatures = features.filter(feature =>
+				canonicalFeatureName !== feature && !provider.hasConditions(feature));
 
 			const currentLineTrimmed = lineText.trim();
 			const needsSpaceAfterDash = /^\s*-$/.test(linePrefix);
 
-			const completionItems = features.map(feature => {
+			const completionItems = filteredFeatures.map(feature => {
 				const item = new vscode.CompletionItem(feature, vscode.CompletionItemKind.Module);
 				item.detail = 'Optify feature';
 

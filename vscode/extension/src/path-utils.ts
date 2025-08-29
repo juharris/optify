@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { getOptionsProvider } from './providers';
 
 export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
 	let currentDir = path.dirname(filePath);
@@ -54,10 +53,4 @@ export function getCanonicalName(filePath: string, optifyRoot: string): string {
 	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
 
 	return result;
-}
-
-export function resolveImportPath(importName: string, optifyRoot: string): string | undefined {
-	const provider = getOptionsProvider(optifyRoot);
-	const featuresWithMetadata = provider.featuresWithMetadata();
-	return featuresWithMetadata[importName]?.path() ?? undefined;
 }

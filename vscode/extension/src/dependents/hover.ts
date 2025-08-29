@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveImportPath } from '../path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from '../path-utils';
 import { getOptionsProvider } from '../providers';
 import { getDecorationLineNumber } from './shared-utils';
 
@@ -43,7 +43,7 @@ export class OptifyDependentsHoverProvider implements vscode.HoverProvider {
 
             // Create markdown with links to dependent files
             const links = dependents.map(dep => {
-                const targetPath = resolveImportPath(dep, optifyRoot);
+                const targetPath = featuresWithMetadata[dep]?.path();
                 if (targetPath) {
                     const uri = vscode.Uri.file(targetPath);
                     return `* [${dep}](${uri.toString()})\n`;

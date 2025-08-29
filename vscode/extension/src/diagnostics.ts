@@ -1,6 +1,7 @@
+import { OptionsWatcher } from '@optify/config';
 import * as vscode from 'vscode';
-import { ConfigParser } from './config-parser';
-import { findOptifyRoot, getCanonicalName, resolveImportPath, isOptifyFeatureFile } from './path-utils';
+import { ConfigParser, OptifyConfig } from './config-parser';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
 /**
@@ -28,38 +29,87 @@ export class OptifyDiagnosticsProvider {
 		try {
 			const provider = getOptionsProvider(optifyRoot);
 
-			const currentFileCanonicalName = getCanonicalName(document.uri.fsPath, optifyRoot);
-			const importInfos = ConfigParser.findImportRanges(text, document.languageId);
-			for (const importInfo of importInfos) {
-				const targetPath = resolveImportPath(importInfo.name, optifyRoot);
-				if (!targetPath) {
-					// Check if it might be a feature alias
-					try {
-						const canonicalName = provider.getCanonicalFeatureName(importInfo.name);
-						if (canonicalName && canonicalName !== importInfo.name) {
-							// It's an alias - create diagnostic with code for quick fix
-							const diagnostic = new vscode.Diagnostic(
-								importInfo.range,
-								`Use '${canonicalName}' for clarity and to help navigate to the file. '${importInfo.name}' is an alias.`,
-								vscode.DiagnosticSeverity.Error
-							);
-							// Store alias info in the code object
-							diagnostic.code = {
-								value: `feature-alias:${importInfo.name}:${canonicalName}`,
-								target: vscode.Uri.parse('https://github.com/juharris/optify')
-							};
-							diagnostics.push(diagnostic);
-						} else {
-							// Not an alias, just unresolved
-							const diagnostic = new vscode.Diagnostic(
-								importInfo.range,
-								`Cannot resolve import '${importInfo.name}'`,
-								vscode.DiagnosticSeverity.Error
-							);
-							diagnostics.push(diagnostic);
-						}
-					} catch {
-						// If getCanonicalFeatureName fails, treat as unresolved
+			const currentFileCanonicalFeatureName = getCanonicalName(document.uri.fsPath, optifyRoot);
+			const config = ConfigParser.parse(text, document.languageId);
+			this.checkConditions(currentFileCanonicalFeatureName, text, document, config, provider, diagnostics);
+			this.checkImports(currentFileCanonicalFeatureName, text, document, config, provider, diagnostics);
+		} catch (error) {
+			console.error(`Error getting diagnostics and suggestions for ${optifyRoot}:`, error);
+			this.outputChannel.appendLine(`Error getting diagnostics and suggestions for ${optifyRoot}: ${error}`);
+			diagnostics.push(new vscode.Diagnostic(
+				new vscode.Range(
+					new vscode.Position(0, 0),
+					new vscode.Position(0, 0)
+				),
+				`Error getting diagnostics and suggestions: ${error}`,
+				vscode.DiagnosticSeverity.Error
+			));
+		}
+
+		this.diagnosticCollection.set(document.uri, diagnostics);
+	}
+
+	private checkConditions(
+		canonicalFeatureName: string,
+		text: string,
+		document: vscode.TextDocument,
+		config: OptifyConfig,
+		provider: OptionsWatcher,
+		diagnostics: vscode.Diagnostic[],
+	) {
+		const metadata = provider.featuresWithMetadata()[canonicalFeatureName];
+		if (!metadata) {
+			// Should not happen.
+			return;
+		}
+
+		const dependents = metadata.dependents();
+		if (!dependents || dependents.length === 0) {
+			return;
+		}
+
+		const conditionsRange = ConfigParser.findConditionsRange(text, document.languageId, config);
+		if (conditionsRange) {
+			diagnostics.push(new vscode.Diagnostic(
+				conditionsRange,
+				`Conditions cannot be used in imported features.\nThis feature is imported by ${JSON.stringify(dependents)}.\nSee https://github.com/juharris/optify/blob/main/docs/Conditions.md for details.`,
+				vscode.DiagnosticSeverity.Error
+			));
+		}
+	}
+
+	private checkImports(
+		canonicalFeatureName: string,
+		text: string,
+		document: vscode.TextDocument,
+		config: OptifyConfig,
+		provider: OptionsWatcher,
+		diagnostics: vscode.Diagnostic[],
+	) {
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId, config);
+		const featuresWithMetadata = provider.featuresWithMetadata();
+		for (const importInfo of importInfos) {
+			const targetPath = featuresWithMetadata[importInfo.name]?.path();
+			if (!targetPath) {
+				// It is not a canonical feature name.
+				// Check if it might be a feature alias
+				try {
+					const canonicalName = provider.getCanonicalFeatureName(importInfo.name);
+					if (canonicalName) {
+						// It's an alias - create diagnostic with code for a quick fix suggestion.
+						const diagnostic = new vscode.Diagnostic(
+							importInfo.range,
+							`Use '${canonicalName}' for clarity and to help navigate to the file. '${importInfo.name}' is an alias.`,
+							vscode.DiagnosticSeverity.Error
+						);
+						// Store alias info to add action to correct it.
+						diagnostic.code = {
+							value: `feature-alias:${importInfo.name}:${canonicalName}`,
+							target: vscode.Uri.parse('https://github.com/juharris/optify')
+						};
+						diagnostics.push(diagnostic);
+					} else {
+						// Not found.
 						const diagnostic = new vscode.Diagnostic(
 							importInfo.range,
 							`Cannot resolve import '${importInfo.name}'`,
@@ -67,21 +117,35 @@ export class OptifyDiagnosticsProvider {
 						);
 						diagnostics.push(diagnostic);
 					}
-				} else if (importInfo.name === currentFileCanonicalName) {
+				} catch {
+					// If something fails, treat as unresolved
 					const diagnostic = new vscode.Diagnostic(
 						importInfo.range,
-						"A file cannot import itself",
+						`Cannot resolve import '${importInfo.name}'`,
+						vscode.DiagnosticSeverity.Error
+					);
+					diagnostics.push(diagnostic);
+				}
+			} else {
+				// It is a canonical feature name with a path.
+				if (provider.hasConditions(importInfo.name)) {
+					const diagnostic = new vscode.Diagnostic(
+						importInfo.range,
+						`Import '${importInfo.name}' has conditions and conditions cannot be used in imported features.\nSee https://github.com/juharris/optify/blob/main/docs/Conditions.md for details.`,
+						vscode.DiagnosticSeverity.Error
+					);
+					diagnostics.push(diagnostic);
+				}
+
+				if (importInfo.name === canonicalFeatureName) {
+					const diagnostic = new vscode.Diagnostic(
+						importInfo.range,
+						"A feature file cannot import itself",
 						vscode.DiagnosticSeverity.Error
 					);
 					diagnostics.push(diagnostic);
 				}
 			}
-
-			this.diagnosticCollection.set(document.uri, diagnostics);
-		} catch (error) {
-			console.error(`Error getting diagnostics and suggestions for ${optifyRoot}:`, error);
-			this.outputChannel.appendLine(`Error getting diagnostics and suggestions for ${optifyRoot}: ${error}`);
-			return;
 		}
 	}
 }

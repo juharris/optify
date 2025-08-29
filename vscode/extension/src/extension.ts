@@ -6,7 +6,8 @@ import { OptifyDefinitionProvider } from './definitions';
 import { OptifyDependentsHoverProvider } from './dependents/hover';
 import { OptifyDependentsProvider } from './dependents/show';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
-import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveImportPath } from './path-utils';
+import { OptifyDocumentLinkProvider } from './links';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
 import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
 import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
@@ -240,7 +241,14 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const onDidOpenDocument = vscode.workspace.onDidOpenTextDocument((document) => {
-		if (isOptifyFeatureFile(document.fileName)) {
+		let filePath = document.fileName;
+		switch (document.uri.scheme) {
+			case 'git':
+				filePath = filePath.replace(/\.git$/, '');
+		}
+		// console.debug(`onDidOpenDocument: filePath: ${filePath}`);
+		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath);
+		if (_isOptifyFeatureFile) {
 			diagnosticsProvider.updateDiagnostics(document);
 			// Update dependents decoration when opening a document
 			const editor = vscode.window.activeTextEditor;
@@ -248,7 +256,7 @@ export function activate(context: vscode.ExtensionContext) {
 				dependentsProvider.updateDependentsDecoration(editor);
 			}
 		}
-		updateOptifyFileContext();
+		updateOptifyFileContext(_isOptifyFeatureFile);
 	});
 
 	const onDidChangeActiveEditor = vscode.window.onDidChangeActiveTextEditor((editor) => {
@@ -292,44 +300,12 @@ function cleanPreview(filePath: string) {
 	}
 }
 
-function updateOptifyFileContext() {
-	const activeEditor = vscode.window.activeTextEditor;
-	const isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
-	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
-}
-
-/**
- * Adds links to imports.
- */
-class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
-	provideDocumentLinks(document: vscode.TextDocument): vscode.DocumentLink[] {
-		const links: vscode.DocumentLink[] = [];
-		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-		if (!workspaceFolder) {
-			return links; // No workspace folder, no links
-		}
-
-		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-
-		// Only provide links for Optify feature files
-		if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot)) {
-			return links;
-		}
-
-		// outputChannel.appendLine(`Providing document links for ${document.fileName} | languageId: ${document.languageId}`);
-		const text = document.getText();
-		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
-
-		for (const importInfo of importInfos) {
-			const targetPath = resolveImportPath(importInfo.name, optifyRoot);
-			if (targetPath) {
-				const link = new vscode.DocumentLink(importInfo.range, vscode.Uri.file(targetPath));
-				links.push(link);
-			}
-		}
-
-		return links;
+function updateOptifyFileContext(isOptifyFile?: boolean) {
+	if (isOptifyFile === undefined) {
+		const activeEditor = vscode.window.activeTextEditor;
+		isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
 	}
+	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
 }
 
 export function deactivate() {
