@@ -241,7 +241,13 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const onDidOpenDocument = vscode.workspace.onDidOpenTextDocument((document) => {
-		const _isOptifyFeatureFile = isOptifyFeatureFile(document.fileName);
+		let filePath = document.fileName;
+		switch (document.uri.scheme) {
+			case 'git':
+				filePath = filePath.replace(/\.git$/, '');
+		}
+		// console.debug(`onDidOpenDocument: filePath: ${filePath}`);
+		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath);
 		if (_isOptifyFeatureFile) {
 			diagnosticsProvider.updateDiagnostics(document);
 			// Update dependents decoration when opening a document
@@ -295,11 +301,11 @@ function cleanPreview(filePath: string) {
 }
 
 function updateOptifyFileContext(isOptifyFile?: boolean) {
-	const activeEditor = vscode.window.activeTextEditor;
-	const _isOptifyFile = isOptifyFile !== undefined
-		? isOptifyFile
-		: activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
-	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', _isOptifyFile);
+	if (isOptifyFile === undefined) {
+		const activeEditor = vscode.window.activeTextEditor;
+		isOptifyFile = activeEditor ? isOptifyFeatureFile(activeEditor.document.fileName) : false;
+	}
+	vscode.commands.executeCommand('setContext', 'optify.isOptifyFile', isOptifyFile);
 }
 
 export function deactivate() {
