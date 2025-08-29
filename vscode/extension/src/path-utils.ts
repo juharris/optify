@@ -1,8 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { getOptionsProvider } from './providers';
-import { OptionsWatcher } from '@optify/config';
 
 export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
 	let currentDir = path.dirname(filePath);
