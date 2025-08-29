@@ -91,11 +91,12 @@ export class OptifyDiagnosticsProvider {
 		for (const importInfo of importInfos) {
 			const targetPath = featuresWithMetadata[importInfo.name]?.path();
 			if (!targetPath) {
+				// It is not a canonical feature name.
 				// Check if it might be a feature alias
 				try {
 					const canonicalName = provider.getCanonicalFeatureName(importInfo.name);
-					if (canonicalName && canonicalName !== importInfo.name) {
-						// It's an alias - create diagnostic with code for quick fix
+					if (canonicalName) {
+						// It's an alias - create diagnostic with code for a quick fix suggestion.
 						const diagnostic = new vscode.Diagnostic(
 							importInfo.range,
 							`Use '${canonicalName}' for clarity and to help navigate to the file. '${importInfo.name}' is an alias.`,
@@ -108,7 +109,7 @@ export class OptifyDiagnosticsProvider {
 						};
 						diagnostics.push(diagnostic);
 					} else {
-						// Not an alias, just not found.
+						// Not found.
 						const diagnostic = new vscode.Diagnostic(
 							importInfo.range,
 							`Cannot resolve import '${importInfo.name}'`,
@@ -116,10 +117,8 @@ export class OptifyDiagnosticsProvider {
 						);
 						diagnostics.push(diagnostic);
 					}
-
-					// TODO Check if there are conditions for the import.
 				} catch {
-					// If getCanonicalFeatureName fails, treat as unresolved
+					// If something fails, treat as unresolved
 					const diagnostic = new vscode.Diagnostic(
 						importInfo.range,
 						`Cannot resolve import '${importInfo.name}'`,
@@ -127,13 +126,25 @@ export class OptifyDiagnosticsProvider {
 					);
 					diagnostics.push(diagnostic);
 				}
-			} else if (importInfo.name === canonicalFeatureName) {
-				const diagnostic = new vscode.Diagnostic(
-					importInfo.range,
-					"A file cannot import itself",
-					vscode.DiagnosticSeverity.Error
-				);
-				diagnostics.push(diagnostic);
+			} else {
+				// It is a canonical feature name with a path.
+				if (provider.hasConditions(importInfo.name)) {
+					const diagnostic = new vscode.Diagnostic(
+						importInfo.range,
+						`Import '${importInfo.name}' has conditions and conditions cannot be used in imported features.\nSee https://github.com/juharris/optify/blob/main/docs/Conditions.md for details.`,
+						vscode.DiagnosticSeverity.Error
+					);
+					diagnostics.push(diagnostic);
+				}
+
+				if (importInfo.name === canonicalFeatureName) {
+					const diagnostic = new vscode.Diagnostic(
+						importInfo.range,
+						"A feature file cannot import itself",
+						vscode.DiagnosticSeverity.Error
+					);
+					diagnostics.push(diagnostic);
+				}
 			}
 		}
 	}
