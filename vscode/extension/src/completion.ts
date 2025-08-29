@@ -114,11 +114,12 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 		try {
 			const provider = getOptionsProvider(optifyRoot);
 			const features = provider.features();
+			const featuresWithoutConditions = features.filter(feature => !provider.hasConditions(feature));
 
 			const currentLineTrimmed = lineText.trim();
 			const needsSpaceAfterDash = /^\s*-$/.test(linePrefix);
 
-			const completionItems = features.map(feature => {
+			const completionItems = featuresWithoutConditions.map(feature => {
 				const item = new vscode.CompletionItem(feature, vscode.CompletionItemKind.Module);
 				item.detail = 'Optify feature';
 
