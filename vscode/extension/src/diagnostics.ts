@@ -1,6 +1,6 @@
 import { OptionsWatcher } from '@optify/config';
 import * as vscode from 'vscode';
-import { ConfigParser } from './config-parser';
+import { ConfigParser, OptifyConfig } from './config-parser';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
@@ -30,20 +30,30 @@ export class OptifyDiagnosticsProvider {
 			const provider = getOptionsProvider(optifyRoot);
 
 			const currentFileCanonicalFeatureName = getCanonicalName(document.uri.fsPath, optifyRoot);
-			// TODO Parse once and get all conditions and imports.
-			this.checkConditions(currentFileCanonicalFeatureName, provider, diagnostics,);
-			this.checkImports(currentFileCanonicalFeatureName, text, document, provider, diagnostics);
-
-			this.diagnosticCollection.set(document.uri, diagnostics);
+			const config = ConfigParser.parse(text, document.languageId);
+			this.checkConditions(currentFileCanonicalFeatureName, text, document, config, provider, diagnostics);
+			this.checkImports(currentFileCanonicalFeatureName, text, document, config, provider, diagnostics);
 		} catch (error) {
 			console.error(`Error getting diagnostics and suggestions for ${optifyRoot}:`, error);
 			this.outputChannel.appendLine(`Error getting diagnostics and suggestions for ${optifyRoot}: ${error}`);
-			return;
+			diagnostics.push(new vscode.Diagnostic(
+				new vscode.Range(
+					new vscode.Position(0, 0),
+					new vscode.Position(0, 0)
+				),
+				`Error getting diagnostics and suggestions: ${error}`,
+				vscode.DiagnosticSeverity.Error
+			));
 		}
+
+		this.diagnosticCollection.set(document.uri, diagnostics);
 	}
 
 	private checkConditions(
 		conicalFeatureName: string,
+		text: string,
+		document: vscode.TextDocument,
+		config: OptifyConfig,
 		provider: OptionsWatcher,
 		diagnostics: vscode.Diagnostic[],
 	) {
@@ -58,17 +68,25 @@ export class OptifyDiagnosticsProvider {
 			return;
 		}
 
-		// TODO Yield an error if there are conditions because there cannot be conditions when there are dependents.
+		const conditionsRange = ConfigParser.findConditionsRange(text, document.languageId, config);
+		if (conditionsRange) {
+			diagnostics.push(new vscode.Diagnostic(
+				conditionsRange,
+				`Conditions cannot be used in imported features.\nThis feature is imported by ${JSON.stringify(dependents)}.\nSee https://github.com/juharris/optify/blob/main/docs/Conditions.md for details.`,
+				vscode.DiagnosticSeverity.Error
+			));
+		}
 	}
 
 	private checkImports(
 		canonicalFeatureName: string,
 		text: string,
 		document: vscode.TextDocument,
+		config: OptifyConfig,
 		provider: OptionsWatcher,
 		diagnostics: vscode.Diagnostic[],
 	) {
-		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId, config);
 		const featuresWithMetadata = provider.featuresWithMetadata();
 		for (const importInfo of importInfos) {
 			const targetPath = featuresWithMetadata[importInfo.name]?.path();

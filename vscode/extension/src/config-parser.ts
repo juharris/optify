@@ -36,20 +36,30 @@ export interface OptifyConfig {
 	options?: any
 }
 
-
 /**
  * Utility functions for parsing configuration files
  */
 export class ConfigParser {
+	static findConditionsRange(text: string, languageId: string, config?: OptifyConfig): vscode.Range | undefined {
+		switch (languageId) {
+			case 'json':
+				return this.findConditionsRangeInJson(text, config);
+			case 'yaml':
+				return this.findConditionsRangeInYaml(text, config);
+			default:
+				return undefined;
+		}
+	}
+
 	/**
 	 * Find all import ranges in a document efficiently in a single parse
 	 */
-	static findImportRanges(text: string, languageId: string): ImportInfo[] {
+	static findImportRanges(text: string, languageId: string, config?: OptifyConfig): ImportInfo[] {
 		switch (languageId) {
 			case 'json':
-				return this.findImportRangesInJson(text);
+				return this.findImportRangesInJson(text, config);
 			case 'yaml':
-				return this.findImportRangesInYaml(text);
+				return this.findImportRangesInYaml(text, config);
 			default:
 				return [];
 		}
@@ -66,44 +76,42 @@ export class ConfigParser {
 		}
 	}
 
-	private static parseJson(text: string): OptifyConfig {
-		const config = JSON.parse(text);
-		return this.validateConfig(config);
-	}
-
-	private static parseYaml(text: string): OptifyConfig {
-		const config = yaml.load(text) as any;
-		return this.validateConfig(config);
-	}
-
-	private static validateConfig(config: any): OptifyConfig {
-		if (!config || typeof config !== 'object') {
-			throw new Error(`Text must be a valid JSON object. Got: ${JSON.stringify(config)}`);
-		}
-		if (Array.isArray(config.imports) && !config.imports.every((imp: any) => typeof imp === 'string')) {
-			throw new Error(`Expected "imports" to be an array of strings. Got: "${JSON.stringify(config.imports)}"`);
+	private static findConditionsRangeInJson(text: string, config?: OptifyConfig): vscode.Range | undefined {
+		if (config && !config.conditions) {
+			return undefined;
 		}
 
-		if (config.options && typeof config.options !== 'object') {
-			throw new Error(`Expected "options" to be an object. Got: "${JSON.stringify(config.options)}"`);
+		const conditionsMatch = text.match(/"conditions"\s*:/);
+		if (!conditionsMatch) {
+			return undefined;
 		}
 
-		if (config.conditions && typeof config.conditions !== 'object') {
-			throw new Error(`Expected "conditions" to be an object. Got: "${JSON.stringify(config.conditions)}"`);
+		const start = this.getPositionFromIndex(text, conditionsMatch.index!);
+		const end = new vscode.Position(start.line, start.character + conditionsMatch[0].length);
+
+		return new vscode.Range(start, end);
+	}
+
+	private static findConditionsRangeInYaml(text: string, config?: OptifyConfig): vscode.Range | undefined {
+		if (config && !config.conditions) {
+			return undefined;
 		}
-		return config as OptifyConfig;
+
+		const conditionsMatch = text.match(/^['"]?conditions['"]?\s*:\s*/m);
+		if (!conditionsMatch) {
+			return undefined;
+		}
+
+		const start = this.getPositionFromIndex(text, conditionsMatch.index!);
+		const end = new vscode.Position(start.line, start.character + conditionsMatch[0].length);
+		return new vscode.Range(start, end);
 	}
 
-	static getPositionFromIndex(text: string, index: number): vscode.Position {
-		const lines = text.substring(0, index).split('\n');
-		return new vscode.Position(lines.length - 1, lines[lines.length - 1].length);
-	}
-
-	private static findImportRangesInJson(text: string): ImportInfo[] {
+	private static findImportRangesInJson(text: string, config?: OptifyConfig): ImportInfo[] {
 		const results: ImportInfo[] = [];
 
 		try {
-			const config = this.parseJson(text);
+			config ||= this.parseJson(text);
 			if (!config.imports) {
 				return results;
 			}
@@ -146,8 +154,12 @@ export class ConfigParser {
 		return results;
 	}
 
-	private static findImportRangesInYaml(text: string): ImportInfo[] {
+	private static findImportRangesInYaml(text: string, config?: OptifyConfig): ImportInfo[] {
 		const results: ImportInfo[] = [];
+		if (config && !config.imports) {
+			return results;
+		}
+
 		const lines = text.split('\n');
 		let inImportsSection = false;
 
@@ -198,5 +210,38 @@ export class ConfigParser {
 		}
 
 		return results;
+	}
+
+	private static getPositionFromIndex(text: string, index: number): vscode.Position {
+		const lines = text.substring(0, index).split('\n');
+		return new vscode.Position(lines.length - 1, lines[lines.length - 1].length);
+	}
+
+	private static parseJson(text: string): OptifyConfig {
+		const config = JSON.parse(text);
+		return this.validateConfig(config);
+	}
+
+	private static parseYaml(text: string): OptifyConfig {
+		const config = yaml.load(text) as any;
+		return this.validateConfig(config);
+	}
+
+	private static validateConfig(config: any): OptifyConfig {
+		if (!config || typeof config !== 'object') {
+			throw new Error(`Text must be a valid JSON object. Got: ${JSON.stringify(config)}`);
+		}
+		if (Array.isArray(config.imports) && !config.imports.every((imp: any) => typeof imp === 'string')) {
+			throw new Error(`Expected "imports" to be an array of strings. Got: "${JSON.stringify(config.imports)}"`);
+		}
+
+		if (config.options && typeof config.options !== 'object') {
+			throw new Error(`Expected "options" to be an object. Got: "${JSON.stringify(config.options)}"`);
+		}
+
+		if (config.conditions && typeof config.conditions !== 'object') {
+			throw new Error(`Expected "conditions" to be an object. Got: "${JSON.stringify(config.conditions)}"`);
+		}
+		return config as OptifyConfig;
 	}
 }
