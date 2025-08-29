@@ -79,4 +79,7 @@ pub trait OptionsRegistry {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Value, String>;
+
+    /// Indicates if the feature has conditions.
+    fn has_conditions(&self, canonical_feature_name: &str) -> bool;
 }
