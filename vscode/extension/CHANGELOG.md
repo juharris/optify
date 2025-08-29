@@ -7,8 +7,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 1.4.1
 
-* Enforce that imported features have no conditions.
-* Some optimizations with checking imports
+Improved support for feature files with conditions
+
+* Show an error if an imported feature has conditions.
+* Don't suggest imports for features with conditions.
+* Make some optimizations with checking imports
 
 ## 1.4.0
 
