@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-VERSION = '1.15.1'
+VERSION = '1.15.2'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-config'
@@ -34,14 +34,14 @@ Gem::Specification.new do |spec|
   spec.extensions = ['ext/optify_ruby/extconf.rb']
 
   # needed until rubygems Rust support is out of beta
-  spec.add_dependency 'rb_sys', '~> 0.9.114'
+  spec.add_dependency 'rb_sys', '~> 0.9.117'
 
-  spec.add_dependency 'sorbet-runtime', '~> 0.5.12167'
+  spec.add_dependency 'sorbet-runtime', '~> 0.6.12477'
 
   spec.add_development_dependency 'rake-compiler', '~> 1.3.0'
   spec.add_development_dependency 'rbs', '~> 4.0.0.dev.4'
-  spec.add_development_dependency 'sorbet', '~> 0.5.12167'
-  spec.add_development_dependency 'tapioca', '~> 0.17.2'
+  spec.add_development_dependency 'sorbet', '~> 0.6.12477'
+  spec.add_development_dependency 'tapioca', '~> 0.17.7'
 
   # Tests
   spec.add_development_dependency 'test-unit', '~> 3.6.8'
