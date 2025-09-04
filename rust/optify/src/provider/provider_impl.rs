@@ -277,7 +277,7 @@ impl OptionsRegistry for OptionsProvider {
             let canonical_feature_name: String = if skip_feature_name_conversion {
                 feature_name.as_ref().to_owned()
             } else {
-                self.get_canonical_feature_name(&feature_name.as_ref())?
+                self.get_canonical_feature_name(feature_name.as_ref())?
             };
 
             if let Some(constraints) = constraints {
@@ -311,14 +311,14 @@ impl OptionsRegistry for OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
         if let Some(_cache_options) = cache_options {
-            match self.get_options_from_cache(key, &feature_names, cache_options, preferences) {
+            match self.get_options_from_cache(key, feature_names, cache_options, preferences) {
                 Ok(Some(options)) => return Ok(options),
                 Ok(None) => (),
                 Err(e) => return Err(e),
             }
         }
 
-        let config = self.get_entire_config(&feature_names, cache_options, preferences)?;
+        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
 
         match config.get::<serde_json::Value>(key) {
             Ok(value) => {
