@@ -310,7 +310,6 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         if let Some(_cache_options) = cache_options {
             match self.get_options_from_cache(key, &feature_names, cache_options, preferences) {
                 Ok(Some(options)) => return Ok(options),
@@ -324,6 +323,8 @@ impl OptionsRegistry for OptionsProvider {
         match config.get::<serde_json::Value>(key) {
             Ok(value) => {
                 if let Some(_cache_options) = cache_options {
+                    let feature_names =
+                        self.get_filtered_feature_names(feature_names, preferences)?;
                     let cache_key = (key.to_owned(), feature_names, preferences.cloned());
                     self.options_cache
                         .write()
@@ -332,9 +333,12 @@ impl OptionsRegistry for OptionsProvider {
                 }
                 Ok(value)
             }
-            Err(e) => Err(format!(
-                "Error getting options with features {feature_names:?}: {e}"
-            )),
+            Err(e) => {
+                let feature_names = feature_names_to_vec(feature_names);
+                Err(format!(
+                    "Error getting options with features {feature_names:?}: {e}"
+                ))
+            }
         }
     }
 
