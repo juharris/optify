@@ -2,69 +2,16 @@ use magnus::{function, method, prelude::*, wrap, Object, Ruby};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
 use optify::builder::OptionsWatcherBuilder;
-use optify::provider::GetOptionsPreferences;
 use optify::provider::OptionsProvider;
 use optify::provider::OptionsRegistry;
 use optify::provider::OptionsWatcher;
 use optify::schema::metadata::OptionsMetadata;
 use std::cell::RefCell;
 
-fn convert_preferences(
-    preferences: &MutGetOptionsPreferences,
-) -> std::cell::Ref<'_, GetOptionsPreferences> {
-    preferences.0.borrow()
-}
+use crate::preferences::convert_preferences;
+use crate::preferences::MutGetOptionsPreferences;
 
-#[derive(Clone)]
-#[wrap(class = "Optify::GetOptionsPreferences")]
-struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
-
-impl MutGetOptionsPreferences {
-    fn new() -> Self {
-        Self(RefCell::new(GetOptionsPreferences {
-            constraints: None,
-            overrides_json: None,
-            skip_feature_name_conversion: false,
-        }))
-    }
-
-    // Constraints Section
-    fn set_constraints_json(&self, constraints_json: Option<String>) {
-        self.0
-            .borrow_mut()
-            .set_constraints_json(constraints_json.as_deref());
-    }
-
-    fn get_constraints_json(&self) -> Option<String> {
-        self.0
-            .borrow()
-            .constraints
-            .as_ref()
-            .map(|c| serde_json::to_string(&c.constraints).unwrap())
-    }
-
-    // Overrides Section
-    fn has_overrides(&self) -> bool {
-        self.0.borrow().overrides_json.is_some()
-    }
-
-    fn set_overrides_json(&self, overrides: Option<String>) {
-        self.0.borrow_mut().overrides_json = overrides;
-    }
-
-    fn get_overrides_json(&self) -> Option<String> {
-        self.0.borrow().overrides_json.clone()
-    }
-
-    // Skip Feature Name Conversion Section
-    fn set_skip_feature_name_conversion(&self, value: bool) {
-        self.0.borrow_mut().skip_feature_name_conversion = value;
-    }
-
-    fn skip_feature_name_conversion(&self) -> bool {
-        self.0.borrow().skip_feature_name_conversion
-    }
-}
+mod preferences;
 
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
@@ -178,6 +125,23 @@ impl WrappedOptionsProvider {
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
     fn get_features_with_metadata_json(&self) -> String {
         serde_json::to_string(&self.0.borrow().get_features_with_metadata()).unwrap()
+    }
+
+    fn get_filtered_features(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<Vec<String>, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self
+            .0
+            .borrow()
+            .get_filtered_feature_names(&feature_names, Some(preferences))
+        {
+            Ok(features) => Ok(features),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
     }
 
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
@@ -352,6 +316,23 @@ impl WrappedOptionsWatcher {
         serde_json::to_string(&self.0.borrow().get_features_with_metadata()).unwrap()
     }
 
+    fn get_filtered_features(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<Vec<String>, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self
+            .0
+            .borrow()
+            .get_filtered_feature_names(&feature_names, Some(preferences))
+        {
+            Ok(features) => Ok(features),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
     fn get_options_json(
         ruby: &Ruby,
         rb_self: &Self,
@@ -466,6 +447,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
     )?;
     provider_class.define_method(
+        "get_filtered_features",
+        method!(WrappedOptionsProvider::get_filtered_features, 2),
+    )?;
+    provider_class.define_method(
         "get_options_json",
         method!(WrappedOptionsProvider::get_options_json, 2),
     )?;
@@ -564,6 +549,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_method(
         "get_canonical_feature_name",
         method!(WrappedOptionsWatcher::get_canonical_feature_name, 1),
+    )?;
+    watcher_class.define_method(
+        "get_filtered_features",
+        method!(WrappedOptionsWatcher::get_filtered_features, 2),
     )?;
     watcher_class.define_method(
         "get_options_json",

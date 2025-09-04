@@ -70,7 +70,7 @@ pub trait OptionsRegistry {
 
     /// Filters `feature_names` based on the preferences,
     /// such as the `preferences.constraints`.
-    /// Also converts the feature names to canonical feature names if `preferences.skip_feature_name_conversion` is false.
+    /// Also converts the feature names to canonical feature names if `preferences.skip_feature_name_conversion` is `false`.
     fn get_filtered_feature_names(
         &self,
         feature_names: &[impl AsRef<str>],
