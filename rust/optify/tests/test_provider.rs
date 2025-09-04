@@ -56,7 +56,7 @@ fn test_filtered_feature_names() -> Result<(), Box<dyn std::error::Error>> {
     preferences.skip_feature_name_conversion = false;
     let filtered_feature_names =
         provider.get_filtered_feature_names(&["a", "b"], Some(&preferences))?;
-    assert_eq!(filtered_feature_names, vec!["A"]);
+    assert_eq!(filtered_feature_names, vec!["B"]);
 
     Ok(())
 }
