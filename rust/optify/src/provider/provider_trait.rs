@@ -68,6 +68,15 @@ pub trait OptionsRegistry {
     /// Returns a map of all the canonical feature names to their metadata.
     fn get_features_with_metadata(&self) -> Features;
 
+    /// Filters `feature_names` based on the preferences,
+    /// such as the `preferences.constraints`.
+    /// Also converts the feature names to canonical feature names if `preferences.skip_feature_name_conversion` is false.
+    fn get_filtered_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Vec<String>, String>;
+
     /// Gets options for a specific key and feature names
     fn get_options(&self, key: &str, feature_names: &[impl AsRef<str>]) -> Result<Value, String>;
 

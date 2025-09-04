@@ -300,6 +300,14 @@ impl OptionsRegistry for OptionsProvider {
         self.features.clone()
     }
 
+    fn get_filtered_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Vec<String>, String> {
+        todo!()
+    }
+
     fn get_options(
         &self,
         key: &str,
