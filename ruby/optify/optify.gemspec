@@ -37,7 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rb_sys', '~> 0.9.117'
 
   sorbet_version = '>= 0.5'
-  sorbet_version_upper_bound = '< 1.0.0'
+  sorbet_version_upper_bound = '< 1'
   spec.add_dependency 'sorbet-runtime', sorbet_version, sorbet_version_upper_bound
 
   spec.add_development_dependency 'rake-compiler', '~> 1.3.0'
