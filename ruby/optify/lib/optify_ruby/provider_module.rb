@@ -93,24 +93,24 @@ module Optify
       end
 
       init unless @cache
-      feature_names = get_canonical_feature_names(feature_names) unless preferences&.skip_feature_name_conversion
+      # feature_names = get_canonical_feature_names(feature_names) unless preferences&.skip_feature_name_conversion
+      local_preferences = preferences || GetOptionsPreferences.new
+      feature_names = get_filtered_features(feature_names, local_preferences)
 
-      cache_key = [key, feature_names, preferences&.constraints_json, config_class]
+      cache_key = [key, feature_names, config_class]
       result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
       # Handle a cache miss.
 
       # We can avoid converting the features names because they're already converted, if that was desired.
-      if preferences.nil?
-        preferences = GetOptionsPreferences.new
-        preferences.skip_feature_name_conversion = true
-      else
-        # Indeed the copying of preferences could be wasteful, but this only happens on a cache miss
-        # and when no custom preferences are provided.
-        preferences = preferences.dup
-        preferences.skip_feature_name_conversion = true
-      end
+      preferences = if preferences.nil?
+                      local_preferences
+                    else
+                      # Indeed the copying of preferences could be wasteful, but this only happens on a cache miss.
+                      preferences.dup
+                    end
+      preferences.skip_feature_name_conversion = true
 
       result = get_options(key, feature_names, config_class, nil, preferences)
 
