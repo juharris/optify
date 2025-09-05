@@ -93,7 +93,6 @@ module Optify
       end
 
       init unless @cache
-      # feature_names = get_canonical_feature_names(feature_names) unless preferences&.skip_feature_name_conversion
       local_preferences = preferences || GetOptionsPreferences.new
       feature_names = get_filtered_features(feature_names, local_preferences)
 
@@ -114,7 +113,8 @@ module Optify
 
       result = get_options(key, feature_names, config_class, nil, preferences)
 
-      T.must(@cache)[cache_key] = result
+      @cache #: as !nil
+        .[]= cache_key, result
     end
   end
 end
