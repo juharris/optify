@@ -19,10 +19,8 @@ pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
-pub(crate) type EntireConfigCache =
-    HashMap<(Vec<String>, Option<GetOptionsPreferences>), config::Config>;
-pub(crate) type OptionsCache =
-    HashMap<(String, Vec<String>, Option<GetOptionsPreferences>), serde_json::Value>;
+pub(crate) type EntireConfigCache = HashMap<Vec<String>, config::Config>;
+pub(crate) type OptionsCache = HashMap<(String, Vec<String>), serde_json::Value>;
 
 pub struct CacheOptions {}
 
@@ -102,7 +100,7 @@ impl OptionsProvider {
         match config_builder.build() {
             Ok(cfg) => {
                 if let Some(_cache_options) = cache_options {
-                    let cache_key = (feature_names, preferences.cloned());
+                    let cache_key = feature_names;
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
@@ -127,7 +125,7 @@ impl OptionsProvider {
             }
         }
         let features = feature_names_to_vec(feature_names);
-        let cache_key = (features, preferences.cloned());
+        let cache_key = features;
         if let Some(config) = self
             .entire_config_cache
             .read()
@@ -148,7 +146,7 @@ impl OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
         let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        let cache_key = (key.to_owned(), feature_names, preferences.cloned());
+        let cache_key = (key.to_owned(), feature_names);
         if let Some(options) = self
             .options_cache
             .read()
@@ -325,7 +323,7 @@ impl OptionsRegistry for OptionsProvider {
                 if let Some(_cache_options) = cache_options {
                     let feature_names =
                         self.get_filtered_feature_names(feature_names, preferences)?;
-                    let cache_key = (key.to_owned(), feature_names, preferences.cloned());
+                    let cache_key = (key.to_owned(), feature_names);
                     self.options_cache
                         .write()
                         .expect("the options cache lock should be held")
