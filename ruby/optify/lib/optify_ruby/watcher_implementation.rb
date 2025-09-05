@@ -33,7 +33,7 @@ module Optify
     #: -> OptionsWatcher
     def init
       _init
-      @cache_creation_time = T.let(Time.now, T.nilable(Time))
+      @cache_creation_time = Time.now #: Time?
       self
     end
 

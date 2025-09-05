@@ -6,8 +6,6 @@ require 'sorbet-runtime'
 module Optify
   # @!visibility private
   module ProviderModule
-    extend T::Sig
-
     #: (Array[String] feature_names) -> Array[String]
     def get_canonical_feature_names(feature_names)
       # Try to optimize a typical case where there are just a few features.
@@ -40,7 +38,7 @@ module Optify
       end
       result.freeze
 
-      @features_with_metadata = T.let(result, T.nilable(T::Hash[String, OptionsMetadata]))
+      @features_with_metadata = result
       result
     end
 
@@ -71,13 +69,14 @@ module Optify
                        get_options_json(key, feature_names)
                      end
       hash = JSON.parse(options_json)
-      T.unsafe(config_class).from_hash(hash)
+      config_class #: as untyped
+        .from_hash(hash)
     end
 
     #: -> void
     def _init
-      @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
-      @features_with_metadata = T.let(nil, T.nilable(T::Hash[String, OptionsMetadata]))
+      @cache = {} #: Hash[untyped, untyped]?
+      @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
 
     NOT_FOUND_IN_CACHE_SENTINEL = Object.new
