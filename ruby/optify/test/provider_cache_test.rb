@@ -49,6 +49,7 @@ class ProviderCacheTest < Test::Unit::TestCase
     expected = MyConditionsConfig.from_hash({ key: 'from B', key_a: 'only in A', key_b: 'only in B' })
     assert_equal(expected, config_a_b)
 
+    # Different constraints, but still match.
     preferences.constraints = { info: 3, status: 'active' }
     config_a_b2 = provider.get_options('config', %w[a b], MyConditionsConfig, cache_options, preferences)
     assert_same(config_a_b, config_a_b2)
@@ -70,5 +71,8 @@ class ProviderCacheTest < Test::Unit::TestCase
     config2 = provider.get_options('config', ['docs_example'], MyConditionsConfig, cache_options, preferences)
     assert_equal(config, config2)
     assert_same(config, config2)
+
+    config3 = provider.get_options('config', %w[docs_example B], MyConditionsConfig, cache_options, preferences)
+    assert_not_same(config, config3)
   end
 end
