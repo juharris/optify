@@ -23,6 +23,9 @@ class ProviderCacheTest < Test::Unit::TestCase
     preferences.constraints = { wtv: 4 }
     config_a2 = provider.get_options('myConfig', ['A'], MyConfig, cache_options, preferences)
     assert_same(config_a, config_a2)
+
+    config_b = provider.get_options('myConfig', ['B'], MyConfig, cache_options, preferences)
+    assert_not_same(config_a, config_b)
   end
 
   def test_cache_with_filtered_constraints
