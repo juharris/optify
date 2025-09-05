@@ -71,11 +71,6 @@ impl OptionsProvider {
     ) -> Result<config::Config, String> {
         let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         if let Some(_cache_options) = cache_options {
-            if let Some(preferences) = preferences {
-                if preferences.overrides_json.is_some() {
-                    return Err("Caching when overrides are given is not supported.".to_owned());
-                }
-            }
             match self.get_entire_config_from_cache(&feature_names, preferences) {
                 Ok(Some(config)) => return Ok(config),
                 Ok(None) => (),
@@ -126,6 +121,11 @@ impl OptionsProvider {
         feature_names: &[impl AsRef<str>],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<config::Config>, String> {
+        if let Some(preferences) = preferences {
+            if preferences.overrides_json.is_some() {
+                return Err("Caching when overrides are given is not supported.".to_owned());
+            }
+        }
         let features = feature_names_to_vec(feature_names);
         let cache_key = (features, preferences.cloned());
         if let Some(config) = self
