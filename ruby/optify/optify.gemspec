@@ -36,12 +36,13 @@ Gem::Specification.new do |spec|
   # needed until rubygems Rust support is out of beta
   spec.add_dependency 'rb_sys', '~> 0.9.117'
 
-  sorbet_version = '~> 0.5.12443'
-  spec.add_dependency 'sorbet-runtime', sorbet_version
+  sorbet_version = '>= 0.5'
+  sorbet_version_upper_bound = '< 1.0.0'
+  spec.add_dependency 'sorbet-runtime', sorbet_version, sorbet_version_upper_bound
 
   spec.add_development_dependency 'rake-compiler', '~> 1.3.0'
   spec.add_development_dependency 'rbs', '~> 4.0.0.dev.4'
-  spec.add_development_dependency 'sorbet', sorbet_version
+  spec.add_development_dependency 'sorbet', sorbet_version, sorbet_version_upper_bound
   spec.add_development_dependency 'tapioca', '~> 0.17.7'
 
   # Tests
