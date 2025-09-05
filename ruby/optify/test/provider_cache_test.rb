@@ -53,6 +53,14 @@ class ProviderCacheTest < Test::Unit::TestCase
     preferences.constraints = { info: 3, status: 'active' }
     config_a_b2 = provider.get_options('config', %w[a b], MyConditionsConfig, cache_options, preferences)
     assert_same(config_a_b, config_a_b2)
+
+    config_a_b2 = provider.get_options('config', %w[a b], MyConditionsConfig, cache_options, nil)
+    assert_same(config_a_b, config_a_b2)
+
+    preferences = Optify::GetOptionsPreferences.new
+    preferences.skip_feature_name_conversion = true
+    config_a_b2 = provider.get_options('config', %w[A B], MyConditionsConfig, cache_options, nil)
+    assert_same(config_a_b, config_a_b2)
   end
 
   def test_cache_with_used_constraints
