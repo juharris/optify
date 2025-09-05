@@ -15,7 +15,7 @@ require_relative 'optify_ruby/watcher_implementation'
 # but that doesn't work when building for multiple versions of Ruby.
 # So we have to do this which is similar to something from 'https://github.com/matsadler/halton-rb/blob/main/lib/halton.rb'.
 begin
-  ruby_version = T.must(RUBY_VERSION.match(/\d+\.\d+/))[0]
+  ruby_version = RUBY_VERSION.match(/\d+\.\d+/)&.[](0)
   require_relative "optify_ruby/#{ruby_version}/optify_ruby"
 rescue LoadError
   begin

@@ -19,10 +19,8 @@ pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
-pub(crate) type EntireConfigCache =
-    HashMap<(Vec<String>, Option<GetOptionsPreferences>), config::Config>;
-pub(crate) type OptionsCache =
-    HashMap<(String, Vec<String>, Option<GetOptionsPreferences>), serde_json::Value>;
+pub(crate) type EntireConfigCache = HashMap<Vec<String>, config::Config>;
+pub(crate) type OptionsCache = HashMap<(String, Vec<String>), serde_json::Value>;
 
 pub struct CacheOptions {}
 
@@ -63,73 +61,31 @@ impl OptionsProvider {
         }
     }
 
-    fn convert_feature_names_for_cache(
-        &self,
-        feature_names: &[impl AsRef<str>],
-        preferences: Option<&GetOptionsPreferences>,
-    ) -> Result<Vec<String>, String> {
-        match preferences {
-            Some(preferences) => {
-                if preferences.overrides_json.is_some() {
-                    return Err("Caching when overrides are given is not supported.".to_owned());
-                }
-                if preferences.skip_feature_name_conversion {
-                    return Ok(feature_names_to_vec(feature_names));
-                }
-                self.get_canonical_feature_names(feature_names)
-            }
-            None => self.get_canonical_feature_names(feature_names),
-        }
-    }
-
     fn get_entire_config(
         &self,
         feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<config::Config, String> {
+        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         if let Some(_cache_options) = cache_options {
-            match self.get_entire_config_from_cache(feature_names, preferences) {
+            match self.get_entire_config_from_cache(&feature_names, preferences) {
                 Ok(Some(config)) => return Ok(config),
                 Ok(None) => (),
                 Err(e) => return Err(e),
             }
         };
         let mut config_builder = config::Config::builder();
-        let mut skip_feature_name_conversion = false;
-        let mut constraints = None;
-        if let Some(_preferences) = preferences {
-            skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
-            constraints = _preferences.constraints.as_ref();
-        }
-        for feature_name in feature_names {
-            // Check for an alias.
-            // Canonical feature names are also included as keys in the aliases map.
-            let canonical_feature_name = if skip_feature_name_conversion {
-                feature_name.as_ref()
-            } else {
-                &self.get_canonical_feature_name(feature_name.as_ref())?
-            };
-
-            if let Some(constraints) = constraints {
-                let conditions = self.conditions.get(canonical_feature_name);
-                if !conditions
-                    .map(|conditions| conditions.evaluate(constraints))
-                    .unwrap_or(true)
-                {
-                    continue;
-                }
-            }
-
+        for canonical_feature_name in feature_names.as_slice() {
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
-                // Should not happen.
-                // All canonical feature names are included as keys in the sources map.
-                // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                 None => {
+                    // Should not happen.
+                    // All canonical feature names are included as keys in the sources map.
+                    // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                     return Err(format!(
                         "Feature name {canonical_feature_name:?} is not a known feature."
-                    ))
+                    ));
                 }
             };
             config_builder = config_builder.add_source(source.clone());
@@ -144,9 +100,7 @@ impl OptionsProvider {
         match config_builder.build() {
             Ok(cfg) => {
                 if let Some(_cache_options) = cache_options {
-                    let features =
-                        self.convert_feature_names_for_cache(feature_names, preferences)?;
-                    let cache_key = (features, preferences.cloned());
+                    let cache_key = feature_names;
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
@@ -165,9 +119,13 @@ impl OptionsProvider {
         feature_names: &[impl AsRef<str>],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<config::Config>, String> {
-        let features = self.convert_feature_names_for_cache(feature_names, preferences)?;
-
-        let cache_key = (features, preferences.cloned());
+        if let Some(preferences) = preferences {
+            if preferences.overrides_json.is_some() {
+                return Err("Caching when overrides are given is not supported.".to_owned());
+            }
+        }
+        let features = feature_names_to_vec(feature_names);
+        let cache_key = features;
         if let Some(config) = self
             .entire_config_cache
             .read()
@@ -187,9 +145,8 @@ impl OptionsProvider {
         _cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
-        let features = self.convert_feature_names_for_cache(feature_names, preferences)?;
-
-        let cache_key = (key.to_owned(), features, preferences.cloned());
+        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let cache_key = (key.to_owned(), feature_names);
         if let Some(options) = self
             .options_cache
             .read()
@@ -300,6 +257,42 @@ impl OptionsRegistry for OptionsProvider {
         self.features.clone()
     }
 
+    fn get_filtered_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Vec<String>, String> {
+        let mut skip_feature_name_conversion = false;
+        let mut constraints = None;
+        if let Some(_preferences) = preferences {
+            skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
+            constraints = _preferences.constraints.as_ref();
+        }
+
+        let mut result = Vec::new();
+        for feature_name in feature_names {
+            // Check for an alias.
+            let canonical_feature_name: String = if skip_feature_name_conversion {
+                feature_name.as_ref().to_owned()
+            } else {
+                self.get_canonical_feature_name(feature_name.as_ref())?
+            };
+
+            if let Some(constraints) = constraints {
+                let conditions = self.conditions.get(&canonical_feature_name);
+                if !conditions
+                    .map(|conditions| conditions.evaluate(constraints))
+                    .unwrap_or(true)
+                {
+                    continue;
+                }
+            }
+            result.push(canonical_feature_name);
+        }
+
+        Ok(result)
+    }
+
     fn get_options(
         &self,
         key: &str,
@@ -328,9 +321,9 @@ impl OptionsRegistry for OptionsProvider {
         match config.get::<serde_json::Value>(key) {
             Ok(value) => {
                 if let Some(_cache_options) = cache_options {
-                    let features =
-                        self.convert_feature_names_for_cache(feature_names, preferences)?;
-                    let cache_key = (key.to_owned(), features, preferences.cloned());
+                    let feature_names =
+                        self.get_filtered_feature_names(feature_names, preferences)?;
+                    let cache_key = (key.to_owned(), feature_names);
                     self.options_cache
                         .write()
                         .expect("the options cache lock should be held")
@@ -339,12 +332,9 @@ impl OptionsRegistry for OptionsProvider {
                 Ok(value)
             }
             Err(e) => {
-                let features = feature_names
-                    .iter()
-                    .map(|name| name.as_ref())
-                    .collect::<Vec<_>>();
+                let feature_names = feature_names_to_vec(feature_names);
                 Err(format!(
-                    "Error getting options with features {features:?}: {e}"
+                    "Error getting options with features {feature_names:?}: {e}"
                 ))
             }
         }

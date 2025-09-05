@@ -274,6 +274,17 @@ impl OptionsRegistry for OptionsWatcher {
             .get_features_with_metadata()
     }
 
+    fn get_filtered_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> std::result::Result<Vec<String>, String> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_filtered_feature_names(feature_names, preferences)
+    }
+
     fn get_options(
         &self,
         key: &str,

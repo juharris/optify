@@ -7,6 +7,8 @@ pub struct GetOptionsPreferences {
     /// A string is used because it makes it easier to pass to the `config` library, but this may change in the future.
     /// It also makes it simpler and maybe faster to get from other programming languages.
     pub overrides_json: Option<String>,
+    /// Determines if the feature names should be converted to canonical feature names.
+    /// Defaults to false: given features names will be converted to canonical feature names before looking for features or options.
     pub skip_feature_name_conversion: bool,
 }
 

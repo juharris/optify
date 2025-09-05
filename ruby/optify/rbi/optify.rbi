@@ -183,6 +183,18 @@ module Optify
     sig { params(canonical_feature_name: String).returns(T.nilable(OptionsMetadata)) }
     def get_feature_metadata(canonical_feature_name); end
 
+    # Filters `feature_names` based on the preferences,
+    # such as the `preferences`'s constraints.
+    # Also converts the feature names to canonical feature names if `preferences.skip_feature_name_conversion` is `false`.
+    sig do
+      params(
+        feature_names: T::Array[String],
+        preferences: GetOptionsPreferences
+      )
+        .returns(T::Array[String])
+    end
+    def get_filtered_features(feature_names, preferences); end
+
     # Fetches options based on the provided key and feature names.
     #
     # @param key The key to fetch options for.

@@ -36,6 +36,32 @@ fn get_provider_with_conditions() -> &'static OptionsProvider {
 }
 
 #[test]
+fn test_filtered_feature_names() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider_with_conditions();
+    let filtered_feature_names = provider.get_filtered_feature_names(&["a", "b"], None)?;
+    assert_eq!(filtered_feature_names, vec!["A", "B"]);
+
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.skip_feature_name_conversion = true;
+    let filtered_feature_names =
+        provider.get_filtered_feature_names(&["A", "B"], Some(&preferences))?;
+    assert_eq!(filtered_feature_names, vec!["A", "B"]);
+
+    preferences.set_constraints(Some(serde_json::json!({"info": 3, "status": "new"})));
+    let filtered_feature_names =
+        provider.get_filtered_feature_names(&["A", "B"], Some(&preferences))?;
+    assert_eq!(filtered_feature_names, vec!["A", "B"]);
+
+    preferences.set_constraints(Some(serde_json::json!({"info": 2, "status": "new"})));
+    preferences.skip_feature_name_conversion = false;
+    let filtered_feature_names =
+        provider.get_filtered_feature_names(&["a", "b"], Some(&preferences))?;
+    assert_eq!(filtered_feature_names, vec!["B"]);
+
+    Ok(())
+}
+
+#[test]
 fn test_provider_get_aliases() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let mut aliases = provider.get_aliases();
@@ -216,8 +242,7 @@ fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_provider_has_conditions() -> Result<(), Box<dyn std::error::Error>> {
     let conditions_provider = get_provider_with_conditions();
-    let provider = get_provider();
     assert!(conditions_provider.has_conditions("A"));
-    assert!(!provider.has_conditions("feature_B/initial"));
+    assert!(!conditions_provider.has_conditions("B"));
     Ok(())
 }

@@ -142,6 +142,8 @@ module Optify::ProviderModule
   # @return The metadata for the feature.
   def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
 
+  def get_filtered_features: (::Array[String] feature_names, GetOptionsPreferences preferences) -> ::Array[String]
+
   def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
 
   # Fetches options in JSON format based on the provided key and feature names.

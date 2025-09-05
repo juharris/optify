@@ -259,4 +259,29 @@ class OptifyTest < Test::Unit::TestCase
       assert_equal('Feature name "A" is not a known feature.', err.message)
     end
   end
+
+  def test_get_filtered_features
+    PROVIDERS.each do |klass|
+      provider = klass.build('../../tests/test_suites/conditions/configs')
+
+      preferences = Optify::GetOptionsPreferences.new
+
+      filtered = provider.get_filtered_features(%w[a b], preferences)
+      assert_equal(%w[A B], filtered)
+
+      preferences.skip_feature_name_conversion = true
+      filtered = provider.get_filtered_features(%w[A B], preferences)
+      assert_equal(%w[A B], filtered)
+
+      preferences.constraints = { info: 3, status: 'new' }
+      filtered = provider.get_filtered_features(%w[A B], preferences)
+      assert_equal(%w[A B], filtered)
+
+      preferences.skip_feature_name_conversion = false
+      preferences.constraints = { info: 2, status: 'new' }
+      filtered = provider.get_filtered_features(%w[a b], preferences)
+      # FIXME
+      assert_equal(%w[B], filtered)
+    end
+  end
 end

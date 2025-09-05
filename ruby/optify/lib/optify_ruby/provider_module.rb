@@ -6,8 +6,6 @@ require 'sorbet-runtime'
 module Optify
   # @!visibility private
   module ProviderModule
-    extend T::Sig
-
     #: (Array[String] feature_names) -> Array[String]
     def get_canonical_feature_names(feature_names)
       # Try to optimize a typical case where there are just a few features.
@@ -40,7 +38,7 @@ module Optify
       end
       result.freeze
 
-      @features_with_metadata = T.let(result, T.nilable(T::Hash[String, OptionsMetadata]))
+      @features_with_metadata = result
       result
     end
 
@@ -71,13 +69,14 @@ module Optify
                        get_options_json(key, feature_names)
                      end
       hash = JSON.parse(options_json)
-      T.unsafe(config_class).from_hash(hash)
+      config_class #: as untyped
+        .from_hash(hash)
     end
 
     #: -> void
     def _init
-      @cache = T.let({}, T.nilable(T::Hash[T.untyped, T.untyped]))
-      @features_with_metadata = T.let(nil, T.nilable(T::Hash[String, OptionsMetadata]))
+      @cache = {} #: Hash[untyped, untyped]?
+      @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
 
     NOT_FOUND_IN_CACHE_SENTINEL = Object.new
@@ -93,28 +92,31 @@ module Optify
       end
 
       init unless @cache
-      feature_names = get_canonical_feature_names(feature_names) unless preferences&.skip_feature_name_conversion
 
-      cache_key = [key, feature_names, preferences&.constraints_json, config_class]
-      result = @cache&.fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
+      if preferences.nil?
+        feature_names = get_filtered_features(feature_names, GetOptionsPreferences.new)
+      elsif !preferences.skip_feature_name_conversion || preferences.constraints_json
+        feature_names = get_filtered_features(feature_names, preferences)
+      end
+
+      # Features are filtered, so we don't need the constraints in the cache key.
+      cache_key = [key, feature_names, config_class]
+      result = @cache #: as !nil
+               .fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
       return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
 
       # Handle a cache miss.
 
-      # We can avoid converting the features names because they're already converted, if that was desired.
-      if preferences.nil?
-        preferences = GetOptionsPreferences.new
-        preferences.skip_feature_name_conversion = true
-      else
-        # Indeed the copying of preferences could be wasteful, but this only happens on a cache miss
-        # and when no custom preferences are provided.
-        preferences = preferences.dup
-        preferences.skip_feature_name_conversion = true
-      end
+      # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
+      # We don't need the constraints because we filtered the features above.
+      # We already know there are no overrides because we checked above.
+      preferences = GetOptionsPreferences.new
+      preferences.skip_feature_name_conversion = true
 
       result = get_options(key, feature_names, config_class, nil, preferences)
 
-      T.must(@cache)[cache_key] = result
+      @cache #: as !nil
+        .[]= cache_key, result
     end
   end
 end
