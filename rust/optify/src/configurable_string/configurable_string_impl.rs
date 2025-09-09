@@ -23,9 +23,9 @@ pub enum ReplacementValue {
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct ConfigurableString {
-    pub root: String,
+    pub root: ReplacementValue,
     // TODO: Rename? components? values?
-    pub replacements: HashMap<String, ReplacementValue>,
+    pub replacements: Option<HashMap<String, ReplacementValue>>,
 }
 
 pub type LoadedFiles = HashMap<String, String>;
@@ -232,18 +232,75 @@ impl<'a> std::fmt::Debug for DynamicReplacements<'a> {
 }
 
 impl ConfigurableString {
-    pub fn build(&self, files: &LoadedFiles) -> Result<String, String> {
+    /// Process a ReplacementValue and return the resulting string.
+    fn process_replacement_value(
+        &self,
+        value: &ReplacementValue,
+        files: &LoadedFiles,
+    ) -> Result<String, String> {
+        match value {
+            ReplacementValue::String(s) => {
+                // Only process as liquid template if:
+                // 1. It contains liquid syntax AND
+                // 2. We have replacements defined
+                if (s.contains("{{") || s.contains("{%")) && self.replacements.is_some() {
+                    self.render_liquid_template(s, files)
+                } else {
+                    Ok(s.clone())
+                }
+            }
+            ReplacementValue::Object(obj) => self.process_replacement_object(obj, files),
+        }
+    }
+
+    /// Process a ReplacementObject (File or Liquid) and return the resulting string.
+    fn process_replacement_object(
+        &self,
+        obj: &ReplacementObject,
+        files: &LoadedFiles,
+    ) -> Result<String, String> {
+        match obj {
+            ReplacementObject::File { file } => {
+                match files.get(file) {
+                    Some(contents) => {
+                        if file.ends_with(".liquid") {
+                            // File contains a liquid template, render it
+                            self.render_liquid_template(contents, files)
+                        } else {
+                            // Plain file, return contents as-is
+                            Ok(contents.clone())
+                        }
+                    }
+                    None => Err(format!("File '{}' not found", file)),
+                }
+            }
+            ReplacementObject::Liquid { liquid } => self.render_liquid_template(liquid, files),
+        }
+    }
+
+    /// Render a liquid template string with the replacements as context.
+    fn render_liquid_template(
+        &self,
+        template_str: &str,
+        files: &LoadedFiles,
+    ) -> Result<String, String> {
         let parser = liquid::ParserBuilder::with_stdlib()
             .build()
             .map_err(|e| format!("Failed to build liquid parser: {}", e))?;
 
-        // Create dynamic replacements object
-        let dynamic_replacements = DynamicReplacements::new(&self.replacements, files);
-
-        // Parse and render the main template
         let template = parser
-            .parse(&self.root)
+            .parse(template_str)
             .map_err(|e| format!("Failed to parse template: {}", e))?;
+
+        let empty_replacements;
+        let replacements = match &self.replacements {
+            Some(r) => r,
+            None => {
+                empty_replacements = HashMap::new();
+                &empty_replacements
+            }
+        };
+        let dynamic_replacements = DynamicReplacements::new(replacements, files);
 
         let result = template
             .render(&dynamic_replacements)
@@ -259,5 +316,9 @@ impl ConfigurableString {
         } else {
             Ok(result)
         }
+    }
+
+    pub fn build(&self, files: &LoadedFiles) -> Result<String, String> {
+        self.process_replacement_value(&self.root, files)
     }
 }

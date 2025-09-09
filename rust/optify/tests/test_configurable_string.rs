@@ -1,34 +1,12 @@
 use optify::configurable_string::configurable_string_impl::LoadedFiles;
-use optify::configurable_string::{ConfigurableString, ReplacementValue};
+use optify::configurable_string::{ConfigurableString, ReplacementObject, ReplacementValue};
 use serde_json::json;
 use std::collections::HashMap;
 
 #[test]
-fn test_configurable_string_from_external_module() {
-    // Test direct construction with liquid syntax
-    let mut replacements = HashMap::new();
-    replacements.insert(
-        "name".to_string(),
-        ReplacementValue::String("Bob".to_string()),
-    );
-    replacements.insert(
-        "greeting".to_string(),
-        ReplacementValue::String("Hello".to_string()),
-    );
-
-    let config = ConfigurableString {
-        root: "{{ greeting }}, {{ name }}!".to_string(),
-        replacements,
-    };
-
-    let files = LoadedFiles::new();
-    assert_eq!(config.build(&files).unwrap(), "Hello, Bob!");
-}
-
-#[test]
 fn test_configurable_string_deserialization() {
     let data = json!({
-        "root": "Welcome {{ user }} to {{ app }}",
+        "root": {"liquid": "Welcome {{ user }} to {{ app }}"},
         "replacements": {
             "user": "Alice",
             "app": "Optify"
@@ -43,7 +21,7 @@ fn test_configurable_string_deserialization() {
 #[test]
 fn test_with_object_replacements_liquid() {
     let data = json!({
-        "root": "Rendered: {{ liquid_template }}",
+        "root": {"liquid": "Rendered: {{ liquid_template }}"},
         "replacements": {
             "name": "world",
             "liquid_template": {
@@ -64,7 +42,7 @@ fn test_with_file_containing_liquid_template() {
     files.insert(file_path.clone(), "Hello {{ name | upcase }}!".into());
 
     let data = json!({
-        "root": "File content: {{ template_file }}",
+        "root": {"liquid": "File content: {{ template_file }}"},
         "replacements": {
             "name": "Justin",
             "template_file": {
@@ -91,8 +69,10 @@ fn test_build_with_liquid_filters() {
     );
 
     let config = ConfigurableString {
-        root: "Currently {{ action | upcase }} the {{ target | capitalize }}...".to_string(),
-        replacements,
+        root: ReplacementValue::Object(ReplacementObject::Liquid {
+            liquid: "Currently {{ action | upcase }} the {{ target | capitalize }}...".to_string(),
+        }),
+        replacements: Some(replacements),
     };
 
     // Test build() method with liquid filters
@@ -103,28 +83,21 @@ fn test_build_with_liquid_filters() {
 
 #[test]
 fn test_liquid_control_flow() {
-    let data = json!({
-        "root": "{% if show_message %}{{ message }}{% else %}No message{% endif %}",
+    let mut data = json!({
+        "root": {"liquid": "{% if show_message != \"\" %}{{ message }}{% else %}No message{% endif %}"},
         "replacements": {
             "show_message": "true",
             "message": "Hello from Liquid!"
         }
     });
 
-    let config: ConfigurableString = serde_json::from_value(data).unwrap();
+    let config: ConfigurableString = serde_json::from_value(data.clone()).unwrap();
     let files = LoadedFiles::new();
     assert_eq!(config.build(&files).unwrap(), "Hello from Liquid!");
 
-    // Test with show_message as false (empty string is falsy in liquid)
-    let data2 = json!({
-        "root": "{% if show_message == \"\" %}No message{% else %}{{ message }}{% endif %}",
-        "replacements": {
-            "show_message": "",
-            "message": "Hello from Liquid!"
-        }
-    });
+    data["replacements"]["show_message"] = json!("");
 
-    let config2: ConfigurableString = serde_json::from_value(data2).unwrap();
+    let config2: ConfigurableString = serde_json::from_value(data).unwrap();
     assert_eq!(config2.build(&files).unwrap(), "No message");
 }
 
@@ -132,19 +105,19 @@ fn test_liquid_control_flow() {
 fn test_nested_liquid_template_access() {
     // Test that liquid templates in replacements can access other variables
     let data = json!({
-        "root": "{{ greeting }}, {{ formatted_name }}!",
+        "root": {"liquid": "{{ greeting }}, {{ formatted_name }}!"},
         "replacements": {
             "name": "alice",
             "greeting": "Hello",
             "formatted_name": {
-                "liquid": "{{ name | capitalize }}"
+                "liquid": "dear {{ name | capitalize }}"
             }
         }
     });
 
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
     let files = LoadedFiles::new();
-    assert_eq!(config.build(&files).unwrap(), "Hello, Alice!");
+    assert_eq!(config.build(&files).unwrap(), "Hello, dear Alice!");
 }
 
 #[test]
@@ -153,7 +126,7 @@ fn test_file_loading_with_root_path() {
     files.insert("simple.txt".into(), "simple text not {{ replaced }}".into());
 
     let data = json!({
-        "root": "File content: {{ simple_file }}",
+        "root": {"liquid": "File content: {{ simple_file }}"},
         "replacements": {
             "simple_file": {
                 "file": "simple.txt"
@@ -170,6 +143,131 @@ fn test_file_loading_with_root_path() {
         result.unwrap(),
         "File content: simple text not {{ replaced }}"
     );
+}
+
+#[test]
+fn test_root_as_liquid_object() {
+    // Test root as a liquid object that can access replacements
+    let data = json!({
+        "root": {
+            "liquid": "Hello {{ name | upcase }}, welcome to {{ place }}!"
+        },
+        "replacements": {
+            "name": "alice",
+            "place": "Wonderland"
+        }
+    });
+
+    let config: ConfigurableString = serde_json::from_value(data).unwrap();
+    let files = LoadedFiles::new();
+    assert_eq!(
+        config.build(&files).unwrap(),
+        "Hello ALICE, welcome to Wonderland!"
+    );
+}
+
+#[test]
+fn test_root_as_file_object() {
+    // Test root as a file object
+    let mut files = LoadedFiles::new();
+    files.insert(
+        "main_template.txt".into(),
+        "This is the main content from a file.".into(),
+    );
+
+    let data = json!({
+        "root": {
+            "file": "main_template.txt"
+        },
+        "replacements": {}
+    });
+
+    let config: ConfigurableString = serde_json::from_value(data).unwrap();
+    assert_eq!(
+        config.build(&files).unwrap(),
+        "This is the main content from a file."
+    );
+}
+
+#[test]
+fn test_root_as_liquid_file_object() {
+    // Test root as a liquid file object that processes liquid templates
+    let mut files = LoadedFiles::new();
+    files.insert(
+        "main.liquid".into(),
+        "Processing: {{ title | upcase }} by {{ author }}".into(),
+    );
+
+    let data = json!({
+        "root": {
+            "file": "main.liquid"
+        },
+        "replacements": {
+            "title": "the book",
+            "author": "Jane Doe"
+        }
+    });
+
+    let config: ConfigurableString = serde_json::from_value(data).unwrap();
+    assert_eq!(
+        config.build(&files).unwrap(),
+        "Processing: THE BOOK by Jane Doe"
+    );
+}
+
+#[test]
+fn test_root_object_with_nested_liquid_replacements() {
+    // Test root as object with nested liquid replacements
+    let data = json!({
+        "root": {
+            "liquid": "Report: {{ header }}\n{{ content }}"
+        },
+        "replacements": {
+            "title": "quarterly report",
+            "header": {
+                "liquid": "{{ title | upcase }}"
+            },
+            "content": "This is the content section."
+        }
+    });
+
+    let config: ConfigurableString = serde_json::from_value(data).unwrap();
+    let files = LoadedFiles::new();
+    assert_eq!(
+        config.build(&files).unwrap(),
+        "Report: QUARTERLY REPORT\nThis is the content section."
+    );
+}
+
+#[test]
+fn test_root_as_string() {
+    let data = json!({
+        "root": "Hello, world! {{ do_not_replace }}",
+    });
+
+    let config: ConfigurableString = serde_json::from_value(data).unwrap();
+    let files = LoadedFiles::new();
+    assert_eq!(
+        config.build(&files).unwrap(),
+        "Hello, world! {{ do_not_replace }}"
+    );
+}
+
+#[test]
+fn test_root_file_not_found_error() {
+    // Test that missing file in root object produces appropriate error
+    let data = json!({
+        "root": {
+            "file": "nonexistent.txt"
+        },
+        "replacements": {}
+    });
+
+    let config: ConfigurableString = serde_json::from_value(data).unwrap();
+    let files = LoadedFiles::new();
+    let result = config.build(&files);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("not found"));
 }
 
 /*
