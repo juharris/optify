@@ -23,8 +23,7 @@ pub enum ReplacementValue {
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct ConfigurableString {
-    // TODO: Rename? base?
-    pub template: String,
+    pub root: String,
     // TODO: Rename? components? values?
     pub replacements: HashMap<String, ReplacementValue>,
 }
@@ -243,7 +242,7 @@ impl ConfigurableString {
 
         // Parse and render the main template
         let template = parser
-            .parse(&self.template)
+            .parse(&self.root)
             .map_err(|e| format!("Failed to parse template: {}", e))?;
 
         let result = template
