@@ -239,16 +239,7 @@ impl ConfigurableString {
         files: &LoadedFiles,
     ) -> Result<String, String> {
         match value {
-            ReplacementValue::String(s) => {
-                // Only process as liquid template if:
-                // 1. It contains liquid syntax AND
-                // 2. We have replacements defined
-                if (s.contains("{{") || s.contains("{%")) && self.replacements.is_some() {
-                    self.render_liquid_template(s, files)
-                } else {
-                    Ok(s.clone())
-                }
-            }
+            ReplacementValue::String(s) => Ok(s.into()),
             ReplacementValue::Object(obj) => self.process_replacement_object(obj, files),
         }
     }
