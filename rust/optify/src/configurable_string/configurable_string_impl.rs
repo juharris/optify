@@ -234,7 +234,6 @@ impl<'a> std::fmt::Debug for DynamicReplacements<'a> {
 
 impl ConfigurableString {
     pub fn build(&self, files: &LoadedFiles) -> Result<String, String> {
-        // Create a liquid parser
         let parser = liquid::ParserBuilder::with_stdlib()
             .build()
             .map_err(|e| format!("Failed to build liquid parser: {}", e))?;
