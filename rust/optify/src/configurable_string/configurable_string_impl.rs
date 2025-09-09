@@ -3,8 +3,6 @@ use liquid::ValueView;
 use serde::Deserialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
@@ -20,88 +18,87 @@ pub enum ReplacementValue {
     Object(ReplacementObject),
 }
 
+/// Helps build a string by components declared in files.
+/// Parsed from a `serde_json::Value`.
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct ConfigurableString {
+    // TODO: Rename? base?
     pub template: String,
+    // TODO: Rename? components? values?
     pub replacements: HashMap<String, ReplacementValue>,
 }
 
-// Dynamic object that resolves values on demand
+pub type LoadedFiles = HashMap<String, String>;
+
+/// Dynamic object that resolves values on demand.
 struct DynamicReplacements<'a> {
     replacements: &'a HashMap<String, ReplacementValue>,
+    // Cache resolved values so that we can return a reference to the value.
+    // Use RefCell to allow interior mutability because of the signature for `get` in the trait.
     cache: RefCell<HashMap<String, liquid::model::Value>>,
     parser: liquid::Parser,
-    root_path: Option<&'a Path>,
+    files: LoadedFiles,
     errors: RefCell<Vec<String>>,
 }
 
 impl<'a> DynamicReplacements<'a> {
-    fn new(
-        replacements: &'a HashMap<String, ReplacementValue>,
-        root_path: Option<&'a Path>,
-    ) -> Self {
+    fn new(replacements: &'a HashMap<String, ReplacementValue>, files: &LoadedFiles) -> Self {
         Self {
             replacements,
+            // TODO Can we avoid copying files?
+            files: files.clone(),
             cache: RefCell::new(HashMap::new()),
             parser: liquid::ParserBuilder::with_stdlib().build().unwrap(),
-            root_path,
             errors: RefCell::new(Vec::new()),
         }
     }
 
     fn resolve_value(&self, key: &str) -> Option<String> {
-        self.replacements.get(key).map(|value| {
-            match value {
-                ReplacementValue::String(s) => s.clone(),
-                ReplacementValue::Object(obj) => {
-                    match obj {
-                        ReplacementObject::File { file: file_path } => {
-                            // Resolve file path relative to root_path if provided
-                            let full_path = if let Some(root) = self.root_path {
-                                root.join(file_path)
-                            } else {
-                                PathBuf::from(file_path)
-                            };
+        let replacement = self.replacements.get(key);
+        match replacement {
+            Some(r) => match r {
+                ReplacementValue::String(s) => Some(s.into()),
+                ReplacementValue::Object(replacement_object) => match replacement_object {
+                    ReplacementObject::File { file } => match self.files.get(file) {
+                        Some(contents) => {
+                            if file.ends_with(".liquid") {
+                                return self.render_liquid(contents);
+                            }
+                            Some(contents.into())
+                        }
 
-                            // Try to read the file content
-                            match fs::read_to_string(&full_path) {
-                                Ok(content) => content,
-                                Err(e) => {
-                                    let error_msg = format!(
-                                        "Failed to read file '{}': {}",
-                                        full_path.display(),
-                                        e
-                                    );
-                                    self.errors.borrow_mut().push(error_msg.clone());
-                                    format!("[file error: {}]", e)
-                                }
-                            }
+                        None => {
+                            self.errors
+                                .borrow_mut()
+                                .push(format!("File '{}' not found for key '{}'.", file, key));
+                            None
                         }
-                        ReplacementObject::Liquid {
-                            liquid: liquid_template,
-                        } => {
-                            // Render the liquid template with current context
-                            match self.parser.parse(liquid_template) {
-                                Ok(template) => {
-                                    // Use self as the context for nested liquid templates
-                                    template.render(self).unwrap_or_else(|e| {
-                                        let error_msg = format!("Liquid render error: {}", e);
-                                        self.errors.borrow_mut().push(error_msg);
-                                        format!("[liquid error: {}]", e)
-                                    })
-                                }
-                                Err(e) => {
-                                    let error_msg = format!("Liquid parse error: {}", e);
-                                    self.errors.borrow_mut().push(error_msg);
-                                    format!("[liquid parse error: {}]", e)
-                                }
-                            }
-                        }
-                    }
+                    },
+                    ReplacementObject::Liquid { liquid } => self.render_liquid(liquid),
+                },
+            },
+            // Shouldn't happen.
+            None => None,
+        }
+    }
+
+    fn render_liquid(&self, liquid: &str) -> Option<String> {
+        match self.parser.parse(liquid) {
+            Ok(template) => match template.render(self) {
+                Ok(result) => Some(result),
+                Err(e) => {
+                    let error_msg = format!("Liquid render error: {}", e);
+                    self.errors.borrow_mut().push(error_msg);
+                    None
                 }
+            },
+            Err(e) => {
+                let error_msg = format!("Liquid parse error: {}", e);
+                self.errors.borrow_mut().push(error_msg);
+                None
             }
-        })
+        }
     }
 
     fn has_errors(&self) -> bool {
@@ -114,6 +111,7 @@ impl<'a> DynamicReplacements<'a> {
 
     fn ensure_cached(&self, key: &str) {
         // Check if already cached first
+        // TODO Try to check if contains else insert in one operation.
         {
             if self.cache.borrow().contains_key(key) {
                 return;
@@ -235,14 +233,14 @@ impl<'a> std::fmt::Debug for DynamicReplacements<'a> {
 }
 
 impl ConfigurableString {
-    pub fn build(&self, root_path: Option<&Path>) -> Result<String, String> {
+    pub fn build(&self, files: &LoadedFiles) -> Result<String, String> {
         // Create a liquid parser
         let parser = liquid::ParserBuilder::with_stdlib()
             .build()
             .map_err(|e| format!("Failed to build liquid parser: {}", e))?;
 
         // Create dynamic replacements object
-        let dynamic_replacements = DynamicReplacements::new(&self.replacements, root_path);
+        let dynamic_replacements = DynamicReplacements::new(&self.replacements, files);
 
         // Parse and render the main template
         let template = parser
