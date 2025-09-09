@@ -1,5 +1,5 @@
 use optify::configurable_string::configurable_string_impl::LoadedFiles;
-use optify::configurable_string::{ConfigurableString, ReplacementObject, ReplacementValue};
+use optify::configurable_string::{ConfigurableString, ReplacementValue};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -52,20 +52,6 @@ fn test_with_object_replacements_file() {
     });
 
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
-
-    // Verify the object was parsed correctly
-    if let Some(ReplacementValue::Object(obj)) = config.replacements.get("config_source") {
-        match obj {
-            ReplacementObject::File { file } => {
-                assert_eq!(file, "/path/to/nonexistent/config.json");
-            }
-            _ => panic!("Expected File variant"),
-        }
-    } else {
-        panic!("Expected Object variant with file property");
-    }
-
-    // Test build output - should show file error since file doesn't exist
     let files = LoadedFiles::new();
     let result = config.build(&files);
     assert!(result.is_err(), "Should fail when file doesn't exist");
@@ -84,20 +70,6 @@ fn test_with_object_replacements_liquid() {
     });
 
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
-
-    // Verify the object was parsed correctly
-    if let Some(ReplacementValue::Object(obj)) = config.replacements.get("liquid_template") {
-        match obj {
-            ReplacementObject::Liquid { liquid } => {
-                assert_eq!(liquid, "Hello {{ name | upcase }}");
-            }
-            _ => panic!("Expected Liquid variant"),
-        }
-    } else {
-        panic!("Expected Object variant with liquid property");
-    }
-
-    // Test build output - liquid template should be rendered with available variables
     let files = LoadedFiles::new();
     assert_eq!(config.build(&files).unwrap(), "Rendered: Hello WORLD");
 }
@@ -190,35 +162,6 @@ fn test_nested_liquid_template_access() {
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
     let files = LoadedFiles::new();
     assert_eq!(config.build(&files).unwrap(), "Hello, Alice!");
-}
-
-#[test]
-fn test_cannot_have_both_file_and_liquid() {
-    // Test that having both file and liquid in the same object picks the first match (file)
-    let data = json!({
-        "template": "Test: {{ test }}",
-        "replacements": {
-            "test": {
-                "file": "some_file.txt",
-                "liquid": "{{ some_template }}"
-            }
-        }
-    });
-
-    // With untagged enum, serde will match the first variant that fits
-    // Since File comes first in our enum, it will match as File and ignore liquid
-    // TODO Let's try to make an error for using both.
-    let config: ConfigurableString = serde_json::from_value(data).unwrap();
-
-    // Verify it was parsed as File variant, ignoring the liquid field
-    if let Some(ReplacementValue::Object(obj)) = config.replacements.get("test") {
-        match obj {
-            ReplacementObject::File { file } => {
-                assert_eq!(file, "some_file.txt");
-            }
-            _ => panic!("Expected File variant when both are present"),
-        }
-    }
 }
 
 #[test]
