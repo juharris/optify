@@ -7,7 +7,7 @@ use std::collections::HashMap;
 fn test_configurable_string_deserialization() {
     let data = json!({
         "root": {"liquid": "Welcome {{ user }} to {{ app }}"},
-        "replacements": {
+        "components": {
             "user": "Alice",
             "app": "Optify"
         }
@@ -19,10 +19,10 @@ fn test_configurable_string_deserialization() {
 }
 
 #[test]
-fn test_with_object_replacements_liquid() {
+fn test_with_object_components_liquid() {
     let data = json!({
         "root": {"liquid": "Rendered: {{ liquid_template }}"},
-        "replacements": {
+        "components": {
             "name": "world",
             "liquid_template": {
                 "liquid": "Hello {{ name | upcase }}"
@@ -43,7 +43,7 @@ fn test_with_file_containing_liquid_template() {
 
     let data = json!({
         "root": {"liquid": "File content: {{ template_file }}"},
-        "replacements": {
+        "components": {
             "name": "Justin",
             "template_file": {
                 "file": file_path,
@@ -58,12 +58,12 @@ fn test_with_file_containing_liquid_template() {
 
 #[test]
 fn test_build_with_liquid_filters() {
-    let mut replacements = HashMap::new();
-    replacements.insert(
+    let mut components = HashMap::new();
+    components.insert(
         "action".to_string(),
         ReplacementValue::String("building".to_string()),
     );
-    replacements.insert(
+    components.insert(
         "target".to_string(),
         ReplacementValue::String("application".to_string()),
     );
@@ -72,7 +72,7 @@ fn test_build_with_liquid_filters() {
         root: ReplacementValue::Object(ReplacementObject::Liquid {
             liquid: "Currently {{ action | upcase }} the {{ target | capitalize }}...".to_string(),
         }),
-        replacements: Some(replacements),
+        components: Some(components),
     };
 
     // Test build() method with liquid filters
@@ -85,7 +85,7 @@ fn test_build_with_liquid_filters() {
 fn test_liquid_control_flow() {
     let mut data = json!({
         "root": {"liquid": "{% if show_message != \"\" %}{{ message }}{% else %}No message{% endif %}"},
-        "replacements": {
+        "components": {
             "show_message": "true",
             "message": "Hello from Liquid!"
         }
@@ -95,7 +95,7 @@ fn test_liquid_control_flow() {
     let files = LoadedFiles::new();
     assert_eq!(config.build(&files).unwrap(), "Hello from Liquid!");
 
-    data["replacements"]["show_message"] = json!("");
+    data["components"]["show_message"] = json!("");
 
     let config2: ConfigurableString = serde_json::from_value(data).unwrap();
     assert_eq!(config2.build(&files).unwrap(), "No message");
@@ -103,10 +103,10 @@ fn test_liquid_control_flow() {
 
 #[test]
 fn test_nested_liquid_template_access() {
-    // Test that liquid templates in replacements can access other variables
+    // Test that liquid templates in components can access other variables
     let data = json!({
         "root": {"liquid": "{{ greeting }}, {{ formatted_name }}!"},
-        "replacements": {
+        "components": {
             "name": "alice",
             "greeting": "Hello",
             "formatted_name": {
@@ -127,7 +127,7 @@ fn test_file_loading_with_root_path() {
 
     let data = json!({
         "root": {"liquid": "File content: {{ simple_file }}"},
-        "replacements": {
+        "components": {
             "simple_file": {
                 "file": "simple.txt"
             }
@@ -147,12 +147,12 @@ fn test_file_loading_with_root_path() {
 
 #[test]
 fn test_root_as_liquid_object() {
-    // Test root as a liquid object that can access replacements
+    // Test root as a liquid object that can access components
     let data = json!({
         "root": {
             "liquid": "Hello {{ name | upcase }}, welcome to {{ place }}!"
         },
-        "replacements": {
+        "components": {
             "name": "alice",
             "place": "Wonderland"
         }
@@ -179,7 +179,7 @@ fn test_root_as_file_object() {
         "root": {
             "file": "main_template.txt"
         },
-        "replacements": {}
+        "components": {}
     });
 
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
@@ -202,7 +202,7 @@ fn test_root_as_liquid_file_object() {
         "root": {
             "file": "main.liquid"
         },
-        "replacements": {
+        "components": {
             "title": "the book",
             "author": "Jane Doe"
         }
@@ -216,13 +216,13 @@ fn test_root_as_liquid_file_object() {
 }
 
 #[test]
-fn test_root_object_with_nested_liquid_replacements() {
-    // Test root as object with nested liquid replacements
+fn test_root_object_with_nested_liquid_components() {
+    // Test root as object with nested liquid components
     let data = json!({
         "root": {
             "liquid": "Report: {{ header }}\n{{ content }}"
         },
-        "replacements": {
+        "components": {
             "title": "quarterly report",
             "header": {
                 "liquid": "{{ title | upcase }}"
@@ -260,23 +260,23 @@ fn test_root_file_not_found_error() {
         "root": {
             "file": "nonexistent.txt"
         },
-        "replacements": {}
+        "components": {}
     });
 
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
     let files = LoadedFiles::new();
     let result = config.build(&files);
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("not found"));
+    assert_eq!("File 'nonexistent.txt' not found.", result.unwrap_err());
 }
 
 /*
-FIXME Try to test.
+FIXME Try to test. Can't catch easily because Liquid panics.
 #[test]
-fn test_with_object_replacements_file() {
+fn test_with_object_components_file() {
     let data = json!({
         "root": "Config loaded from {{ config_source }}",
-        "replacements": {
+        "components": {
             "config_source": {
                 "file": "/path/to/nonexistent/config.json"
             }

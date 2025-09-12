@@ -24,8 +24,7 @@ pub enum ReplacementValue {
 #[allow(dead_code)]
 pub struct ConfigurableString {
     pub root: ReplacementValue,
-    // TODO: Rename? components? values?
-    pub replacements: Option<HashMap<String, ReplacementValue>>,
+    pub components: Option<HashMap<String, ReplacementValue>>,
 }
 
 pub type LoadedFiles = HashMap<String, String>;
@@ -262,7 +261,7 @@ impl ConfigurableString {
                             Ok(contents.clone())
                         }
                     }
-                    None => Err(format!("File '{}' not found", file)),
+                    None => Err(format!("File '{}' not found.", file)),
                 }
             }
             ReplacementObject::Liquid { liquid } => self.render_liquid_template(liquid, files),
@@ -284,7 +283,7 @@ impl ConfigurableString {
             .map_err(|e| format!("Failed to parse template: {}", e))?;
 
         let empty_replacements;
-        let replacements = match &self.replacements {
+        let replacements = match &self.components {
             Some(r) => r,
             None => {
                 empty_replacements = HashMap::new();
