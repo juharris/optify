@@ -18,11 +18,14 @@ pub enum ReplacementValue {
     Object(ReplacementObject),
 }
 
+// TODO Think of a better name. Everything is "configurable".
+// like PrecomputedValue? ConfigurableOption? OptifyOption?
 /// Helps build a string by components declared in files.
 /// Parsed from a `serde_json::Value`.
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct ConfigurableString {
+    // TODO Is `root`` okay? Maybe `start`? `initial`? `base`?
     pub root: ReplacementValue,
     pub components: Option<HashMap<String, ReplacementValue>>,
 }

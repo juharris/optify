@@ -5,7 +5,7 @@ use serde::Deserialize;
 use super::conditions::ConditionExpression;
 use super::metadata::OptionsMetadata;
 
-pub(crate) type ConfigurationOptions = config::Value;
+pub(crate) type ConfigurationOptions = serde_json::Value;
 
 #[derive(Clone, Debug, Deserialize)]
 #[allow(unused)]

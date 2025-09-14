@@ -5,9 +5,10 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
+use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
+use crate::configurable_string::locator::find_configurable_value_pointers;
 use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
-use crate::schema::conditions::ConditionExpression;
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
@@ -147,8 +148,8 @@ fn resolve_imports(
     // Build the configuration and store it.
     match config_builder.build() {
         Ok(new_config) => {
-            // Convert to something that can be inserted as a source.
-            let options_as_config_value: config::Value = match new_config.try_deserialize() {
+            // Convert to something that can be inserted in a source.
+            let options_as_json: serde_json::Value = match new_config.try_deserialize() {
                 Ok(v) => v,
                 Err(e) => {
                     // Should never happen.
@@ -157,9 +158,6 @@ fn resolve_imports(
                     ));
                 }
             };
-            let options_as_json: serde_json::Value = options_as_config_value
-                .try_deserialize()
-                .expect("configuration should be deserializable to JSON");
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
             sources.insert(canonical_feature_name.to_owned(), source);
@@ -172,16 +170,6 @@ fn resolve_imports(
     }
 
     Ok(())
-}
-
-/// The result of loading a feature configuration file.
-struct LoadingResult {
-    canonical_feature_name: String,
-    conditions: Option<ConditionExpression>,
-    source: config::File<config::FileSourceString, config::FileFormat>,
-    imports: Option<Vec<String>>,
-    metadata: OptionsMetadata,
-    original_config: serde_json::Value,
 }
 
 impl OptionsProviderBuilder {
@@ -269,17 +257,10 @@ impl OptionsProviderBuilder {
         };
 
         let options_as_json_str = match feature_config.options {
-            Some(options) => match options.try_deserialize::<serde_json::Value>() {
-                Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
-                Err(e) => {
-                    return Some(Err(format!(
-                        "Error deserializing options for '{}': {e}",
-                        absolute_path.to_string_lossy(),
-                    )))
-                }
-            },
+            Some(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
             None => "{}".to_owned(),
         };
+
         let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
         let canonical_feature_name = get_canonical_feature_name(path, directory);
 
@@ -300,13 +281,17 @@ impl OptionsProviderBuilder {
             ),
         };
 
+        let configurable_value_pointers =
+            find_configurable_value_pointers(raw_config.get("options"));
+
         Some(Ok(LoadingResult {
             canonical_feature_name,
             conditions: feature_config.conditions,
-            source,
+            configurable_value_pointers,
             imports: feature_config.imports,
             metadata,
             original_config: raw_config,
+            source,
         }))
     }
 
