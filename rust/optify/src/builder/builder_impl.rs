@@ -12,6 +12,7 @@ use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
+type ConfigurableValuePointers = HashMap<String, Vec<String>>;
 type Dependents = HashMap<String, Vec<String>>;
 type Imports = HashMap<String, Vec<String>>;
 
@@ -22,6 +23,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    configurable_value_pointers: ConfigurableValuePointers,
     dependents: Dependents,
     conditions: Conditions,
     features: Features,
@@ -176,8 +178,9 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
-            dependents: Dependents::new(),
             conditions: Conditions::new(),
+            configurable_value_pointers: ConfigurableValuePointers::new(),
+            dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
             schema: None,
@@ -322,6 +325,12 @@ impl OptionsProviderBuilder {
         if let Some(imports) = &info.imports {
             self.imports
                 .insert(canonical_feature_name.clone(), imports.clone());
+        }
+        if !info.configurable_value_pointers.is_empty() {
+            self.configurable_value_pointers.insert(
+                canonical_feature_name.clone(),
+                info.configurable_value_pointers.clone(),
+            );
         }
         add_alias(
             &mut self.aliases,
