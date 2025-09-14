@@ -27,6 +27,7 @@ pub enum ReplacementValue {
 pub struct ConfigurableString {
     // TODO Is `root`` okay? Maybe `start`? `initial`? `base`?
     pub root: ReplacementValue,
+    // TODO Maybe rename? "resources"?
     pub components: Option<HashMap<String, ReplacementValue>>,
 }
 

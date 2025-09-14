@@ -281,6 +281,7 @@ impl OptionsProviderBuilder {
             ),
         };
 
+        // TODO Add option to disable.
         let configurable_value_pointers =
             find_configurable_value_pointers(raw_config.get("options"));
 
