@@ -1,0 +1,19 @@
+{
+  "options": {
+    "greeting_from_file": {
+      "$type": "Optify.ConfigurableString",
+      "root": {
+        "file": "templates/greeting.txt"
+      }
+    },
+    "message_from_liquid_file": {
+      "$type": "Optify.ConfigurableString",
+      "root": {
+        "file": "templates/message.liquid"
+      },
+      "components": {
+        "app_name": "Optify"
+      }
+    }
+  }
+}

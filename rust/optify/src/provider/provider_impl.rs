@@ -6,11 +6,13 @@ use std::{
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
+    configurable_string::LoadedFiles,
     provider::GetOptionsPreferences,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
 use super::OptionsRegistry;
+use crate::configurable_string::ConfigurableString;
 
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
@@ -36,6 +38,7 @@ pub struct OptionsProvider {
     conditions: Conditions,
     configurable_value_pointers: ConfigurableValuePointers,
     features: Features,
+    loaded_files: LoadedFiles,
     sources: Sources,
 
     // Caches - using RwLock for thread-safe interior mutability
@@ -112,6 +115,7 @@ impl OptionsProvider {
         conditions: &Conditions,
         configurable_value_pointers: &ConfigurableValuePointers,
         features: &Features,
+        loaded_files: &LoadedFiles,
         sources: &Sources,
     ) -> Self {
         OptionsProvider {
@@ -119,6 +123,7 @@ impl OptionsProvider {
             conditions: conditions.clone(),
             configurable_value_pointers: configurable_value_pointers.clone(),
             features: features.clone(),
+            loaded_files: loaded_files.clone(),
             sources: sources.clone(),
             entire_config_cache: RwLock::new(EntireConfigCache::new()),
             options_cache: RwLock::new(OptionsCache::new()),
@@ -229,8 +234,8 @@ impl OptionsProvider {
         feature_names: &[String],
     ) -> Result<serde_json::Value, String> {
         // TODO See if there is a more efficient way with less copying.
+        // Maybe `value.pointer_mut`?
         // Also there should be a value to set a value at a pointer location.
-        use crate::configurable_string::ConfigurableString;
 
         // Collect all configurable value pointers for the requested features
         let mut all_pointers = HashSet::new();
@@ -244,10 +249,6 @@ impl OptionsProvider {
         if all_pointers.is_empty() {
             return Ok(value);
         }
-
-        // For now, we'll use an empty LoadedFiles map
-        // In the future, we might want to load files based on the configuration
-        let loaded_files = HashMap::new();
 
         // Process each pointer
         for pointer in all_pointers {
@@ -270,8 +271,7 @@ impl OptionsProvider {
                     }
                 };
 
-            // Build the string
-            let built_string = configurable_string.build(&loaded_files)?;
+            let built_string = configurable_string.build(&self.loaded_files)?;
 
             // Replace the value at the pointer location with the built string
             set_value_at_pointer(
@@ -345,7 +345,10 @@ impl OptionsRegistry for OptionsProvider {
         let config = self.get_entire_config(&feature_names, cache_options, preferences)?;
 
         match config.try_deserialize() {
-            Ok(value) => Ok(value),
+            Ok(value) => {
+                // Process configurable strings in the entire config
+                self.process_configurable_strings(value, &feature_names)
+            }
             Err(e) => Err(e.to_string()),
         }
     }
@@ -445,21 +448,58 @@ impl OptionsRegistry for OptionsProvider {
         let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         let config = self.get_entire_config(&filtered_feature_names, cache_options, preferences)?;
 
-        match config.get::<serde_json::Value>(key) {
-            Ok(value) => {
-                if let Some(_cache_options) = cache_options {
-                    let cache_key = (key.to_owned(), filtered_feature_names);
-                    self.options_cache
-                        .write()
-                        .expect("the options cache lock should be held")
-                        .insert(cache_key, value.clone());
-                }
-                Ok(value)
+        // First get the entire config as JSON and process all configurable strings
+        let entire_value: serde_json::Value = match config.try_deserialize() {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(format!(
+                    "Error deserializing config with features {filtered_feature_names:?}: {e}"
+                ))
             }
-            Err(e) => Err(format!(
-                "Error getting options with features {filtered_feature_names:?}: {e}"
-            )),
+        };
+
+        let processed_entire_value =
+            self.process_configurable_strings(entire_value, &filtered_feature_names)?;
+
+        // Now extract the specific key from the processed config
+        // Support both direct keys and nested keys with dot notation
+        let value = if key.contains('.') {
+            // Handle nested keys with dot notation
+            let parts: Vec<&str> = key.split('.').collect();
+            let mut current = &processed_entire_value;
+            for part in parts {
+                match current.get(part) {
+                    Some(v) => current = v,
+                    None => {
+                        return Err(format!(
+                            "Key '{}' not found in config with features {filtered_feature_names:?}",
+                            key
+                        ))
+                    }
+                }
+            }
+            current.clone()
+        } else {
+            // Direct key access
+            match processed_entire_value.get(key) {
+                Some(value) => value.clone(),
+                None => {
+                    return Err(format!(
+                        "Key '{}' not found in config with features {filtered_feature_names:?}",
+                        key
+                    ))
+                }
+            }
+        };
+
+        if cache_options.is_some() {
+            let cache_key = (key.to_owned(), filtered_feature_names.clone());
+            self.options_cache
+                .write()
+                .expect("the options cache lock should be held")
+                .insert(cache_key, value.clone());
         }
+        Ok(value)
     }
 
     fn has_conditions(&self, canonical_feature_name: &str) -> bool {

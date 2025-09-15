@@ -8,6 +8,7 @@ use std::sync::Arc;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_value_pointers;
+use crate::configurable_string::LoadedFiles;
 use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
@@ -28,6 +29,7 @@ pub struct OptionsProviderBuilder {
     conditions: Conditions,
     features: Features,
     imports: Imports,
+    loaded_files: LoadedFiles,
     schema: Option<Arc<Validator>>,
     sources: Sources,
 }
@@ -183,6 +185,7 @@ impl OptionsProviderBuilder {
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
+            loaded_files: LoadedFiles::new(),
             schema: None,
             sources: Sources::new(),
         }
@@ -350,6 +353,49 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         let supported_extensions =
             HashSet::from(["json", "json5", "yaml", "yml", "toml", "ini", "ron"]);
 
+        // First pass: load non-config files
+        // FIXME do in 1 step.
+        for entry in walkdir::WalkDir::new(directory).into_iter() {
+            let entry = entry
+                .unwrap_or_else(|_| panic!("Error walking directory: {}", directory.display()));
+            let path = entry.path();
+
+            if !path.is_file() {
+                continue;
+            }
+
+            // Skip .optify folders
+            if path
+                .components()
+                .any(|component| component.as_os_str() == ".optify")
+            {
+                continue;
+            }
+
+            // Check if file does NOT have a supported extension (i.e., non-config files)
+            let is_non_config_file = if let Some(ext) = path.extension() {
+                let ext_str = ext.to_str().unwrap_or("");
+                !supported_extensions.contains(&ext_str)
+            } else {
+                true // Files without extensions are considered non-config
+            };
+
+            if is_non_config_file {
+                // Load the file content
+                if let Ok(contents) = std::fs::read_to_string(path) {
+                    // Store with a relative path from the directory
+                    let relative_path = path
+                        .strip_prefix(directory)
+                        .unwrap()
+                        .to_str()
+                        .expect("path should be valid Unicode")
+                        .replace(std::path::MAIN_SEPARATOR, "/");
+                    self.loaded_files.insert(relative_path, contents);
+                }
+            }
+        }
+
+        // Second pass: process config files
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .filter_map(|entry| {
@@ -452,6 +498,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             &self.conditions,
             &self.configurable_value_pointers,
             &self.features,
+            &self.loaded_files,
             &self.sources,
         ))
     }
