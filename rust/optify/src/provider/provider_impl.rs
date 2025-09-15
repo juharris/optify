@@ -43,13 +43,6 @@ pub struct OptionsProvider {
     options_cache: RwLock<OptionsCache>,
 }
 
-fn feature_names_to_vec<T: AsRef<str>>(feature_names: &[T]) -> Vec<String> {
-    feature_names
-        .iter()
-        .map(|s| s.as_ref().to_owned())
-        .collect()
-}
-
 /// Get a value at a JSON pointer location
 fn get_value_at_pointer(value: &serde_json::Value, pointer: &str) -> Option<serde_json::Value> {
     value.pointer(pointer).cloned()
@@ -134,20 +127,19 @@ impl OptionsProvider {
 
     fn get_entire_config(
         &self,
-        feature_names: &[impl AsRef<str>],
+        feature_names: &[String],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<config::Config, String> {
-        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         if let Some(_cache_options) = cache_options {
-            match self.get_entire_config_from_cache(&feature_names, preferences) {
+            match self.get_entire_config_from_cache(feature_names, preferences) {
                 Ok(Some(config)) => return Ok(config),
                 Ok(None) => (),
                 Err(e) => return Err(e),
             }
         };
         let mut config_builder = config::Config::builder();
-        for canonical_feature_name in feature_names.as_slice() {
+        for canonical_feature_name in feature_names {
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
                 None => {
@@ -171,7 +163,7 @@ impl OptionsProvider {
         match config_builder.build() {
             Ok(cfg) => {
                 if let Some(_cache_options) = cache_options {
-                    let cache_key = feature_names;
+                    let cache_key = feature_names.to_owned();
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
@@ -187,7 +179,7 @@ impl OptionsProvider {
 
     fn get_entire_config_from_cache(
         &self,
-        feature_names: &[impl AsRef<str>],
+        feature_names: &[String],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<config::Config>, String> {
         if let Some(preferences) = preferences {
@@ -195,13 +187,12 @@ impl OptionsProvider {
                 return Err("Caching when overrides are given is not supported.".to_owned());
             }
         }
-        let features = feature_names_to_vec(feature_names);
-        let cache_key = features;
+        let cache_key = feature_names;
         if let Some(config) = self
             .entire_config_cache
             .read()
             .expect("the entire config cache should be readable")
-            .get(&cache_key)
+            .get(cache_key)
         {
             return Ok(Some(config.clone()));
         }
@@ -216,8 +207,8 @@ impl OptionsProvider {
         _cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
-        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        let cache_key = (key.to_owned(), feature_names);
+        let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let cache_key = (key.to_owned(), filtered_feature_names);
         if let Some(options) = self
             .options_cache
             .read()
@@ -350,7 +341,8 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
+        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let config = self.get_entire_config(&feature_names, cache_options, preferences)?;
 
         match config.try_deserialize() {
             Ok(value) => Ok(value),
@@ -450,14 +442,13 @@ impl OptionsRegistry for OptionsProvider {
             }
         }
 
-        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
+        let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let config = self.get_entire_config(&filtered_feature_names, cache_options, preferences)?;
 
         match config.get::<serde_json::Value>(key) {
             Ok(value) => {
                 if let Some(_cache_options) = cache_options {
-                    let feature_names =
-                        self.get_filtered_feature_names(feature_names, preferences)?;
-                    let cache_key = (key.to_owned(), feature_names);
+                    let cache_key = (key.to_owned(), filtered_feature_names);
                     self.options_cache
                         .write()
                         .expect("the options cache lock should be held")
@@ -465,12 +456,9 @@ impl OptionsRegistry for OptionsProvider {
                 }
                 Ok(value)
             }
-            Err(e) => {
-                let feature_names = feature_names_to_vec(feature_names);
-                Err(format!(
-                    "Error getting options with features {feature_names:?}: {e}"
-                ))
-            }
+            Err(e) => Err(format!(
+                "Error getting options with features {filtered_feature_names:?}: {e}"
+            )),
         }
     }
 
