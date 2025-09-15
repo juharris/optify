@@ -1,4 +1,8 @@
-use std::{collections::HashMap, path::Path, sync::RwLock};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+    sync::RwLock,
+};
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
@@ -16,6 +20,7 @@ pub(crate) type SourceValue = config::File<config::FileSourceString, config::Fil
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
+pub(crate) type ConfigurableValuePointers = HashMap<String, Vec<String>>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -29,6 +34,7 @@ pub struct CacheOptions {}
 pub struct OptionsProvider {
     aliases: Aliases,
     conditions: Conditions,
+    configurable_value_pointers: ConfigurableValuePointers,
     features: Features,
     sources: Sources,
 
@@ -44,16 +50,81 @@ fn feature_names_to_vec<T: AsRef<str>>(feature_names: &[T]) -> Vec<String> {
         .collect()
 }
 
+/// Get a value at a JSON pointer location
+fn get_value_at_pointer(value: &serde_json::Value, pointer: &str) -> Option<serde_json::Value> {
+    value.pointer(pointer).cloned()
+}
+
+/// Set a value at a JSON pointer location
+fn set_value_at_pointer(
+    value: &mut serde_json::Value,
+    pointer: &str,
+    new_value: serde_json::Value,
+) -> Result<(), String> {
+    // Split pointer into parts
+    let parts: Vec<&str> = pointer.split('/').skip(1).collect(); // Skip empty first part
+
+    if parts.is_empty() {
+        *value = new_value;
+        return Ok(());
+    }
+
+    // FIXME There is probably a proper way to set the value without custom code.
+    // Navigate to the parent and set the value
+    let mut current = value;
+    for (i, part) in parts.iter().enumerate() {
+        if i == parts.len() - 1 {
+            // Last part - set the value
+            match current {
+                serde_json::Value::Object(map) => {
+                    map.insert(part.to_string(), new_value);
+                    return Ok(());
+                }
+                serde_json::Value::Array(arr) => {
+                    if let Ok(index) = part.parse::<usize>() {
+                        if index < arr.len() {
+                            arr[index] = new_value;
+                            return Ok(());
+                        }
+                    }
+                    return Err(format!("Invalid array index in pointer: {}", pointer));
+                }
+                _ => return Err(format!("Cannot set value at pointer: {}", pointer)),
+            }
+        } else {
+            // Navigate deeper
+            current = match current {
+                serde_json::Value::Object(map) => map
+                    .get_mut(*part)
+                    .ok_or_else(|| format!("Path not found in pointer: {}", pointer))?,
+                serde_json::Value::Array(arr) => {
+                    let index = part
+                        .parse::<usize>()
+                        .map_err(|_| format!("Invalid array index in pointer: {}", pointer))?;
+                    arr.get_mut(index).ok_or_else(|| {
+                        format!("Array index out of bounds in pointer: {}", pointer)
+                    })?
+                }
+                _ => return Err(format!("Cannot navigate pointer: {}", pointer)),
+            };
+        }
+    }
+
+    Ok(())
+}
+
 impl OptionsProvider {
     pub(crate) fn new(
         aliases: &Aliases,
         conditions: &Conditions,
+        configurable_value_pointers: &ConfigurableValuePointers,
         features: &Features,
         sources: &Sources,
     ) -> Self {
         OptionsProvider {
             aliases: aliases.clone(),
             conditions: conditions.clone(),
+            configurable_value_pointers: configurable_value_pointers.clone(),
             features: features.clone(),
             sources: sources.clone(),
             entire_config_cache: RwLock::new(EntireConfigCache::new()),
@@ -157,6 +228,69 @@ impl OptionsProvider {
         }
 
         Ok(None)
+    }
+
+    /// Process configurable strings in the JSON value based on the pointers
+    pub fn process_configurable_strings(
+        &self,
+        // FIXME Try not to copy the value. Can we pass by reference? Probably need to.
+        mut value: serde_json::Value,
+        feature_names: &[String],
+    ) -> Result<serde_json::Value, String> {
+        // TODO See if there is a more efficient way with less copying.
+        // Also there should be a value to set a value at a pointer location.
+        use crate::configurable_string::ConfigurableString;
+
+        // Collect all configurable value pointers for the requested features
+        let mut all_pointers = HashSet::new();
+        for feature_name in feature_names {
+            if let Some(pointers) = self.configurable_value_pointers.get(feature_name) {
+                all_pointers.extend(pointers.iter().cloned());
+            }
+        }
+
+        // If no configurable strings, return the value as-is
+        if all_pointers.is_empty() {
+            return Ok(value);
+        }
+
+        // For now, we'll use an empty LoadedFiles map
+        // In the future, we might want to load files based on the configuration
+        let loaded_files = HashMap::new();
+
+        // Process each pointer
+        for pointer in all_pointers {
+            // Get the value at the pointer location
+            let configurable_value = match get_value_at_pointer(&value, &pointer) {
+                Some(v) => v,
+                None => continue, // Skip if pointer doesn't exist
+            };
+
+            // Deserialize into ConfigurableString
+            // FIXME Maybe we should deserialize and it would be faster to process the JSON directly?
+            let configurable_string: ConfigurableString =
+                match serde_json::from_value(configurable_value.clone()) {
+                    Ok(cs) => cs,
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to deserialize ConfigurableString at {}: {}",
+                            pointer, e
+                        ));
+                    }
+                };
+
+            // Build the string
+            let built_string = configurable_string.build(&loaded_files)?;
+
+            // Replace the value at the pointer location with the built string
+            set_value_at_pointer(
+                &mut value,
+                &pointer,
+                serde_json::Value::String(built_string),
+            )?;
+        }
+
+        Ok(value)
     }
 }
 

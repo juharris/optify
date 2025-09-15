@@ -12,7 +12,7 @@
 		{
 			"fileMatch": [
 				"rust/optify/tests/**/*.json",
-				"tests/{invalid_suites,test_suites}/**/configs/**/*.json"
+				"tests/{configurable_values,invalid_suites,test_suites}/**/configs/**/*.json"
 			],
 			"url": "./schemas/feature_file.json"
 		},
@@ -26,7 +26,7 @@
 	"yaml.schemas": {
 		"./schemas/feature_file.json": [
 			"rust/optify/tests/**/*.{yaml,yml}",
-			"tests/{invalid_suites,test_suites}/**/configs/**/*.{yaml,yml}"
+			"tests/{configurable_values,invalid_suites,test_suites}/**/configs/**/*.{yaml,yml}"
 		],
 		"./tests/test_suites/inheritance/configs/.optify/schema.json": [
 			"tests/test_suites/inheritance/configs/**/*.{yaml,yml}"

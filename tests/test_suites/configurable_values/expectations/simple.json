@@ -1,0 +1,9 @@
+{
+	"features": [
+		"simple"
+	],
+	"options": {
+		"greeting": "Hello, World!",
+		"message": "Welcome to Optify!"
+	}
+}

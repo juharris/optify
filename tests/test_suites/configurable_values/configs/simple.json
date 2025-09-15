@@ -1,0 +1,17 @@
+{
+  "options": {
+    "greeting": {
+      "$type": "Optify.ConfigurableString",
+      "root": "Hello, World!"
+    },
+    "message": {
+      "$type": "Optify.ConfigurableString",
+      "root": {
+        "liquid": "Welcome to {{ name }}!"
+      },
+      "components": {
+        "name": "Optify"
+      }
+    }
+  }
+}

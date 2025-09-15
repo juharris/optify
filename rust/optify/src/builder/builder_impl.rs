@@ -209,18 +209,7 @@ impl OptionsProviderBuilder {
         }
     }
 
-    fn process_entry(path: &Path, directory: &Path) -> Option<Result<LoadingResult, String>> {
-        if !path.is_file()
-            // Skip .md files because they are not handled by the `config` library, but there may be README.md files in the directory.
-            || path.extension().filter(|e| *e == "md").is_some()
-            // Skip .optify folders because they mark settings such as the root folder.
-            || path
-                .components()
-                .any(|component| component.as_os_str() == ".optify")
-        {
-            return None;
-        }
-
+    fn process_entry(path: &Path, directory: &Path) -> Result<LoadingResult, String> {
         // TODO Optimization: Find a more efficient way to build a more generic view of the file.
         // The `config` library is helpful because it handles many file types.
         // It would also be nice to support comments in .json files, even though it is not standard.
@@ -230,10 +219,10 @@ impl OptionsProviderBuilder {
         let config_for_path = match config::Config::builder().add_source(file).build() {
             Ok(conf) => conf,
             Err(e) => {
-                return Some(Err(format!(
+                return Err(format!(
                     "Error loading file '{}': {e}",
                     absolute_path.to_string_lossy(),
-                )))
+                ))
             }
         };
 
@@ -241,10 +230,10 @@ impl OptionsProviderBuilder {
         let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
             Ok(v) => v,
             Err(e) => {
-                return Some(Err(format!(
+                return Err(format!(
                     "Error deserializing configuration for file '{}': {e}",
                     absolute_path.to_string_lossy(),
-                )))
+                ))
             }
         };
 
@@ -252,10 +241,10 @@ impl OptionsProviderBuilder {
         {
             Ok(v) => v,
             Err(e) => {
-                return Some(Err(format!(
+                return Err(format!(
                     "Error deserializing configuration for file '{}': {e}",
                     absolute_path.to_string_lossy(),
-                )))
+                ))
             }
         };
 
@@ -288,7 +277,7 @@ impl OptionsProviderBuilder {
         let configurable_value_pointers =
             find_configurable_value_pointers(raw_config.get("options"));
 
-        Some(Ok(LoadingResult {
+        Ok(LoadingResult {
             canonical_feature_name,
             conditions: feature_config.conditions,
             configurable_value_pointers,
@@ -296,7 +285,7 @@ impl OptionsProviderBuilder {
             metadata,
             original_config: raw_config,
             source,
-        }))
+        })
     }
 
     fn process_loading_result(
@@ -357,19 +346,45 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             ));
         }
 
+        // TODO Get supported extensions from config library
+        let supported_extensions =
+            HashSet::from(["json", "json5", "yaml", "yml", "toml", "ini", "ron"]);
+
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
-            .par_bridge()
             .filter_map(|entry| {
-                Self::process_entry(
-                    entry
-                        .unwrap_or_else(|_| {
-                            panic!("Error walking directory: {}", directory.display())
-                        })
-                        .path(),
-                    directory,
-                )
+                let entry = entry
+                    .unwrap_or_else(|_| panic!("Error walking directory: {}", directory.display()));
+                let path = entry.path();
+
+                // Filter out unsupported files before parallel processing
+                if !path.is_file() {
+                    return None;
+                }
+
+                // Skip .optify folders
+                if path
+                    .components()
+                    .any(|component| component.as_os_str() == ".optify")
+                {
+                    return None;
+                }
+
+                // Check if file has a supported extension
+                if let Some(ext) = path.extension() {
+                    let ext_str = ext.to_str().unwrap_or("");
+                    if !supported_extensions.contains(&ext_str) {
+                        return None;
+                    }
+                } else {
+                    return None;
+                }
+
+                Some(path.to_path_buf())
             })
+            .collect::<Vec<_>>()
+            .into_par_iter()
+            .map(|path| Self::process_entry(&path, directory))
             .collect();
         for loading_result in loading_results {
             self.process_loading_result(&loading_result)?;
@@ -435,6 +450,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         Ok(OptionsProvider::new(
             &self.aliases,
             &self.conditions,
+            &self.configurable_value_pointers,
             &self.features,
             &self.sources,
         ))
