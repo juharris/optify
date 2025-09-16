@@ -1,0 +1,10 @@
+{
+	"features": [
+		"simple",
+		"override_name"
+	],
+	"options": {
+		"greeting": "Hello, World!",
+		"message": "Welcome to space!"
+	}
+}
