@@ -1,5 +1,5 @@
-const TYPE_KEY: &str = "$type";
-const TYPE: &str = "Optify.ConfigurableString";
+pub(crate) const TYPE_KEY: &str = "$type";
+pub(crate) const TYPE: &str = "Optify.ConfigurableString";
 
 // Deep recursively search for JSON Pointers to objects
 // that have a `"$type"` property with a value of "Optify.ConfigurableString".

@@ -1,0 +1,10 @@
+{
+	"features": [
+		"simple",
+		"raw_overrides"
+	],
+	"options": {
+		"greeting": "raw greeting",
+		"message": "raw message"
+	}
+}
