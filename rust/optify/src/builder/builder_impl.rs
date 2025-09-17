@@ -1,4 +1,5 @@
 use config;
+use config::FileStoredFormat;
 use jsonschema::{Draft, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -191,6 +192,20 @@ impl OptionsProviderBuilder {
         }
     }
 
+    fn get_supported_extensions() -> HashSet<&'static str> {
+        [
+            config::FileFormat::Ini.file_extensions(),
+            config::FileFormat::Json.file_extensions(),
+            config::FileFormat::Json5.file_extensions(),
+            config::FileFormat::Ron.file_extensions(),
+            config::FileFormat::Toml.file_extensions(),
+            config::FileFormat::Yaml.file_extensions(),
+        ]
+        .iter()
+        .flat_map(|exts| exts.iter().copied())
+        .collect()
+    }
+
     fn validate_with_schema(&self, info: &LoadingResult) -> Result<(), String> {
         let validator = match &self.schema {
             Some(v) => v,
@@ -349,53 +364,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             ));
         }
 
-        // TODO Get supported extensions from config library
-        let supported_extensions =
-            HashSet::from(["json", "json5", "yaml", "yml", "toml", "ini", "ron"]);
-
-        // First pass: load non-config files
-        // FIXME do in 1 step.
-        for entry in walkdir::WalkDir::new(directory).into_iter() {
-            let entry = entry
-                .unwrap_or_else(|_| panic!("Error walking directory: {}", directory.display()));
-            let path = entry.path();
-
-            if !path.is_file() {
-                continue;
-            }
-
-            // Skip .optify folders
-            if path
-                .components()
-                .any(|component| component.as_os_str() == ".optify")
-            {
-                continue;
-            }
-
-            // Check if file does NOT have a supported extension (i.e., non-config files)
-            let is_non_config_file = if let Some(ext) = path.extension() {
-                let ext_str = ext.to_str().unwrap_or("");
-                !supported_extensions.contains(&ext_str)
-            } else {
-                true // Files without extensions are considered non-config
-            };
-
-            if is_non_config_file {
-                // Load the file content
-                if let Ok(contents) = std::fs::read_to_string(path) {
-                    // Store with a relative path from the directory
-                    let relative_path = path
-                        .strip_prefix(directory)
-                        .unwrap()
-                        .to_str()
-                        .expect("path should be valid Unicode")
-                        .replace(std::path::MAIN_SEPARATOR, "/");
-                    self.loaded_files.insert(relative_path, contents);
-                }
-            }
-        }
-
-        // Second pass: process config files
+        let supported_extensions = Self::get_supported_extensions();
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .filter_map(|entry| {
@@ -403,12 +372,12 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     .unwrap_or_else(|_| panic!("Error walking directory: {}", directory.display()));
                 let path = entry.path();
 
-                // Filter out unsupported files before parallel processing
+                // Filter out unsupported files
                 if !path.is_file() {
                     return None;
                 }
 
-                // Skip .optify folders
+                // Skip the contents of.optify folders
                 if path
                     .components()
                     .any(|component| component.as_os_str() == ".optify")
@@ -416,17 +385,30 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     return None;
                 }
 
-                // Check if file has a supported extension
-                if let Some(ext) = path.extension() {
-                    let ext_str = ext.to_str().unwrap_or("");
-                    if !supported_extensions.contains(&ext_str) {
-                        return None;
-                    }
-                } else {
-                    return None;
-                }
+                let is_config_file = match path.extension() {
+                    Some(ext) => match ext.to_str() {
+                        Some(ext_str) => supported_extensions.contains(ext_str),
+                        None => false,
+                    },
+                    None => false,
+                };
 
-                Some(path.to_path_buf())
+                if is_config_file {
+                    Some(path.to_path_buf())
+                } else {
+                    // Load the file content
+                    if let Ok(contents) = std::fs::read_to_string(path) {
+                        // Store with a relative path from the directory
+                        let relative_path = path
+                            .strip_prefix(directory)
+                            .unwrap()
+                            .to_str()
+                            .expect("path should be valid Unicode")
+                            .replace(std::path::MAIN_SEPARATOR, "/");
+                        self.loaded_files.insert(relative_path, contents);
+                    }
+                    None
+                }
             })
             .collect::<Vec<_>>()
             .into_par_iter()
