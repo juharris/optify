@@ -4,7 +4,7 @@ use crate::schema::{conditions::ConditionExpression, metadata::OptionsMetadata};
 pub(crate) struct LoadingResult {
     pub canonical_feature_name: String,
     pub conditions: Option<ConditionExpression>,
-    pub configurable_value_pointers: Vec<String>,
+    pub configurable_value_paths: Vec<String>,
     pub imports: Option<Vec<String>>,
     pub metadata: OptionsMetadata,
     pub original_config: serde_json::Value,

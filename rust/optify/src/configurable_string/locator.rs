@@ -1,9 +1,9 @@
 pub(crate) const TYPE_KEY: &str = "$type";
 pub(crate) const TYPE: &str = "Optify.ConfigurableString";
 
-// Deep recursively search for JSON Pointers to objects
+// Deep recursively search for JSON Paths to objects
 // that have a `"$type"` property with a value of "Optify.ConfigurableString".
-pub(crate) fn find_configurable_value_pointers(options: Option<&serde_json::Value>) -> Vec<String> {
+pub(crate) fn find_configurable_value_paths(options: Option<&serde_json::Value>) -> Vec<String> {
     let mut result = Vec::new();
 
     if let Some(value) = options {
@@ -33,9 +33,9 @@ fn find_configurable_strings_recursive(
             // Recursively search object properties
             for (key, val) in obj {
                 let new_path = if current_path.is_empty() {
-                    format!("/{}", key)
+                    key.to_string()
                 } else {
-                    format!("{}/{}", current_path, key)
+                    format!("{}.{}", current_path, key)
                 };
                 find_configurable_strings_recursive(val, &new_path, result);
             }
@@ -43,7 +43,11 @@ fn find_configurable_strings_recursive(
         serde_json::Value::Array(arr) => {
             // Recursively search array elements
             for (index, val) in arr.iter().enumerate() {
-                let new_path = format!("{}/{}", current_path, index);
+                let new_path = if current_path.is_empty() {
+                    format!("[{}]", index)
+                } else {
+                    format!("{}[{}]", current_path, index)
+                };
                 find_configurable_strings_recursive(val, &new_path, result);
             }
         }
@@ -66,9 +70,9 @@ mod tests {
             "components": {}
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
-        assert_eq!(pointers, vec!["".to_string()]);
+        assert_eq!(paths, vec!["".to_string()]);
     }
 
     #[test]
@@ -81,9 +85,9 @@ mod tests {
             }
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
-        assert_eq!(pointers, vec!["/feature".to_string()]);
+        assert_eq!(paths, vec!["feature".to_string()]);
     }
 
     #[test]
@@ -100,9 +104,9 @@ mod tests {
             }
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
-        assert_eq!(pointers, vec!["/nested/deep/value".to_string()]);
+        assert_eq!(paths, vec!["nested.deep.value".to_string()]);
     }
 
     #[test]
@@ -117,9 +121,9 @@ mod tests {
             ]
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
-        assert_eq!(pointers, vec!["/array/0".to_string()]);
+        assert_eq!(paths, vec!["array[0]".to_string()]);
     }
 
     #[test]
@@ -157,29 +161,29 @@ mod tests {
             "regular": "not configurable"
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
         assert_eq!(
-            pointers,
+            paths,
             vec![
-                "/array/0".to_string(),
-                "/array/2".to_string(),
-                "/feature".to_string(),
-                "/nested/deep/value".to_string()
+                "array[0]".to_string(),
+                "array[2]".to_string(),
+                "feature".to_string(),
+                "nested.deep.value".to_string()
             ]
         );
     }
 
     #[test]
     fn test_empty_input() {
-        let pointers = find_configurable_value_pointers(None);
-        assert!(pointers.is_empty());
+        let paths = find_configurable_value_paths(None);
+        assert!(paths.is_empty());
 
-        let pointers = find_configurable_value_pointers(Some(&json!({})));
-        assert!(pointers.is_empty());
+        let paths = find_configurable_value_paths(Some(&json!({})));
+        assert!(paths.is_empty());
 
-        let pointers = find_configurable_value_pointers(Some(&json!([])));
-        assert!(pointers.is_empty());
+        let paths = find_configurable_value_paths(Some(&json!([])));
+        assert!(paths.is_empty());
     }
 
     #[test]
@@ -198,8 +202,8 @@ mod tests {
             }
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
-        assert!(pointers.is_empty());
+        let paths = find_configurable_value_paths(Some(&json_value));
+        assert!(paths.is_empty());
     }
 
     #[test]
@@ -217,8 +221,8 @@ mod tests {
             }
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
-        assert!(pointers.is_empty());
+        let paths = find_configurable_value_paths(Some(&json_value));
+        assert!(paths.is_empty());
     }
 
     #[test]
@@ -239,11 +243,11 @@ mod tests {
             }
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
         assert_eq!(
-            pointers,
-            vec!["/level1/level2/level3/level4/level5".to_string()]
+            paths,
+            vec!["level1.level2.level3.level4.level5".to_string()]
         );
     }
 
@@ -268,13 +272,13 @@ mod tests {
             ]
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
         assert_eq!(
-            pointers,
+            paths,
             vec![
-                "/items/0/0".to_string(),
-                "/items/1/nested_object".to_string()
+                "items[0][0]".to_string(),
+                "items[1].nested_object".to_string()
             ]
         );
     }
@@ -295,10 +299,10 @@ mod tests {
             }
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
         // Should only find the top-level configurable string, not the nested one
-        assert_eq!(pointers, vec!["/feature".to_string()]);
+        assert_eq!(paths, vec!["feature".to_string()]);
     }
 
     #[test]
@@ -334,14 +338,14 @@ mod tests {
             "regular_value": "not a configurable string"
         });
 
-        let pointers = find_configurable_value_pointers(Some(&json_value));
+        let paths = find_configurable_value_paths(Some(&json_value));
 
         assert_eq!(
-            pointers,
+            paths,
             vec![
-                "/array/0".to_string(),
-                "/feature".to_string(),
-                "/nested/deep/value".to_string()
+                "array[0]".to_string(),
+                "feature".to_string(),
+                "nested.deep.value".to_string()
             ]
         );
     }
