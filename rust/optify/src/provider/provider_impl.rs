@@ -240,7 +240,8 @@ impl OptionsProvider {
                                 path.clone()
                             }
                         } else {
-                            path.clone()
+                            // We can skip it because it doesn't start with the key prefix so it will not be used.
+                            continue;
                         }
                     } else {
                         path.clone()
@@ -251,8 +252,7 @@ impl OptionsProvider {
         }
 
         for path in all_paths {
-            // FIXME Use JSON and don't convert to pointer.
-            // Convert JSON path to JSON pointer
+            // TODO Try to use JSON Paths and don't convert to pointer.
             let pointer = Self::json_path_to_pointer(&path);
 
             // Get the value at the pointer location
@@ -261,7 +261,7 @@ impl OptionsProvider {
                 None => continue,
             };
 
-            // Only continue if it has the right indicator property.
+            // Only continue if it has the right indicator property because it may have been overridden.
             if let Some(type_value) =
                 configurable_value.get(crate::configurable_string::locator::TYPE_KEY)
             {
