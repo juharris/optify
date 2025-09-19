@@ -239,6 +239,7 @@ class OptifyTest < Test::Unit::TestCase
       preferences.skip_feature_name_conversion = false
       options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       assert_equal('root string same', options.rootString)
+      # FIXME Might break these.
       s = provider.get_options_json('myConfig.rootString', feature_names)
       assert_equal('"root string same"', s)
       assert_equal('root string same', JSON.parse(s))
@@ -280,7 +281,6 @@ class OptifyTest < Test::Unit::TestCase
       preferences.skip_feature_name_conversion = false
       preferences.constraints = { info: 2, status: 'new' }
       filtered = provider.get_filtered_features(%w[a b], preferences)
-      # FIXME
       assert_equal(%w[B], filtered)
     end
   end

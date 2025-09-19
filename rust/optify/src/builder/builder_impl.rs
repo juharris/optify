@@ -8,10 +8,10 @@ use std::sync::Arc;
 
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
-use crate::configurable_string::locator::find_configurable_value_paths;
+use crate::configurable_string::locator::find_configurable_values;
 use crate::configurable_string::LoadedFiles;
 use crate::provider::{
-    Aliases, Conditions, ConfigurableValuePaths, Features, OptionsProvider, Sources,
+    Aliases, Conditions, ConfigurableValuePointers, Features, OptionsProvider, Sources,
 };
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
@@ -26,7 +26,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
-    configurable_value_paths: ConfigurableValuePaths,
+    configurable_value_pointers: ConfigurableValuePointers,
     dependents: Dependents,
     conditions: Conditions,
     features: Features,
@@ -183,7 +183,7 @@ impl OptionsProviderBuilder {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
             conditions: Conditions::new(),
-            configurable_value_paths: ConfigurableValuePaths::new(),
+            configurable_value_pointers: ConfigurableValuePointers::new(),
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
@@ -293,12 +293,12 @@ impl OptionsProviderBuilder {
         };
 
         // TODO Add option to disable. Maybe read through .optify/config.json.
-        let configurable_value_paths = find_configurable_value_paths(raw_config.get("options"));
+        let configurable_value_pointers = find_configurable_values(raw_config.get("options"));
 
         Ok(LoadingResult {
             canonical_feature_name,
             conditions: feature_config.conditions,
-            configurable_value_paths,
+            configurable_value_pointers,
             imports: feature_config.imports,
             metadata,
             original_config: raw_config,
@@ -333,10 +333,10 @@ impl OptionsProviderBuilder {
             self.imports
                 .insert(canonical_feature_name.clone(), imports.clone());
         }
-        if !info.configurable_value_paths.is_empty() {
-            self.configurable_value_paths.insert(
+        if !info.configurable_value_pointers.is_empty() {
+            self.configurable_value_pointers.insert(
                 canonical_feature_name.clone(),
-                info.configurable_value_paths.clone(),
+                info.configurable_value_pointers.clone(),
             );
         }
         add_alias(
@@ -478,7 +478,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         Ok(OptionsProvider::new(
             &self.aliases,
             &self.conditions,
-            &self.configurable_value_paths,
+            &self.configurable_value_pointers,
             &self.features,
             &self.loaded_files,
             &self.sources,

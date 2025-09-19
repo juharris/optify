@@ -22,7 +22,7 @@ pub(crate) type SourceValue = config::File<config::FileSourceString, config::Fil
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
-pub(crate) type ConfigurableValuePaths = HashMap<String, Vec<String>>;
+pub(crate) type ConfigurableValuePointers = HashMap<String, Vec<String>>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -36,7 +36,7 @@ pub struct CacheOptions {}
 pub struct OptionsProvider {
     aliases: Aliases,
     conditions: Conditions,
-    configurable_value_paths: ConfigurableValuePaths,
+    configurable_value_pointers: ConfigurableValuePointers,
     features: Features,
     loaded_files: LoadedFiles,
     sources: Sources,
@@ -50,7 +50,7 @@ impl OptionsProvider {
     pub(crate) fn new(
         aliases: &Aliases,
         conditions: &Conditions,
-        configurable_value_paths: &ConfigurableValuePaths,
+        configurable_value_pointers: &ConfigurableValuePointers,
         features: &Features,
         loaded_files: &LoadedFiles,
         sources: &Sources,
@@ -58,7 +58,7 @@ impl OptionsProvider {
         OptionsProvider {
             aliases: aliases.clone(),
             conditions: conditions.clone(),
-            configurable_value_paths: configurable_value_paths.clone(),
+            configurable_value_pointers: configurable_value_pointers.clone(),
             features: features.clone(),
             loaded_files: loaded_files.clone(),
             sources: sources.clone(),
@@ -163,99 +163,39 @@ impl OptionsProvider {
         Ok(None)
     }
 
-    /// Convert JSON path to JSON pointer format
-    fn json_path_to_pointer(path: &str) -> String {
-        if path.is_empty() {
-            return String::new();
-        }
-
-        let mut pointer = String::new();
-        let mut current = String::new();
-        let mut in_bracket = false;
-
-        for ch in path.chars() {
-            match ch {
-                '.' if !in_bracket => {
-                    if !current.is_empty() {
-                        pointer.push('/');
-                        pointer.push_str(&current);
-                        current.clear();
-                    }
-                }
-                '[' => {
-                    if !current.is_empty() {
-                        pointer.push('/');
-                        pointer.push_str(&current);
-                        current.clear();
-                    }
-                    in_bracket = true;
-                }
-                ']' => {
-                    if in_bracket && !current.is_empty() {
-                        pointer.push('/');
-                        pointer.push_str(&current);
-                        current.clear();
-                    }
-                    in_bracket = false;
-                }
-                _ => {
-                    current.push(ch);
-                }
-            }
-        }
-
-        if !current.is_empty() {
-            pointer.push('/');
-            pointer.push_str(&current);
-        }
-
-        pointer
-    }
-
-    /// Process configurable strings in the JSON value based on the paths.
+    /// Process configurable strings in the JSON value based on the pointers.
     pub fn process_configurable_strings(
         &self,
         value: &mut serde_json::Value,
         feature_names: &[String],
         key_prefix: Option<&str>,
     ) -> Result<(), String> {
-        // Collect all configurable value paths for the requested features
-        // TODO Build in one statement.
-        let mut all_paths = HashSet::new();
-        for feature_name in feature_names {
-            if let Some(paths) = self.configurable_value_paths.get(feature_name) {
-                for path in paths {
-                    // If a key prefix is provided, skip paths that start with it
-                    let adjusted_path = if let Some(prefix) = key_prefix {
-                        if path.starts_with(prefix) {
-                            // Remove the prefix and the following dot if present
-                            let trimmed = path.strip_prefix(prefix).unwrap();
-                            if trimmed.starts_with('.') {
-                                trimmed[1..].to_string()
-                            } else if trimmed.starts_with('[') {
-                                trimmed.to_string()
-                            } else if trimmed.is_empty() {
-                                String::new()
-                            } else {
-                                path.clone()
-                            }
-                        } else {
-                            // We can skip it because it doesn't start with the key prefix so it will not be used.
-                            continue;
-                        }
-                    } else {
-                        path.clone()
-                    };
-                    all_paths.insert(adjusted_path);
-                }
-            }
+        if self.configurable_value_pointers.is_empty() {
+            // There are no configurable strings to process.
+            return Ok(());
         }
 
-        for path in all_paths {
-            // TODO Try to use JSON Paths and don't convert to pointer.
-            let pointer = Self::json_path_to_pointer(&path);
+        // Collect all configurable pointers for the requested features.
+        let all_pointers: HashSet<String> = feature_names
+            .iter()
+            .filter_map(|feature_name| self.configurable_value_pointers.get(feature_name))
+            .flat_map(|pointers| pointers.iter())
+            .cloned()
+            .collect();
 
-            // Get the value at the pointer location
+        println!("all_pointers: {:?}", all_pointers);
+
+        for mut pointer in all_pointers {
+            if let Some(key_prefix) = key_prefix {
+                if !pointer.starts_with(key_prefix) {
+                    // The pointer does not start with the key prefix so it will not be used.
+                    continue;
+                } else {
+                    // Remove the key prefix.
+                    pointer = pointer[key_prefix.len()..].to_string();
+                }
+            }
+
             let configurable_value = match value.pointer(&pointer) {
                 Some(v) => v,
                 None => continue,
@@ -282,7 +222,7 @@ impl OptionsProvider {
                     Err(e) => {
                         return Err(format!(
                             "Failed to deserialize ConfigurableString at {}: {}",
-                            path, e
+                            pointer, e
                         ));
                     }
                 };
