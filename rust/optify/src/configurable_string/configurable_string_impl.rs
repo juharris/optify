@@ -18,8 +18,6 @@ pub enum ReplacementValue {
     Object(ReplacementObject),
 }
 
-// TODO Think of a better name. Everything is "configurable".
-// like PrecomputedValue? ConfigurableOption? OptifyOption?
 /// Helps build a string by components declared in files.
 /// Parsed from a `serde_json::Value`.
 #[derive(Deserialize, Debug)]
@@ -113,7 +111,7 @@ impl<'a> DynamicReplacements<'a> {
 
     fn ensure_cached(&self, key: &str) {
         // Check if already cached first
-        // TODO Try to check if contains else insert in one operation.
+        // TODO Try to check if we can do "contains else insert" in one operation.
         {
             if self.cache.borrow().contains_key(key) {
                 return;

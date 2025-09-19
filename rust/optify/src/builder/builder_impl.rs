@@ -229,11 +229,11 @@ impl OptionsProviderBuilder {
     }
 
     fn process_entry(path: &Path, directory: &Path) -> Result<LoadingResult, String> {
+        let absolute_path = dunce::canonicalize(path).expect("path should be valid");
         // TODO Optimization: Find a more efficient way to build a more generic view of the file.
         // The `config` library is helpful because it handles many file types.
         // It would also be nice to support comments in .json files, even though it is not standard.
         // The `config` library does support .json5 which supports comments.
-        let absolute_path = dunce::canonicalize(path).expect("path should be valid");
         let file = config::File::from(path);
         let config_for_path = match config::Config::builder().add_source(file).build() {
             Ok(conf) => conf,

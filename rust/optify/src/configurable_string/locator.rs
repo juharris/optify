@@ -1,4 +1,6 @@
 pub(crate) const TYPE_KEY: &str = "$type";
+// TODO Think of a better name. Everything is "configurable".
+// like PrecomputedValue? ConfigurableOption? OptifyOption?
 pub(crate) const TYPE: &str = "Optify.ConfigurableString";
 
 /// Finds pointers like JSON pointers to configurable values
