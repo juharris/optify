@@ -29,28 +29,28 @@ pub struct ConfigurableString {
     pub components: Option<HashMap<String, ReplacementValue>>,
 }
 
+/// Mapping from relative file paths to their contents.
 pub type LoadedFiles = HashMap<String, String>;
 
 /// Dynamic object that resolves values on demand.
 struct DynamicReplacements<'a> {
-    replacements: &'a HashMap<String, ReplacementValue>,
     // Cache resolved values so that we can return a reference to the value.
     // Use RefCell to allow interior mutability because of the signature for `get` in the trait.
     cache: RefCell<HashMap<String, liquid::model::Value>>,
-    parser: liquid::Parser,
-    files: LoadedFiles,
     errors: RefCell<Vec<String>>,
+    files: &'a LoadedFiles,
+    parser: liquid::Parser,
+    replacements: &'a HashMap<String, ReplacementValue>,
 }
 
 impl<'a> DynamicReplacements<'a> {
-    fn new(replacements: &'a HashMap<String, ReplacementValue>, files: &LoadedFiles) -> Self {
+    fn new(replacements: &'a HashMap<String, ReplacementValue>, files: &'a LoadedFiles) -> Self {
         Self {
-            replacements,
-            // TODO Can we avoid copying files?
-            files: files.clone(),
             cache: RefCell::new(HashMap::new()),
-            parser: liquid::ParserBuilder::with_stdlib().build().unwrap(),
             errors: RefCell::new(Vec::new()),
+            files,
+            parser: liquid::ParserBuilder::with_stdlib().build().unwrap(),
+            replacements,
         }
     }
 
