@@ -1,0 +1,11 @@
+{
+	"features": [
+		"type_other_string"
+	],
+	"options": {
+		"greeting": {
+			"$type": "wtv",
+			"root": "Hello, World!"
+		}
+	}
+}

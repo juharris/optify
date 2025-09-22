@@ -1,0 +1,8 @@
+{
+	"options": {
+		"greeting": {
+			"$type": 3,
+			"root": "Hello, World!"
+		}
+	}
+}

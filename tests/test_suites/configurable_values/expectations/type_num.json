@@ -1,0 +1,11 @@
+{
+	"features": [
+		"type_num"
+	],
+	"options": {
+		"greeting": {
+			"$type": 3,
+			"root": "Hello, World!"
+		}
+	}
+}

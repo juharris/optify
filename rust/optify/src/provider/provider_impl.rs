@@ -176,59 +176,58 @@ impl OptionsProvider {
         }
 
         // Collect all configurable pointers for the requested features.
-        let all_pointers: HashSet<String> = feature_names
+        let all_pointers: HashSet<&String> = feature_names
             .iter()
             .filter_map(|feature_name| self.configurable_value_pointers.get(feature_name))
             .flat_map(|pointers| pointers.iter())
-            .cloned()
             .collect();
 
-        for mut pointer in all_pointers {
-            if let Some(key_prefix) = key_prefix {
-                if !pointer.starts_with(key_prefix) {
-                    // The pointer does not start with the key prefix so it will not be used.
-                    continue;
-                } else {
-                    // Remove the key prefix.
-                    pointer = pointer[key_prefix.len()..].to_string();
+        for pointer in all_pointers {
+            let relative_pointer = match key_prefix {
+                Some(key_prefix) => {
+                    if !pointer.starts_with(key_prefix) {
+                        // The pointer does not start with the key prefix so it will not be used.
+                        continue;
+                    } else {
+                        // Remove the key prefix because we need pointers relative the current key.
+                        pointer[key_prefix.len()..].to_string()
+                    }
                 }
-            }
-
-            let configurable_value = match value.pointer(&pointer) {
-                Some(v) => v,
-                None => continue,
+                // There is not key prefix when the entire configuration is requested.
+                _ => pointer.to_string(),
             };
 
-            // Only continue if it has the right indicator property because it may have been overridden.
-            if let Some(type_value) =
-                configurable_value.get(crate::configurable_string::locator::TYPE_KEY)
-            {
-                if let Some(type_str) = type_value.as_str() {
-                    if type_str != crate::configurable_string::locator::TYPE {
+            if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
+                // Only continue if it has the right indicator property because it may have been overridden.
+                if let Some(type_value) =
+                    configurable_value.get(crate::configurable_string::locator::TYPE_KEY)
+                {
+                    if let Some(type_str) = type_value.as_str() {
+                        if type_str != crate::configurable_string::locator::TYPE {
+                            continue;
+                        }
+                    } else {
                         continue;
                     }
+                } else {
+                    continue;
                 }
-            } else {
-                continue;
-            }
 
-            // Deserialize into ConfigurableString
-            // FIXME Maybe we should deserialize and it would be faster to process the JSON directly?
-            let configurable_string: ConfigurableString =
-                match serde_json::from_value(configurable_value.clone()) {
-                    Ok(cs) => cs,
-                    Err(e) => {
-                        return Err(format!(
-                            "Failed to deserialize ConfigurableString at {}: {}",
-                            pointer, e
-                        ));
-                    }
-                };
+                let configurable_string: ConfigurableString =
+                    match serde_json::from_value(configurable_value.clone()) {
+                        Ok(cs) => cs,
+                        Err(e) => {
+                            return Err(format!(
+                                "Failed to deserialize ConfigurableString at {}: {}",
+                                pointer, e
+                            ));
+                        }
+                    };
 
-            // Replace the value at the pointer location with the built string
-            if let Some(target) = value.pointer_mut(&pointer) {
+                // Replace the value at the pointer location with the built string
+
                 let built_string = configurable_string.build(&self.loaded_files)?;
-                *target = serde_json::Value::String(built_string);
+                *configurable_value = serde_json::Value::String(built_string);
             }
         }
 
