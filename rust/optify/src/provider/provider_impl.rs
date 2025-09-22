@@ -183,8 +183,6 @@ impl OptionsProvider {
             .cloned()
             .collect();
 
-        println!("all_pointers: {:?}", all_pointers);
-
         for mut pointer in all_pointers {
             if let Some(key_prefix) = key_prefix {
                 if !pointer.starts_with(key_prefix) {

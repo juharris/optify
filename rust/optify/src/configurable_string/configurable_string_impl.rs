@@ -36,6 +36,8 @@ pub type LoadedFiles = HashMap<String, String>;
 struct DynamicReplacements<'a> {
     // Cache resolved values so that we can return a reference to the value.
     // Use RefCell to allow interior mutability because of the signature for `get` in the trait.
+    // An alternative is to pre-compute all of the possible values,
+    // but some configured values might not be used or be able to be rendered.
     cache: RefCell<HashMap<String, liquid::model::Value>>,
     errors: RefCell<Vec<String>>,
     files: &'a LoadedFiles,
@@ -110,8 +112,6 @@ impl<'a> DynamicReplacements<'a> {
     }
 
     fn ensure_cached(&self, key: &str) {
-        // Check if already cached first
-        // TODO Try to check if we can do "contains else insert" in one operation.
         {
             if self.cache.borrow().contains_key(key) {
                 return;
@@ -155,12 +155,6 @@ impl<'a> ObjectView for DynamicReplacements<'a> {
     }
 
     fn contains_key(&self, index: &str) -> bool {
-        // Check cache first
-        {
-            if self.cache.borrow().contains_key(index) {
-                return true;
-            }
-        } // Release borrow before next check
         self.replacements.contains_key(index)
     }
 

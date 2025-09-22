@@ -21,7 +21,7 @@ fn test_configurable_string_deserialization() {
 #[test]
 fn test_with_object_components_liquid() {
     let data = json!({
-        "root": {"liquid": "Rendered: {{ liquid_template }}"},
+        "root": {"liquid": "Rendered: {{ liquid_template }} was {{ name }} and {{ name }}"},
         "components": {
             "name": "world",
             "liquid_template": {
@@ -32,7 +32,10 @@ fn test_with_object_components_liquid() {
 
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
     let files = LoadedFiles::new();
-    assert_eq!(config.build(&files).unwrap(), "Rendered: Hello WORLD");
+    assert_eq!(
+        config.build(&files).unwrap(),
+        "Rendered: Hello WORLD was world and world"
+    );
 }
 
 #[test]
