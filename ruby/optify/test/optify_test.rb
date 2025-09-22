@@ -239,7 +239,9 @@ class OptifyTest < Test::Unit::TestCase
       preferences.skip_feature_name_conversion = false
       options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       assert_equal('root string same', options.rootString)
-      # FIXME Might break these.
+
+      # It's nice that these JSON Paths like keys work, but it's not guaranteed to work in the future and
+      # wouldn't work when there are configurable strings.
       s = provider.get_options_json('myConfig.rootString', feature_names)
       assert_equal('"root string same"', s)
       assert_equal('root string same', JSON.parse(s))
