@@ -1,6 +1,8 @@
 # Optify Bindings for Node.js
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
 
+See the [homepage] for details about how feature files are combined to build the options to process at runtime.
+
 # Usage
 
 ```TypeScript
@@ -74,3 +76,5 @@ Some notes:
 
 See https://napi.rs/docs/introduction/getting-started#deep-dive \
 See https://napi.rs/docs/introduction/simple-package
+
+[homepage]: https://github.com/juharris/optify

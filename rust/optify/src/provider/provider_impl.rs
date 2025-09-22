@@ -411,11 +411,10 @@ impl OptionsRegistry for OptionsProvider {
                 }
                 Ok(value)
             }
-            Err(e) => {
-                Err(format!(
-                    "Error getting key '{key}' from config with features {filtered_feature_names:?}: {e}"
-                ))
-            }
+            Err(e) => Err(format!(
+                "Error getting options with features {:?}: {e}",
+                feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>()
+            )),
         }
     }
 
