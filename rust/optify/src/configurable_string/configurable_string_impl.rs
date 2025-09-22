@@ -118,7 +118,12 @@ impl<'a> DynamicReplacements<'a> {
             }
         }
 
-        // Not cached, resolve and cache it
+        // It would be nice to do something like `self.cache.borrow_mut().entry(...).or_insert(...)`
+        // and optimize the typical case where it's not in the cache, assuming most key are only used once in a template.
+        // This would could use extra memory when not needed, but it also makes using the cache more complicated and more importantly does not work because `resolve_value` eventually recursively calls this method and the cache would already be borrowed.
+
+        // Not cached, resolve and cache it.
+        // There should always be a value found, otherwise Liquid rendering will eventually yield an error about an index not being found.
         if let Some(value) = self.resolve_value(key) {
             self.cache
                 .borrow_mut()
