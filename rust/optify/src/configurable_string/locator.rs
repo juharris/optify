@@ -71,7 +71,7 @@ mod tests {
         let json_value = json!({
             TYPE_KEY: TYPE,
             "root": "Root level configurable string",
-            "components": {}
+            "arguments": {}
         });
 
         let pointers = find_configurable_values(Some(&json_value));
@@ -85,7 +85,7 @@ mod tests {
             "feature": {
                 TYPE_KEY: TYPE,
                 "root": "Hello {{ name }}!",
-                "components": {}
+                "arguments": {}
             }
         });
 
@@ -102,7 +102,7 @@ mod tests {
                     "value": {
                         TYPE_KEY: TYPE,
                         "root": "Deep nested",
-                        "components": {}
+                        "arguments": {}
                     }
                 }
             }
@@ -120,7 +120,7 @@ mod tests {
                 {
                     TYPE_KEY: TYPE,
                     "root": "Array item",
-                    "components": {}
+                    "arguments": {}
                 }
             ]
         });
@@ -136,14 +136,14 @@ mod tests {
             "feature": {
                 TYPE_KEY: TYPE,
                 "root": "Hello {{ name }}!",
-                "components": {}
+                "arguments": {}
             },
             "nested": {
                 "deep": {
                     "value": {
                         TYPE_KEY: TYPE,
                         "root": "Deep nested",
-                        "components": {}
+                        "arguments": {}
                     }
                 }
             },
@@ -151,7 +151,7 @@ mod tests {
                 {
                     TYPE_KEY: TYPE,
                     "root": "Array item",
-                    "components": {}
+                    "arguments": {}
                 },
                 {
                     "regular": "object"
@@ -159,7 +159,7 @@ mod tests {
                 {
                     TYPE_KEY: TYPE,
                     "root": "Second array item",
-                    "components": {}
+                    "arguments": {}
                 }
             ],
             "regular": "not configurable"
@@ -216,12 +216,12 @@ mod tests {
             "feature": {
                 "$type": "SomeOtherType",
                 "root": "Hello {{ name }}!",
-                "components": {}
+                "arguments": {}
             },
             "another": {
                 "$type": 42, // Not a string
                 "root": "Hello",
-                "components": {}
+                "arguments": {}
             }
         });
 
@@ -239,7 +239,7 @@ mod tests {
                             "level5": {
                                 TYPE_KEY: TYPE,
                                 "root": "Very deep",
-                                "components": {}
+                                "arguments": {}
                             }
                         }
                     }
@@ -263,14 +263,14 @@ mod tests {
                     {
                         TYPE_KEY: TYPE,
                         "root": "Nested array item",
-                        "components": {}
+                        "arguments": {}
                     }
                 ],
                 {
                     "nested_object": {
                         TYPE_KEY: TYPE,
                         "root": "Object in array",
-                        "components": {}
+                        "arguments": {}
                     }
                 }
             ]
@@ -290,11 +290,11 @@ mod tests {
             "feature": {
                 TYPE_KEY: TYPE,
                 "root": "Hello {{ name }}!",
-                "components": {
+                "arguments": {
                     "nested": {
                         TYPE_KEY: TYPE, // This should not be found
                         "root": "Should not be found",
-                        "components": {}
+                        "arguments": {}
                     }
                 }
             }
@@ -313,7 +313,7 @@ mod tests {
             "feature": {
                 TYPE_KEY: TYPE,
                 "root": "Hello {{ name }}! Welcome to {{ resources.app_name }}.",
-                "components": {
+                "arguments": {
                     "simple.txt": "simple.txt",
                     "template.liquid": "template.liquid"
                 }
@@ -323,7 +323,7 @@ mod tests {
                     "value": {
                         TYPE_KEY: TYPE,
                         "root": "Deep nested: {{ resources.template }}",
-                        "components": {
+                        "arguments": {
                             "template.liquid": "template.liquid"
                         }
                     }
@@ -333,7 +333,7 @@ mod tests {
                 {
                     TYPE_KEY: TYPE,
                     "root": "Array item: {{ index }}",
-                    "components": {}
+                    "arguments": {}
                 }
             ],
             "regular_value": "not a configurable string"

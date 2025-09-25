@@ -1,4 +1,4 @@
 options:
   message:
-    components:
+    arguments:
       name: "space"

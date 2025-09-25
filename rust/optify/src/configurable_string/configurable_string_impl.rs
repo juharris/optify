@@ -25,8 +25,7 @@ pub enum ReplacementValue {
 pub struct ConfigurableString {
     // TODO Is `root` okay? Maybe `start`? `initial`? `base`?
     pub root: ReplacementValue,
-    // TODO Maybe rename? "resources"?
-    pub components: Option<HashMap<String, ReplacementValue>>,
+    pub arguments: Option<HashMap<String, ReplacementValue>>,
 }
 
 /// Mapping from relative file paths to their contents.
@@ -284,7 +283,7 @@ impl ConfigurableString {
             .map_err(|e| format!("Failed to parse template: {}", e))?;
 
         let empty_replacements;
-        let replacements = match &self.components {
+        let replacements = match &self.arguments {
             Some(r) => r,
             None => {
                 empty_replacements = HashMap::new();
