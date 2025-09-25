@@ -1,0 +1,267 @@
+# Configurable Strings
+
+Strings can be configured with a starting root template and arguments.
+They are useful for sharing strings amongst features and allowing to override parts of the string.
+
+**Strings are built when the configuration is built.**
+Meaning that they will be built eagerly in Rust and cached when requested,
+speeding up your runtime for subsequent requests.
+
+## Overview
+
+Configurable strings provide:
+- **Template-based string generation** using Liquid syntax
+- **Variable substitution** with configurable arguments in Liquid templates
+- **File-based templates** for longer or reusable content in the root or arguments
+- **Inheritance and override** capabilities across features, like any other configurable object
+
+## Basic Structure
+
+A configurable string is defined using the special type `Optify.ConfigurableString` with two main components:
+1. **root**: The template string or source
+2. **arguments**: Optional variables to substitute in the template
+
+## Syntax Options
+
+### 1. Simple String
+
+The simplest form is a plain string without any variables:
+
+```json
+{
+  "greeting": {
+    "$type": "Optify.ConfigurableString",
+    "root": "Hello, World!"
+  }
+}
+```
+
+Result: `"Hello, World!"`
+
+### 2. Liquid Template with Variables
+
+Use Liquid syntax for variable substitution:
+
+```json
+{
+  "message": {
+    "$type": "Optify.ConfigurableString",
+    "root": {
+      "liquid": "Welcome to {{ name }}!"
+    },
+    "arguments": {
+      "name": "Optify"
+    }
+  }
+}
+```
+
+Result: `"Welcome to Optify!"`
+
+### 3. File-based Templates
+
+Load templates from external files:
+
+```json
+{
+  "greeting_from_file": {
+    "$type": "Optify.ConfigurableString",
+    "root": {
+      "file": "templates/greeting.txt"
+    }
+  }
+}
+```
+
+Where `templates/greeting.txt` contains:
+```
+Hello from template file!
+```
+
+Result: `"Hello from template file!"`
+
+### 4. File-based Liquid Templates
+
+Combine file loading with Liquid templates:
+
+```json
+{
+  "message_from_liquid_file": {
+    "$type": "Optify.ConfigurableString",
+    "root": {
+      "file": "templates/message.liquid"
+    },
+    "arguments": {
+      "app_name": "Optify",
+      "message_from_file": {
+        "file": "templates/message.txt"
+      }
+    }
+  }
+}
+```
+
+Where `templates/message.liquid` contains:
+```liquid
+Welcome to {{ app_name }}! {{ message_from_file }}
+```
+
+Where `templates/message.txt` contains:
+```
+This message is from a file.
+```
+
+Result: `"Welcome to Optify! This message is from a file."`
+
+## Overriding Arguments
+
+One of the most powerful features of configurable strings is the ability to override arguments in other feature files while keeping the template intact.
+
+### Example: Base Configuration
+
+`feature_A.json`:
+```json
+{
+  "options": {
+    "welcome_message": {
+      "$type": "Optify.ConfigurableString",
+      "root": {
+        "liquid": "Hello, {{audience}}!"
+      },
+      "arguments": {
+        "audience": "World"
+      }
+    }
+  }
+}
+```
+
+### Example: Override Arguments
+
+`feature_B.yaml`:
+```yaml
+options:
+  welcome_message:
+    arguments:
+      audience: "Justin"
+```
+
+When features `["feature_A", "feature_B"]` are applied, the result is:
+```json
+{
+  "welcome_message": "Hello, Justin!"
+}
+```
+
+Notice how only the `arguments` were overridden, not the template itself.
+
+## Nested Arguments
+
+Arguments can reference other arguments using Liquid templates:
+
+```json
+{
+  "complex_message": {
+    "$type": "Optify.ConfigurableString",
+    "root": {
+      "liquid": "{{ greeting }}, {{ name }}! {{ closing }}"
+    },
+    "arguments": {
+      "greeting": {
+        "liquid": "Welcome to {{ location }}"
+      },
+      "location": "Optify",
+      "name": "Developer",
+      "closing": "Enjoy your stay!"
+    }
+  }
+}
+```
+
+Result: `"Welcome to Optify, Developer! Enjoy your stay!"`
+
+## Use Cases
+
+### 1. Environment-Specific Messages
+Different messages for different environments without changing code:
+
+```json
+{
+  "api_endpoint": {
+    "$type": "Optify.ConfigurableString",
+    "root": {
+      "liquid": "https://{{ subdomain }}.example.com/api/{{ version }}"
+    },
+    "arguments": {
+      "subdomain": "dev",
+      "version": "v1"
+    }
+  }
+}
+```
+
+### 2. Dynamic Error Messages
+Provide context-aware error messages:
+
+```json
+{
+  "error_message": {
+    "$type": "Optify.ConfigurableString",
+    "root": {
+      "liquid": "Failed to {{ action }} {{ resource }}: {{ reason }}"
+    },
+    "arguments": {
+      "action": "load",
+      "resource": "user profile",
+      "reason": "network timeout"
+    }
+  }
+}
+```
+
+## Best Practices
+
+1. **Keep templates focused**: Each configurable string should represent a single, cohesive message or value
+2. **Use descriptive argument names**: Make it clear what each argument represents
+3. **Document complex templates**: Add comments or documentation for templates with multiple variables
+4. **Prefer file-based templates for long content**: Keep configuration files clean by moving longer templates to separate files
+5. **Test argument overrides**: Ensure that overriding arguments produces the expected results
+
+## File Organization
+
+When using file-based templates, organize them logically:
+
+```
+configurations/
+├── feature_a.json
+├── feature_b.yaml
+└── templates/
+    ├── emails/
+    │   ├── welcome.liquid
+    │   └── notification.liquid
+    ├── ui/
+    │   ├── error.liquid
+    │   └── success.liquid
+    └── api/
+        └── responses.liquid
+```
+
+## Liquid Template Features
+
+Configurable strings support standard Liquid template features:
+
+- **Variables**: `{{ variable_name }}`
+- **Filters**: `{{ name | upcase }}`, `{{ price | round: 2 }}`
+
+For full Liquid syntax documentation, see the [Liquid template language documentation](https://shopify.github.io/liquid/).
+
+## Examples and Tests
+
+For more comprehensive examples and test cases, see the [test suite for configurable values](../tests/test_suites/configurable_values/).
+
+The test suite includes:
+- Simple string configurations
+- Template overrides
+- File-based templates
+- Complex nested arguments
+- Various data type handling

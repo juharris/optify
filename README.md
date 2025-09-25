@@ -94,6 +94,7 @@ class MyConfiguration
 {
     string[]? myArray
     MyObject? myObject
+    string? myString
 }
 ```
 
@@ -118,6 +119,15 @@ Create `configurations/feature_A.json`:
             "myObject": {
                 "one": 1,
                 "two": 2
+            },
+            "myString": {
+                "$type": "Optify.ConfigurableString",
+                "root": {
+                    "liquid": "Hello, {{audience}}!"
+                },
+                "arguments": {
+                    "audience": "Justin"
+                }
             }
         }
     }
@@ -138,6 +148,9 @@ options:
         myObject:
             one: 11
             three: 33
+        myString:
+            arguments:
+                audience: "World"
 ```
 
 You'll load the `configurations` folder using an `OptionsProviderBuilder` and then get an `OptionsProvider` from that builder.
@@ -158,7 +171,8 @@ The result of using features: `["A", "B"]` will be:
     "one": 11,
     "two": 2,
     "three": 3
-  }
+  },
+  "myString": "Hello, World!"
 }
 ```
 
@@ -174,7 +188,8 @@ The result of using features: `["B", "A"]` will be:
     "one": 1,
     "two": 2,
     "three": 3
-  }
+  },
+  "myString": "Hello, Justin!"
 }
 ```
 
@@ -454,6 +469,36 @@ A feature file with the follow conditions will be applied:
     }
 }
 ```
+
+# Configurable Strings
+Strings can be configured with a starting root template and arguments.
+They are useful for sharing strings amongst features and allowing to override parts of the string.
+
+Example:
+```JSON
+{
+    "options": {
+        "greeting": {
+            "$type": "Optify.ConfigurableString",
+            "root": {
+                "liquid": "Hello, {{audience}}! {{message}}"
+            },
+            "arguments": {
+                "audience": "World",
+                "message": {
+                    "file": "templates/message.txt"
+                }
+            }
+        }
+    }
+}
+```
+
+The value for `"greeting"` will be `"Hello, World! How are you?"` once the configuration is built.
+
+Raw file contents can and files containing liquid templates are supported.
+
+For more details and examples, see [here](./docs/ConfigurableStrings.md).
 
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.
