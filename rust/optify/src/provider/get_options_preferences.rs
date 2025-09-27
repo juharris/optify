@@ -2,6 +2,10 @@ use crate::provider::constraints::Constraints;
 
 #[derive(Hash, PartialEq, Eq)]
 pub struct GetOptionsPreferences {
+    /// Allows resolving configurable strings.
+    /// Defaults to false: no configurable strings will be resolved.
+    /// Configurable strings must have been enabled when the options were built to have them resolved at runtime.
+    pub are_configurable_strings_enabled: bool,
     pub constraints: Option<Constraints>,
     /// Overrides to apply after the built configuration.
     /// A string is used because it makes it easier to pass to the `config` library, but this may change in the future.
@@ -15,6 +19,7 @@ pub struct GetOptionsPreferences {
 impl Clone for GetOptionsPreferences {
     fn clone(&self) -> Self {
         Self {
+            are_configurable_strings_enabled: self.are_configurable_strings_enabled,
             constraints: self.constraints.clone(),
             overrides_json: self.overrides_json.clone(),
             skip_feature_name_conversion: self.skip_feature_name_conversion,
@@ -31,6 +36,7 @@ impl Default for GetOptionsPreferences {
 impl GetOptionsPreferences {
     pub fn new() -> Self {
         Self {
+            are_configurable_strings_enabled: false,
             constraints: None,
             overrides_json: None,
             skip_feature_name_conversion: false,

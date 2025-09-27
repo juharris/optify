@@ -252,6 +252,134 @@ fn test_cache_empty_features() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn test_cache_get_all_options_configurable_strings() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_new_provider();
+    let cache_options = CacheOptions {};
+
+    // Test with are_configurable_strings_enabled = false (default)
+    let mut preferences_false = GetOptionsPreferences::new();
+    preferences_false.are_configurable_strings_enabled = false;
+
+    let result_false =
+        provider.get_all_options(&["a"], Some(&cache_options), Some(&preferences_false))?;
+
+    // Test with are_configurable_strings_enabled = true - should be a cache miss
+    let mut preferences_true = GetOptionsPreferences::new();
+    preferences_true.are_configurable_strings_enabled = true;
+
+    let result_true =
+        provider.get_all_options(&["a"], Some(&cache_options), Some(&preferences_true))?;
+
+    // Results might be the same content but should have been fetched separately (cache miss)
+    // We can verify cache miss by checking that we get a cache hit when using same preferences
+    let result_true2 =
+        provider.get_all_options(&["a"], Some(&cache_options), Some(&preferences_true))?;
+    assert_eq!(result_true, result_true2);
+
+    // And verify another cache hit with false
+    let result_false2 =
+        provider.get_all_options(&["a"], Some(&cache_options), Some(&preferences_false))?;
+    assert_eq!(result_false, result_false2);
+
+    Ok(())
+}
+
+#[test]
+fn test_cache_configurable_strings_false_equals_no_preferences(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_new_provider();
+    let cache_options = CacheOptions {};
+    // Test with are_configurable_strings_enabled = false (default)
+    let mut preferences_false = GetOptionsPreferences::new();
+    preferences_false.are_configurable_strings_enabled = false;
+    let feature_names = &["a"];
+
+    // Test with no preferences
+    let result_no_preferences = provider.get_options_with_preferences(
+        "myConfig",
+        feature_names,
+        Some(&cache_options),
+        None,
+    )?;
+
+    // Should hit the cache from the no preferences call since false is the default
+    let cached_result = provider.get_options_from_cache(
+        "myConfig",
+        feature_names,
+        Some(&cache_options),
+        Some(&preferences_false),
+    )?;
+    assert!(cached_result.is_some());
+
+    let result_with_false = cached_result.unwrap();
+    assert_eq!(result_no_preferences, result_with_false);
+
+    // With no preferences should hit the cache
+    let cached_result =
+        provider.get_options_from_cache("myConfig", &["a"], Some(&cache_options), None)?;
+    assert!(cached_result.is_some());
+    assert_eq!(cached_result.unwrap(), result_with_false);
+
+    Ok(())
+}
+
+#[test]
+fn test_cache_get_options_configurable_strings_enabled() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_new_provider();
+    let cache_options = CacheOptions {};
+
+    // First call with are_configurable_strings_enabled = false
+    let mut preferences_false = GetOptionsPreferences::new();
+    preferences_false.are_configurable_strings_enabled = false;
+
+    let _result_false = provider.get_options_with_preferences(
+        "myConfig",
+        &["a"],
+        Some(&cache_options),
+        Some(&preferences_false),
+    )?;
+
+    let cached_hit_with_false = provider.get_options_from_cache(
+        "myConfig",
+        &["a"],
+        Some(&cache_options),
+        Some(&preferences_false),
+    )?;
+    assert!(cached_hit_with_false.is_some());
+
+    // Second call with are_configurable_strings_enabled = true - should be cache miss
+    let mut preferences_true = GetOptionsPreferences::new();
+    preferences_true.are_configurable_strings_enabled = true;
+
+    let cached_miss = provider.get_options_from_cache(
+        "myConfig",
+        &["a"],
+        Some(&cache_options),
+        Some(&preferences_true),
+    )?;
+    assert!(cached_miss.is_none());
+
+    let result_true = provider.get_options_with_preferences(
+        "myConfig",
+        &["a"],
+        Some(&cache_options),
+        Some(&preferences_true),
+    )?;
+
+    // Now verify cache hit with same preferences
+    let cached_hit = provider.get_options_from_cache(
+        "myConfig",
+        &["a"],
+        Some(&cache_options),
+        Some(&preferences_true),
+    )?;
+    assert!(cached_hit.is_some());
+    assert_eq!(cached_hit.unwrap(), result_true);
+
+    Ok(())
+}
+
+#[test]
 fn test_cache_constraints() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_new_provider();
     let cache_options = CacheOptions {};

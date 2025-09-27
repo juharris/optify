@@ -20,6 +20,7 @@ fn test_suite(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> 
             .map(|v| v.as_str().unwrap())
             .collect::<Vec<&str>>();
         let mut preferences = GetOptionsPreferences::new();
+        preferences.are_configurable_strings_enabled = true;
         let constraints = expected_info.get("constraints");
         preferences.set_constraints(constraints.cloned());
         expected_options.iter().for_each(|(key, expected_value)| {

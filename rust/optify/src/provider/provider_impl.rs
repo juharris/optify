@@ -26,8 +26,8 @@ pub(crate) type ConfigurableValuePointers = HashMap<String, Vec<String>>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
-pub(crate) type EntireConfigCache = HashMap<Vec<String>, config::Config>;
-pub(crate) type OptionsCache = HashMap<(String, Vec<String>), serde_json::Value>;
+pub(crate) type EntireConfigCache = HashMap<(Vec<String>, bool), config::Config>;
+pub(crate) type OptionsCache = HashMap<(String, Vec<String>, bool), serde_json::Value>;
 
 pub struct CacheOptions {}
 
@@ -105,7 +105,10 @@ impl OptionsProvider {
         match config_builder.build() {
             Ok(cfg) => {
                 if let Some(_cache_options) = cache_options {
-                    let cache_key = feature_names.to_owned();
+                    let are_configurable_strings_enabled = preferences
+                        .map(|p| p.are_configurable_strings_enabled)
+                        .unwrap_or(false);
+                    let cache_key = (feature_names.to_owned(), are_configurable_strings_enabled);
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
@@ -129,12 +132,15 @@ impl OptionsProvider {
                 return Err("Caching when overrides are given is not supported.".to_owned());
             }
         }
-        let cache_key = feature_names;
+        let are_configurable_strings_enabled = preferences
+            .map(|p| p.are_configurable_strings_enabled)
+            .unwrap_or(false);
+        let cache_key = (feature_names.to_owned(), are_configurable_strings_enabled);
         if let Some(config) = self
             .entire_config_cache
             .read()
             .expect("the entire config cache should be readable")
-            .get(cache_key)
+            .get(&cache_key)
         {
             return Ok(Some(config.clone()));
         }
@@ -150,7 +156,14 @@ impl OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
         let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        let cache_key = (key.to_owned(), filtered_feature_names);
+        let are_configurable_strings_enabled = preferences
+            .map(|p| p.are_configurable_strings_enabled)
+            .unwrap_or(false);
+        let cache_key = (
+            key.to_owned(),
+            filtered_feature_names,
+            are_configurable_strings_enabled,
+        );
         if let Some(options) = self
             .options_cache
             .read()
@@ -169,7 +182,16 @@ impl OptionsProvider {
         value: &mut serde_json::Value,
         feature_names: &[String],
         key_prefix: Option<&str>,
+        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<(), String> {
+        if preferences
+            .map(|p| !p.are_configurable_strings_enabled)
+            // Configurable strings are disabled by default.
+            .unwrap_or(true)
+        {
+            return Ok(());
+        }
+
         if self.configurable_value_pointers.is_empty() {
             // There are no configurable strings to process.
             return Ok(());
@@ -297,7 +319,7 @@ impl OptionsRegistry for OptionsProvider {
         match config.try_deserialize::<serde_json::Value>() {
             Ok(mut value) => {
                 // Process configurable strings in the entire config
-                self.process_configurable_strings(&mut value, &feature_names, None)?;
+                self.process_configurable_strings(&mut value, &feature_names, None, preferences)?;
                 Ok(value)
             }
             Err(e) => Err(e.to_string()),
@@ -401,9 +423,21 @@ impl OptionsRegistry for OptionsProvider {
 
         match config.get::<serde_json::Value>(key) {
             Ok(mut value) => {
-                self.process_configurable_strings(&mut value, &filtered_feature_names, Some(key))?;
+                self.process_configurable_strings(
+                    &mut value,
+                    &filtered_feature_names,
+                    Some(key),
+                    preferences,
+                )?;
                 if cache_options.is_some() {
-                    let cache_key = (key.to_owned(), filtered_feature_names.clone());
+                    let are_configurable_strings_enabled = preferences
+                        .map(|p| p.are_configurable_strings_enabled)
+                        .unwrap_or(false);
+                    let cache_key = (
+                        key.to_owned(),
+                        filtered_feature_names.clone(),
+                        are_configurable_strings_enabled,
+                    );
                     self.options_cache
                         .write()
                         .expect("the options cache lock should be held")

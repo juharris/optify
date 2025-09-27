@@ -100,6 +100,7 @@ module Optify
       end
 
       # Features are filtered, so we don't need the constraints in the cache key.
+      # FIXME Need preferences in the cache key in case configurable strings are enabled/disabled.
       cache_key = [key, feature_names, config_class]
       result = @cache #: as !nil
                .fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
