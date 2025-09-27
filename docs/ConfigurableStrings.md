@@ -3,8 +3,27 @@
 Strings can be configured with a starting root template and arguments.
 They are useful for sharing strings amongst features and allowing to override parts of the string.
 
-**Strings are built when the configuration is built.**
-Meaning that they will be built eagerly in Rust and cached when requested,
+Example:
+```JSON
+{
+	"options": {
+		"greeting": {
+			"$type": "Optify.ConfigurableString",
+			"root": {
+        "liquid": "Hello, {{name}}!"
+      },
+      "arguments": {
+        "name": "World"
+      }
+    }
+  }
+}
+```
+
+Result: `"Hello, World!"`
+
+**Strings are built when the configuration is retrieved.**
+Meaning that they will be built eagerly in Rust and cached when requested from a provider,
 speeding up your runtime for subsequent requests.
 
 ## Overview
