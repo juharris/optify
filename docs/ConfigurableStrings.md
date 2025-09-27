@@ -34,6 +34,17 @@ Configurable strings provide:
 - **File-based templates** for longer or reusable content in the root or arguments
 - **Inheritance and override** capabilities across features, like any other configurable object
 
+## Enabling Configurable Strings
+
+In `.optify/config.json` for the directory where you want to enable configurable strings:
+
+```JSON
+{
+	"$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/optify_config.json",
+	"areConfigurableStringsEnabled": true
+}
+```
+
 ## Basic Structure
 
 A configurable string is defined using the special type `Optify.ConfigurableString` with two main components:

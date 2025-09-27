@@ -498,7 +498,7 @@ The value for `"greeting"` will be `"Hello, World! How are you?"` once the confi
 
 Raw file contents can and files containing liquid templates are supported.
 
-For more details and examples, see [here](./docs/ConfigurableStrings.md).
+For more details, how to enable configurable strings, and examples, see [here](./docs/ConfigurableStrings.md).
 
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.

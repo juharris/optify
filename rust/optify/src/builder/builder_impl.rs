@@ -501,7 +501,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                 .dependents = Some(sorted_dependents);
         }
 
-        // TODO Try to optimize to move values into the provider and avoid cloning.
+        // TODO Try to optimize to move values into the provider and avoid cloning in the constructor.
         Ok(OptionsProvider::new(
             &self.aliases,
             &self.conditions,
