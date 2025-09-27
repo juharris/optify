@@ -17,7 +17,7 @@ module Optify
 
     # Create a new immutable instance of the class from a hash.
     #
-    # This is a class method that so that it can set members with private setters.
+    # This is a class method so that it can set members with private setters.
     # @param hash The hash to create the instance from.
     # @return The new instance.
     #: (Hash[untyped, untyped] hash) -> instance

@@ -9,6 +9,10 @@
 		"root": {
 			"type": "boolean",
 			"description": "Whether the configuration file is the root configuration file. If true, then the configuration file is the root configuration file. If false, then the configuration file is a sub-configuration file."
+		},
+		"areConfigurableStringsEnabled": {
+			"type": "boolean",
+			"description": "Whether configurable strings are enabled. Defaults to `false`. See https://github.com/juharris/optify/blob/main/docs/ConfigurableStrings.md for more details."
 		}
 	}
 }

@@ -105,7 +105,7 @@ All `*.json`, `*.yaml`, and `*.yml` files in `configurations` and any of its sub
 Markdown files (ending in `.md`) are ignored.
 
 Create `configurations/feature_A.json`:
-```json
+```JSON
 {
     "metadata": {
         "aliases": [ "A" ],
@@ -135,7 +135,7 @@ Create `configurations/feature_A.json`:
 ```
 
 Create `configurations/feature_B/initial.yaml`:
-```yaml
+```YAML
 metadata:
     aliases:
         - "B"
@@ -159,7 +159,7 @@ The exact class names and methods may vary slightly depending on the language yo
 See below for links to implementations in different languages.
 
 The result of using features: `["A", "B"]` will be:
-```json
+```JSON
 {
   // "myArray" from B overrides "myArray" from A.
   "myArray": [
@@ -177,7 +177,7 @@ The result of using features: `["A", "B"]` will be:
 ```
 
 The result of using features: `["B", "A"]` will be:
-```json
+```JSON
 {
   // "myArray" from A overrides "myArray" from B.
   "myArray": [
@@ -373,7 +373,7 @@ Each import must be a canonical feature name, i.e., derived from path to a file 
 For example, if we have:
 
 `configurations/feature_A.json`:
-```json
+```JSON
 {
     "options": {
         "myConfig": {
@@ -391,7 +391,7 @@ For example, if we have:
 ```
 
 `configurations/feature_B.yaml`:
-```yaml
+```YAML
 options:
     myConfig:
         myArray:
@@ -402,7 +402,7 @@ options:
 ```
 
 And `configurations/feature_C.yaml`:
-```yaml
+```YAML
 imports:
     - "feature_A"
     - "feature_B"
@@ -413,7 +413,7 @@ options:
 ```
 
 The resulting options for `feature_C` will be as if we included the features in the order `["feature_A", "feature_B", "feature_C"]`:
-```json
+```JSON
 {
     "myConfig":{
         // The values from feature_B as feature_B is listed after feature_A so it overrides it.

@@ -6,10 +6,12 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
+use crate::builder::builder_options::BuilderOptions;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
 use crate::configurable_string::LoadedFiles;
+use crate::json::reader::read_json_from_file_as;
 use crate::provider::{
     Aliases, Conditions, ConfigurableValuePointers, Features, OptionsProvider, Sources,
 };
@@ -228,7 +230,11 @@ impl OptionsProviderBuilder {
         }
     }
 
-    fn process_entry(path: &Path, directory: &Path) -> Result<LoadingResult, String> {
+    fn process_entry(
+        path: &Path,
+        directory: &Path,
+        builder_options: &BuilderOptions,
+    ) -> Result<LoadingResult, String> {
         let absolute_path = dunce::canonicalize(path).expect("path should be valid");
         // TODO Optimization: Find a more efficient way to build a more generic view of the file.
         // The `config` library is helpful because it handles many file types.
@@ -292,8 +298,11 @@ impl OptionsProviderBuilder {
             ),
         };
 
-        // TODO Add option to disable. Maybe read through .optify/config.json.
-        let configurable_value_pointers = find_configurable_values(raw_config.get("options"));
+        let configurable_value_pointers = if builder_options.are_configurable_strings_enabled {
+            find_configurable_values(raw_config.get("options"))
+        } else {
+            Vec::new()
+        };
 
         Ok(LoadingResult {
             canonical_feature_name,
@@ -364,6 +373,22 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             ));
         }
 
+        // Look for .optify/config.json and load as settings for the files in the directory.
+        let config_path = directory.join(".optify").join("config.json");
+        let builder_options = if config_path.is_file() {
+            match read_json_from_file_as::<BuilderOptions>(&config_path) {
+                Ok(v) => v,
+                Err(e) => {
+                    return Err(format!(
+                        "Error loading builder options from {}: {e}",
+                        config_path.as_path().display()
+                    ));
+                }
+            }
+        } else {
+            BuilderOptions::default()
+        };
+
         let supported_extensions = Self::get_supported_extensions();
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
@@ -397,6 +422,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     Some(path.to_path_buf())
                 } else {
                     // Load the file content
+                    // TODO Handle errors.
                     if let Ok(contents) = std::fs::read_to_string(path) {
                         // Store with a relative path from the directory
                         let relative_path = path
@@ -412,7 +438,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             })
             .collect::<Vec<_>>()
             .into_par_iter()
-            .map(|path| Self::process_entry(&path, directory))
+            .map(|path| Self::process_entry(&path, directory, &builder_options))
             .collect();
         for loading_result in loading_results {
             self.process_loading_result(&loading_result)?;

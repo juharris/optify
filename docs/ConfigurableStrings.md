@@ -27,7 +27,7 @@ A configurable string is defined using the special type `Optify.ConfigurableStri
 
 The simplest form is a plain string without any variables:
 
-```json
+```JSON
 {
   "greeting": {
     "$type": "Optify.ConfigurableString",
@@ -42,7 +42,7 @@ Result: `"Hello, World!"`
 
 Use Liquid syntax for variable substitution:
 
-```json
+```JSON
 {
   "message": {
     "$type": "Optify.ConfigurableString",
@@ -62,7 +62,7 @@ Result: `"Welcome to Optify!"`
 
 Load templates from external files:
 
-```json
+```JSON
 {
   "greeting_from_file": {
     "$type": "Optify.ConfigurableString",
@@ -84,7 +84,7 @@ Result: `"Hello from template file!"`
 
 Combine file loading with Liquid templates:
 
-```json
+```JSON
 {
   "message_from_liquid_file": {
     "$type": "Optify.ConfigurableString",
@@ -120,7 +120,7 @@ One of the most powerful features of configurable strings is the ability to over
 ### Example: Base Configuration
 
 `feature_A.json`:
-```json
+```JSON
 {
   "options": {
     "welcome_message": {
@@ -139,7 +139,7 @@ One of the most powerful features of configurable strings is the ability to over
 ### Example: Override Arguments
 
 `feature_B.yaml`:
-```yaml
+```YAML
 options:
   welcome_message:
     arguments:
@@ -147,7 +147,7 @@ options:
 ```
 
 When features `["feature_A", "feature_B"]` are applied, the result is:
-```json
+```JSON
 {
   "welcome_message": "Hello, Justin!"
 }
@@ -159,7 +159,7 @@ Notice how only the `arguments` were overridden, not the template itself.
 
 Arguments can reference other arguments using Liquid templates:
 
-```json
+```JSON
 {
   "complex_message": {
     "$type": "Optify.ConfigurableString",
@@ -185,7 +185,7 @@ Result: `"Welcome to Optify, Developer! Enjoy your stay!"`
 ### 1. Environment-Specific Messages
 Different messages for different environments without changing code:
 
-```json
+```JSON
 {
   "api_endpoint": {
     "$type": "Optify.ConfigurableString",
@@ -203,7 +203,7 @@ Different messages for different environments without changing code:
 ### 2. Dynamic Error Messages
 Provide context-aware error messages:
 
-```json
+```JSON
 {
   "error_message": {
     "$type": "Optify.ConfigurableString",
