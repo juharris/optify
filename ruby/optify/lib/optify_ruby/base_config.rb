@@ -17,20 +17,35 @@ module Optify
 
     # Create a new immutable instance of the class from a hash.
     #
-    # This is a class method that so that it can set members with private setters.
-    # @param hash The hash to create the instance from.
-    # @return The new instance.
+    # This is a class method so that it can set members with private setters.
+    # @param hash [Hash] The hash to create the instance from.
+    # @return [instance] The new instance.
     #: (Hash[untyped, untyped] hash) -> instance
     def self.from_hash(hash)
       instance = new
 
-      hash.each do |key, value|
-        sig = T::Utils.signature_for_method(instance_method(key))
-        raise "A Sorbet signature is required for `#{name}.#{key}`." if sig.nil?
+      # Identify attribute-style reader methods defined on this concrete subclass.
+      valid_attribute_methods = self.instance_methods(false)
+        .reject { |m| m.to_s.end_with?('=') || [:==, :to_h].include?(m) }
+        .sort
 
-        sig_return_type = sig.return_type
-        value = _convert_value(value, sig_return_type)
-        instance.instance_variable_set("@#{key}", value)
+      hash.each do |raw_key, value|
+        key = raw_key.is_a?(String) ? raw_key.to_sym : raw_key
+
+        unless valid_attribute_methods.include?(key)
+          provided_keys = hash.keys.map { |k| k.is_a?(String) ? k.to_sym : k }
+          raise ArgumentError,
+                "Unknown attribute `#{key}` for #{name}. " \
+                "Valid attributes: #{valid_attribute_methods.join(', ')}. " \
+                "Provided keys: #{provided_keys.join(', ')}."
+        end
+
+        method_sig = T::Utils.signature_for_method(instance_method(key))
+        raise "A Sorbet signature is required for `#{name}##{key}`." if method_sig.nil?
+
+        sig_return_type = method_sig.return_type
+        coerced = _convert_value(value, sig_return_type)
+        instance.instance_variable_set("@#{key}", coerced)
       end
 
       instance.freeze
@@ -53,42 +68,37 @@ module Optify
         return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
         # Handle `T.nilable(T::Hash[...])` and `T.any(...)`.
-        # We used to use `type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)`, but it's not needed now that we handle `T.any(...)`
-        # because using `.types` works for both cases.
         if type.respond_to?(:types)
           # Find a type that works for the hash.
           type.types.each do |t|
             return _convert_hash(value, t).freeze
           rescue StandardError
-            # Ignore and try the next type.
+            # Try next type.
           end
           raise TypeError, "Could not convert hash: #{value} to #{type}."
         end
         return _convert_hash(value, type).freeze
       end
 
-      # It would be nice to validate that the value is of the correct type here.
-      # For example that a string is a string and an Integer is an Integer.
+      # Could add primitive type validation here in future.
       value
     end
 
     #: (Hash[untyped, untyped] hash, untyped type) -> untyped
     def self._convert_hash(hash, type)
       if type.respond_to?(:raw_type)
-        # There is an object for the hash.
-        # It could be a custom class, a String, or maybe something else.
+        # Could be a custom class, String, etc.
         type_for_hash = type.raw_type
         return type_for_hash.from_hash(hash) if type_for_hash.respond_to?(:from_hash)
       elsif type.is_a?(T::Types::TypedHash)
-        # The hash should be a hash, but the values might be objects to convert.
+        # Convert a typed hash (possibly coercing keys and values).
         type_for_keys = type.keys
-
-        convert_key = if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
-                        lambda(&:to_sym)
-                      else
-                        lambda(&:itself)
-                      end
-
+        convert_key =
+          if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
+            lambda(&:to_sym)
+          else
+            lambda(&:itself)
+          end
         type_for_values = type.values
         return hash.map { |k, v| [convert_key.call(k), _convert_value(v, type_for_values)] }.to_h
       end
@@ -99,8 +109,6 @@ module Optify
     private_class_method :_convert_hash, :_convert_value
 
     # Compare this object with another object for equality.
-    # @param other The object to compare.
-    # @return [Boolean] true if the objects are equal; otherwise, false.
     #: (untyped other) -> bool
     def ==(other)
       return true if other.equal?(self)
@@ -111,22 +119,15 @@ module Optify
       end
     end
 
-    # Convert this object to a Hash recursively.
-    # This is mostly the reverse operation of `from_hash`,
-    # as keys will be symbols
-    # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
-    # @return [Hash] The hash representation of this object.
+    # Convert this object to a Hash recursively (symbol keys).
     #: () -> Hash[Symbol, untyped]
     def to_h
       result = Hash.new(instance_variables.size)
-
       instance_variables.each do |var_name|
-        # Remove the @ prefix to get the method name
-        method_name = var_name.to_s[1..] #: as !nil
+        method_name = var_name.to_s[1..] # remove leading '@'
         value = instance_variable_get(var_name)
         result[method_name.to_sym] = _convert_value_to_hash(value)
       end
-
       result
     end
 
