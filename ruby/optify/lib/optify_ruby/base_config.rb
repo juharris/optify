@@ -47,7 +47,11 @@ module Optify
 
         sig_return_type = sig.return_type
         coerced = _convert_value(value, sig_return_type)
-        instance.instance_variable_set("@#{key}", coerced)
+        begin
+          instance.instance_variable_set("@#{key}", coerced)
+        rescue StandardError => e
+          raise e.class, "Failed to set attribute `#{key}` on #{name}: #{e.message}", e.backtrace
+        end
       end
 
       instance.freeze
