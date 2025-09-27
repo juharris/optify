@@ -54,5 +54,21 @@ module BaseConfigTest
       assert_not_equal(a1, a2)
       assert a1 != a2
     end
+
+    def test_unknown_property_symbol_key
+      err = assert_raise(ArgumentError) do
+        TestObject.from_hash({ bad: 1 })
+      end
+      assert_match(/Unknown attribute `bad`/, err.message)
+      assert_match(/Valid attributes:/, err.message)
+    end
+
+    def test_unknown_property_string_key
+      err = assert_raise(ArgumentError) do
+        TestObject.from_hash({ 'bad' => 1 })
+      end
+      assert_match(/Unknown attribute `bad`/, err.message)
+      assert_match(/Valid attributes:/, err.message)
+    end
   end
 end
