@@ -65,7 +65,7 @@ module BaseConfigTest
         TestObject.from_hash({ bad: 1 })
       end
       assert_equal(
-        'Error converting hash to `BaseConfigTest::TestObject` with key "bad" with value: `1`. Perhaps "bad" is not a valid attribute for `BaseConfigTest::TestObject`.',
+        'Error converting hash to `BaseConfigTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `BaseConfigTest::TestObject`.',
         err.message
       )
 
@@ -78,7 +78,7 @@ module BaseConfigTest
         TestObjectWithObject.from_hash({ object: { bad: 2 } })
       end
       assert_equal(
-        'Error converting hash to `BaseConfigTest::TestObject` with key "bad" with value: `2`. Perhaps "bad" is not a valid attribute for `BaseConfigTest::TestObject`.',
+        'Error converting hash to `BaseConfigTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `BaseConfigTest::TestObject`.',
         err.message
       )
 

@@ -28,7 +28,7 @@ module Optify
         begin
           method = instance_method(key)
         rescue StandardError
-          raise ArgumentError, "Error converting hash to `#{name}` with key \"#{key}\" with value: `#{value}`. Perhaps \"#{key}\" is not a valid attribute for `#{name}`."
+          raise ArgumentError, "Error converting hash to `#{name}` because of key \"#{key}\". Perhaps \"#{key}\" is not a valid attribute for `#{name}`."
         end
 
         sig = T::Utils.signature_for_method(method)
