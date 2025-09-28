@@ -67,7 +67,7 @@ module Optify
     # Indicates if configurable strings are enabled.
     # They are disabled by default.
     sig { returns(T::Boolean) }
-    def are_configurable_strings_enabled; end
+    def are_configurable_strings_enabled?; end
 
     # Disable configurable strings which default to disabled.
     sig { void }

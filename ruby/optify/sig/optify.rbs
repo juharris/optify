@@ -54,7 +54,7 @@ end
 class Optify::GetOptionsPreferences
   # Indicates if configurable strings are enabled.
   # They are disabled by default.
-  def are_configurable_strings_enabled: () -> bool
+  def are_configurable_strings_enabled?: () -> bool
 
   # Disable configurable strings which default to disabled.
   def disable_configurable_strings: () -> void

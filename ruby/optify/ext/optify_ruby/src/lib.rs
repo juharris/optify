@@ -488,7 +488,7 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     get_options_preferences_class
         .define_method("dup", method!(MutGetOptionsPreferences::clone, 0))?;
     get_options_preferences_class.define_method(
-        "are_configurable_strings_enabled",
+        "are_configurable_strings_enabled?",
         method!(
             MutGetOptionsPreferences::are_configurable_strings_enabled,
             0

@@ -7,6 +7,31 @@ require_relative 'conditions_config'
 require_relative 'my_config'
 
 class ProviderCacheTest < Test::Unit::TestCase
+  def test_cache_with_configurable_strings
+    provider = Optify::OptionsProvider
+               .build('../../tests/test_suites/simple/configs')
+               .init
+    cache_options = Optify::CacheOptions.new
+    preferences = Optify::GetOptionsPreferences.new
+    assert !preferences.are_configurable_strings_enabled?
+    preferences.enable_configurable_strings
+    assert preferences.are_configurable_strings_enabled?
+    preferences.disable_configurable_strings
+    assert !preferences.are_configurable_strings_enabled?
+
+    config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options, preferences)
+    config_a2 = provider.get_options('myConfig', ['a'], MyConfig, cache_options, nil)
+    assert_same(config_a, config_a2)
+
+    preferences.enable_configurable_strings
+    assert preferences.are_configurable_strings_enabled?
+    config_a_enabled = provider.get_options('myConfig', ['A'], MyConfig, cache_options, preferences)
+    assert_not_same(config_a, config_a_enabled)
+
+    config_a2_enabled = provider.get_options('myConfig', ['a'], MyConfig, cache_options, preferences)
+    assert_same(config_a_enabled, config_a2_enabled)
+  end
+
   def test_cache_with_constraints
     provider = Optify::OptionsProvider
                .build('../../tests/test_suites/simple/configs')
