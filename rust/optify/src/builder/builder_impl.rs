@@ -195,6 +195,19 @@ impl OptionsProviderBuilder {
         }
     }
 
+    pub fn build_and_clear(&mut self) -> Result<OptionsProvider, String> {
+        self.prepare_build()?;
+
+        Ok(OptionsProvider::new(
+            std::mem::take(&mut self.aliases),
+            std::mem::take(&mut self.conditions),
+            std::mem::take(&mut self.configurable_value_pointers),
+            std::mem::take(&mut self.features),
+            std::mem::take(&mut self.loaded_files),
+            std::mem::take(&mut self.sources),
+        ))
+    }
+
     fn get_supported_extensions() -> HashSet<&'static str> {
         [
             config::FileFormat::Ini.file_extensions(),
@@ -228,6 +241,39 @@ impl OptionsProviderBuilder {
                 error_messages.join(", ")
             ))
         }
+    }
+
+    fn prepare_build(&mut self) -> Result<(), String> {
+        let mut resolved_imports: HashSet<String> = HashSet::new();
+        for (canonical_feature_name, imports_for_feature) in &self.imports {
+            if resolved_imports.insert(canonical_feature_name.clone()) {
+                // Check for infinite loops by starting a path here.
+                let mut features_in_resolution_path: HashSet<String> =
+                    HashSet::from([canonical_feature_name.clone()]);
+                resolve_imports(
+                    canonical_feature_name,
+                    imports_for_feature,
+                    &mut resolved_imports,
+                    &mut features_in_resolution_path,
+                    &self.aliases,
+                    &mut self.dependents,
+                    &self.imports,
+                    &mut self.sources,
+                    &self.conditions,
+                )?;
+            }
+        }
+
+        for (canonical_feature_name, dependents) in &self.dependents {
+            let mut sorted_dependents = dependents.clone();
+            sorted_dependents.sort_unstable();
+            self.features
+                .get_mut(canonical_feature_name)
+                .unwrap()
+                .dependents = Some(sorted_dependents);
+        }
+
+        Ok(())
     }
 
     fn process_entry(
@@ -472,43 +518,15 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     }
 
     fn build(&mut self) -> Result<OptionsProvider, String> {
-        let mut resolved_imports: HashSet<String> = HashSet::new();
-        for (canonical_feature_name, imports_for_feature) in &self.imports {
-            if resolved_imports.insert(canonical_feature_name.clone()) {
-                // Check for infinite loops by starting a path here.
-                let mut features_in_resolution_path: HashSet<String> =
-                    HashSet::from([canonical_feature_name.clone()]);
-                resolve_imports(
-                    canonical_feature_name,
-                    imports_for_feature,
-                    &mut resolved_imports,
-                    &mut features_in_resolution_path,
-                    &self.aliases,
-                    &mut self.dependents,
-                    &self.imports,
-                    &mut self.sources,
-                    &self.conditions,
-                )?;
-            }
-        }
+        self.prepare_build()?;
 
-        for (canonical_feature_name, dependents) in &self.dependents {
-            let mut sorted_dependents = dependents.clone();
-            sorted_dependents.sort_unstable();
-            self.features
-                .get_mut(canonical_feature_name)
-                .unwrap()
-                .dependents = Some(sorted_dependents);
-        }
-
-        // TODO Try to optimize to move values into the provider and avoid cloning in the constructor.
         Ok(OptionsProvider::new(
-            &self.aliases,
-            &self.conditions,
-            &self.configurable_value_pointers,
-            &self.features,
-            &self.loaded_files,
-            &self.sources,
+            self.aliases.clone(),
+            self.conditions.clone(),
+            self.configurable_value_pointers.clone(),
+            self.features.clone(),
+            self.loaded_files.clone(),
+            self.sources.clone(),
         ))
     }
 }

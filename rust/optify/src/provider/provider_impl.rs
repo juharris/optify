@@ -48,20 +48,20 @@ pub struct OptionsProvider {
 
 impl OptionsProvider {
     pub(crate) fn new(
-        aliases: &Aliases,
-        conditions: &Conditions,
-        configurable_value_pointers: &ConfigurableValuePointers,
-        features: &Features,
-        loaded_files: &LoadedFiles,
-        sources: &Sources,
+        aliases: Aliases,
+        conditions: Conditions,
+        configurable_value_pointers: ConfigurableValuePointers,
+        features: Features,
+        loaded_files: LoadedFiles,
+        sources: Sources,
     ) -> Self {
         OptionsProvider {
-            aliases: aliases.clone(),
-            conditions: conditions.clone(),
-            configurable_value_pointers: configurable_value_pointers.clone(),
-            features: features.clone(),
-            loaded_files: loaded_files.clone(),
-            sources: sources.clone(),
+            aliases,
+            conditions,
+            configurable_value_pointers,
+            features,
+            loaded_files,
+            sources,
             entire_config_cache: RwLock::new(EntireConfigCache::new()),
             options_cache: RwLock::new(OptionsCache::new()),
         }
@@ -261,7 +261,7 @@ impl OptionsRegistry for OptionsProvider {
     fn build(directory: impl AsRef<Path>) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(directory.as_ref())?;
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn build_with_schema(
@@ -271,7 +271,7 @@ impl OptionsRegistry for OptionsProvider {
         let mut builder = OptionsProviderBuilder::new();
         builder.with_schema(schema_path.as_ref())?;
         builder.add_directory(directory.as_ref())?;
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsProvider, String> {
@@ -279,7 +279,7 @@ impl OptionsRegistry for OptionsProvider {
         for directory in directories {
             builder.add_directory(directory.as_ref())?;
         }
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn build_from_directories_with_schema(
@@ -291,7 +291,7 @@ impl OptionsRegistry for OptionsProvider {
         for directory in directories {
             builder.add_directory(directory.as_ref())?;
         }
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn get_aliases(&self) -> Vec<String> {
