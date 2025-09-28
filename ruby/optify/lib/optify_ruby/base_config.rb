@@ -25,7 +25,13 @@ module Optify
       instance = new
 
       hash.each do |key, value|
-        sig = T::Utils.signature_for_method(instance_method(key))
+        begin
+          method = instance_method(key)
+        rescue StandardError
+          raise ArgumentError, "Error converting hash to `#{name}` because of key \"#{key}\". Perhaps \"#{key}\" is not a valid attribute for `#{name}`."
+        end
+
+        sig = T::Utils.signature_for_method(method)
         raise "A Sorbet signature is required for `#{name}.#{key}`." if sig.nil?
 
         sig_return_type = sig.return_type
