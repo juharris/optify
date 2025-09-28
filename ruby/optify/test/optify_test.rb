@@ -35,6 +35,7 @@ class OptifyTest < Test::Unit::TestCase
         features = expected_info['features']
         constraints = expected_info['constraints']
         preferences = Optify::GetOptionsPreferences.new
+        preferences.enable_configurable_strings
         preferences.constraints = constraints
         expected_options.each do |key, expected_value|
           expected_json = provider.get_options_json_with_preferences(key, features, preferences)
