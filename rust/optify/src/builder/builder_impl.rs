@@ -468,16 +468,20 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     Some(path.to_path_buf())
                 } else {
                     // Load the file content
-                    // TODO Handle errors.
-                    if let Ok(contents) = std::fs::read_to_string(path) {
-                        // Store with a relative path from the directory
-                        let relative_path = path
-                            .strip_prefix(directory)
-                            .unwrap()
-                            .to_str()
-                            .expect("path should be valid Unicode")
-                            .replace(std::path::MAIN_SEPARATOR, "/");
-                        self.loaded_files.insert(relative_path, contents);
+                    match std::fs::read_to_string(path) {
+                        Ok(contents) => {
+                            let relative_path = path
+                                .strip_prefix(directory)
+                                .unwrap()
+                                .to_str()
+                                .expect("path should be valid Unicode")
+                                .replace(std::path::MAIN_SEPARATOR, "/");
+                            self.loaded_files.insert(relative_path, contents);
+                        }
+                        Err(e) => {
+                            // TODO Yield errors.
+                            eprintln!("Error reading file {}: {e}\nSkipping file.", path.display());
+                        }
                     }
                     None
                 }
