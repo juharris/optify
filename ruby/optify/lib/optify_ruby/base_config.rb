@@ -24,34 +24,19 @@ module Optify
     def self.from_hash(hash)
       instance = new
 
-      # Determine which reader methods look like config attributes (defined
-      # directly on this subclass, not inherited, and not utility methods.)
-      valid_attribute_methods = instance_methods(false)
-        .reject { |m| m.to_s.end_with?('=') || [:==, :to_h].include?(m) }
-        .sort
-
-      hash.each do |raw_key, value|
-        # Allow passing either symbols or strings for keys.
-        key = raw_key.is_a?(String) ? raw_key.to_sym : raw_key
-
-        unless valid_attribute_methods.include?(key)
-          provided_keys = hash.keys.map { |k| k.is_a?(String) ? k.to_sym : k }
-          raise ArgumentError,
-                "Unknown attribute `#{key}` for #{name}. " \
-                "Valid attributes: #{valid_attribute_methods.join(', ')}. " \
-                "Provided keys: #{provided_keys.join(', ')}."
+      hash.each do |key, value|
+        begin
+          method = instance_method(key)
+        rescue StandardError
+          raise ArgumentError, "Error converting hash to `#{name}` with key \"#{key}\" with value: `#{value}`. Perhaps \"#{key}\" is not a valid attribute for `#{name}`."
         end
 
-        sig = T::Utils.signature_for_method(instance_method(key))
-        raise "A Sorbet signature is required for `#{name}##{key}`." if sig.nil?
+        sig = T::Utils.signature_for_method(method)
+        raise "A Sorbet signature is required for `#{name}.#{key}`." if sig.nil?
 
         sig_return_type = sig.return_type
-        coerced = _convert_value(value, sig_return_type)
-        begin
-          instance.instance_variable_set("@#{key}", coerced)
-        rescue StandardError => e
-          raise e.class, "Failed to set attribute `#{key}` on #{name}: #{e.message}", e.backtrace
-        end
+        value = _convert_value(value, sig_return_type)
+        instance.instance_variable_set("@#{key}", value)
       end
 
       instance.freeze
@@ -166,7 +151,7 @@ module Optify
         if value.respond_to?(:to_h)
           value.to_h
         else
-            value
+          value
         end
       end
     end
