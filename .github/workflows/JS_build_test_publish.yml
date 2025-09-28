@@ -70,18 +70,20 @@ jobs:
             target: aarch64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: |-
-              set -ex
+              set -eu
+              rustup update stable
               yarn build --target aarch64-unknown-linux-gnu
               yarn build:ts
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
-              set -ex &&
-              npm install -g corepack &&
-              corepack enable &&
-              rustup target add aarch64-unknown-linux-musl &&
-              yarn build --target aarch64-unknown-linux-musl &&
+              set -eu
+              rustc --version
+              npm install -g corepack
+              corepack enable
+              rustup target add aarch64-unknown-linux-musl
+              yarn build --target aarch64-unknown-linux-musl
               yarn build:ts
     name: "[${{ matrix.settings.target }}] Build & Test"
     runs-on: ${{ matrix.settings.host }}
