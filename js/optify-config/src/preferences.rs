@@ -15,6 +15,24 @@ impl JsGetOptionsPreferences {
     }
   }
 
+  /// Indicates if configurable strings are enabled.
+  #[napi]
+  pub fn are_configurable_strings_enabled(&self) -> bool {
+    self.inner.are_configurable_strings_enabled
+  }
+
+  /// Enables configurable strings which are disabled by default.
+  #[napi]
+  pub fn enable_configurable_strings(&mut self) {
+    self.inner.are_configurable_strings_enabled = true;
+  }
+
+  /// Disables configurable strings which are disabled by default.
+  #[napi]
+  pub fn disable_configurable_strings(&mut self) {
+    self.inner.are_configurable_strings_enabled = false;
+  }
+
   #[napi]
   pub fn set_constraints_json(&mut self, constraints_json: Option<String>) {
     self.inner.set_constraints_json(constraints_json.as_deref());

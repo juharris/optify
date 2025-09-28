@@ -17,6 +17,7 @@ const runSuite = (suitePath: string) => {
     const expectedInfo = JSON.parse(fs.readFileSync(expectationPath, 'utf8'));
     const { constraints, options: expectedOptions, features } = expectedInfo;
     const preferences = new GetOptionsPreferences();
+    preferences.enableConfigurableStrings();
     if (constraints) {
       preferences.setConstraintsJson(JSON.stringify(constraints));
     }
