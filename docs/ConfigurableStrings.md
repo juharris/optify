@@ -6,10 +6,10 @@ They are useful for sharing strings amongst features and allowing to override pa
 Example:
 ```JSON
 {
-	"options": {
-		"greeting": {
-			"$type": "Optify.ConfigurableString",
-			"root": {
+  "options": {
+    "greeting": {
+      "$type": "Optify.ConfigurableString",
+      "root": {
         "liquid": "Hello, {{name}}!"
       },
       "arguments": {
@@ -40,8 +40,8 @@ In `.optify/config.json` for the directory where you want to enable configurable
 
 ```JSON
 {
-	"$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/optify_config.json",
-	"areConfigurableStringsEnabled": true
+  "$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/optify_config.json",
+  "areConfigurableStringsEnabled": true
 }
 ```
 
