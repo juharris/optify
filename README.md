@@ -122,7 +122,7 @@ Create `configurations/feature_A.json`:
             },
             "myString": {
                 "$type": "Optify.ConfigurableString",
-                "root": {
+                "base": {
                     "liquid": "Hello, {{audience}}!"
                 },
                 "arguments": {
@@ -471,7 +471,7 @@ A feature file with the follow conditions will be applied:
 ```
 
 # Configurable Strings
-Strings can be configured with a starting root template and arguments.
+Strings can be configured with a starting base starting template and arguments.
 They are useful for sharing strings amongst features and allowing to override parts of the string.
 
 Example:
@@ -480,7 +480,7 @@ Example:
     "options": {
         "greeting": {
             "$type": "Optify.ConfigurableString",
-            "root": {
+            "base": {
                 "liquid": "Hello, {{audience}}! {{message}}"
             },
             "arguments": {

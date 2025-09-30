@@ -5,11 +5,11 @@
 	"options": {
 		"greeting": {
 			"$type": "Optify.ConfigurableString",
-			"root": "Hello, World!"
+			"base": "Hello, World!"
 		},
 		"message": {
 			"$type": "Optify.ConfigurableString",
-			"root": {
+			"base": {
 				"liquid": "Welcome to {{ name }}!"
 			},
 			"arguments": {

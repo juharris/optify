@@ -6,7 +6,7 @@ use std::collections::HashMap;
 #[test]
 fn test_configurable_string_deserialization() {
     let data = json!({
-        "root": {"liquid": "Welcome {{ user }} to {{ app }}"},
+        "base": {"liquid": "Welcome {{ user }} to {{ app }}"},
         "arguments": {
             "user": "Alice",
             "app": "Optify"
@@ -21,7 +21,7 @@ fn test_configurable_string_deserialization() {
 #[test]
 fn test_with_object_arguments_liquid() {
     let data = json!({
-        "root": {"liquid": "Rendered: {{ liquid_template }} was {{ name }} and {{ name }}"},
+        "base": {"liquid": "Rendered: {{ liquid_template }} was {{ name }} and {{ name }}"},
         "arguments": {
             "name": "world",
             "liquid_template": {
@@ -45,7 +45,7 @@ fn test_with_file_containing_liquid_template() {
     files.insert(file_path.clone(), "Hello {{ name | upcase }}!".into());
 
     let data = json!({
-        "root": {"liquid": "File content: {{ template_file }}"},
+        "base": {"liquid": "File content: {{ template_file }}"},
         "arguments": {
             "name": "Justin",
             "template_file": {
@@ -72,7 +72,7 @@ fn test_build_with_liquid_filters() {
     );
 
     let config = ConfigurableString {
-        root: ReplacementValue::Object(ReplacementObject::Liquid {
+        base: ReplacementValue::Object(ReplacementObject::Liquid {
             liquid: "Currently {{ action | upcase }} the {{ target | capitalize }}...".to_string(),
         }),
         arguments: Some(arguments),
@@ -87,7 +87,7 @@ fn test_build_with_liquid_filters() {
 #[test]
 fn test_liquid_control_flow() {
     let mut data = json!({
-        "root": {"liquid": "{% if show_message != \"\" %}{{ message }}{% else %}No message{% endif %}"},
+        "base": {"liquid": "{% if show_message != \"\" %}{{ message }}{% else %}No message{% endif %}"},
         "arguments": {
             "show_message": "true",
             "message": "Hello from Liquid!"
@@ -108,7 +108,7 @@ fn test_liquid_control_flow() {
 fn test_nested_liquid_template_access() {
     // Test that liquid templates in arguments can access other variables
     let data = json!({
-        "root": {"liquid": "{{ greeting }}, {{ formatted_name }}!"},
+        "base": {"liquid": "{{ greeting }}, {{ formatted_name }}!"},
         "arguments": {
             "name": "alice",
             "greeting": "Hello",
@@ -129,7 +129,7 @@ fn test_file_loading_with_root_path() {
     files.insert("simple.txt".into(), "simple text not {{ replaced }}".into());
 
     let data = json!({
-        "root": {"liquid": "File content: {{ simple_file }}"},
+        "base": {"liquid": "File content: {{ simple_file }}"},
         "arguments": {
             "simple_file": {
                 "file": "simple.txt"
@@ -149,10 +149,9 @@ fn test_file_loading_with_root_path() {
 }
 
 #[test]
-fn test_root_as_liquid_object() {
-    // Test root as a liquid object that can access arguments
+fn test_base_as_liquid_object() {
     let data = json!({
-        "root": {
+        "base": {
             "liquid": "Hello {{ name | upcase }}, welcome to {{ place }}!"
         },
         "arguments": {
@@ -170,8 +169,7 @@ fn test_root_as_liquid_object() {
 }
 
 #[test]
-fn test_root_as_file_object() {
-    // Test root as a file object
+fn test_base_as_file_object() {
     let mut files = LoadedFiles::new();
     files.insert(
         "main_template.txt".into(),
@@ -179,7 +177,7 @@ fn test_root_as_file_object() {
     );
 
     let data = json!({
-        "root": {
+        "base": {
             "file": "main_template.txt"
         },
         "arguments": {}
@@ -193,8 +191,7 @@ fn test_root_as_file_object() {
 }
 
 #[test]
-fn test_root_as_liquid_file_object() {
-    // Test root as a liquid file object that processes liquid templates
+fn test_base_as_liquid_file_object() {
     let mut files = LoadedFiles::new();
     files.insert(
         "main.liquid".into(),
@@ -202,7 +199,7 @@ fn test_root_as_liquid_file_object() {
     );
 
     let data = json!({
-        "root": {
+        "base": {
             "file": "main.liquid"
         },
         "arguments": {
@@ -219,10 +216,9 @@ fn test_root_as_liquid_file_object() {
 }
 
 #[test]
-fn test_root_object_with_nested_liquid_arguments() {
-    // Test root as object with nested liquid arguments
+fn test_base_object_with_nested_liquid_arguments() {
     let data = json!({
-        "root": {
+        "base": {
             "liquid": "Report: {{ header }}\n{{ content }}"
         },
         "arguments": {
@@ -243,9 +239,9 @@ fn test_root_object_with_nested_liquid_arguments() {
 }
 
 #[test]
-fn test_root_as_string() {
+fn test_base_as_string() {
     let data = json!({
-        "root": "Hello, world! {{ do_not_replace }}",
+        "base": "Hello, world! {{ do_not_replace }}",
     });
 
     let config: ConfigurableString = serde_json::from_value(data).unwrap();
@@ -257,10 +253,10 @@ fn test_root_as_string() {
 }
 
 #[test]
-fn test_root_file_not_found_error() {
+fn test_base_file_not_found_error() {
     // Test that missing file in root object produces appropriate error
     let data = json!({
-        "root": {
+        "base": {
             "file": "nonexistent.txt"
         },
         "arguments": {}
@@ -278,7 +274,7 @@ FIXME Try to test. Can't catch easily because Liquid panics.
 #[test]
 fn test_with_object_arguments_file() {
     let data = json!({
-        "root": "Config loaded from {{ config_source }}",
+        "base": "Config loaded from {{ config_source }}",
         "arguments": {
             "config_source": {
                 "file": "/path/to/nonexistent/config.json"

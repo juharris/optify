@@ -70,7 +70,7 @@ mod tests {
     fn test_configurable_string_at_root() {
         let json_value = json!({
             TYPE_KEY: TYPE,
-            "root": "Root level configurable string",
+            "base": "Root level configurable string",
             "arguments": {}
         });
 
@@ -84,7 +84,7 @@ mod tests {
         let json_value = json!({
             "feature": {
                 TYPE_KEY: TYPE,
-                "root": "Hello {{ name }}!",
+                "base": "Hello {{ name }}!",
                 "arguments": {}
             }
         });
@@ -101,7 +101,7 @@ mod tests {
                 "deep": {
                     "value": {
                         TYPE_KEY: TYPE,
-                        "root": "Deep nested",
+                        "base": "Deep nested",
                         "arguments": {}
                     }
                 }
@@ -119,7 +119,7 @@ mod tests {
             "array": [
                 {
                     TYPE_KEY: TYPE,
-                    "root": "Array item",
+                    "base": "Array item",
                     "arguments": {}
                 }
             ]
@@ -135,14 +135,14 @@ mod tests {
         let json_value = json!({
             "feature": {
                 TYPE_KEY: TYPE,
-                "root": "Hello {{ name }}!",
+                "base": "Hello {{ name }}!",
                 "arguments": {}
             },
             "nested": {
                 "deep": {
                     "value": {
                         TYPE_KEY: TYPE,
-                        "root": "Deep nested",
+                        "base": "Deep nested",
                         "arguments": {}
                     }
                 }
@@ -150,7 +150,7 @@ mod tests {
             "array": [
                 {
                     TYPE_KEY: TYPE,
-                    "root": "Array item",
+                    "base": "Array item",
                     "arguments": {}
                 },
                 {
@@ -158,7 +158,7 @@ mod tests {
                 },
                 {
                     TYPE_KEY: TYPE,
-                    "root": "Second array item",
+                    "base": "Second array item",
                     "arguments": {}
                 }
             ],
@@ -215,12 +215,12 @@ mod tests {
         let json_value = json!({
             "feature": {
                 "$type": "SomeOtherType",
-                "root": "Hello {{ name }}!",
+                "base": "Hello {{ name }}!",
                 "arguments": {}
             },
             "another": {
                 "$type": 42, // Not a string
-                "root": "Hello",
+                "base": "Hello",
                 "arguments": {}
             }
         });
@@ -238,7 +238,7 @@ mod tests {
                         "level4": {
                             "level5": {
                                 TYPE_KEY: TYPE,
-                                "root": "Very deep",
+                                "base": "Very deep",
                                 "arguments": {}
                             }
                         }
@@ -262,14 +262,14 @@ mod tests {
                 [
                     {
                         TYPE_KEY: TYPE,
-                        "root": "Nested array item",
+                        "base": "Nested array item",
                         "arguments": {}
                     }
                 ],
                 {
                     "nested_object": {
                         TYPE_KEY: TYPE,
-                        "root": "Object in array",
+                        "base": "Object in array",
                         "arguments": {}
                     }
                 }
@@ -289,11 +289,11 @@ mod tests {
         let json_value = json!({
             "feature": {
                 TYPE_KEY: TYPE,
-                "root": "Hello {{ name }}!",
+                "base": "Hello {{ name }}!",
                 "arguments": {
                     "nested": {
                         TYPE_KEY: TYPE, // This should not be found
-                        "root": "Should not be found",
+                        "base": "Should not be found",
                         "arguments": {}
                     }
                 }
@@ -312,7 +312,7 @@ mod tests {
         let json_value = json!({
             "feature": {
                 TYPE_KEY: TYPE,
-                "root": "Hello {{ name }}! Welcome to {{ resources.app_name }}.",
+                "base": "Hello {{ name }}! Welcome to {{ resources.app_name }}.",
                 "arguments": {
                     "simple.txt": "simple.txt",
                     "template.liquid": "template.liquid"
@@ -322,7 +322,7 @@ mod tests {
                 "deep": {
                     "value": {
                         TYPE_KEY: TYPE,
-                        "root": "Deep nested: {{ resources.template }}",
+                        "base": "Deep nested: {{ resources.template }}",
                         "arguments": {
                             "template.liquid": "template.liquid"
                         }
@@ -332,7 +332,7 @@ mod tests {
             "array": [
                 {
                     TYPE_KEY: TYPE,
-                    "root": "Array item: {{ index }}",
+                    "base": "Array item: {{ index }}",
                     "arguments": {}
                 }
             ],

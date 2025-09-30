@@ -131,11 +131,13 @@
 								"Optify.ConfigurableString"
 							]
 						},
-						"root": {
+						"base": {
+							"description": "The base value to use as the starting point or root for the configurable string. It can be a string or an object to use a file or a liquid template.",
 							"$ref": "#/definitions/configurableStringReplacementValue"
 						},
 						"arguments": {
 							"type": "object",
+							"description": "The arguments to use to fill the base template. Each argument can be a string or an object.",
 							"additionalProperties": {
 								"$ref": "#/definitions/configurableStringReplacementValue"
 							}
@@ -143,7 +145,7 @@
 					},
 					"required": [
 						"$type",
-						"root"
+						"base"
 					],
 					"additionalProperties": false
 				}
@@ -162,7 +164,7 @@
 					"properties": {
 						"file": {
 							"type": "string",
-							"description": "The relative path to a file with contents to use as a replacement value.\n\nCertain types of files will be handled specially: .liquid files will be treated as liquid templates."
+							"description": "The relative path to a file with contents to use as a replacement value.\n\nCertain types of files will be handled specially: .liquid files will be treated as liquid templates and arguments can be used to recursively fill the template."
 						}
 					},
 					"required": [
@@ -175,7 +177,7 @@
 					"properties": {
 						"liquid": {
 							"type": "string",
-							"description": "A liquid template to use as a replacement value for recursive replacement."
+							"description": "A liquid template to use as the value. The template can use arguments to recursively fill the template."
 						}
 					},
 					"required": [

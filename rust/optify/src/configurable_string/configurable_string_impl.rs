@@ -23,7 +23,7 @@ pub enum ReplacementValue {
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct ConfigurableString {
-    pub root: ReplacementValue,
+    pub base: ReplacementValue,
     pub arguments: Option<HashMap<String, ReplacementValue>>,
 }
 
@@ -308,6 +308,6 @@ impl ConfigurableString {
     }
 
     pub fn build(&self, files: &LoadedFiles) -> Result<String, String> {
-        self.process_replacement_value(&self.root, files)
+        self.process_replacement_value(&self.base, files)
     }
 }

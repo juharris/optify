@@ -9,7 +9,7 @@ Example:
   "options": {
     "greeting": {
       "$type": "Optify.ConfigurableString",
-      "root": {
+      "base": {
         "liquid": "Hello, {{name}}!"
       },
       "arguments": {
@@ -61,7 +61,7 @@ The simplest form is a plain string without any variables:
 {
   "greeting": {
     "$type": "Optify.ConfigurableString",
-    "root": "Hello, World!"
+    "base": "Hello, World!"
   }
 }
 ```
@@ -76,7 +76,7 @@ Use Liquid syntax for variable substitution:
 {
   "message": {
     "$type": "Optify.ConfigurableString",
-    "root": {
+    "base": {
       "liquid": "Welcome to {{ name }}!"
     },
     "arguments": {
@@ -96,7 +96,7 @@ Load templates from external files:
 {
   "greeting_from_file": {
     "$type": "Optify.ConfigurableString",
-    "root": {
+    "base": {
       "file": "templates/greeting.txt"
     }
   }
@@ -118,7 +118,7 @@ Combine file loading with Liquid templates:
 {
   "message_from_liquid_file": {
     "$type": "Optify.ConfigurableString",
-    "root": {
+    "base": {
       "file": "templates/message.liquid"
     },
     "arguments": {
@@ -155,7 +155,7 @@ One of the most powerful features of configurable strings is the ability to over
   "options": {
     "welcome_message": {
       "$type": "Optify.ConfigurableString",
-      "root": {
+      "base": {
         "liquid": "Hello, {{audience}}!"
       },
       "arguments": {
@@ -193,7 +193,7 @@ Arguments can reference other arguments using Liquid templates:
 {
   "complex_message": {
     "$type": "Optify.ConfigurableString",
-    "root": {
+    "base": {
       "liquid": "{{ greeting }}, {{ name }}! {{ closing }}"
     },
     "arguments": {
@@ -219,7 +219,7 @@ Different messages for different environments without changing code:
 {
   "api_endpoint": {
     "$type": "Optify.ConfigurableString",
-    "root": {
+    "base": {
       "liquid": "https://{{ subdomain }}.example.com/api/{{ version }}"
     },
     "arguments": {
@@ -237,7 +237,7 @@ Provide context-aware error messages:
 {
   "error_message": {
     "$type": "Optify.ConfigurableString",
-    "root": {
+    "base": {
       "liquid": "Failed to {{ action }} {{ resource }}: {{ reason }}"
     },
     "arguments": {
