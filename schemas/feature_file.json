@@ -137,7 +137,7 @@
 						},
 						"arguments": {
 							"type": "object",
-							"description": "The arguments to use to fill the base template. Each argument can be a string or an object.",
+							"description": "The arguments to use to fill the base template. Each argument can be a string or an object.\n\nUse empty strings instead of `null`. Values cannot be `null` because it's not clear what should be done with them and how they should be inserted into the template.",
 							"additionalProperties": {
 								"$ref": "#/definitions/configurableStringReplacementValue"
 							}
@@ -153,9 +153,6 @@
 		},
 		"configurableStringReplacementValue": {
 			"anyOf": [
-				{
-					"type": "null"
-				},
 				{
 					"type": "string"
 				},
