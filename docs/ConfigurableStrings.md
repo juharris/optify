@@ -1,9 +1,11 @@
 # Configurable Strings
 
-Strings can be configured with a starting root template and arguments.
-They are useful for sharing strings amongst features and allowing to override parts of the string.
+Strings can be configured with a `"base"` starting root template and `"arguments"` to fill the template.
+This encourages reusing common substrings and sharing them amongst features while allowing features to override parts of the string.
 
-Example:
+`"base"` and values in `"arguments"` can be strings, or objects that reference a file or a [Liquid][Liquid] template.
+
+Simple example:
 ```JSON
 {
   "options": {
@@ -20,7 +22,7 @@ Example:
 }
 ```
 
-Result: `"Hello, World!"`
+Result: `{ "greeting": "Hello, World!" }`
 
 **Strings are built when the configuration is retrieved.**
 Meaning that they will be built eagerly in Rust and cached when requested from a provider,
@@ -295,3 +297,5 @@ The test suite includes:
 - File-based templates
 - Complex nested arguments
 - Various data type handling
+
+[Liquid]: https://shopify.github.io/liquid
