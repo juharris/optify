@@ -1,11 +1,13 @@
 use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
-use optify::provider::{OptionsRegistry, OptionsWatcher};
+use optify::provider::{OptionsRegistry, OptionsWatcher, WatcherOptions};
 use std::fs::File;
 use std::io::Write;
 use std::thread;
 use std::time::Duration;
 
 const SLEEP_TIME: u64 = 50;
+
+const DEFAULT_DEBOUNCE_DURATION: Duration = Duration::from_millis(10);
 
 #[test]
 fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,7 +18,10 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
     let mut file = File::create(&options_file)?;
     file.write_all(b"{\"options\":{\"test\":42}}")?;
 
-    let provider = OptionsWatcher::build(test_dir)?;
+    let provider = OptionsWatcher::build_with_options(
+        test_dir,
+        WatcherOptions::new(DEFAULT_DEBOUNCE_DURATION),
+    )?;
     let created_at = provider.last_modified();
 
     let options = provider.get_options("test", &["modifiable_test"])?;
@@ -53,7 +58,10 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     let subdir2 = temp_dir2.path().join("dir2");
     std::fs::create_dir_all(&subdir2)?;
 
-    let provider = OptionsWatcher::build_from_directories(&[subdir1.as_path(), subdir2.as_path()])?;
+    let provider = OptionsWatcher::build_from_directories_with_options(
+        &[subdir1.as_path(), subdir2.as_path()],
+        WatcherOptions::new(DEFAULT_DEBOUNCE_DURATION),
+    )?;
     let created_at = provider.last_modified();
 
     let options1 = provider.get_options("test1", &["test1"])?;
@@ -130,6 +138,7 @@ fn test_watchable_builder_error_rebuilding_provider() -> Result<(), Box<dyn std:
 
     let mut builder = OptionsWatcherBuilder::new();
     builder.add_directory(test_dir)?;
+    builder.with_watcher_options(WatcherOptions::new(DEFAULT_DEBOUNCE_DURATION));
     let provider = builder.build()?;
 
     let options = provider.get_options("test", &["test"])?;

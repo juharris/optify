@@ -5,12 +5,9 @@ use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
 use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::provider::{
-    CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry,
+    CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry, WatcherOptions,
 };
 use crate::schema::metadata::OptionsMetadata;
-
-/// The duration to wait before triggering a rebuild after file changes.
-pub const DEFAULT_DEBOUNCE_DURATION: std::time::Duration = std::time::Duration::from_secs(1);
 
 pub type OptionsWatcherListener = Arc<dyn Fn(&HashSet<PathBuf>) + Send + Sync>;
 
@@ -33,14 +30,63 @@ pub struct OptionsWatcher {
 }
 
 impl OptionsWatcher {
+    pub fn build_with_options(
+        directory: impl AsRef<Path>,
+        watcher_options: WatcherOptions,
+    ) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.with_watcher_options(watcher_options);
+        builder.add_directory(directory.as_ref())?;
+        builder.build()
+    }
+
+    pub fn build_with_schema_and_options(
+        directory: impl AsRef<Path>,
+        schema_path: impl AsRef<Path>,
+        watcher_options: WatcherOptions,
+    ) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.with_schema(schema_path.as_ref())?;
+        builder.add_directory(directory.as_ref())?;
+        builder.with_watcher_options(watcher_options);
+        builder.build()
+    }
+
+    pub fn build_from_directories_with_options(
+        directories: &[impl AsRef<Path>],
+        watcher_options: WatcherOptions,
+    ) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.with_watcher_options(watcher_options);
+        builder.build()
+    }
+
+    pub fn build_from_directories_with_schema_and_options(
+        directories: &[impl AsRef<Path>],
+        schema_path: impl AsRef<Path>,
+        watcher_options: WatcherOptions,
+    ) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.with_watcher_options(watcher_options);
+        builder.with_schema(schema_path.as_ref())?;
+        for directory in directories {
+            builder.add_directory(directory.as_ref())?;
+        }
+        builder.build()
+    }
+
     pub(crate) fn new(
         watched_directories: &[impl AsRef<Path>],
         schema_path: Option<impl AsRef<Path>>,
+        watcher_options: WatcherOptions,
     ) -> Result<Self, String> {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
         let mut debouncer_watcher = new_debouncer(
-            DEFAULT_DEBOUNCE_DURATION,
+            watcher_options.debounce_duration,
             None,
             move |result: DebounceEventResult| match result {
                 Ok(events) => {

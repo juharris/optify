@@ -2,9 +2,9 @@ import { describe, expect, test, beforeEach, afterEach } from '@jest/globals';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { OptionsWatcher } from '../dist/index';
+import { OptionsWatcher, WatcherOptions } from '../dist/index';
 
-const MODIFICATION_DEBOUNCE_MS = 1000;
+const MODIFICATION_DEBOUNCE_MS = 10;
 const RETRY_DELAY = MODIFICATION_DEBOUNCE_MS * 2 + 100;
 const MAX_RETRY_ATTEMPTS = 10;
 
@@ -23,7 +23,9 @@ describe("OptionsWatcher", () => {
     const configPath = path.join(tempDir, 'config.yaml');
     fs.writeFileSync(configPath, '');
 
-    const watcher = OptionsWatcher.build(tempDir);
+    const options = new WatcherOptions();
+    options.setDebounceDurationMs(MODIFICATION_DEBOUNCE_MS);
+    let watcher: OptionsWatcher | null = OptionsWatcher.buildWithOptions(tempDir, options);
     const builtTime = watcher.lastModified();
 
     const initialFeatures = watcher.featuresWithMetadata();
@@ -36,17 +38,19 @@ describe("OptionsWatcher", () => {
       if (listenerCalled) return;
       listenerCalled = true;
 
-      expect(watcher.lastModified()).toBeGreaterThan(builtTime!);
+      expect(watcher!.lastModified()).toBeGreaterThan(builtTime!);
       expect(event.changedPaths).toBeDefined();
       expect(Array.isArray(event.changedPaths)).toBe(true);
       expect(event.changedPaths.length).toBeGreaterThan(0);
 
-      const afterRebuild = watcher.featuresWithMetadata();
+      const afterRebuild = watcher!.featuresWithMetadata();
       expect(afterRebuild).not.toBe(initialFeatures);
 
-      const afterRebuild2 = watcher.featuresWithMetadata();
+      const afterRebuild2 = watcher!.featuresWithMetadata();
       expect(afterRebuild2).toBe(afterRebuild);
 
+      // Let native resources be cleaned up.
+      watcher = null;
       done();
     });
 
@@ -77,7 +81,9 @@ describe("OptionsWatcher", () => {
     const configPath = path.join(tempDir, 'config.yaml');
     fs.writeFileSync(configPath, '');
 
-    const watcher = OptionsWatcher.build(tempDir);
+    const options = new WatcherOptions();
+    options.setDebounceDurationMs(MODIFICATION_DEBOUNCE_MS);
+    let watcher: OptionsWatcher | null = OptionsWatcher.buildWithOptions(tempDir, options);
     const builtTime = watcher.lastModified();
 
     let listener1Called = false;
@@ -87,6 +93,8 @@ describe("OptionsWatcher", () => {
     const checkAllListenersCalled = () => {
       if (listener1Called && listener2Called && !testCompleted) {
         testCompleted = true;
+        // Let native resources be cleaned up.
+        watcher = null;
         done();
       }
     };
@@ -95,7 +103,7 @@ describe("OptionsWatcher", () => {
     watcher.addListener((_, event) => {
       if (!listener1Called) {
         listener1Called = true;
-        expect(watcher.lastModified()).toBeGreaterThan(builtTime!);
+        expect(watcher!.lastModified()).toBeGreaterThan(builtTime!);
         expect(event.changedPaths).toBeDefined();
         expect(Array.isArray(event.changedPaths)).toBe(true);
         expect(event.changedPaths.length).toBeGreaterThan(0);
@@ -106,7 +114,7 @@ describe("OptionsWatcher", () => {
     watcher.addListener((_, event) => {
       if (!listener2Called) {
         listener2Called = true;
-        expect(watcher.lastModified()).toBeGreaterThan(builtTime!);
+        expect(watcher!.lastModified()).toBeGreaterThan(builtTime!);
         expect(event.changedPaths).toBeDefined();
         expect(Array.isArray(event.changedPaths)).toBe(true);
         expect(event.changedPaths.length).toBeGreaterThan(0);

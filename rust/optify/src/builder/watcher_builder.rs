@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::provider::OptionsWatcher;
+use crate::provider::{OptionsWatcher, WatcherOptions};
 
 use super::OptionsRegistryBuilder;
 
@@ -14,6 +14,7 @@ use super::OptionsRegistryBuilder;
 pub struct OptionsWatcherBuilder {
     schema_path: Option<PathBuf>,
     watched_directories: Vec<PathBuf>,
+    watcher_options: WatcherOptions,
 }
 
 impl Default for OptionsWatcherBuilder {
@@ -27,7 +28,13 @@ impl OptionsWatcherBuilder {
         OptionsWatcherBuilder {
             schema_path: None,
             watched_directories: Vec::new(),
+            watcher_options: WatcherOptions::default(),
         }
+    }
+
+    pub fn with_watcher_options(&mut self, watcher_options: WatcherOptions) -> &mut Self {
+        self.watcher_options = watcher_options;
+        self
     }
 }
 
@@ -45,6 +52,10 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
     }
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
-        OptionsWatcher::new(&self.watched_directories, self.schema_path.as_ref())
+        OptionsWatcher::new(
+            &self.watched_directories,
+            self.schema_path.as_ref(),
+            self.watcher_options.clone(),
+        )
     }
 }

@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::preferences::JsGetOptionsPreferences;
+use crate::watcher_options::JsWatcherOptions;
 
 #[napi(js_name = "OptionsWatcher")]
 pub struct JsOptionsWatcher {
@@ -64,8 +65,35 @@ impl JsOptionsWatcher {
   }
 
   #[napi]
+  pub fn build_with_options(
+    directory: String,
+    options: &JsWatcherOptions,
+  ) -> napi::Result<JsOptionsWatcher> {
+    let path = std::path::Path::new(&directory);
+    match OptionsWatcher::build_with_options(path, options.inner.clone()) {
+      Ok(provider) => Ok(JsOptionsWatcher {
+        inner: Some(provider),
+      }),
+      Err(e) => Err(napi::Error::from_reason(e.to_string())),
+    }
+  }
+
+  #[napi]
   pub fn build_from_directories(directories: Vec<String>) -> napi::Result<JsOptionsWatcher> {
     match OptionsWatcher::build_from_directories(&directories) {
+      Ok(provider) => Ok(JsOptionsWatcher {
+        inner: Some(provider),
+      }),
+      Err(e) => Err(napi::Error::from_reason(e.to_string())),
+    }
+  }
+
+  #[napi]
+  pub fn build_from_directories_with_options(
+    directories: Vec<String>,
+    options: &JsWatcherOptions,
+  ) -> napi::Result<JsOptionsWatcher> {
+    match OptionsWatcher::build_from_directories_with_options(&directories, options.inner.clone()) {
       Ok(provider) => Ok(JsOptionsWatcher {
         inner: Some(provider),
       }),
@@ -188,6 +216,12 @@ impl JsOptionsWatcherBuilder {
       .inner
       .add_directory(path)
       .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    Ok(())
+  }
+
+  #[napi]
+  pub fn with_watcher_options(&mut self, options: &JsWatcherOptions) -> napi::Result<()> {
+    self.inner.with_watcher_options(options.inner.clone());
     Ok(())
   }
 
