@@ -1,12 +1,18 @@
-use std::{collections::HashMap, path::Path, sync::RwLock};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+    sync::RwLock,
+};
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
+    configurable_string::LoadedFiles,
     provider::GetOptionsPreferences,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
 use super::OptionsRegistry;
+use crate::configurable_string::ConfigurableString;
 
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
@@ -16,11 +22,12 @@ pub(crate) type SourceValue = config::File<config::FileSourceString, config::Fil
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
+pub(crate) type ConfigurableValuePointers = HashMap<String, Vec<String>>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
 pub(crate) type EntireConfigCache = HashMap<Vec<String>, config::Config>;
-pub(crate) type OptionsCache = HashMap<(String, Vec<String>), serde_json::Value>;
+pub(crate) type OptionsCache = HashMap<(String, Vec<String>, bool), serde_json::Value>;
 
 pub struct CacheOptions {}
 
@@ -29,7 +36,9 @@ pub struct CacheOptions {}
 pub struct OptionsProvider {
     aliases: Aliases,
     conditions: Conditions,
+    configurable_value_pointers: ConfigurableValuePointers,
     features: Features,
+    loaded_files: LoadedFiles,
     sources: Sources,
 
     // Caches - using RwLock for thread-safe interior mutability
@@ -37,25 +46,22 @@ pub struct OptionsProvider {
     options_cache: RwLock<OptionsCache>,
 }
 
-fn feature_names_to_vec<T: AsRef<str>>(feature_names: &[T]) -> Vec<String> {
-    feature_names
-        .iter()
-        .map(|s| s.as_ref().to_owned())
-        .collect()
-}
-
 impl OptionsProvider {
     pub(crate) fn new(
-        aliases: &Aliases,
-        conditions: &Conditions,
-        features: &Features,
-        sources: &Sources,
+        aliases: Aliases,
+        conditions: Conditions,
+        configurable_value_pointers: ConfigurableValuePointers,
+        features: Features,
+        loaded_files: LoadedFiles,
+        sources: Sources,
     ) -> Self {
         OptionsProvider {
-            aliases: aliases.clone(),
-            conditions: conditions.clone(),
-            features: features.clone(),
-            sources: sources.clone(),
+            aliases,
+            conditions,
+            configurable_value_pointers,
+            features,
+            loaded_files,
+            sources,
             entire_config_cache: RwLock::new(EntireConfigCache::new()),
             options_cache: RwLock::new(OptionsCache::new()),
         }
@@ -63,20 +69,19 @@ impl OptionsProvider {
 
     fn get_entire_config(
         &self,
-        feature_names: &[impl AsRef<str>],
+        feature_names: &[String],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<config::Config, String> {
-        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         if let Some(_cache_options) = cache_options {
-            match self.get_entire_config_from_cache(&feature_names, preferences) {
+            match self.get_entire_config_from_cache(feature_names, preferences) {
                 Ok(Some(config)) => return Ok(config),
                 Ok(None) => (),
                 Err(e) => return Err(e),
             }
         };
         let mut config_builder = config::Config::builder();
-        for canonical_feature_name in feature_names.as_slice() {
+        for canonical_feature_name in feature_names {
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
                 None => {
@@ -100,7 +105,7 @@ impl OptionsProvider {
         match config_builder.build() {
             Ok(cfg) => {
                 if let Some(_cache_options) = cache_options {
-                    let cache_key = feature_names;
+                    let cache_key = feature_names.to_owned();
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
@@ -116,7 +121,7 @@ impl OptionsProvider {
 
     fn get_entire_config_from_cache(
         &self,
-        feature_names: &[impl AsRef<str>],
+        feature_names: &[String],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<config::Config>, String> {
         if let Some(preferences) = preferences {
@@ -124,8 +129,7 @@ impl OptionsProvider {
                 return Err("Caching when overrides are given is not supported.".to_owned());
             }
         }
-        let features = feature_names_to_vec(feature_names);
-        let cache_key = features;
+        let cache_key = feature_names.to_owned();
         if let Some(config) = self
             .entire_config_cache
             .read()
@@ -145,8 +149,15 @@ impl OptionsProvider {
         _cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
-        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        let cache_key = (key.to_owned(), feature_names);
+        let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let are_configurable_strings_enabled = preferences
+            .map(|p| p.are_configurable_strings_enabled)
+            .unwrap_or(false);
+        let cache_key = (
+            key.to_owned(),
+            filtered_feature_names,
+            are_configurable_strings_enabled,
+        );
         if let Some(options) = self
             .options_cache
             .read()
@@ -158,13 +169,93 @@ impl OptionsProvider {
 
         Ok(None)
     }
+
+    /// Process configurable strings in the JSON value based on the pointers.
+    pub fn process_configurable_strings(
+        &self,
+        value: &mut serde_json::Value,
+        feature_names: &[String],
+        key_prefix: Option<&str>,
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<(), String> {
+        if preferences
+            .map(|p| !p.are_configurable_strings_enabled)
+            // Configurable strings are disabled by default.
+            .unwrap_or(true)
+        {
+            return Ok(());
+        }
+
+        if self.configurable_value_pointers.is_empty() {
+            // There are no configurable strings to process.
+            return Ok(());
+        }
+
+        // Collect all configurable pointers for the requested features.
+        let all_pointers: HashSet<&String> = feature_names
+            .iter()
+            .filter_map(|feature_name| self.configurable_value_pointers.get(feature_name))
+            .flat_map(|pointers| pointers.iter())
+            .collect();
+
+        for pointer in all_pointers {
+            let relative_pointer = match key_prefix {
+                Some(key_prefix) => {
+                    if !pointer.starts_with(key_prefix) {
+                        // The pointer does not start with the key prefix so it will not be used.
+                        continue;
+                    } else {
+                        // Remove the key prefix because we need pointers relative the current key.
+                        pointer[key_prefix.len()..].to_string()
+                    }
+                }
+                // There is not key prefix when the entire configuration is requested.
+                _ => pointer.to_string(),
+            };
+
+            if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
+                // Only continue if it has the right indicator property because it may have been overridden.
+                if let Some(type_value) =
+                    configurable_value.get(crate::configurable_string::locator::TYPE_KEY)
+                {
+                    if let Some(type_str) = type_value.as_str() {
+                        if type_str != crate::configurable_string::locator::TYPE {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+
+                let configurable_string: ConfigurableString =
+                    match serde_json::from_value(configurable_value.clone()) {
+                        Ok(cs) => cs,
+                        Err(e) => {
+                            return Err(format!(
+                                "Failed to deserialize ConfigurableString at {}: {}",
+                                pointer, e
+                            ));
+                        }
+                    };
+
+                // Replace the value at the pointer location with the built string
+
+                let built_string = configurable_string.build(&self.loaded_files)?;
+                *configurable_value = serde_json::Value::String(built_string);
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl OptionsRegistry for OptionsProvider {
     fn build(directory: impl AsRef<Path>) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(directory.as_ref())?;
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn build_with_schema(
@@ -174,7 +265,7 @@ impl OptionsRegistry for OptionsProvider {
         let mut builder = OptionsProviderBuilder::new();
         builder.with_schema(schema_path.as_ref())?;
         builder.add_directory(directory.as_ref())?;
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsProvider, String> {
@@ -182,7 +273,7 @@ impl OptionsRegistry for OptionsProvider {
         for directory in directories {
             builder.add_directory(directory.as_ref())?;
         }
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn build_from_directories_with_schema(
@@ -194,7 +285,7 @@ impl OptionsRegistry for OptionsProvider {
         for directory in directories {
             builder.add_directory(directory.as_ref())?;
         }
-        builder.build()
+        builder.build_and_clear()
     }
 
     fn get_aliases(&self) -> Vec<String> {
@@ -216,10 +307,15 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
+        let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let config = self.get_entire_config(&feature_names, cache_options, preferences)?;
 
-        match config.try_deserialize() {
-            Ok(value) => Ok(value),
+        match config.try_deserialize::<serde_json::Value>() {
+            Ok(mut value) => {
+                // Process configurable strings in the entire config
+                self.process_configurable_strings(&mut value, &feature_names, None, preferences)?;
+                Ok(value)
+            }
             Err(e) => Err(e.to_string()),
         }
     }
@@ -316,14 +412,26 @@ impl OptionsRegistry for OptionsProvider {
             }
         }
 
-        let config = self.get_entire_config(feature_names, cache_options, preferences)?;
+        let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let config = self.get_entire_config(&filtered_feature_names, cache_options, preferences)?;
 
         match config.get::<serde_json::Value>(key) {
-            Ok(value) => {
-                if let Some(_cache_options) = cache_options {
-                    let feature_names =
-                        self.get_filtered_feature_names(feature_names, preferences)?;
-                    let cache_key = (key.to_owned(), feature_names);
+            Ok(mut value) => {
+                self.process_configurable_strings(
+                    &mut value,
+                    &filtered_feature_names,
+                    Some(key),
+                    preferences,
+                )?;
+                if cache_options.is_some() {
+                    let are_configurable_strings_enabled = preferences
+                        .map(|p| p.are_configurable_strings_enabled)
+                        .unwrap_or(false);
+                    let cache_key = (
+                        key.to_owned(),
+                        filtered_feature_names.clone(),
+                        are_configurable_strings_enabled,
+                    );
                     self.options_cache
                         .write()
                         .expect("the options cache lock should be held")
@@ -331,12 +439,10 @@ impl OptionsRegistry for OptionsProvider {
                 }
                 Ok(value)
             }
-            Err(e) => {
-                let feature_names = feature_names_to_vec(feature_names);
-                Err(format!(
-                    "Error getting options with features {feature_names:?}: {e}"
-                ))
-            }
+            Err(e) => Err(format!(
+                "Error getting options with features {:?}: {e}",
+                feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>()
+            )),
         }
     }
 

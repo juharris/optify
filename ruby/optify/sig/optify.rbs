@@ -52,6 +52,16 @@ end
 
 # Preferences when getting options.
 class Optify::GetOptionsPreferences
+  # Indicates if configurable strings are enabled.
+  # They are disabled by default.
+  def are_configurable_strings_enabled?: () -> bool
+
+  # Disable configurable strings which default to disabled.
+  def disable_configurable_strings: () -> void
+
+  # Enable configurable strings which default to disabled.
+  def enable_configurable_strings: () -> void
+
   # Set constraints for the current request to limit the features that can be enabled.
   def constraints=: (::Hash[untyped, untyped]? value) -> void
 

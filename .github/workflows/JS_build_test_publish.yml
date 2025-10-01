@@ -23,10 +23,12 @@ on:
     branches: [ "main" ]
     types: [ opened, synchronize, reopened, ready_for_review ]
     paths:
-      - ".github/workflows/JS_build_test_publish.yml"
-      # We only really need to run this if the version is bumped.
+      - '.github/workflows/JS_build_test_publish.yml'
+      # We only really need to run this if the version is bumped or the dependencies are updated.
       # We test the code well enough in build_test.yml.
-      - "js/optify-config/package.json"
+      - 'js/optify-config/Cargo.toml'
+      - 'js/optify-config/package.json'
+      - 'rust/optify/Cargo.toml'
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
@@ -41,10 +43,12 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
+              set -eu
               yarn build --target x86_64-apple-darwin
               yarn build:ts
           - host: windows-latest
             build: |
+              set -eu
               yarn build --target x86_64-pc-windows-msvc
               yarn build:ts
             target: x86_64-pc-windows-msvc
@@ -52,28 +56,34 @@ jobs:
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
+              set -eu
+              rustup update stable
               yarn build --target x86_64-unknown-linux-gnu
               yarn build:ts
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
+              set -eu
               yarn build --target aarch64-apple-darwin
               yarn build:ts
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
-            build: |
+            build: |-
+              set -eu
+              rustup update stable
               yarn build --target aarch64-unknown-linux-gnu
               yarn build:ts
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
-              set -ex &&
-              npm install -g corepack &&
-              corepack enable &&
-              rustup target add aarch64-unknown-linux-musl &&
-              yarn build --target aarch64-unknown-linux-musl &&
+              set -eu
+              rustc --version
+              npm install -g corepack
+              corepack enable
+              rustup target add aarch64-unknown-linux-musl
+              yarn build --target aarch64-unknown-linux-musl
               yarn build:ts
     name: "[${{ matrix.settings.target }}] Build & Test"
     runs-on: ${{ matrix.settings.host }}

@@ -1,0 +1,8 @@
+{
+	"options": {
+		"greeting": {
+			"$type": "wtv",
+			"base": "Hello, World!"
+		}
+	}
+}

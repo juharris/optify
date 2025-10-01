@@ -1,0 +1,3 @@
+options:
+  greeting: "raw greeting"
+  message: "raw message"

@@ -1,0 +1,9 @@
+{
+	"features": [
+		"with_files"
+	],
+	"options": {
+		"greeting_from_file": "Hello from template file!",
+		"message_from_liquid_file": "Welcome to Optify! This message is from a template file."
+	}
+}

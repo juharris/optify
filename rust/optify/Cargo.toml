@@ -21,6 +21,7 @@ exclude = [
 config = "0.15.14"
 dunce = "1.0.5"
 jsonschema = { version = "0.32.1" }
+liquid = "0.26.11"
 notify = "8.2.0"
 # For fetching JSON schema files from the web, but it requires OpenSSL, which is tricky to install in CI environments in Docker containers.
 # Add `openssl-sys = { version = "*", features = ["vendored"] }`, helps a bit, but requires Perl which is also tricky to install.

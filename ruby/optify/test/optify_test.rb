@@ -35,6 +35,7 @@ class OptifyTest < Test::Unit::TestCase
         features = expected_info['features']
         constraints = expected_info['constraints']
         preferences = Optify::GetOptionsPreferences.new
+        preferences.enable_configurable_strings
         preferences.constraints = constraints
         expected_options.each do |key, expected_value|
           expected_json = provider.get_options_json_with_preferences(key, features, preferences)
@@ -239,6 +240,9 @@ class OptifyTest < Test::Unit::TestCase
       preferences.skip_feature_name_conversion = false
       options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       assert_equal('root string same', options.rootString)
+
+      # It's nice that these JSON Paths like keys work, but it's not guaranteed to work in the future and
+      # wouldn't work when there are configurable strings.
       s = provider.get_options_json('myConfig.rootString', feature_names)
       assert_equal('"root string same"', s)
       assert_equal('root string same', JSON.parse(s))
@@ -280,7 +284,6 @@ class OptifyTest < Test::Unit::TestCase
       preferences.skip_feature_name_conversion = false
       preferences.constraints = { info: 2, status: 'new' }
       filtered = provider.get_filtered_features(%w[a b], preferences)
-      # FIXME
       assert_equal(%w[B], filtered)
     end
   end

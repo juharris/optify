@@ -14,11 +14,20 @@ pub struct MutGetOptionsPreferences(RefCell<GetOptionsPreferences>);
 
 impl MutGetOptionsPreferences {
     pub fn new() -> Self {
-        Self(RefCell::new(GetOptionsPreferences {
-            constraints: None,
-            overrides_json: None,
-            skip_feature_name_conversion: false,
-        }))
+        Self(RefCell::new(GetOptionsPreferences::new()))
+    }
+
+    // Configurable Strings Section
+    pub fn are_configurable_strings_enabled(&self) -> bool {
+        self.0.borrow().are_configurable_strings_enabled
+    }
+
+    pub fn disable_configurable_strings(&self) {
+        self.0.borrow_mut().are_configurable_strings_enabled = false;
+    }
+
+    pub fn enable_configurable_strings(&self) {
+        self.0.borrow_mut().are_configurable_strings_enabled = true;
     }
 
     // Constraints Section

@@ -64,6 +64,19 @@ module Optify
 
   # Preferences when getting options.
   class GetOptionsPreferences
+    # Indicates if configurable strings are enabled.
+    # They are disabled by default.
+    sig { returns(T::Boolean) }
+    def are_configurable_strings_enabled?; end
+
+    # Disable configurable strings which default to disabled.
+    sig { void }
+    def disable_configurable_strings; end
+
+    # Enable configurable strings which default to disabled.
+    sig { void }
+    def enable_configurable_strings; end
+
     # Set constraints for the current request to limit the features that can be enabled.
     sig { params(value: T.nilable(T::Hash[T.untyped, T.untyped])).void }
     def constraints=(value); end

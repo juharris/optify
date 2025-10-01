@@ -114,6 +114,76 @@
 			"$ref": "#/definitions/condition",
 			"description": "Conditions to enable this feature file when it is requested and when constraints are given. These conditions are meant for temporary experimental features that should only be enabled in some requests.\n\nIf no constraints are given, then these conditions are ignored. Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.\n\nConditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#conditions for more information and examples."
 		},
+		"configurableString": {
+			"anyOf": [
+				{
+					"type": "null"
+				},
+				{
+					"type": "string"
+				},
+				{
+					"type": "object",
+					"properties": {
+						"$type": {
+							"type": "string",
+							"enum": [
+								"Optify.ConfigurableString"
+							]
+						},
+						"base": {
+							"description": "The base value to use as the starting point or root for the configurable string. It can be a string or an object to use a file or a liquid template.",
+							"$ref": "#/definitions/configurableStringReplacementValue"
+						},
+						"arguments": {
+							"type": "object",
+							"description": "The arguments to use to fill the base template. Each argument can be a string or an object.\n\nUse empty strings instead of `null`. Values cannot be `null` because it's not clear what should be done with them and how they should be inserted into the template.",
+							"additionalProperties": {
+								"$ref": "#/definitions/configurableStringReplacementValue"
+							}
+						}
+					},
+					"required": [
+						"$type",
+						"base"
+					],
+					"additionalProperties": false
+				}
+			]
+		},
+		"configurableStringReplacementValue": {
+			"anyOf": [
+				{
+					"type": "string"
+				},
+				{
+					"type": "object",
+					"properties": {
+						"file": {
+							"type": "string",
+							"description": "The relative path to a file with contents to use as a replacement value.\n\nCertain types of files will be handled specially: .liquid files will be treated as liquid templates and arguments can be used to recursively fill the template."
+						}
+					},
+					"required": [
+						"file"
+					],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"liquid": {
+							"type": "string",
+							"description": "A liquid template to use as the value. The template can use arguments to recursively fill the template."
+						}
+					},
+					"required": [
+						"liquid"
+					],
+					"additionalProperties": false
+				}
+			]
+		},
 		"imports": {
 			"type": "array",
 			"description": "List of canonical feature names to inherit from.\n\nCanonical feature names are derived from the relative path to the file from the root of the configuration files, but without the file extension in order to keep canonical feature names clear.\n\nImports are applied in order. I.e., later imports override earlier imports.\n\nAliases cannot be use to refer to an imported feature.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#inheritance for more information and examples.",
@@ -145,7 +215,7 @@
 						"minLength": 1
 					},
 					"default": [
-						"alias"
+						"<alias>"
 					],
 					"uniqueItems": true
 				},

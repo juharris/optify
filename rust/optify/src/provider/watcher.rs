@@ -92,7 +92,7 @@ impl OptionsWatcher {
                 .map_err(|e| format!("Failed to add directory {:?}: {e}", dir.as_ref()))?;
         }
         let provider = builder
-            .build()
+            .build_and_clear()
             .map_err(|e| format!("Failed to build provider: {e}"))?;
         let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
 
@@ -133,7 +133,7 @@ impl OptionsWatcher {
                         return;
                     }
 
-                    match builder.build() {
+                    match builder.build_and_clear() {
                         Ok(new_provider) => match current_provider.write() {
                             Ok(mut provider) => {
                                 *provider = new_provider;

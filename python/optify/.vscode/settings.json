@@ -1,3 +1,9 @@
 {
-    "python.terminal.activateEnvironment": true
+	"python.terminal.activateEnvironment": true,
+	"[rust]": {
+		"editor.formatOnSave": true
+	},
+	"[python]": {
+		"editor.formatOnSave": true
+	}
 }

@@ -1,13 +1,20 @@
 use config;
+use config::FileStoredFormat;
 use jsonschema::{Draft, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
+use crate::builder::builder_options::BuilderOptions;
+use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
-use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
-use crate::schema::conditions::ConditionExpression;
+use crate::configurable_string::locator::find_configurable_values;
+use crate::configurable_string::LoadedFiles;
+use crate::json::reader::read_json_from_file_as;
+use crate::provider::{
+    Aliases, Conditions, ConfigurableValuePointers, Features, OptionsProvider, Sources,
+};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
@@ -21,10 +28,12 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
+    configurable_value_pointers: ConfigurableValuePointers,
     dependents: Dependents,
     conditions: Conditions,
     features: Features,
     imports: Imports,
+    loaded_files: LoadedFiles,
     schema: Option<Arc<Validator>>,
     sources: Sources,
 }
@@ -147,8 +156,8 @@ fn resolve_imports(
     // Build the configuration and store it.
     match config_builder.build() {
         Ok(new_config) => {
-            // Convert to something that can be inserted as a source.
-            let options_as_config_value: config::Value = match new_config.try_deserialize() {
+            // Convert to something that can be inserted in a source.
+            let options_as_json: serde_json::Value = match new_config.try_deserialize() {
                 Ok(v) => v,
                 Err(e) => {
                     // Should never happen.
@@ -157,9 +166,6 @@ fn resolve_imports(
                     ));
                 }
             };
-            let options_as_json: serde_json::Value = options_as_config_value
-                .try_deserialize()
-                .expect("configuration should be deserializable to JSON");
             let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
             let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
             sources.insert(canonical_feature_name.to_owned(), source);
@@ -174,27 +180,46 @@ fn resolve_imports(
     Ok(())
 }
 
-/// The result of loading a feature configuration file.
-struct LoadingResult {
-    canonical_feature_name: String,
-    conditions: Option<ConditionExpression>,
-    source: config::File<config::FileSourceString, config::FileFormat>,
-    imports: Option<Vec<String>>,
-    metadata: OptionsMetadata,
-    original_config: serde_json::Value,
-}
-
 impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
-            dependents: Dependents::new(),
             conditions: Conditions::new(),
+            configurable_value_pointers: ConfigurableValuePointers::new(),
+            dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
+            loaded_files: LoadedFiles::new(),
             schema: None,
             sources: Sources::new(),
         }
+    }
+
+    pub fn build_and_clear(&mut self) -> Result<OptionsProvider, String> {
+        self.prepare_build()?;
+
+        Ok(OptionsProvider::new(
+            std::mem::take(&mut self.aliases),
+            std::mem::take(&mut self.conditions),
+            std::mem::take(&mut self.configurable_value_pointers),
+            std::mem::take(&mut self.features),
+            std::mem::take(&mut self.loaded_files),
+            std::mem::take(&mut self.sources),
+        ))
+    }
+
+    fn get_supported_extensions() -> HashSet<&'static str> {
+        [
+            config::FileFormat::Ini.file_extensions(),
+            config::FileFormat::Json.file_extensions(),
+            config::FileFormat::Json5.file_extensions(),
+            config::FileFormat::Ron.file_extensions(),
+            config::FileFormat::Toml.file_extensions(),
+            config::FileFormat::Yaml.file_extensions(),
+        ]
+        .iter()
+        .flat_map(|exts| exts.iter().copied())
+        .collect()
     }
 
     fn validate_with_schema(&self, info: &LoadingResult) -> Result<(), String> {
@@ -218,31 +243,57 @@ impl OptionsProviderBuilder {
         }
     }
 
-    fn process_entry(path: &Path, directory: &Path) -> Option<Result<LoadingResult, String>> {
-        if !path.is_file()
-            // Skip .md files because they are not handled by the `config` library, but there may be README.md files in the directory.
-            || path.extension().filter(|e| *e == "md").is_some()
-            // Skip .optify folders because they mark settings such as the root folder.
-            || path
-                .components()
-                .any(|component| component.as_os_str() == ".optify")
-        {
-            return None;
+    fn prepare_build(&mut self) -> Result<(), String> {
+        let mut resolved_imports: HashSet<String> = HashSet::new();
+        for (canonical_feature_name, imports_for_feature) in &self.imports {
+            if resolved_imports.insert(canonical_feature_name.clone()) {
+                // Check for infinite loops by starting a path here.
+                let mut features_in_resolution_path: HashSet<String> =
+                    HashSet::from([canonical_feature_name.clone()]);
+                resolve_imports(
+                    canonical_feature_name,
+                    imports_for_feature,
+                    &mut resolved_imports,
+                    &mut features_in_resolution_path,
+                    &self.aliases,
+                    &mut self.dependents,
+                    &self.imports,
+                    &mut self.sources,
+                    &self.conditions,
+                )?;
+            }
         }
 
+        for (canonical_feature_name, dependents) in &self.dependents {
+            let mut sorted_dependents = dependents.clone();
+            sorted_dependents.sort_unstable();
+            self.features
+                .get_mut(canonical_feature_name)
+                .unwrap()
+                .dependents = Some(sorted_dependents);
+        }
+
+        Ok(())
+    }
+
+    fn process_entry(
+        path: &Path,
+        directory: &Path,
+        builder_options: &BuilderOptions,
+    ) -> Result<LoadingResult, String> {
+        let absolute_path = dunce::canonicalize(path).expect("path should be valid");
         // TODO Optimization: Find a more efficient way to build a more generic view of the file.
         // The `config` library is helpful because it handles many file types.
         // It would also be nice to support comments in .json files, even though it is not standard.
         // The `config` library does support .json5 which supports comments.
-        let absolute_path = dunce::canonicalize(path).expect("path should be valid");
         let file = config::File::from(path);
         let config_for_path = match config::Config::builder().add_source(file).build() {
             Ok(conf) => conf,
             Err(e) => {
-                return Some(Err(format!(
+                return Err(format!(
                     "Error loading file '{}': {e}",
                     absolute_path.to_string_lossy(),
-                )))
+                ))
             }
         };
 
@@ -250,10 +301,10 @@ impl OptionsProviderBuilder {
         let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
             Ok(v) => v,
             Err(e) => {
-                return Some(Err(format!(
+                return Err(format!(
                     "Error deserializing configuration for file '{}': {e}",
                     absolute_path.to_string_lossy(),
-                )))
+                ))
             }
         };
 
@@ -261,25 +312,18 @@ impl OptionsProviderBuilder {
         {
             Ok(v) => v,
             Err(e) => {
-                return Some(Err(format!(
+                return Err(format!(
                     "Error deserializing configuration for file '{}': {e}",
                     absolute_path.to_string_lossy(),
-                )))
+                ))
             }
         };
 
         let options_as_json_str = match feature_config.options {
-            Some(options) => match options.try_deserialize::<serde_json::Value>() {
-                Ok(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
-                Err(e) => {
-                    return Some(Err(format!(
-                        "Error deserializing options for '{}': {e}",
-                        absolute_path.to_string_lossy(),
-                    )))
-                }
-            },
+            Some(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
             None => "{}".to_owned(),
         };
+
         let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
         let canonical_feature_name = get_canonical_feature_name(path, directory);
 
@@ -300,14 +344,21 @@ impl OptionsProviderBuilder {
             ),
         };
 
-        Some(Ok(LoadingResult {
+        let configurable_value_pointers = if builder_options.are_configurable_strings_enabled {
+            find_configurable_values(raw_config.get("options"))
+        } else {
+            Vec::new()
+        };
+
+        Ok(LoadingResult {
             canonical_feature_name,
             conditions: feature_config.conditions,
-            source,
+            configurable_value_pointers,
             imports: feature_config.imports,
             metadata,
             original_config: raw_config,
-        }))
+            source,
+        })
     }
 
     fn process_loading_result(
@@ -337,6 +388,12 @@ impl OptionsProviderBuilder {
             self.imports
                 .insert(canonical_feature_name.clone(), imports.clone());
         }
+        if !info.configurable_value_pointers.is_empty() {
+            self.configurable_value_pointers.insert(
+                canonical_feature_name.clone(),
+                info.configurable_value_pointers.clone(),
+            );
+        }
         add_alias(
             &mut self.aliases,
             canonical_feature_name,
@@ -362,19 +419,76 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             ));
         }
 
+        // Look for .optify/config.json and load as settings for the files in the directory.
+        let config_path = directory.join(".optify").join("config.json");
+        let builder_options = if config_path.is_file() {
+            match read_json_from_file_as::<BuilderOptions>(&config_path) {
+                Ok(v) => v,
+                Err(e) => {
+                    return Err(format!(
+                        "Error loading builder options from {}: {e}",
+                        config_path.as_path().display()
+                    ));
+                }
+            }
+        } else {
+            BuilderOptions::default()
+        };
+
+        let supported_extensions = Self::get_supported_extensions();
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
-            .par_bridge()
             .filter_map(|entry| {
-                Self::process_entry(
-                    entry
-                        .unwrap_or_else(|_| {
-                            panic!("Error walking directory: {}", directory.display())
-                        })
-                        .path(),
-                    directory,
-                )
+                let entry = entry
+                    .unwrap_or_else(|_| panic!("Error walking directory: {}", directory.display()));
+                let path = entry.path();
+
+                // Filter out unsupported files
+                if !path.is_file() {
+                    return None;
+                }
+
+                // Skip the contents of.optify folders
+                if path
+                    .components()
+                    .any(|component| component.as_os_str() == ".optify")
+                {
+                    return None;
+                }
+
+                let is_config_file = match path.extension() {
+                    Some(ext) => match ext.to_str() {
+                        Some(ext_str) => supported_extensions.contains(ext_str),
+                        None => false,
+                    },
+                    None => false,
+                };
+
+                if is_config_file {
+                    Some(path.to_path_buf())
+                } else {
+                    // Load the file content
+                    match std::fs::read_to_string(path) {
+                        Ok(contents) => {
+                            let relative_path = path
+                                .strip_prefix(directory)
+                                .unwrap()
+                                .to_str()
+                                .expect("path should be valid Unicode")
+                                .replace(std::path::MAIN_SEPARATOR, "/");
+                            self.loaded_files.insert(relative_path, contents);
+                        }
+                        Err(e) => {
+                            // TODO Yield errors.
+                            eprintln!("Error reading file {}: {e}\nSkipping file.", path.display());
+                        }
+                    }
+                    None
+                }
             })
+            .collect::<Vec<_>>()
+            .into_par_iter()
+            .map(|path| Self::process_entry(&path, directory, &builder_options))
             .collect();
         for loading_result in loading_results {
             self.process_loading_result(&loading_result)?;
@@ -408,40 +522,15 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     }
 
     fn build(&mut self) -> Result<OptionsProvider, String> {
-        let mut resolved_imports: HashSet<String> = HashSet::new();
-        for (canonical_feature_name, imports_for_feature) in &self.imports {
-            if resolved_imports.insert(canonical_feature_name.clone()) {
-                // Check for infinite loops by starting a path here.
-                let mut features_in_resolution_path: HashSet<String> =
-                    HashSet::from([canonical_feature_name.clone()]);
-                resolve_imports(
-                    canonical_feature_name,
-                    imports_for_feature,
-                    &mut resolved_imports,
-                    &mut features_in_resolution_path,
-                    &self.aliases,
-                    &mut self.dependents,
-                    &self.imports,
-                    &mut self.sources,
-                    &self.conditions,
-                )?;
-            }
-        }
-
-        for (canonical_feature_name, dependents) in &self.dependents {
-            let mut sorted_dependents = dependents.clone();
-            sorted_dependents.sort_unstable();
-            self.features
-                .get_mut(canonical_feature_name)
-                .unwrap()
-                .dependents = Some(sorted_dependents);
-        }
+        self.prepare_build()?;
 
         Ok(OptionsProvider::new(
-            &self.aliases,
-            &self.conditions,
-            &self.features,
-            &self.sources,
+            self.aliases.clone(),
+            self.conditions.clone(),
+            self.configurable_value_pointers.clone(),
+            self.features.clone(),
+            self.loaded_files.clone(),
+            self.sources.clone(),
         ))
     }
 }
