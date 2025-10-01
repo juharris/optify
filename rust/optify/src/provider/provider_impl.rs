@@ -26,7 +26,7 @@ pub(crate) type ConfigurableValuePointers = HashMap<String, Vec<String>>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
-pub(crate) type EntireConfigCache = HashMap<(Vec<String>, bool), config::Config>;
+pub(crate) type EntireConfigCache = HashMap<Vec<String>, config::Config>;
 pub(crate) type OptionsCache = HashMap<(String, Vec<String>, bool), serde_json::Value>;
 
 pub struct CacheOptions {}
@@ -105,10 +105,7 @@ impl OptionsProvider {
         match config_builder.build() {
             Ok(cfg) => {
                 if let Some(_cache_options) = cache_options {
-                    let are_configurable_strings_enabled = preferences
-                        .map(|p| p.are_configurable_strings_enabled)
-                        .unwrap_or(false);
-                    let cache_key = (feature_names.to_owned(), are_configurable_strings_enabled);
+                    let cache_key = feature_names.to_owned();
                     self.entire_config_cache
                         .write()
                         .expect("the entire config cache lock should be held")
@@ -132,10 +129,7 @@ impl OptionsProvider {
                 return Err("Caching when overrides are given is not supported.".to_owned());
             }
         }
-        let are_configurable_strings_enabled = preferences
-            .map(|p| p.are_configurable_strings_enabled)
-            .unwrap_or(false);
-        let cache_key = (feature_names.to_owned(), are_configurable_strings_enabled);
+        let cache_key = feature_names.to_owned();
         if let Some(config) = self
             .entire_config_cache
             .read()
