@@ -9,7 +9,8 @@ export {
   GetOptionsPreferences,
   OptionsProviderBuilder,
   OptionsWatcherListenerEvent,
-  OptionsWatcherBuilder
+  OptionsWatcherBuilder,
+  WatcherOptions
 } from '../index';
 
 // Re-export the native classes directly
