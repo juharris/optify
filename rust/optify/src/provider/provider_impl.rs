@@ -187,18 +187,39 @@ impl OptionsProvider {
         }
 
         if self.configurable_value_pointers.is_empty() {
+            // There are no configurable strings to process, assume they are not enabled for the provider, even for use in overrides.
+            return Ok(());
+        }
+
+        // When overrides are present, dynamically discover all configurable strings
+        // because overrides may contain ConfigurableStrings not in the original features
+        let has_overrides = preferences
+            .map(|p| p.overrides_json.is_some())
+            .unwrap_or(false);
+
+        // TODO It would be nice to save memory and use a `HashSet<&String>` instead of a `HashSet<String>`.
+        // `HashSet<String>` is needed when there are overrides, but that should be the exception rather than the rule.
+        let pointers: HashSet<String> = if has_overrides {
+            // Dynamically find all configurable strings in the merged value
+            crate::configurable_string::locator::find_configurable_values(Some(value))
+                .into_iter()
+                .collect()
+        } else {
+            // Collect all configurable pointers for the requested features.
+            feature_names
+                .iter()
+                .filter_map(|feature_name| self.configurable_value_pointers.get(feature_name))
+                .flat_map(|pointers| pointers.iter())
+                .cloned()
+                .collect()
+        };
+
+        if pointers.is_empty() {
             // There are no configurable strings to process.
             return Ok(());
         }
 
-        // Collect all configurable pointers for the requested features.
-        let all_pointers: HashSet<&String> = feature_names
-            .iter()
-            .filter_map(|feature_name| self.configurable_value_pointers.get(feature_name))
-            .flat_map(|pointers| pointers.iter())
-            .collect();
-
-        for pointer in all_pointers {
+        for pointer in &pointers {
             let relative_pointer = match key_prefix {
                 Some(key_prefix) => {
                     if !pointer.starts_with(key_prefix) {
@@ -210,7 +231,7 @@ impl OptionsProvider {
                     }
                 }
                 // There is not key prefix when the entire configuration is requested.
-                _ => pointer.to_string(),
+                _ => format!("/{}", pointer),
             };
 
             if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
@@ -312,7 +333,6 @@ impl OptionsRegistry for OptionsProvider {
 
         match config.try_deserialize::<serde_json::Value>() {
             Ok(mut value) => {
-                // Process configurable strings in the entire config
                 self.process_configurable_strings(&mut value, &feature_names, None, preferences)?;
                 Ok(value)
             }

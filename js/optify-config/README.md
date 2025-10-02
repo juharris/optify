@@ -46,6 +46,7 @@ console.log(JSON.stringify(options, null, 2))
 Use Node >= 22.
 
 ```Shell
+corepack enable
 yarn install
 yarn build:debug
 yarn build:ts

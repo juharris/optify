@@ -272,12 +272,19 @@ fn test_cache_get_all_options_configurable_strings() -> Result<(), Box<dyn std::
         Some(&preferences_false),
     )?;
 
+    assert_eq!(
+        "Welcome to {{ name }}!",
+        result_false["message"]["base"]["liquid"]
+    );
+
     // Test with are_configurable_strings_enabled = true - should be a cache miss
     let mut preferences_true = GetOptionsPreferences::new();
     preferences_true.are_configurable_strings_enabled = true;
 
     let result_true =
         provider.get_all_options(feature_names, Some(&cache_options), Some(&preferences_true))?;
+
+    assert_eq!("Welcome to Optify!", result_true["message"]);
 
     // Results might be the same content but should have been fetched separately (cache miss)
     // We can verify cache miss by checking that we get a cache hit when using same preferences
