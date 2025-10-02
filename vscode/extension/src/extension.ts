@@ -29,6 +29,7 @@ export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: stri
 		// If some of the next lines fail in Rust from an unwrap or expect, then the exception is not caught.
 		const provider = getOptionsProvider(optifyRoot);
 		const preferences = new GetOptionsPreferences();
+		preferences.enableConfigurableStrings();
 		preferences.setSkipFeatureNameConversion(true);
 		if (editingOptions?.overrides) {
 			preferences.setOverridesJson(editingOptions.overrides);
