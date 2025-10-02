@@ -1,4 +1,4 @@
-import { OptionsWatcher } from '@optify/config';
+import { OptionsWatcher, WatcherOptions } from '@optify/config';
 
 const providerCache = new Map<string, OptionsWatcher>();
 const updateCallbacks: (() => void)[] = [];
@@ -6,6 +6,8 @@ const updateCallbacks: (() => void)[] = [];
 export function getOptionsProvider(optifyRoot: string): OptionsWatcher {
 	let result = providerCache.get(optifyRoot);
 	if (result === undefined) {
+		const watcherOptions = new WatcherOptions();
+		watcherOptions.setDebounceDurationMs(10);
 		result = OptionsWatcher.build(optifyRoot);
 		result.addListener(() => {
 			// Notify all registered callbacks when options change
