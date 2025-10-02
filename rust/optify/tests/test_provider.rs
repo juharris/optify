@@ -5,8 +5,18 @@ use optify::{
 use std::sync::OnceLock;
 
 static CONDITIONS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
+static CONFIGURABLE_STRINGS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 static INHERITANCE_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 static PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
+
+fn get_configurable_values_provider() -> &'static OptionsProvider {
+    CONFIGURABLE_STRINGS_PROVIDER.get_or_init(|| {
+        let path = std::path::Path::new("../../tests/test_suites/configurable_values/configs");
+        let mut builder = OptionsProviderBuilder::new();
+        builder.add_directory(path).unwrap();
+        builder.build().unwrap()
+    })
+}
 
 fn get_provider() -> &'static OptionsProvider {
     PROVIDER.get_or_init(|| {
@@ -17,18 +27,18 @@ fn get_provider() -> &'static OptionsProvider {
     })
 }
 
-fn get_inheritance_provider() -> &'static OptionsProvider {
-    INHERITANCE_PROVIDER.get_or_init(|| {
-        let path = std::path::Path::new("../../tests/test_suites/inheritance/configs");
+fn get_provider_with_conditions() -> &'static OptionsProvider {
+    CONDITIONS_PROVIDER.get_or_init(|| {
+        let path = std::path::Path::new("../../tests/test_suites/conditions/configs");
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(path).unwrap();
         builder.build().unwrap()
     })
 }
 
-fn get_provider_with_conditions() -> &'static OptionsProvider {
-    CONDITIONS_PROVIDER.get_or_init(|| {
-        let path = std::path::Path::new("../../tests/test_suites/conditions/configs");
+fn get_inheritance_provider() -> &'static OptionsProvider {
+    INHERITANCE_PROVIDER.get_or_init(|| {
+        let path = std::path::Path::new("../../tests/test_suites/inheritance/configs");
         let mut builder = OptionsProviderBuilder::new();
         builder.add_directory(path).unwrap();
         builder.build().unwrap()
@@ -244,5 +254,34 @@ fn test_provider_has_conditions() -> Result<(), Box<dyn std::error::Error>> {
     let conditions_provider = get_provider_with_conditions();
     assert!(conditions_provider.has_conditions("A"));
     assert!(!conditions_provider.has_conditions("B"));
+    Ok(())
+}
+
+#[test]
+fn test_configurable_values_get_all_options_with_overrides(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_configurable_values_provider();
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.are_configurable_strings_enabled = true;
+    preferences.overrides_json = Some(
+        serde_json::json!({
+            "message": {
+                "$type": "Optify.ConfigurableString",
+                "base": {
+                    "liquid": "Hello {{ name }}!"
+                },
+                "arguments": {
+                    "name": "from the test"
+                }
+            }
+        })
+        .to_string(),
+    );
+
+    let features: Vec<&str> = vec![];
+    let opts = provider.get_all_options(&features, None, Some(&preferences))?;
+
+    assert_eq!(opts["message"], "Hello from the test!");
+
     Ok(())
 }
