@@ -113,6 +113,7 @@ module Optify
       # We already know there are no overrides because we checked above.
       preferences = GetOptionsPreferences.new
       preferences.skip_feature_name_conversion = true
+      preferences.enable_configurable_strings if are_configurable_strings_enabled
 
       result = get_options(key, feature_names, config_class, nil, preferences)
 
