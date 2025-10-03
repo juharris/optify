@@ -7,6 +7,12 @@ require_relative 'conditions_config'
 require_relative 'my_config'
 
 class ProviderCacheTest < Test::Unit::TestCase
+  class StringConfig < Optify::BaseConfig
+    def self.from_hash(obj)
+      obj.is_a?(String) ? obj : super(obj)
+    end
+  end
+
   def test_cache_with_configurable_strings
     provider = Optify::OptionsProvider
                .build('../../tests/test_suites/simple/configs')
@@ -107,5 +113,27 @@ class ProviderCacheTest < Test::Unit::TestCase
 
     config3 = provider.get_options('config', %w[docs_example B], MyConditionsConfig, cache_options, preferences)
     assert_not_same(config, config3)
+  end
+
+  def test_cache_with_configurable_values
+    provider = Optify::OptionsProvider
+               .build('../../tests/test_suites/configurable_values/configs')
+               .init
+    cache_options = Optify::CacheOptions.new
+    preferences = Optify::GetOptionsPreferences.new
+    preferences.enable_configurable_strings
+
+    greeting1 = provider.get_options('greeting', ['simple'], StringConfig, cache_options, preferences)
+    assert_equal('Hello, World!', greeting1)
+
+    greeting2 = provider.get_options('greeting', ['simple'], StringConfig, cache_options, preferences)
+    assert_same(greeting1, greeting2)
+
+    message1 = provider.get_options('message', ['simple'], StringConfig, cache_options, preferences)
+    assert_equal('Welcome to Optify!', message1)
+    assert_not_same(greeting1, message1)
+
+    message2 = provider.get_options('message', ['simple'], StringConfig, cache_options, preferences)
+    assert_same(message1, message2)
   end
 end
