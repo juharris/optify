@@ -5,6 +5,10 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.6.1
+
+Improve Preview window message for unsaved changes.
+
 ## 1.6.0
 
 Improve Preview window with the help of some libraries and using React:
