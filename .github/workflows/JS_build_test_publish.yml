@@ -222,7 +222,6 @@ jobs:
             yarn build:ts
             yarn test
             rm -rf node_modules
-            rm -rf target
             rm -rf .yarn/cache
       - name: Upload artifact
         uses: actions/upload-artifact@v4
