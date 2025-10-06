@@ -75,16 +75,14 @@ jobs:
       if: github.ref == 'refs/heads/main'
       shell: bash
       run: |
-        npm run publish -- --pre-release --target ${{ matrix.settings.targets }} --skip-duplicate
+        npm run publish -- --target ${{ matrix.settings.targets }} --skip-duplicate
       working-directory: ./vscode/extension
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
     - name: "[Open VSX] Publish"
-      # Temp publish pre-release to try it first.
-      # if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main'
       shell: bash
       run: |
-        # npx ovsx publish --target ${{ matrix.settings.targets }} --skip-duplicate --pat ${{ secrets.OPEN_VSX_TOKEN }}
-        npx ovsx publish --pre-release --target ${{ matrix.settings.targets }} --pat ${{ secrets.OPEN_VSX_TOKEN }}
+        npx ovsx publish --target ${{ matrix.settings.targets }} --skip-duplicate --pat ${{ secrets.OPEN_VSX_TOKEN }}
       working-directory: ./vscode/extension
     
