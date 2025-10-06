@@ -171,8 +171,8 @@ jobs:
           if-no-files-found: error
   build-freebsd:
     # Disabled for now because it gives too many installation errors such as when trying to install `yarn`.
-    if: ${{ false && (github.event.pull_request.draft == false || github.event_name != 'pull_request') }}
-    runs-on: macos-13
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
     name: "[FreeBSD] Build"
     steps:
       - uses: actions/checkout@v4
@@ -186,13 +186,13 @@ jobs:
           shared-key: freebsd-rust
       - name: "Build & Test"
         id: build
-        uses: cross-platform-actions/action@v0.24.0
+        uses: cross-platform-actions/action@v0.29.0
         env:
           DEBUG: napi:*
           RUSTUP_IO_THREADS: 1
         with:
           operating_system: freebsd
-          version: '13.2'
+          version: '13.5'
           memory: 8G
           cpu_count: 3
           environment_variables: DEBUG RUSTUP_IO_THREADS
@@ -202,8 +202,7 @@ jobs:
 
             cd js/optify-config
             sudo pkg install -y -f curl node libnghttp2 npm
-            # TODO Avoid `sudo`.
-            sudo npm install -g corepack yarn --ignore-scripts
+            sudo npm install -g yarn --ignore-scripts
             curl https://sh.rustup.rs -sSf --output rustup.sh
             sh rustup.sh -y --profile minimal --default-toolchain stable
             source "$HOME/.cargo/env"
@@ -217,6 +216,7 @@ jobs:
 
             freebsd-version
 
+            sudo corepack enable
             yarn install
             yarn build
             yarn build:ts
@@ -490,8 +490,7 @@ jobs:
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs:
-      # FreeBSD is disabled for now because it gives too many installation errors such as when trying to install `yarn`.
-      # - build-freebsd
+      - build-freebsd
       - test-macOS-windows-binding
       - test-linux-x64-gnu-binding
       - test-linux-aarch64-gnu-binding
