@@ -3,7 +3,6 @@
 
 .nvmrc
 node_modules
-out/
 src/
 esbuild.js
 
@@ -16,6 +15,9 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+
+out/test
+out/tests
 
 CLAUDE.md
 .claude/
