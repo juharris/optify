@@ -187,7 +187,7 @@ export const PreviewApp: React.FC = () => {
 						color: 'var(--vscode-inputValidation-warningForeground)',
 					}}
 				>
-					⚠️ Preview from unsaved changes
+					⚠️ Preview for unsaved changes
 				</div>
 			)}
 
