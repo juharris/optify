@@ -171,7 +171,7 @@ jobs:
           if-no-files-found: error
   build-freebsd:
     # Disabled for now because it gives too many installation errors such as when trying to install `yarn`.
-    # if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     name: "[FreeBSD] Build"
     steps:
@@ -203,19 +203,17 @@ jobs:
             cd js/optify-config
             sudo pkg install -y -f curl node libnghttp2 npm
             sudo npm install -g yarn --ignore-scripts
-            # TODO Avoid `sudo`.
-            # sudo npm install -g corepack yarn --ignore-scripts
             curl https://sh.rustup.rs -sSf --output rustup.sh
             sh rustup.sh -y --profile minimal --default-toolchain stable
             source "$HOME/.cargo/env"
-            
+
             rustc --version
             node -v
             yarn --version
             pwd
             ls -lah
             whoami
-            
+
             freebsd-version
 
             sudo corepack enable
