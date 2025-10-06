@@ -60,18 +60,22 @@ jobs:
       run: npm run lint
       working-directory: ./vscode/extension
     - name: "Compile"
+      if: github.ref == 'refs/heads/main'
       run: npm run compile
+      working-directory: ./vscode/extension
+    - name: "Package"
+      if: github.ref != 'refs/heads/main'
+      shell: bash
+      run: npm run package
       working-directory: ./vscode/extension
     - name: "Test"
       run: ${{ matrix.settings.test_command }}
       working-directory: ./vscode/extension
     - name: "[VS] Publish"
       if: github.ref == 'refs/heads/main'
-      # It probably just fails if the extension is already published.
-      continue-on-error: true
       shell: bash
       run: |
-        npm run publish -- --target ${{ matrix.settings.targets }}
+        npm run publish -- --target ${{ matrix.settings.targets }} --skip-duplicate
       working-directory: ./vscode/extension
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}

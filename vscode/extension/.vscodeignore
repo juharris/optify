@@ -1,6 +1,12 @@
 .vscode/**
 .vscode-test/**
-src/**
+
+.nvmrc
+# Don't exclude node_modules: we need @optify/config (native addon)
+src/
+esbuild.js
+
+.gitattributes
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -10,9 +16,10 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 
-out/test/
-out/tests/
+out/test
+out/tests
 
+CLAUDE.md
 .claude/
 
 assets/demo.gif

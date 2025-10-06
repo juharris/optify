@@ -1,4 +1,3 @@
-import { GetOptionsPreferences } from '@optify/config';
 import * as vscode from 'vscode';
 import { OptifyCompletionProvider } from './completion';
 import { ConfigParser } from './config-parser';
@@ -8,7 +7,7 @@ import { OptifyDependentsProvider } from './dependents/show';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
 import { OptifyDocumentLinkProvider } from './links';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
-import { PreviewBuilder, PreviewWhileEditingOptions } from './preview';
+import { PreviewBuilder, PreviewWhileEditingOptions, PreviewData } from './preview';
 import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
 const outputChannel = vscode.window.createOutputChannel('Optify');
@@ -22,23 +21,12 @@ interface ActivePreview {
 
 const activePreviews = new Map<string, ActivePreview>();
 
-export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): string {
-	// console.debug(`Building preview for '${canonicalFeatures}' in '${optifyRoot}'`);
+export function buildOptifyPreviewData(canonicalFeatures: string[], optifyRoot: string, editingOptions: PreviewWhileEditingOptions | undefined = undefined): PreviewData | { error: string } {
 	const previewBuilder = new PreviewBuilder();
 	try {
 		// If some of the next lines fail in Rust from an unwrap or expect, then the exception is not caught.
 		const provider = getOptionsProvider(optifyRoot);
-		const preferences = new GetOptionsPreferences();
-		preferences.enableConfigurableStrings();
-		preferences.setSkipFeatureNameConversion(true);
-		if (editingOptions?.overrides) {
-			preferences.setOverridesJson(editingOptions.overrides);
-		}
-		const builtConfigJson = provider.getAllOptionsJson(editingOptions?.features ?? canonicalFeatures, preferences);
-		const builtConfig = JSON.parse(builtConfigJson);
-		const feature = canonicalFeatures.length === 1 ? canonicalFeatures[0] : undefined;
-		const dependents = feature ? provider.featuresWithMetadata()[feature]?.dependents() : null;
-		return previewBuilder.getPreviewHtml(canonicalFeatures, builtConfig, dependents, provider);
+		return previewBuilder.buildPreviewData(canonicalFeatures, provider, editingOptions);
 	} catch (error) {
 		const message = `Failed to build preview${editingOptions ? " while editing" : ""}: ${error}`;
 		console.error(message);
@@ -47,8 +35,15 @@ export function buildOptifyPreview(canonicalFeatures: string[], optifyRoot: stri
 		}
 		outputChannel.appendLine(message);
 		const errorMessage = `${error}` + (editingOptions ? "\n\nIf the file was saved with any issues, then correct any issues and save the file to fix the preview." : "");
-		return previewBuilder.getErrorPreviewHtml(canonicalFeatures, errorMessage);
+		return { error: errorMessage };
 	}
+}
+
+function sendPreviewUpdate(panel: vscode.WebviewPanel, data: PreviewData | { error: string }) {
+	panel.webview.postMessage({
+		type: 'updateConfig',
+		data: 'error' in data ? { features: [], config: {}, dependents: null, isUnsaved: false, error: data.error } : data,
+	});
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -135,16 +130,21 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.ViewColumn.Beside,
 				{
 					enableScripts: true,
-					enableFindWidget: true
+					enableFindWidget: true,
+					localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'out')]
 				}
 			);
 
-			panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
+			const previewBuilder = new PreviewBuilder();
+			panel.webview.html = previewBuilder.getPreviewHtmlShell(panel.webview, context.extensionUri);
 
 			// Handle messages from the webview
 			panel.webview.onDidReceiveMessage(
 				async (message) => {
-					if (message.command === 'openFile') {
+					if (message.command === 'ready') {
+						const initialData = buildOptifyPreviewData([canonicalName], optifyRoot);
+						sendPreviewUpdate(panel, initialData);
+					} else if (message.command === 'openFile') {
 						if (message.path) {
 							const uri = vscode.Uri.file(message.path);
 							vscode.window.showTextDocument(uri);
@@ -157,11 +157,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 			// Update the preview when the changes to the file are saved.
 			const updatePreview = () => {
-				// console.debug(`File changed: '${filePath}'. Remaking preview.`);
-				panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot);
+				const data = buildOptifyPreviewData([canonicalName], optifyRoot);
+				sendPreviewUpdate(panel, data);
 			};
 
-			// Update preview on document text changes (before save)
 			const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 				if (event.document.uri.fsPath === filePath) {
 					const preview = activePreviews.get(filePath);
@@ -174,13 +173,13 @@ export function activate(context: vscode.ExtensionContext) {
 					}
 
 					preview.debounceTimer = setTimeout(() => {
-						// console.debug(`Document changed (unsaved): '${filePath}'. Updating preview.`);
 						const documentText = event.document.getText();
 						const config = ConfigParser.parse(documentText, event.document.languageId);
-						panel.webview.html = buildOptifyPreview([canonicalName], optifyRoot, {
+						const data = buildOptifyPreviewData([canonicalName], optifyRoot, {
 							features: config.imports ?? [],
 							overrides: config.options ? JSON.stringify(config.options) : undefined
 						});
+						sendPreviewUpdate(panel, data);
 					}, EDIT_DEBOUNCE_MILLISECONDS);
 				}
 			});
