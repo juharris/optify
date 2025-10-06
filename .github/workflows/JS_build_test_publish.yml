@@ -222,6 +222,7 @@ jobs:
             yarn build:ts
             yarn test
             rm -rf node_modules
+            rm -rf target
             rm -rf .yarn/cache
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -489,8 +490,7 @@ jobs:
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs:
-      # FreeBSD is disabled for now because it gives too many installation errors such as when trying to install `yarn`.
-      # - build-freebsd
+      - build-freebsd
       - test-macOS-windows-binding
       - test-linux-x64-gnu-binding
       - test-linux-aarch64-gnu-binding
