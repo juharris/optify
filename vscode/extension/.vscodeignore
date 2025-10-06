@@ -1,6 +1,13 @@
 .vscode/**
 .vscode-test/**
-src/**
+
+.nvmrc
+node_modules
+out/
+src/
+esbuild.js
+
+.gitattributes
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -9,9 +16,6 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
-
-out/test/
-out/tests/
 
 CLAUDE.md
 .claude/
