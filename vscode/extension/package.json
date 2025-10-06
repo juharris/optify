@@ -2,7 +2,7 @@
 	"name": "optify",
 	"displayName": "Optify",
 	"description": "Helps manage Optify feature files.",
-	"version": "1.6.0-alpha",
+	"version": "1.6.0",
 	"publisher": "optify-config",
 	"license": "MIT",
 	"repository": "https://github.com/juharris/optify",
