@@ -84,6 +84,7 @@ jobs:
       # if: github.ref == 'refs/heads/main'
       shell: bash
       run: |
-        npx ovsx publish --pre-release --target ${{ matrix.settings.targets }} --skip-duplicate --pat ${{ secrets.OPEN_VSX_TOKEN }}
+        # npx ovsx publish --target ${{ matrix.settings.targets }} --skip-duplicate --pat ${{ secrets.OPEN_VSX_TOKEN }}
+        npx ovsx publish --pre-release --target ${{ matrix.settings.targets }} --pat ${{ secrets.OPEN_VSX_TOKEN }}
       working-directory: ./vscode/extension
     
