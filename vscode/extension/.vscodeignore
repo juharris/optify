@@ -2,9 +2,7 @@
 .vscode-test/**
 
 .nvmrc
-# Probably needed because we don't actually pack everything.
-# See https://aka.ms/vscode-bundle-extension to see if we can pack more.
-# node_modules
+# Don't exclude node_modules: we need @optify/config (native addon)
 src/
 esbuild.js
 
