@@ -60,19 +60,17 @@ jobs:
       run: npm run lint
       working-directory: ./vscode/extension
     - name: "Compile"
+      if: github.ref == 'refs/heads/main'
       run: npm run compile
-      working-directory: ./vscode/extension
-    - name: "Test"
-      run: ${{ matrix.settings.test_command }}
       working-directory: ./vscode/extension
     - name: "Package"
       if: github.ref != 'refs/heads/main'
       shell: bash
-      run: |
-        npm run package
+      run: npm run package
       working-directory: ./vscode/extension
-      env:
-        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    - name: "Test"
+      run: ${{ matrix.settings.test_command }}
+      working-directory: ./vscode/extension
     - name: "[VS] Publish"
       if: github.ref == 'refs/heads/main'
       shell: bash
