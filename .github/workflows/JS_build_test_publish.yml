@@ -205,20 +205,20 @@ jobs:
             sudo npm install -g yarn --ignore-scripts
             # TODO Avoid `sudo`.
             # sudo npm install -g corepack yarn --ignore-scripts
-            # corepack enable
             curl https://sh.rustup.rs -sSf --output rustup.sh
             sh rustup.sh -y --profile minimal --default-toolchain stable
             source "$HOME/.cargo/env"
-
+            
             rustc --version
             node -v
             yarn --version
             pwd
             ls -lah
             whoami
-
+            
             freebsd-version
-
+            
+            corepack enable
             yarn install
             yarn build
             yarn build:ts
