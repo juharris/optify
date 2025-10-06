@@ -217,8 +217,8 @@ jobs:
             whoami
             
             freebsd-version
-            
-            corepack enable
+
+            sudo corepack enable
             yarn install
             yarn build
             yarn build:ts
