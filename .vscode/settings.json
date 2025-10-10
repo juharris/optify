@@ -18,6 +18,12 @@
 		},
 		{
 			"fileMatch": [
+				"tests/test_suites/configurable_values/configs/**/*.json"
+			],
+			"url": "./tests/test_suites/configurable_values/configs/.optify/schema.json"
+		},
+		{
+			"fileMatch": [
 				"tests/test_suites/inheritance/configs/**/*.json"
 			],
 			"url": "./tests/test_suites/inheritance/configs/.optify/schema.json"
@@ -27,6 +33,9 @@
 		"./schemas/feature_file.json": [
 			"rust/optify/tests/**/*.{yaml,yml}",
 			"tests/{configurable_values,invalid_suites,test_suites}/**/configs/**/*.{yaml,yml}"
+		],
+		"./tests/test_suites/configurable_values/configs/.optify/schema.json": [
+			"tests/test_suites/configurable_values/configs/**/*.{yaml,yml}"
 		],
 		"./tests/test_suites/inheritance/configs/.optify/schema.json": [
 			"tests/test_suites/inheritance/configs/**/*.{yaml,yml}"
