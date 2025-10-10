@@ -1,0 +1,32 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Optify Feature Configuration",
+	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats. See https://github.com/juharris/optify for more information.",
+	"type": "object",
+	"additionalProperties": false,
+	"minProperties": 1,
+	"properties": {
+		"conditions": {
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/conditions"
+		},
+		"imports": {
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/imports"
+		},
+		"metadata": {
+			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/metadata"
+		},
+		"options": {
+			"type": "object",
+			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
+			"minProperties": 1,
+			"properties": {
+				"greeting": {
+					"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+				},
+				"message": {
+					"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+				}
+			}
+		}
+	}
+}

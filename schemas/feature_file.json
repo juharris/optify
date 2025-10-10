@@ -115,6 +115,7 @@
 			"description": "Conditions to enable this feature file when it is requested and when constraints are given. These conditions are meant for temporary experimental features that should only be enabled in some requests.\n\nIf no constraints are given, then these conditions are ignored. Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.\n\nConditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#conditions for more information and examples."
 		},
 		"configurableString": {
+			"description": "A string or a template that can be filled in when the configuration is built. There are no required properties because files that only override arguments should not need to re-specify the type and base value.\n\nSee https://github.com/juharris/optify/blob/main/docs/ConfigurableStrings.md for details.",
 			"anyOf": [
 				{
 					"type": "null"
@@ -127,6 +128,7 @@
 					"properties": {
 						"$type": {
 							"type": "string",
+							"description": "The type for this object to help Optify determine if pre-processing is needed.",
 							"enum": [
 								"Optify.ConfigurableString"
 							]
@@ -143,10 +145,6 @@
 							}
 						}
 					},
-					"required": [
-						"$type",
-						"base"
-					],
 					"additionalProperties": false
 				}
 			]
