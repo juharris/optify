@@ -12,9 +12,7 @@ use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
 use crate::configurable_string::LoadedFiles;
 use crate::json::reader::read_json_from_file_as;
-use crate::provider::{
-    Aliases, Conditions, ConfigurableValuePointers, Features, OptionsProvider, Sources,
-};
+use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
@@ -28,7 +26,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
-    configurable_value_pointers: ConfigurableValuePointers,
+    all_configurable_value_pointers: HashSet<String>,
     dependents: Dependents,
     conditions: Conditions,
     features: Features,
@@ -184,8 +182,8 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
+            all_configurable_value_pointers: HashSet::new(),
             conditions: Conditions::new(),
-            configurable_value_pointers: ConfigurableValuePointers::new(),
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
@@ -198,10 +196,15 @@ impl OptionsProviderBuilder {
     pub fn build_and_clear(&mut self) -> Result<OptionsProvider, String> {
         self.prepare_build()?;
 
+        let all_configurable_value_pointers = self
+            .all_configurable_value_pointers
+            .iter()
+            .cloned()
+            .collect();
         Ok(OptionsProvider::new(
             std::mem::take(&mut self.aliases),
+            all_configurable_value_pointers,
             std::mem::take(&mut self.conditions),
-            std::mem::take(&mut self.configurable_value_pointers),
             std::mem::take(&mut self.features),
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
@@ -389,10 +392,8 @@ impl OptionsProviderBuilder {
                 .insert(canonical_feature_name.clone(), imports.clone());
         }
         if !info.configurable_value_pointers.is_empty() {
-            self.configurable_value_pointers.insert(
-                canonical_feature_name.clone(),
-                info.configurable_value_pointers.clone(),
-            );
+            self.all_configurable_value_pointers
+                .extend(info.configurable_value_pointers.iter().cloned());
         }
         add_alias(
             &mut self.aliases,
@@ -524,10 +525,15 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     fn build(&mut self) -> Result<OptionsProvider, String> {
         self.prepare_build()?;
 
+        let all_configurable_value_pointers = self
+            .all_configurable_value_pointers
+            .iter()
+            .cloned()
+            .collect();
         Ok(OptionsProvider::new(
             self.aliases.clone(),
+            all_configurable_value_pointers,
             self.conditions.clone(),
-            self.configurable_value_pointers.clone(),
             self.features.clone(),
             self.loaded_files.clone(),
             self.sources.clone(),

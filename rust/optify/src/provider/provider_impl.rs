@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    path::Path,
-    sync::RwLock,
-};
+use std::{collections::HashMap, path::Path, sync::RwLock};
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
@@ -22,7 +18,6 @@ pub(crate) type SourceValue = config::File<config::FileSourceString, config::Fil
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
-pub(crate) type ConfigurableValuePointers = HashMap<String, Vec<String>>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -34,9 +29,9 @@ pub struct CacheOptions {}
 /// ⚠️ Development in progress ⚠️\
 /// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
+    all_configurable_value_pointers: Vec<String>,
     aliases: Aliases,
     conditions: Conditions,
-    configurable_value_pointers: ConfigurableValuePointers,
     features: Features,
     loaded_files: LoadedFiles,
     sources: Sources,
@@ -49,16 +44,16 @@ pub struct OptionsProvider {
 impl OptionsProvider {
     pub(crate) fn new(
         aliases: Aliases,
+        all_configurable_value_pointers: Vec<String>,
         conditions: Conditions,
-        configurable_value_pointers: ConfigurableValuePointers,
         features: Features,
         loaded_files: LoadedFiles,
         sources: Sources,
     ) -> Self {
         OptionsProvider {
+            all_configurable_value_pointers,
             aliases,
             conditions,
-            configurable_value_pointers,
             features,
             loaded_files,
             sources,
@@ -174,7 +169,6 @@ impl OptionsProvider {
     pub fn process_configurable_strings(
         &self,
         value: &mut serde_json::Value,
-        feature_names: &[String],
         key_prefix: Option<&str>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<(), String> {
@@ -186,40 +180,7 @@ impl OptionsProvider {
             return Ok(());
         }
 
-        if self.configurable_value_pointers.is_empty() {
-            // There are no configurable strings to process, assume they are not enabled for the provider, even for use in overrides.
-            return Ok(());
-        }
-
-        // When overrides are present, dynamically discover all configurable strings
-        // because overrides may contain ConfigurableStrings not in the original features
-        let has_overrides = preferences
-            .map(|p| p.overrides_json.is_some())
-            .unwrap_or(false);
-
-        // TODO It would be nice to save memory and use a `HashSet<&String>` instead of a `HashSet<String>`.
-        // `HashSet<String>` is needed when there are overrides, but that should be the exception rather than the rule.
-        let pointers: HashSet<String> = if has_overrides {
-            // Dynamically find all configurable strings in the merged value
-            crate::configurable_string::locator::find_configurable_values(Some(value))
-                .into_iter()
-                .collect()
-        } else {
-            // Collect all configurable pointers for the requested features.
-            feature_names
-                .iter()
-                .filter_map(|feature_name| self.configurable_value_pointers.get(feature_name))
-                .flat_map(|pointers| pointers.iter())
-                .cloned()
-                .collect()
-        };
-
-        if pointers.is_empty() {
-            // There are no configurable strings to process.
-            return Ok(());
-        }
-
-        for pointer in &pointers {
+        for pointer in &self.all_configurable_value_pointers {
             let relative_pointer = match key_prefix {
                 Some(key_prefix) => {
                     if !pointer.starts_with(key_prefix) {
@@ -333,7 +294,7 @@ impl OptionsRegistry for OptionsProvider {
 
         match config.try_deserialize::<serde_json::Value>() {
             Ok(mut value) => {
-                self.process_configurable_strings(&mut value, &feature_names, None, preferences)?;
+                self.process_configurable_strings(&mut value, None, preferences)?;
                 Ok(value)
             }
             Err(e) => Err(e.to_string()),
@@ -437,12 +398,7 @@ impl OptionsRegistry for OptionsProvider {
 
         match config.get::<serde_json::Value>(key) {
             Ok(mut value) => {
-                self.process_configurable_strings(
-                    &mut value,
-                    &filtered_feature_names,
-                    Some(key),
-                    preferences,
-                )?;
+                self.process_configurable_strings(&mut value, Some(key), preferences)?;
                 if cache_options.is_some() {
                     let are_configurable_strings_enabled = preferences
                         .map(|p| p.are_configurable_strings_enabled)
