@@ -1,0 +1,9 @@
+{
+	"features": [
+		"imports_imports"
+	],
+	"options": {
+		"greeting": "Hello, World!",
+		"message": "Welcome to Optify!"
+	}
+}
