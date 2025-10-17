@@ -33,7 +33,7 @@ speeding up your runtime for subsequent requests.
 Configurable strings provide:
 - **Template-based string generation** using Liquid syntax
 - **Variable substitution** with configurable arguments in Liquid templates
-- **File-based templates** for longer or reusable content in the root or arguments
+- **File-based templates** for longer or reusable content in the base or arguments
 - **Inheritance and override** capabilities across features, like any other configurable object
 
 ## Enabling Configurable Strings
@@ -50,7 +50,7 @@ In `.optify/config.json` for the directory where you want to enable configurable
 ## Basic Structure
 
 A configurable string is defined using the special type `Optify.ConfigurableString` with two main components:
-1. **root**: The template string or source
+1. **base**: The template string or source
 2. **arguments**: Optional variables to substitute in the template
 
 ## Syntax Options
