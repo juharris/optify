@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import { ConfigParser } from './config-parser';
 import { findOptifyRoot, isOptifyFeatureFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
 /**
- * Provides "Go to Definition" functionality for imports.
+ * Provides "Go to Definition" functionality for imports and file paths.
  */
 export class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 	provideDefinition(
@@ -25,7 +27,8 @@ export class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 		const provider = getOptionsProvider(optifyRoot);
 		const featuresWithMetadata = provider.featuresWithMetadata();
 		const text = document.getText();
-		const importInfos = ConfigParser.findImportRanges(text, document.languageId);
+		const config = ConfigParser.parse(text, document.languageId);
+		const importInfos = ConfigParser.findImportRanges(text, document.languageId, config);
 
 		// Check if the cursor is on an import (including quotes)
 		for (const importInfo of importInfos) {
@@ -47,6 +50,22 @@ export class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 				const targetPath = featuresWithMetadata[importInfo.name]?.path();
 				if (targetPath) {
 					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
+				}
+			}
+		}
+
+		// Check if the cursor is on a file reference in options
+		const fileRefs = ConfigParser.findFileReferences(text, document.languageId, config);
+		for (const fileRef of fileRefs) {
+			if (fileRef.range.contains(position)) {
+				const fullPath = path.join(optifyRoot, fileRef.filePath);
+
+				if (fs.existsSync(fullPath)) {
+					return new vscode.Location(vscode.Uri.file(fullPath), new vscode.Position(0, 0));
+				} else {
+					// If file doesn't exist, trigger quick open with the file path
+					vscode.commands.executeCommand('workbench.action.quickOpen', fileRef.filePath);
+					return null;
 				}
 			}
 		}
