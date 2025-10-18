@@ -6,6 +6,11 @@ export interface ImportInfo {
 	range: vscode.Range
 }
 
+export interface FileReferenceInfo {
+	filePath: string
+	range: vscode.Range
+}
+
 export interface EqualsCondition {
 	jsonPointer: string
 	matches: string
@@ -65,6 +70,20 @@ export class ConfigParser {
 		}
 	}
 
+	/**
+	 * Find all file references in the options section of a document.
+	 */
+	static findFileReferences(text: string, languageId: string, config?: OptifyConfig): FileReferenceInfo[] {
+		switch (languageId) {
+			case 'json':
+				return this.findFileReferencesInJson(text, config);
+			case 'yaml':
+				return this.findFileReferencesInYaml(text, config);
+			default:
+				return [];
+		}
+	}
+
 	static parse(text: string, languageId: string): OptifyConfig {
 		switch (languageId) {
 			case 'json':
@@ -105,6 +124,135 @@ export class ConfigParser {
 		const start = this.getPositionFromIndex(text, conditionsMatch.index!);
 		const end = new vscode.Position(start.line, start.character + conditionsMatch[0].length);
 		return new vscode.Range(start, end);
+	}
+
+	private static findFileReferencesInJson(text: string, config?: OptifyConfig): FileReferenceInfo[] {
+		const results: FileReferenceInfo[] = [];
+
+		try {
+			config ||= this.parseJson(text);
+			if (!config.options) {
+				return results;
+			}
+
+			const optionsMatch = text.match(/"options"\s*:\s*\{/);
+			if (!optionsMatch) {
+				return results;
+			}
+
+			const optionsStartIndex = optionsMatch.index! + optionsMatch[0].length;
+
+			const fileKeyPattern = /"file"\s*:\s*"([^"]*)"/g;
+			let match;
+
+			while ((match = fileKeyPattern.exec(text.substring(optionsStartIndex))) !== null) {
+				const filePath = match[1];
+				// Exclude the quotes from the range (only underline the file path)
+				const startPos = optionsStartIndex + match.index! + match[0].indexOf('"' + filePath);
+				// Include quotes
+				const endPos = startPos + filePath.length + 2;
+
+				const startPosition = this.getPositionFromIndex(text, startPos);
+				const endPosition = this.getPositionFromIndex(text, endPos);
+
+				results.push({
+					filePath,
+					range: new vscode.Range(startPosition, endPosition)
+				});
+			}
+		} catch (error) {
+			// Return empty array on parse error
+		}
+
+		return results;
+	}
+
+	private static findFileReferencesInYaml(text: string, config?: OptifyConfig): FileReferenceInfo[] {
+		const results: FileReferenceInfo[] = [];
+
+		try {
+			config ||= this.parseYaml(text);
+			if (!config.options) {
+				return results;
+			}
+		} catch (error) {
+			// Return empty array on parse error
+			return results;
+		}
+
+		const lines = text.split('\n');
+		let inOptionsSection = false;
+		let optionsIndent = 0;
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			const trimmedLine = line.trim();
+
+			// Ignore comments
+			if (trimmedLine.startsWith('#')) {
+				continue;
+			}
+
+			// Check if we're entering the options section
+			if (trimmedLine.startsWith('options:')) {
+				inOptionsSection = true;
+				optionsIndent = line.indexOf('options:');
+				continue;
+			}
+
+			// If we're in options section and hit another top-level key at same or lower indent, exit
+			if (inOptionsSection && trimmedLine && line.indexOf(trimmedLine) <= optionsIndent && trimmedLine.includes(':') && !trimmedLine.startsWith('-')) {
+				break;
+			}
+
+			if (inOptionsSection) {
+				// Match various forms of file references:
+				// 1. file: path/to/file.liquid
+				// 2. file: "path/to/file.liquid"
+				// 3. file: 'path/to/file.liquid'
+				// 4. key: { file: "path/to/file.liquid" }
+				// 5. key: { file: 'path/to/file.liquid' }
+				// 6. key: { file: path/to/file.liquid }
+
+				// Match standalone file key
+				const standaloneMatch = trimmedLine.match(/^file\s*:\s*(["']?)([^"'\n]+?)\1\s*$/);
+				if (standaloneMatch) {
+					const quote = standaloneMatch[1];
+					const filePath = standaloneMatch[2].trim();
+					const startCol = line.indexOf(quote + filePath) + quote.length;
+					const endCol = startCol + filePath.length;
+
+					results.push({
+						filePath,
+						range: new vscode.Range(
+							new vscode.Position(i, startCol),
+							new vscode.Position(i, endCol)
+						)
+					});
+					continue;
+				}
+
+				// Match inline object form: key: { file: "path" }
+				const inlineMatch = trimmedLine.match(/\{\s*file\s*:\s*(["']?)([^"'\}]+?)\1\s*\}/);
+				if (inlineMatch) {
+					const quote = inlineMatch[1];
+					const filePath = inlineMatch[2].trim();
+					const fileKeyStart = line.indexOf('file');
+					const pathStart = line.indexOf(quote + filePath, fileKeyStart) + quote.length;
+					const pathEnd = pathStart + filePath.length;
+
+					results.push({
+						filePath,
+						range: new vscode.Range(
+							new vscode.Position(i, pathStart),
+							new vscode.Position(i, pathEnd)
+						)
+					});
+				}
+			}
+		}
+
+		return results;
 	}
 
 	private static findImportRangesInJson(text: string, config?: OptifyConfig): ImportInfo[] {
