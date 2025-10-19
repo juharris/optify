@@ -1,25 +1,33 @@
 .vscode/**
 .vscode-test/**
-
+**/.vscode-test.*
 .nvmrc
-# Don't exclude node_modules: we need @optify/config (native addon)
-src/
-esbuild.js
-
 .gitattributes
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
+CLAUDE.md
+.claude/
+
+# Source files (we bundle them)
+src/
+esbuild.js
 **/tsconfig.json
 **/eslint.config.mjs
 **/*.map
 **/*.ts
-**/.vscode-test.*
 
-out/test
-out/tests
+# Test files
+out/test/
+out/tests/
+**/test/
+**/tests/
 
-CLAUDE.md
-.claude/
-
+# Assets not needed in package
 assets/demo.gif
+
+# Exclude all node_modules except @optify/config (native addon dependency)
+node_modules/**
+!node_modules/@optify/
+!node_modules/@optify/config/
+!node_modules/@optify/config/**

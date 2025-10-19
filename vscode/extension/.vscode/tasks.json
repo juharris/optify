@@ -6,7 +6,7 @@
 		{
 			"label": "npm: watch",
 			"type": "shell",
-			"command": "npm run watch || source '/opt/dev/sh/nvm/nvm.sh' && nvm use 22 && npm run watch",
+			"command": "npm run watch || source '/opt/dev/sh/nvm/nvm.sh' && nvm use 24 && npm run watch",
 			"problemMatcher": "$tsc-watch",
 			"isBackground": true,
 			"presentation": {
