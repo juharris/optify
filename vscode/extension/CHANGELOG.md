@@ -5,6 +5,15 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.7.0
+
+- Add links to file references in options.
+- Pack files and reduce extension size.
+
+## 1.6.2
+
+Support Configurable Strings in imported features.
+
 ## 1.6.1
 
 Improve Preview window message for unsaved changes.

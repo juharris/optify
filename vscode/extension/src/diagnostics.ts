@@ -5,7 +5,7 @@ import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-ut
 import { getOptionsProvider } from './providers';
 
 /**
- * Validates files such as validating imports.
+ * Validates files such as validating conditions and imports.
 */
 export class OptifyDiagnosticsProvider {
 	outputChannel = vscode.window.createOutputChannel('Optify');
