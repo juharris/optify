@@ -7,7 +7,23 @@
 			"label": "npm: watch",
 			"type": "shell",
 			"command": "npm run watch || source '/opt/dev/sh/nvm/nvm.sh' && nvm use 24 && npm run watch",
-			"problemMatcher": "$tsc-watch",
+			"problemMatcher": {
+				"owner": "esbuild",
+				"fileLocation": "relative",
+				"pattern": {
+					"regexp": "^([^:]+):(\\d+):(\\d+): (warning|error): (.+)$",
+					"file": 1,
+					"line": 2,
+					"column": 3,
+					"severity": 4,
+					"message": 5
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "^> .* watch$",
+					"endsPattern": "^\\[watch\\] build finished"
+				}
+			},
 			"isBackground": true,
 			"presentation": {
 				"reveal": "never"
