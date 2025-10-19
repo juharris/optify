@@ -7,7 +7,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 1.7.0
 
-Add links to file references in options.
+- Add links to file references in options.
+- Pack files and reduce extension size.
+
+## 1.6.2
+
+Support Configurable Strings in imported features.
 
 ## 1.6.1
 
