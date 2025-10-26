@@ -7,6 +7,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 1.7.1
 
+- Preview: Lower display thresholds to improve performance for large configs.
 - Update @optify/config to 1.1.3 to correct import cycle detection.
 
 ## 1.7.0

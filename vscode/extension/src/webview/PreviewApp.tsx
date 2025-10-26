@@ -204,12 +204,13 @@ export const PreviewApp: React.FC = () => {
 					<JsonViewer
 						value={previewData.config}
 						theme={theme}
-						rootName={false}
+						collapseStringsAfterLength={80}
+						defaultInspectDepth={6}
 						displayDataTypes={false}
 						displaySize={false}
-						defaultInspectDepth={8}
 						highlightUpdates={true}
-						collapseStringsAfterLength={80}
+						maxDisplayLength={10}
+						rootName={false}
 						valueTypes={valueTypes}
 					/>
 				</div>
