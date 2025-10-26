@@ -81,7 +81,7 @@ fn resolve_imports(
     let mut config_builder = config::Config::builder();
     for import in imports_for_feature {
         // Validate imports.
-        if !features_in_resolution_path.insert(import.clone()) {
+        if features_in_resolution_path.contains(import) {
             // The import is already in the path, so there is a cycle.
             return Err(format!(
                     "Error when resolving imports for '{canonical_feature_name}': Cycle detected with import '{import}'. The features in the path (not in order): {features_in_resolution_path:?}"
@@ -108,21 +108,22 @@ fn resolve_imports(
         // Get the source so that we can build the configuration.
         // Getting the source also ensures the import is a canonical feature name.
         let mut source = match sources.get(import) {
-                Some(s) => s,
-                // The import is not a canonical feature name.
-                None => match aliases.get(&unicase::UniCase::new(import.clone())) {
-                    Some(canonical_name_for_import) => {
-                        return Err(format!(
-                            "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name. Use '{canonical_name_for_import}' instead of '{import}' in order to keep dependencies clear and to help with navigating through files."
-                        ))
-                    }
-                    None => {
-                        return Err(format!(
-                            "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name and not a recognized alias. Use a canonical feature name in order to keep dependencies clear and to help with navigating through files."
-                        ))
-                    }
-                },
-            };
+            Some(s) => s,
+            // The import is not a canonical feature name.
+            None => match aliases.get(&unicase::UniCase::new(import.clone())) {
+                Some(canonical_name_for_import) => {
+                    return Err(format!(
+                        "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name. Use '{canonical_name_for_import}' instead of '{import}' in order to keep dependencies clear and to help with navigating through files."
+                    ))
+                }
+                None => {
+                    return Err(format!(
+                        "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name and not a recognized alias. Use a canonical feature name in order to keep dependencies clear and to help with navigating through files."
+                    ))
+                }
+            },
+        };
+
         if resolved_imports.insert(import.clone()) {
             if let Some(imports_for_import) = all_imports.get(import) {
                 let mut _features_in_resolution_path = features_in_resolution_path.clone();
