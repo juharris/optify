@@ -167,7 +167,8 @@ jobs:
       name: "[Python] Setup"
       with:
         cache: pip
-        python-version: 3.x
+        # Respect PyO3's maximum supported Python version.
+        python-version: '3.14'
     - name: "[Python] Build"
       shell: bash
       run: pip install -e .[dev]
