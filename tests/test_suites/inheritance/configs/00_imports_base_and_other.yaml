@@ -1,0 +1,5 @@
+imports:
+  - 01_base
+  - 02_imports_base
+options:
+  key1: "value01"
