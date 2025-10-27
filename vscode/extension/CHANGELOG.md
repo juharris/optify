@@ -5,6 +5,12 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.7.1
+
+- Preview: Lower display thresholds to improve performance for large configs and avoid showing long arrays and big objects.
+- Preview: Show "Loading..." when loading the configuration.
+- Update @optify/config to 1.1.3 to correct import cycle detection.
+
 ## 1.7.0
 
 - Add links to file references in options.

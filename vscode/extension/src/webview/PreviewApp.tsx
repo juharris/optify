@@ -11,12 +11,7 @@ declare const acquireVsCodeApi: () => {
 const vscode = acquireVsCodeApi();
 
 export const PreviewApp: React.FC = () => {
-	const [previewData, setPreviewData] = useState<PreviewData>({
-		features: [],
-		config: {},
-		dependents: null,
-		isUnsaved: false,
-	});
+	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
 	useEffect(() => {
@@ -102,28 +97,31 @@ export const PreviewApp: React.FC = () => {
 				Configuration Preview
 			</h2>
 
-			<div style={{ marginBottom: '1rem' }}>
-				<strong>Features:</strong>
-				<div
-					style={{
-						marginTop: '0.5rem',
-						padding: '0.5rem',
-						backgroundColor: 'var(--vscode-textCodeBlock-background)',
-						border: '1px solid var(--vscode-widget-border)',
-						borderRadius: '4px',
-					}}
-				>
-					<JsonViewer
-						value={previewData.features}
-						theme={theme}
-						rootName={false}
-						displayDataTypes={false}
-						displaySize={false}
-					/>
+			{previewData ?
+				<div style={{ marginBottom: '1rem' }}>
+					<strong>Features:</strong>
+					<div
+						style={{
+							marginTop: '0.5rem',
+							padding: '0.5rem',
+							backgroundColor: 'var(--vscode-textCodeBlock-background)',
+							border: '1px solid var(--vscode-widget-border)',
+							borderRadius: '4px',
+						}}
+					>
+						<JsonViewer
+							value={previewData.features}
+							theme={theme}
+							rootName={false}
+							displayDataTypes={false}
+							displaySize={false}
+						/>
+					</div>
 				</div>
-			</div>
+				: <>Loading...</>
+			}
 
-			{previewData.dependents && previewData.dependents.length > 0 && (
+			{previewData?.dependents && previewData.dependents.length > 0 && (
 				<div style={{ marginBottom: '1rem' }}>
 					<h3 style={{ color: 'var(--vscode-foreground)' }}>Dependents</h3>
 					<p>Features that import this one:</p>
@@ -156,7 +154,7 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{previewData.error && (
+			{previewData?.error && (
 				<div style={{ marginBottom: '1rem' }}>
 					<h3 style={{ color: 'var(--vscode-errorForeground)' }}>Error</h3>
 					<div
@@ -174,9 +172,9 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{!previewData.error && <h3 style={{ color: 'var(--vscode-foreground)' }}>Configuration:</h3>}
+			{previewData && !previewData.error && <h3 style={{ color: 'var(--vscode-foreground)' }}>Configuration:</h3>}
 
-			{previewData.isUnsaved && (
+			{previewData?.isUnsaved && (
 				<div
 					style={{
 						padding: '0.5rem',
@@ -191,7 +189,7 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{!previewData.error && (
+			{previewData && !previewData.error && (
 				<div
 					style={{
 						padding: '1rem',
@@ -204,12 +202,31 @@ export const PreviewApp: React.FC = () => {
 					<JsonViewer
 						value={previewData.config}
 						theme={theme}
-						rootName={false}
+						collapseStringsAfterLength={120}
+						defaultInspectControl={(path, value) => {
+							if (path.length < 2) {
+								// Keep top-level nodes expanded.
+								return true
+							}
+							if (value) {
+								// Collapse large objects/arrays by default.
+								if (Array.isArray(value)) {
+									return value.length < 8
+								}
+								if (typeof value === 'object') {
+									return Object.keys(value).length < 8
+								}
+							}
+
+							// Show primitives.
+							return true
+						}}
+						defaultInspectDepth={7}
 						displayDataTypes={false}
 						displaySize={false}
-						defaultInspectDepth={8}
 						highlightUpdates={true}
-						collapseStringsAfterLength={80}
+						maxDisplayLength={100}
+						rootName={false}
 						valueTypes={valueTypes}
 					/>
 				</div>
