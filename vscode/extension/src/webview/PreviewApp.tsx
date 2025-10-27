@@ -202,11 +202,7 @@ export const PreviewApp: React.FC = () => {
 					<JsonViewer
 						value={previewData.config}
 						theme={theme}
-						collapseStringsAfterLength={80}
-						defaultInspectDepth={7}
-						displayDataTypes={false}
-						displaySize={false}
-						highlightUpdates={true}
+						collapseStringsAfterLength={120}
 						defaultInspectControl={(path, value) => {
 							if (path.length < 2) {
 								// Keep top-level nodes expanded.
@@ -225,6 +221,11 @@ export const PreviewApp: React.FC = () => {
 							// Show primitives.
 							return true
 						}}
+						defaultInspectDepth={7}
+						displayDataTypes={false}
+						displaySize={false}
+						highlightUpdates={true}
+						maxDisplayLength={100}
 						rootName={false}
 						valueTypes={valueTypes}
 					/>

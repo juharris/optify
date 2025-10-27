@@ -10,5 +10,3 @@ cd "$(dirname "$0")/.."
 pushd vscode/extension
 npm version ${strategy}
 npm install @optify/config@latest
-popd
-
