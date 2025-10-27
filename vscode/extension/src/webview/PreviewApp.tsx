@@ -203,11 +203,28 @@ export const PreviewApp: React.FC = () => {
 						value={previewData.config}
 						theme={theme}
 						collapseStringsAfterLength={80}
-						defaultInspectDepth={6}
+						defaultInspectDepth={7}
 						displayDataTypes={false}
 						displaySize={false}
 						highlightUpdates={true}
-						maxDisplayLength={10}
+						defaultInspectControl={(path, value) => {
+							if (path.length < 2) {
+								// Keep top-level nodes expanded.
+								return true
+							}
+							if (value) {
+								// Collapse large objects/arrays by default.
+								if (Array.isArray(value)) {
+									return value.length < 8
+								}
+								if (typeof value === 'object') {
+									return Object.keys(value).length < 8
+								}
+							}
+
+							// Show primitives.
+							return true
+						}}
 						rootName={false}
 						valueTypes={valueTypes}
 					/>
