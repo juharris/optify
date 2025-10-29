@@ -2,7 +2,7 @@
 
 # Optify
 
-Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.
+Powers **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.
 Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
 [![Crates.io](https://img.shields.io/crates/v/optify?logo=Rust)](https://crates.io/crates/optify)
@@ -15,11 +15,14 @@ Configurations for different experiments or feature flags are mergeable to suppo
 > The configuration should declare **what** to do, but **not how** to do it.
 
 This project helps improve the scalability and maintainability of code.
-We should determine the right configuration for a request or process when it starts by passing the enabled features to an `OptionsProvider`.
+Determine the right configuration for a request or process when it starts by passing the enabled features to an `OptionsProvider`.
 The returned options would be used throughout the request or process to change business logic.
 Supporting deep configurations with many types of properties instead of simple enabled/disabled feature flags is important to help avoid conditional statements (`if` statements) and thus improve the scalability of our code and make it easier to maintain our code as explained in [this article][cond-article].
 
-Instead of working with feature flags:
+See [AI Example](./docs/AI_Example.md) for an example of using Optify to manage the configuration for using an LLM with customizing the system instructions and enabled tools.
+
+## Motivation
+Instead of working with feature flags like this:
 ```Python
 if Settings.is_feature_A_enabled:
     handle_A(params)
@@ -45,7 +48,7 @@ Instead we can convert each enabled flag to a string and then build the merged c
 
 See [tests](./tests/) for examples and tests for different variations of this paradigm for managing options.
 
-Core Features:
+## Core Features
 * **Each *feature flag* can be represented by a JSON or YAML file** which contains options to override default configuration values when processing feature names or experiment names in a request.
 * Each file is a granular **partial** representation of the overall configuration.
   Features are intended to be combined to build the final configuration.
@@ -82,10 +85,35 @@ Configurations in the cloud are fine for temporary experiments, but make the dai
 The main point is to keep the configurations private and internal to your codebase while feature flags names are part of your external API.
 
 # Merging Configuration Files
-When merging configurations for features, objects are merged with the last feature taking precedence.
-Key values, including lists are overwritten.
+Objects are merged with the last feature taking precedence.
+**All values, including arrays/lists, but not objects/dictionaries, are overwritten.**
+I.e., all types override previous values except for objects/dictionaries which are merged recursively.
 
-As explained below, the .NET version works a little differently that the versions in this repository which are backed by the Rust implementation.
+**Array items are not overwritten** because it would make it impossible or confusing to insert items or remove items.
+To replicate an array that needs configurable items, use an object with keys to sort and treat `null` values as removed items.
+For example, consider this configuration built after merging others:
+```JSON
+{
+    "items": {
+        "item_01": {"k": "value 1"},
+        "item_03": null,
+        "item_05": {"k": "value 5"}
+    }
+}
+```
+
+It represents an array: `[{"k": "value 1"}, {"k": "value 5"}]`
+
+The following Python code can be used to filter, sort, and convert it to the dictionary to a list:
+```Python
+items = sorted(
+    ((k,v) for k, v in config["items"].items() if v is not None),
+    key=lambda kv: kv[0])
+items = [v for (_k,v) in items]
+```
+
+
+As explained below, the .NET version works a little differently than the versions in this repository which are backed by the Rust implementation.
 
 ## Example
 Suppose you have a class that you want to use to configure your logic at runtime:
@@ -156,6 +184,7 @@ options:
 You'll load the `configurations` folder using an `OptionsProviderBuilder` and then get an `OptionsProvider` from that builder.
 Some languages also have an `OptionsWatcherBuilder` which can be used to watch for changes in the configuration files and automatically reload changes into the `OptionsProvider`.
 The exact class names and methods may vary slightly depending on the language you are using.
+`OptionsProvider` and `OptionsWatcher` also have static `build` methods.
 See below for links to implementations in different languages.
 
 The result of using features: `["A", "B"]` will be:
@@ -361,10 +390,12 @@ For example,
 See the [here](./tests/test_suites/inheritance/configs/.optify/schema.json) for an example.
 
 # Inheritance
-Feature files can list ordered dependencies to declare other files to eagerly import.
+Feature files can list ordered dependencies to declare other files to eagerly import before the options in that files are applied.
+I.e., the configuration for the feature file is built by first applying the imported features in order and then applying the options in the feature file itself.
+See [merging configuration files](#merging-configuration-files) for details on how options are merged.
 
 This allows grouping related configurations while keeping most files small, focused, and like granular building blocks.
-This also helps keep lists of enabled features smaller at runtime for typical feature that are used together.
+This also helps keep lists of enabled features smaller at runtime for typical features that are used together.
 
 Imports are resolved at build time, when `OptionsProviderBuilder::build` is called so that getting to right configuration from an `OptionsProvider` is as fast as possible, but sacrificing some extra memory overhead to store redundant options because the options will also be stored in each parent.
 
@@ -416,7 +447,7 @@ The resulting options for `feature_C` will be as if we included the features in 
 ```JSON
 {
     "myConfig":{
-        // The values from feature_B as feature_B is listed after feature_A so it overrides it.
+        // The array has the values from feature_B as feature_B is listed after feature_A.
         "myArray": [
             "feature B item 1"
         ],
