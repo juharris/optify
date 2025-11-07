@@ -1,13 +1,37 @@
+# Rust build artifacts and source
 target
 Cargo.lock
+Cargo.toml
 .cargo
+build.rs
+src/*.rs
+rustfmt.toml
+
+# Development and CI/CD
 .github
-npm
+.claude
+.vscode
+.nvmrc
+.yarnrc.yml
 .eslintrc
 .prettierignore
-rustfmt.toml
-yarn.lock
-*.node
-.yarn
-__test__
 renovate.json
+
+# Package management
+npm
+yarn.lock
+.yarn
+
+# Tests
+__test__
+tests
+jest.config.js
+
+# TypeScript config
+tsconfig.json
+
+# Native bindings (users will download platform-specific ones)
+*.node
+
+# TypeScript source (use compiled dist/ instead)
+src/*.ts
