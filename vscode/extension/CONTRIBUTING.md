@@ -1,3 +1,9 @@
+# Setup
+
+```shell
+npm install
+```
+
 # Starting
 
 F5 in VS Code.
