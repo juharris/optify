@@ -26,7 +26,7 @@ Other properties such as the tool input schema can also be customized adjacent t
             "arguments": {
                 "product_name": "MyApp",
                 "personality": {
-                    "file": "templates/personality.txt"
+                    "file": "shared/personality.txt"
                 }
             }
         },
