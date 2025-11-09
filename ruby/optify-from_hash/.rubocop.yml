@@ -22,3 +22,8 @@ Metrics/MethodLength:
 
 Metrics/PerceivedComplexity:
   Max: 10
+
+Naming/FileName:
+  Exclude:
+    # Filename deliberately matches gem name
+    - 'lib/optify-from_hash.rb'

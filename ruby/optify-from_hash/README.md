@@ -52,7 +52,7 @@ bundle install
 
 Run:
 ```shell
-rake test
+bundle exec rake test
 ```
 
 ## Style
