@@ -2,7 +2,7 @@
 # typed: true
 
 require 'test/unit'
-require_relative '../lib/optify_from_hash'
+require_relative '../lib/optify-from_hash'
 require_relative 'hash_utils'
 require_relative 'my_config'
 

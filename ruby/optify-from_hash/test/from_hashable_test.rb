@@ -2,7 +2,7 @@
 # typed: true
 
 require 'test/unit'
-require_relative '../lib/optify_from_hash'
+require_relative '../lib/optify-from_hash'
 require_relative 'my_config'
 
 # Ensure that equality and other utility methods other than `from_hash` work.
