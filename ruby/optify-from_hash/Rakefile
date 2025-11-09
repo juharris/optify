@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+# typed: false
+
+require 'rake/testtask'
+
+desc 'Run tests'
+task default: :test
+
+Rake::TestTask.new do |t|
+  t.test_files = FileList[File.expand_path('test/*_test.rb', __dir__)]
+end
