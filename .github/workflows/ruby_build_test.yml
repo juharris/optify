@@ -66,7 +66,7 @@ jobs:
         mkdir -p tmp
         bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > tmp/optify_from_hash.rbs~
         diff -u sig/optify_from_hash.rbs tmp/optify_from_hash.rbs~
-      working-directory: ./ruby/optify
+      working-directory: ./ruby/optify-from_hash
     - name: "[Ruby] Test"
       run: bundle exec rake test
-      working-directory: ./ruby/optify
+      working-directory: ./ruby/optify-from_hash
