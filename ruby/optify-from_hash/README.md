@@ -107,26 +107,3 @@ See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
 
 ## Publishing
 A GitHub Action is setup to publish the gem as needed.
-To publish manually, run the following with the correct version and architecture:
-```shell
-rake gem
-gem push pkg/optify-from_hash-<version>-<architecture>.gem
-```
-
-To check metadata for the gem file:
-```shell
-tar -xf pkg/optify-from_hash-<version>-<architecture>.gem
-gzip -d metadata.gz
-less metadata
-```
-
-To inspect the contents of the gem:
-```shell
-gem unpack optify-from_hash-<version>-<architecture>.gem
-```
-
-To see credentials to get the API key to update a GitHub Action, run:
-For Mac:
-```shell
-cat ~/.local/share/gem/credentials
-```
