@@ -9,39 +9,17 @@ module Optify
   # This class is a work in progress with minimal error handling
   # and doesn't handle certain cases such as nilable types yet.
   # It may be moved to another gem in the future.
-  class BaseConfig
+  class BaseConfig < FromHashable
     abstract!
-
-    # Create a new instance of the class from a hash.
-    #
-    # This is a class method that so that it can set members with private setters.
-    # @param hash The hash to create the instance from.
-    # @return The new instance.
-    sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
-    def self.from_hash(hash); end
-
-    # Convert this object to a Hash recursively.
-    # This is mostly the reverse operation of `from_hash`,
-    # as keys will be symbols
-    # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
-    # @return The hash representation of this object.
-    sig { returns(T::Hash[Symbol, T.untyped]) }
-    def to_h; end
-
-    # Compare this object with another object for equality.
-    # @param other The object to compare.
-    # @return [Boolean] true if the objects are equal; otherwise, false.
-    sig { params(other: T.untyped).returns(T::Boolean) }
-    def ==(other); end
   end
 
   # Options for caching.
   # Only enabling or disabling caching is supported for now.
-  class CacheOptions < BaseConfig
+  class CacheOptions < FromHashable
   end
 
   # Information about a feature.
-  class OptionsMetadata < BaseConfig
+  class OptionsMetadata < FromHashable
     sig { returns(T.nilable(T::Array[String])) }
     def aliases; end
 
@@ -214,7 +192,7 @@ module Optify
     # @param feature_names The enabled feature names to use to build the options.
     # @param config_class The class of the configuration to return.
     # The class must implement `from_hash` as a class method to convert a hash to an instance of the class.
-    # It is recommended to use a class that extends `Optify::BaseConfig` because it implements `from_hash`.
+    # It is recommended to use a class that extends `Optify::FromHashable` because it implements `from_hash`.
     # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
     # @param preferences The preferences to use when getting options.
     # @return The options.

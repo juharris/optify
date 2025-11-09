@@ -4,6 +4,8 @@ end
 
 # A base class for classes that can be created from a hash.
 class Optify::FromHashable
+  extend T::Helpers
+
   # Create a new instance of the class from a hash.
   #
   # This is a class method that so that it can set members with private setters.

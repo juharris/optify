@@ -1,15 +1,14 @@
 # frozen_string_literal: true
 
-VERSION = '0.0.1'
+LIB_VERSION = '0.0.1'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-from_hash'
-  spec.version = VERSION
+  spec.version = LIB_VERSION
   spec.summary = 'Utilities for converting hashes to immutable objects.'
   spec.description = 'Helps convert hashes to immutable objects.'
   spec.homepage = 'https://github.com/juharris/optify'
   spec.license = 'MIT'
-
   spec.authors = ['Justin D. Harris']
 
   spec.required_ruby_version = '>= 3.0'

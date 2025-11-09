@@ -5,6 +5,8 @@
 module Optify
   # A base class for classes that can be created from a hash.
   class FromHashable
+    extend T::Sig
+    extend T::Helpers
     abstract!
 
     # Create a new instance of the class from a hash.

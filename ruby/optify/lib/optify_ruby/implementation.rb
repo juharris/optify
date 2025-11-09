@@ -11,7 +11,7 @@ require_relative './provider_module'
 module Optify
   # Options for caching.
   # Only enabling or disabling caching is supported for now.
-  class CacheOptions < BaseConfig
+  class CacheOptions < FromHashable
   end
 
   # Provides configurations based on keys and enabled feature names.

@@ -7,7 +7,7 @@ require_relative 'conditions_config'
 require_relative 'my_config'
 
 class ProviderCacheTest < Test::Unit::TestCase
-  class StringConfig < Optify::BaseConfig
+  class StringConfig < Optify::FromHashable
     def self.from_hash(obj)
       obj.is_a?(String) ? obj : super(obj)
     end

@@ -4,4 +4,6 @@ source 'https://rubygems.org'
 
 gemspec
 
+gem 'optify-from_hash', path: '../optify-from_hash'
+
 gem 'rubocop', '~> 1.76.1', require: false

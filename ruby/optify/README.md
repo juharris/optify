@@ -16,7 +16,7 @@ Define your immutable configuration classes:
 ```ruby
 require 'optify'
 
-class MyObject < Optify::BaseConfig
+class MyObject < Optify::FromHashable
   sig { returns(Integer) }
   attr_reader :number
 
@@ -24,7 +24,7 @@ class MyObject < Optify::BaseConfig
   attr_reader :string
 end
 
-class MyConfig < Optify::BaseConfig
+class MyConfig < Optify::FromHashable
   sig { returns(String) }
   attr_reader :name
 
@@ -66,7 +66,7 @@ See [optify_test.rb](test/optify_test.rb) for more examples.
 
 Use Ruby 3.4+., for example, run:
 ```shell
-chruby 3.4.1
+chruby 3.4.4
 ```
 
 Run:
@@ -98,7 +98,7 @@ To automatically convert Sorbet style to RBS:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
 
-Note that classes that inherit from `Optify:BaseConfig` such as `OptionsMetadata` need Sorbet signatures for their attributes for `from_hash` to work.
+Note that classes that inherit from `Optify:FromHashable` such as `OptionsMetadata` need Sorbet signatures for their attributes for `from_hash` to work.
 So some classes will need Sorbet signatures.
 
 <!--
