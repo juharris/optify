@@ -47,7 +47,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # Rust
+    # Required for the main Ruby gem.
+    # We will soon make a new version of the main Ruby gem that doesn't require Rust.
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          ruby/optify
+          rust/optify
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-rust
+    - name: "[Rust] Build"
+      run: cargo build --release
+      working-directory: ./rust/optify
+
     # Ruby
+    # Gem: optify-from_hash
+
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
     - uses: ruby/setup-ruby@v1
@@ -55,7 +72,7 @@ jobs:
       with:
         bundler-cache: true
         working-directory: ./ruby/optify-from_hash
-    - name: "[Ruby] Lint"
+    - name: "[Ruby][from_hash] Lint"
       shell: bash
       run: |
         set -ex
@@ -67,6 +84,41 @@ jobs:
         bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > tmp/optify_from_hash.rbs~
         diff -u sig/optify_from_hash.rbs tmp/optify_from_hash.rbs~
       working-directory: ./ruby/optify-from_hash
-    - name: "[Ruby] Test"
+    - name: "[Ruby][from_hash] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify-from_hash
+
+    # Gem: optify
+    - name: "[Ruby] Check Ruby version"
+      shell: bash
+      run: |
+        set -ex
+        # The Ruby versions must be the same for both gems.
+        diff -u .ruby-version ../optify/.ruby-version
+      working-directory: ./ruby/optify-from_hash
+    
+    - name: "[Ruby][optify] Install dependencies"
+      shell: bash
+      run: bundle install
+      working-directory: ./ruby/optify
+    - name: "[Ruby][optify] Lint"
+      shell: bash
+      run: |
+        set -ex
+        bundle exec srb tc
+        bundle exec rubocop
+
+        # Ensure that the RBS file is up-to-date.
+        mkdir -p tmp
+        bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
+        diff -u sig/optify.rbs tmp/optify.rbs~
+      working-directory: ./ruby/optify
+    - name: "[Ruby][optify][Rust] Lint"
+      run : cargo fmt -- --check
+      working-directory: ./ruby/optify
+    - name: "[Ruby][optify][Rust] Clippy"
+      run: cargo clippy --release --no-deps -- -D warnings --no-deps
+      working-directory: ./ruby/optify
+    - name: "[Ruby][optify] Test"
+      run: bundle exec rake test
+      working-directory: ./ruby/optify
