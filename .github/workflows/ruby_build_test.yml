@@ -102,8 +102,7 @@ jobs:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
     - name: "[from_hash] Publish"
-      # TEMP
-      # if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       # It probably just fails if the gem is already published.
       continue-on-error: true
       shell: bash
