@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gemspec
+
+gem 'optify-from_hash'
+# To use a local version:
+# gem 'optify-from_hash', path: '../optify-from_hash'
+
+gem 'rubocop', '~> 1.76.1', require: false
