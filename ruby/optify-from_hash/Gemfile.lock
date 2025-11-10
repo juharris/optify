@@ -52,6 +52,7 @@ GEM
       sorbet-static (= 0.6.12606)
     sorbet-runtime (0.6.12606)
     sorbet-static (0.6.12606-universal-darwin)
+    sorbet-static (0.6.12606-x86_64-linux)
     sorbet-static-and-runtime (0.6.12606)
       sorbet (= 0.6.12606)
       sorbet-runtime (= 0.6.12606)
@@ -86,7 +87,10 @@ GEM
       yard
 
 PLATFORMS
+  aarch64-linux
+  arm64-darwin
   universal-darwin
+  x86_64-linux
 
 DEPENDENCIES
   optify-from_hash!
