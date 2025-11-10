@@ -5,18 +5,24 @@ on:
     branches: [ "main" ]
     paths:
       - ".github/workflows/ruby_build_test.yml"
-      - "ruby/optify-from_hash/**"
+      - "ruby/**"
+      - "rust/**"
       - "tests/**"
   pull_request:
     branches: [ "main" ]
     types: [ opened, synchronize, reopened, ready_for_review ]
     paths:
       - ".github/workflows/ruby_build_test.yml"
-      - "ruby/optify-from_hash/**"
+      - "ruby/**"
+      - "rust/**"
       - "tests/**"
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RB_SYS_CARGO_PROFILE: release
 
 jobs:
   setup:
@@ -35,6 +41,21 @@ jobs:
             matrix='["ubuntu-latest", "macos-latest"]'
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+   # Following example from https://github.com/oxidize-rb/actions/blob/main/cross-gem
+  ci-data:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
+    outputs:
+      result: ${{ steps.fetch.outputs.result }}
+    steps:
+      - uses: oxidize-rb/actions/fetch-ci-data@v1
+        id: fetch
+        with:
+          # Can see versions using `curl https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json`
+          # We don't need the latest bleeding edge.
+          stable-ruby-versions: |
+            exclude: [head]
 
   build:
     name: "Build & Test"
@@ -164,3 +185,142 @@ jobs:
     - name: "[optify] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify
+
+  # Build the gem for specific Ruby versions and platforms so that devs don't have to build it locally.
+  cross-gem:
+    name: "Build"
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
+    needs:
+      - build
+      - ci-data
+    strategy:
+      fail-fast: true
+      matrix:
+        ruby_platform:
+        # Add more as needed.
+        # More versions in https://raw.githubusercontent.com/oxidize-rb/rb-sys/main/data/derived/github-actions-matrix.json
+        - aarch64-linux
+        - arm64-darwin
+        - x86_64-linux
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          ruby/optify
+          rust/optify
+        cache-on-failure: true
+        shared-key: ${{ matrix.ruby_platform }}-rust
+
+    # This is file is mainly for local development and to help Sorbet.
+    # It should not be needed for the build as we'll set a specific version of Ruby.
+    - name: "rm .ruby-version"
+      shell: bash
+      run: |
+        rm .ruby-version
+      working-directory: ./ruby/optify
+
+    - uses: ruby/setup-ruby@v1
+      name: "[Ruby] Setup"
+      with:
+        bundler-cache: true
+        # The version to use to run rb-sys, but the cross-gem step will use a Docker container with it's own Ruby version, I think.
+        ruby-version: "3.4.1"
+        # Don't put the working-directory here because we don't want to install the Ruby project in this context.
+
+    # Initialize some Rust resources
+    # such as ensuring that /home/runner/.cargo/registry is created.
+    # Otherwise, we get "docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /home/runner/.cargo/registry."
+    - name: "[Rust] Build"
+      run: cargo check --release
+      working-directory: ./rust/optify
+
+    # Documentation: https://github.com/oxidize-rb/actions/blob/main/cross-gem
+    # Outputs: gem-path
+    - uses: oxidize-rb/actions/cross-gem@main
+      id: cross-build
+      name: "[Ruby] Cross-Build"
+      with:
+        # Temporarily disable cache to avoid issues with setting up the dependencies.
+        cargo-cache-clean: false
+        cache-save-always: false
+        cache-version: ${{ matrix.ruby_platform }}
+        platform: ${{ matrix.ruby_platform }}
+        # Available versions: https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json
+        # Found in https://github.com/oxidize-rb/actions/blob/main/fetch-ci-data/evaluate.rb
+        ruby-versions: ${{ join(fromJSON(needs.ci-data.outputs.result).stable-ruby-versions, ',') }}
+
+        # Docker tag to override the default.
+        # Useful when the number is changed for the action, but the Docker image is not yet published.
+        # Images: https://hub.docker.com/u/rbsys
+        # tag: '0.9.117'
+        working-directory: ./ruby/optify
+
+    - name: "[Ruby] Publish"
+      if: github.ref == 'refs/heads/main'
+      shell: bash
+      # It probably just fails if the gem is already published.
+      # We want to only be lenient for the `gem push`, but we would still want to clearly see that an issue happened during the run.
+      continue-on-error: true
+      run: |
+        set -ex
+        gem_path="${{ steps.cross-build.outputs.gem-path }}"
+        ls -lh "${gem_path}"
+        gem push "${gem_path}"
+        sha256sum "${gem_path}"
+      env:
+        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
+
+  # Publish a gem with the Rust source code so that versions of ruby and platforms that aren't built by this action can compile the Rust code when they build.
+  # This allows future versions of Ruby to be used that aren't explicitly supported by this action.
+  source-gem:
+    name: "Source Gem"
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          ruby/optify
+          rust/optify
+        cache-on-failure: true
+        shared-key: source-gem-rust
+
+    # setup-ruby also runs `bundle install`.
+    # It uses the Ruby version from .ruby-version.
+    - uses: ruby/setup-ruby@v1
+      name: "Setup"
+      with:
+        bundler-cache: true
+        working-directory: ./ruby/optify
+
+    - name: Build gem
+      run: |
+        set -ex
+        mkdir --parents pkg
+        gem build optify.gemspec --output pkg/optify-config.gem
+      working-directory: ./ruby/optify
+
+    - name: "Publish"
+      if: github.ref == 'refs/heads/main'
+      shell: bash
+      # It probably just fails if the gem is already published.
+      # We want to only be lenient for the `gem push`, but we would still want to clearly see that an issue happened during the run.
+      continue-on-error: true
+      run: |
+        set -ex
+        gem_path="pkg/optify-config.gem"
+        ls -lh "${gem_path}"
+        gem push "${gem_path}"
+        sha256sum "${gem_path}"
+      working-directory: ./ruby/optify
+      env:
+        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'

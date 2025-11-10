@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.authors = ['Justin D. Harris']
 
   # Only certain versions are supported by Magnus: https://github.com/matsadler/magnus.
-  # See notes in ruby_cross-build.yml for more details about cross-compilation and source gems.
+  # See notes in ruby_build_test.yml for more details about cross-compilation and source gems.
   spec.required_ruby_version = '>= 3.0'
 
   spec.metadata = {
