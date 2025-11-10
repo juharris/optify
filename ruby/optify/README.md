@@ -89,7 +89,7 @@ RB_SYS_CARGO_PROFILE='release' rake compile
 
 Run:
 ```shell
-bundle exec rake test 
+bundle exec rake test
 ```
 
 ## Typing

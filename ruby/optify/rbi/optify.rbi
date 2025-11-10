@@ -3,6 +3,7 @@
 
 # Tools for working with configurations declared in files.
 module Optify
+  # DEPRECATED: Use `Optify::FromHashable` instead.
   # A base class for classes from configuration files.
   # Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`
   # because they will have an implementation of `from_hash` that works recursively.

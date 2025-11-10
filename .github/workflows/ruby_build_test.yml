@@ -68,14 +68,17 @@ jobs:
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
     - uses: ruby/setup-ruby@v1
-      name: "[Ruby] Setup"
+      name: "Setup"
       with:
         bundler-cache: true
         working-directory: ./ruby/optify-from_hash
-    - name: "[Ruby][from_hash] Lint"
+    - name: "[from_hash] Lint"
       shell: bash
       run: |
         set -ex
+
+        bundle exec tapioca gem --verify
+
         bundle exec srb tc
         bundle exec rubocop
 
@@ -84,11 +87,11 @@ jobs:
         bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > tmp/optify_from_hash.rbs~
         diff -u sig/optify_from_hash.rbs tmp/optify_from_hash.rbs~
       working-directory: ./ruby/optify-from_hash
-    - name: "[Ruby][from_hash] Test"
+    - name: "[from_hash] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify-from_hash
 
-    - name: "[Ruby][from_hash] Build"
+    - name: "[from_hash] Build"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
@@ -98,7 +101,7 @@ jobs:
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
-    - name: "[Ruby][from_hash] Publish"
+    - name: "[from_hash] Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       # It probably just fails if the gem is already published.
       continue-on-error: true
@@ -111,7 +114,7 @@ jobs:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
     # Gem: optify
-    - name: "[Ruby] Check Ruby version"
+    - name: "Check Ruby version"
       shell: bash
       run: |
         set -ex
@@ -119,14 +122,17 @@ jobs:
         diff -u .ruby-version ../optify/.ruby-version
       working-directory: ./ruby/optify-from_hash
     
-    - name: "[Ruby][optify] Install dependencies"
+    - name: "[optify] Install dependencies"
       shell: bash
       run: bundle install
       working-directory: ./ruby/optify
-    - name: "[Ruby][optify] Lint"
+    - name: "[optify] Lint"
       shell: bash
       run: |
         set -ex
+
+        bundle exec tapioca gem --verify
+
         bundle exec srb tc
         bundle exec rubocop
 
@@ -135,12 +141,12 @@ jobs:
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
         diff -u sig/optify.rbs tmp/optify.rbs~
       working-directory: ./ruby/optify
-    - name: "[Ruby][optify][Rust] Lint"
+    - name: "[optify][Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./ruby/optify
-    - name: "[Ruby][optify][Rust] Clippy"
+    - name: "[optify][Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./ruby/optify
-    - name: "[Ruby][optify] Test"
+    - name: "[optify] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify
