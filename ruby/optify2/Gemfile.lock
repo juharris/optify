@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     optify2 (0.0.1)
+      optify-from_hash (~> 0.1.0)
       sorbet-runtime (>= 0.5, < 1)
 
 GEM
@@ -53,7 +54,9 @@ GEM
     sorbet (0.6.12477)
       sorbet-static (= 0.6.12477)
     sorbet-runtime (0.6.12477)
+    sorbet-static (0.6.12477-aarch64-linux)
     sorbet-static (0.6.12477-universal-darwin)
+    sorbet-static (0.6.12477-x86_64-linux)
     sorbet-static-and-runtime (0.6.12477)
       sorbet (= 0.6.12477)
       sorbet-runtime (= 0.6.12477)
@@ -94,7 +97,6 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  optify-from_hash
   optify2!
   rake
   rbs (~> 4.0.0.dev.4)

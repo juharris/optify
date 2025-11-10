@@ -25,6 +25,8 @@ Gem::Specification.new do |spec|
 
   spec.files = Dir['lib/**/*.rb', 'rbi/*', 'sig/*']
 
+  spec.add_dependency 'optify-from_hash', '~> 0.1.0'
+
   sorbet_version = '>= 0.5'
   sorbet_version_upper_bound = '< 1'
   spec.add_dependency 'sorbet-runtime', sorbet_version, sorbet_version_upper_bound
