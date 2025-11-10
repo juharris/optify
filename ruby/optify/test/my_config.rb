@@ -3,7 +3,7 @@
 
 require_relative '../lib/optify_ruby/base_config'
 
-class MyObject < Optify::BaseConfig
+class MyObject < Optify::FromHashable
   sig { returns(Integer) }
   attr_reader :one
 
@@ -21,7 +21,7 @@ class MyObject < Optify::BaseConfig
 end
 
 # A custom configuration for testing.
-class MyConfig < Optify::BaseConfig
+class MyConfig < Optify::FromHashable
   sig { returns(String) }
   attr_reader :rootString # rubocop:disable Naming/MethodName
 

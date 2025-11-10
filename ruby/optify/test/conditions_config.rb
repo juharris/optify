@@ -4,7 +4,7 @@
 require_relative '../lib/optify_ruby/base_config'
 
 # A custom configuration for testing for the conditions folder.
-class MyConditionsConfig < Optify::BaseConfig
+class MyConditionsConfig < Optify::FromHashable
   sig { returns(String) }
   attr_reader :key
 

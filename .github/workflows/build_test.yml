@@ -7,7 +7,6 @@ on:
       - ".github/workflows/build_test.yml"
       - "js/**"
       - "python/**"
-      - "ruby/**"
       - "rust/**"
       - "tests/**"
   pull_request:
@@ -17,7 +16,6 @@ on:
       - ".github/workflows/build_test.yml"
       - "js/**"
       - "python/**"
-      - "ruby/**"
       - "rust/**"
       - "tests/**"
 
@@ -65,7 +63,6 @@ jobs:
         workspaces: |
           js/optify-config
           python/optify
-          ruby/optify
           rust/optify
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
@@ -131,36 +128,6 @@ jobs:
     - name: "[JS] Test"
       run: yarn test
       working-directory: ./js/optify-config
-
-    # Ruby
-    # setup-ruby also runs `bundle install`.
-    # It uses the Ruby version from .ruby-version.
-    - uses: ruby/setup-ruby@v1
-      name: "[Ruby] Setup"
-      with:
-        bundler-cache: true
-        working-directory: ./ruby/optify
-    - name: "[Ruby] Lint"
-      shell: bash
-      run: |
-        set -ex
-        bundle exec srb tc
-        bundle exec rubocop
-
-        # Ensure that the RBS file is up-to-date.
-        mkdir -p tmp
-        bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
-        diff -u sig/optify.rbs tmp/optify.rbs~
-      working-directory: ./ruby/optify
-    - name: "[Ruby][Rust] Lint"
-      run : cargo fmt -- --check
-      working-directory: ./ruby/optify
-    - name: "[Ruby][Rust] Clippy"
-      run: cargo clippy --release --no-deps -- -D warnings --no-deps
-      working-directory: ./ruby/optify
-    - name: "[Ruby] Test"
-      run: bundle exec rake test
-      working-directory: ./ruby/optify
 
     # Python
     - uses: actions/setup-python@v5

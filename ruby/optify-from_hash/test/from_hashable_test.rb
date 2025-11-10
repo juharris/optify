@@ -2,11 +2,12 @@
 # typed: true
 
 require 'test/unit'
-require_relative '../lib/optify'
+require_relative '../lib/optify-from_hash'
 require_relative 'my_config'
 
-module BaseConfigTest
-  class TestObject < Optify::BaseConfig
+# Ensure that equality and other utility methods other than `from_hash` work.
+module FromHashableTest
+  class TestObject < Optify::FromHashable
     sig { returns(T.nilable(Integer)) }
     attr_reader :num
 
@@ -14,12 +15,12 @@ module BaseConfigTest
     attr_reader :hash
   end
 
-  class TestObjectWithObject < Optify::BaseConfig
+  class TestObjectWithObject < Optify::FromHashable
     sig { returns(TestObject) }
     attr_reader :object
   end
 
-  class BaseConfigTest < Test::Unit::TestCase
+  class FromHashableTest < Test::Unit::TestCase
     def test_same
       a1 = TestObject.from_hash({ hash: { k: 1 } })
       assert_same(a1, a1)
@@ -65,12 +66,12 @@ module BaseConfigTest
         TestObject.from_hash({ bad: 1 })
       end
       assert_equal(
-        'Error converting hash to `BaseConfigTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `BaseConfigTest::TestObject`.',
+        'Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`.',
         err.message
       )
 
       assert_instance_of(NameError, err.cause)
-      assert_equal('undefined method \'bad\' for class \'BaseConfigTest::TestObject\'', err.cause.message)
+      assert_equal('undefined method \'bad\' for class \'FromHashableTest::TestObject\'', err.cause.message)
     end
 
     def test_unknown_property_in_object
@@ -78,12 +79,12 @@ module BaseConfigTest
         TestObjectWithObject.from_hash({ object: { bad: 2 } })
       end
       assert_equal(
-        'Error converting hash to `BaseConfigTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `BaseConfigTest::TestObject`.',
+        'Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`.',
         err.message
       )
 
       assert_instance_of(NameError, err.cause)
-      assert_equal('undefined method \'bad\' for class \'BaseConfigTest::TestObject\'', err.cause.message)
+      assert_equal('undefined method \'bad\' for class \'FromHashableTest::TestObject\'', err.cause.message)
     end
   end
 end

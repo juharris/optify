@@ -2,40 +2,23 @@
 module Optify
 end
 
+# DEPRECATED: Use `Optify::FromHashable` instead.
 # A base class for classes from configuration files.
 # Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`
 # because they will have an implementation of `from_hash` that works recursively.
 # This class is a work in progress with minimal error handling
 # and doesn't handle certain cases such as nilable types yet.
 # It may be moved to another gem in the future.
-class Optify::BaseConfig
-  # Create a new instance of the class from a hash.
-  #
-  # This is a class method that so that it can set members with private setters.
-  # @param hash The hash to create the instance from.
-  # @return The new instance.
-  def self.from_hash: (::Hash[untyped, untyped] hash) -> instance
-
-  # Convert this object to a Hash recursively.
-  # This is mostly the reverse operation of `from_hash`,
-  # as keys will be symbols
-  # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
-  # @return The hash representation of this object.
-  def to_h: () -> ::Hash[Symbol, untyped]
-
-  # Compare this object with another object for equality.
-  # @param other The object to compare.
-  # @return [Boolean] true if the objects are equal; otherwise, false.
-  def ==: (untyped other) -> bool
+class Optify::BaseConfig < FromHashable
 end
 
 # Options for caching.
 # Only enabling or disabling caching is supported for now.
-class Optify::CacheOptions < BaseConfig
+class Optify::CacheOptions < FromHashable
 end
 
 # Information about a feature.
-class Optify::OptionsMetadata < BaseConfig
+class Optify::OptionsMetadata < FromHashable
   def aliases: () -> ::Array[String]?
 
   # The canonical names of features that import this one.

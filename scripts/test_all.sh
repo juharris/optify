@@ -19,4 +19,4 @@ pytest
 popd
 
 pushd ruby/optify
-rake test
+bundle exec rake test

@@ -2,12 +2,13 @@
 # typed: true
 
 require 'test/unit'
-require_relative '../lib/optify'
+require_relative '../lib/optify-from_hash'
 require_relative 'hash_utils'
 require_relative 'my_config'
 
+# Ensures that we can convert hashes to objects.
 module FromHashTest
-  class TestObject < Optify::BaseConfig
+  class TestObject < Optify::FromHashable
     sig { returns(Integer) }
     attr_reader :num
 
@@ -16,7 +17,7 @@ module FromHashTest
   end
 
   # An object with distinct properties from `TestObject`.
-  class TestObject2 < Optify::BaseConfig
+  class TestObject2 < Optify::FromHashable
     sig { returns(String) }
     attr_reader :string
 
@@ -24,7 +25,7 @@ module FromHashTest
     attr_reader :hash_symbol_to_object
   end
 
-  class TestConfig < Optify::BaseConfig
+  class TestConfig < Optify::FromHashable
     sig { returns(T::Array[T.any(String, TestObject)]) }
     attr_reader :array_of_string_or_object
 
@@ -330,7 +331,12 @@ module FromHashTest
     end
 
     def test_nilable_hash_with_string_or_object_or_object2
-      c = TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 'hello', 'object' => { num: 42 }, 'object2' => { string: 'hello2' }, 'nil' => nil } })
+      c = TestConfig.from_hash({
+                                 nilable_hash_with_string_or_object_or_object2: {
+                                   'string' => 'hello',
+                                   'object' => { num: 42 }, 'object2' => { string: 'hello2' }, 'nil' => nil
+                                 }
+                               })
       h = T.must(c.nilable_hash_with_string_or_object_or_object2)
       assert_equal('hello', h['string'])
       assert_equal(42, T.cast(h['object'], TestObject).num)
@@ -351,9 +357,12 @@ module FromHashTest
     # Skip for now because we don't validate primitive value types.
     def skip_test_nilable_hash_with_string_or_object_or_object2_invalid_value
       exception = assert_raises(TypeError) do
-        TestConfig.from_hash({ nilable_hash_with_string_or_object_or_object2: { 'string' => 3 } })
+        TestConfig.from_hash({
+                               nilable_hash_with_string_or_object_or_object2: { 'string' => 3 }
+                             })
       end
-      assert_match(/Could not convert value: 3 to T.nilable\(T.any\(String, TestObject, TestObject2\)\)./, exception.message)
+      assert_match(/Could not convert value: 3 to T.nilable\(T.any\(String, TestObject, TestObject2\)\)./,
+                   exception.message)
     end
 
     def test_symbol_to_symbol
