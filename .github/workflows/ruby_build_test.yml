@@ -36,7 +36,7 @@ jobs:
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  test:
+  build:
     name: "Build & Test"
     needs: setup
     runs-on: ${{ matrix.os }}
@@ -44,23 +44,14 @@ jobs:
       fail-fast: true
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    permissions:
+       # This permission is mandatory for trusted publishing.
+      id-token: write
+      # This permission is required for `rake release` to push the release tag.
+      contents: write
+    
     steps:
     - uses: actions/checkout@v4
-
-    # Rust
-    # Required for the main Ruby gem.
-    # We will soon make a new version of the main Ruby gem that doesn't require Rust.
-    - name: "[Rust] Setup cache"
-      uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: |
-          ruby/optify
-          rust/optify
-        cache-on-failure: true
-        shared-key: ${{ matrix.os }}-rust
-    - name: "[Rust] Build"
-      run: cargo build --release
-      working-directory: ./rust/optify
 
     # Ruby
     # Gem: optify-from_hash
@@ -90,6 +81,15 @@ jobs:
     - name: "[from_hash] Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify-from_hash
+    - name: "[from_hash] Pre-Publish"
+      shell: bash
+      run: |
+        set -ex
+        # From https://github.com/rubygems/release-gem/blob/v1/action.yml until that action can use a different directory.
+        git config --global user.email "$(git log -1 --pretty=format:'%ae')"
+        git config --global user.name "$(git log -1 --pretty=format:'%an')"
+      working-directory: ./ruby/optify-from_hash
+      
 
     - name: "[from_hash] Build"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
@@ -114,6 +114,22 @@ jobs:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
     # Gem: optify
+
+    # Rust
+    # Required for the main Ruby gem.
+    # We will soon make a new version of the main Ruby gem that doesn't require Rust.
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          ruby/optify
+          rust/optify
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-rust
+    - name: "[Rust] Build"
+      run: cargo build --release
+      working-directory: ./rust/optify
+
     - name: "Check Ruby version"
       shell: bash
       run: |
