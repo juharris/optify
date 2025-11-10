@@ -12,7 +12,7 @@ gem install optify-from_hash
 
 Define your immutable classes:
 ```ruby
-require 'optify'
+require 'optify-from_hash'
 
 class MyObject < Optify::FromHashable
   sig { returns(Integer) }
@@ -26,12 +26,26 @@ class MyConfig < Optify::FromHashable
   sig { returns(String) }
   attr_reader :name
 
-  sig { returns(MyObject) }
-  attr_reader :object
-
   sig { returns(T::Array[MyObject]) }
   attr_reader :objects
 end
+
+config = MyConfig.from_hash(
+  name: 'My Config',
+  objects: [
+    {
+      number: 1,
+      string: 'My String'
+    },
+    {
+      number: 2,
+      string: 'My String 2'
+    }
+  ]
+)
+
+puts config.name # "My Config"
+puts config.objects[1].number # 2
 ```
 
 > Note that RBS style comments instead of Sorbet `sig`s are not supported
@@ -89,7 +103,7 @@ To automatically convert Sorbet style to RBS:
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
 
-Note that classes that inherit from `Optify:FromHashable` Sorbet signatures for their attributes for `from_hash` to work.
+Note that classes that inherit from `Optify:FromHashable` need Sorbet signatures for their attributes for `from_hash` to work.
 So some classes will need Sorbet signatures.
 When it is possible to convert an RBS signature, then this library will try to support it.
 
