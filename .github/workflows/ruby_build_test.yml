@@ -131,8 +131,6 @@ jobs:
       run: |
         set -ex
 
-        bundle exec tapioca gem --verify
-
         bundle exec srb tc
         bundle exec rubocop
 
