@@ -1,19 +1,76 @@
-# frozen_string_literal: true
 # typed: strict
+# frozen_string_literal: true
+
+require 'sorbet-runtime'
+require 'json'
 
 module Optify
   # Preferences for `get_options`.
   class GetOptionsPreferences
-    # @param constraints [Hash]
-    #: (Hash[untyped, untyped]? constraints) -> void
-    def constraints=(constraints)
-      self.constraints_json = constraints&.to_json
+    extend T::Sig
+
+    #: bool
+    attr_accessor :skip_feature_name_conversion
+
+    #: String?
+    attr_accessor :constraints_json
+
+    #: String?
+    attr_accessor :overrides_json
+
+    #: bool
+    attr_reader :configurable_strings_enabled
+
+    #: -> void
+    def initialize
+      @skip_feature_name_conversion = false #: bool
+      @constraints_json = nil #: String?
+      @overrides_json = nil #: String?
+      @configurable_strings_enabled = false #: bool
     end
 
-    # @param overrides [Hash]
-    #: (Hash[untyped, untyped]? overrides) -> void
+    #: (Hash[String, untyped]? constraints) -> void
+    def constraints=(constraints)
+      @constraints_json = constraints&.to_json
+    end
+
+    #: -> Hash[String, untyped]?
+    def constraints
+      return nil unless @constraints_json
+
+      JSON.parse(@constraints_json)
+    end
+
+    #: (Hash[String, untyped]? overrides) -> void
     def overrides=(overrides)
-      self.overrides_json = overrides&.to_json
+      @overrides_json = overrides&.to_json
+    end
+
+    #: -> Hash[String, untyped]?
+    def overrides
+      return nil unless @overrides_json
+
+      JSON.parse(@overrides_json)
+    end
+
+    #: -> void
+    def enable_configurable_strings
+      @configurable_strings_enabled = true
+    end
+
+    #: -> void
+    def disable_configurable_strings
+      @configurable_strings_enabled = false
+    end
+
+    #: -> bool
+    def are_configurable_strings_enabled?
+      @configurable_strings_enabled
+    end
+
+    #: -> bool
+    def overrides?
+      !@overrides_json.nil?
     end
   end
 end

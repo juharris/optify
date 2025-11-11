@@ -1,5 +1,5 @@
-# frozen_string_literal: true
 # typed: strict
+# frozen_string_literal: true
 
 require 'sorbet-runtime'
 
@@ -52,7 +52,7 @@ module Optify
     # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
     # @param preferences The preferences to use when getting options.
     # @return The options.
-    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+    #: [Config] (String, Array[String], Class[Config], ?CacheOptions?, ?Optify::GetOptionsPreferences?) -> Config
     def _get_options(key, feature_names, config_class, cache_options = nil, preferences = nil)
       return get_options_with_cache(key, feature_names, config_class, cache_options, preferences) if cache_options
 

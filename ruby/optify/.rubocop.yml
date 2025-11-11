@@ -1,3 +1,6 @@
+plugins:
+  - rubocop-sorbet
+
 AllCops:
   # We'll enable them as needed.
   # Don't want to accept any new ones without reviewing them.
@@ -22,3 +25,38 @@ Metrics/MethodLength:
 
 Metrics/PerceivedComplexity:
   Max: 11
+
+Sorbet/EnforceSignatures:
+  Enabled: true
+  Style: "rbs"
+  Exclude:
+    - lib/optify_ruby/options_metadata.rb
+    - test/**/*.rb
+
+# Ensure all new files RBS.
+Sorbet/ForbidSig:
+  Enabled: true
+  Exclude:
+    - lib/optify_ruby/options_metadata.rb
+    - test/**/*.rb
+
+Sorbet/ForbidTAbsurd:
+  Enabled: true
+
+Sorbet/ForbidTBind:
+  Enabled: true
+
+Sorbet/ForbidTCast:
+  Enabled: true
+
+Sorbet/ForbidTLet:
+  Enabled: true
+
+Sorbet/ForbidTMust:
+  Enabled: true
+
+Sorbet/ForbidTTypeAlias:
+  Enabled: true
+
+Sorbet/ForbidTUnsafe:
+  Enabled: true

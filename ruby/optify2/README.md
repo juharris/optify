@@ -85,7 +85,7 @@ bundle exec rake test
 ## Typing
 To automatically convert Sorbet style to RBS:
 ```shell
-bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
+bundle exec spoom srb sigs translate --from=rbi --to=rbs lib --max-line-length=80 --no-positional-names
 ```
 
 Note that classes that inherit from `Optify:FromHashable` such as `OptionsMetadata` need Sorbet signatures for their attributes for `from_hash` to work.

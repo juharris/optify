@@ -1,8 +1,8 @@
-# frozen_string_literal: true
 # typed: true
+# frozen_string_literal: true
 
 require 'sorbet-runtime'
-
+require 'json'
 require_relative './base_config'
 
 module Optify
@@ -10,11 +10,10 @@ module Optify
   class OptionsMetadata < FromHashable
     extend T::Sig
 
-    sig { returns(T.nilable(T::Array[String])) }
+    sig { returns(T::Array[String]) }
     attr_reader :aliases
 
-    # The canonical names of features that import this one.
-    sig { returns(T.nilable(T::Array[String])) }
+    sig { returns(T::Array[String]) }
     attr_reader :dependents
 
     sig { returns(T.untyped) }
@@ -28,5 +27,17 @@ module Optify
 
     sig { returns(T.nilable(String)) }
     attr_reader :path
+
+    #: -> String
+    def to_json(*_args)
+      {
+        'aliases' => @aliases,
+        'dependents' => @dependents,
+        'details' => @details,
+        'name' => @name,
+        'owners' => @owners,
+        'path' => @path
+      }.to_json
+    end
   end
 end

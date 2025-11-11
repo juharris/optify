@@ -1,5 +1,5 @@
-# frozen_string_literal: true
 # typed: strict
+# frozen_string_literal: true
 
 # The implementation to use directly Ruby and with types declared.
 require_relative 'optify_ruby/get_options_preferences'
