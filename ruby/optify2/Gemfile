@@ -3,3 +3,6 @@
 source 'https://rubygems.org'
 
 gemspec
+
+# TODO: Use local path to from_hash
+# TODO Share tests.
