@@ -10,12 +10,12 @@ module Optify
   # Auto-reloading options provider with file watching
   class OptionsWatcher < OptionsProvider
     #: -> void
-    def initialize
+    def initialize # rubocop:disable Lint/MissingSuper
       raise 'Do not instantiate OptionsWatcher directly. Use OptionsWatcherBuilder instead.'
     end
 
     # @override
-    #: ((OptionsProviderImpl | OptionsWatcherImpl) impl) -> OptionsProvider
+    #: ((OptionsProviderImpl | OptionsWatcherImpl) impl) -> OptionsWatcher
     def self.from_impl(impl)
       watcher = allocate
       watcher.instance_variable_set(:@impl, impl)
@@ -23,6 +23,18 @@ module Optify
       watcher.instance_variable_set(:@features_with_metadata, nil)
       watcher.instance_variable_set(:@cache_creation_time, nil)
       watcher
+    end
+
+    #: (String directory) -> OptionsWatcher
+    def self.build(directory)
+      OptionsWatcherBuilder.new.add_directory(directory).build
+    end
+
+    #: (Array[String] directories) -> OptionsWatcher
+    def self.build_from_directories(directories)
+      builder = OptionsWatcherBuilder.new
+      directories.each { |dir| builder.add_directory(dir) }
+      builder.build
     end
 
     #: -> Array[Float]?
@@ -79,7 +91,7 @@ module Optify
     #: -> void
     def _check_cache
       cache_time = @cache_creation_time
-      return if cache_time && watcher_impl.last_modified && cache_time.to_f > watcher_impl.last_modified.max
+      return if cache_time && cache_time > watcher_impl.last_modified
 
       init
     end
@@ -89,7 +101,7 @@ module Optify
   class OptionsWatcherBuilder
     #: -> void
     def initialize
-      @builder = OptionsWatcherBuilderImpl.new
+      @builder = OptionsWatcherBuilderImpl.new #: OptionsWatcherBuilderImpl
     end
 
     #: (String directory) -> OptionsWatcherBuilder

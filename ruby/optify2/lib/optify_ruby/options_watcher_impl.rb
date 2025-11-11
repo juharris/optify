@@ -10,22 +10,22 @@ module Optify
   class OptionsWatcherImpl < OptionsProviderImpl
     extend T::Sig
 
-    #: Array[Float]?
+    #: Time
     attr_reader :last_modified
 
     #: (
     #|   Hash[String, Feature] features,
-    #|   Hash[String, String] aliases,
+    #|   Hash[String, String] alias_map,
     #|   Array[String] config_directories,
+    #|   BuilderOptions builder_options,
     #|   ^-> OptionsProviderImpl builder
     #| ) -> void
-    def initialize(features, aliases, config_directories, builder)
-      super(features, aliases, config_directories)
-      @builder = builder
-      @listener = nil
-      @last_modified = nil
-      @mutex = Mutex.new
-      update_last_modified
+    def initialize(features, alias_map, config_directories, builder_options, builder)
+      super(features, alias_map, config_directories, builder_options)
+      @builder = builder #: ^-> OptionsProviderImpl
+      @listener = nil #: Listen::Listener?
+      @last_modified = Time.now #: Time
+      @mutex = Mutex.new #: Mutex
     end
 
     #: -> void
@@ -46,15 +46,7 @@ module Optify
 
     #: -> void
     def rebuild_if_needed
-      return unless has_changes?
-
       rebuild
-    end
-
-    #: -> bool
-    def has_changes?
-      current_modified = calculate_last_modified
-      @last_modified != current_modified
     end
 
     #: -> void
@@ -65,39 +57,15 @@ module Optify
 
         provider = @builder.call
         @features = provider.features
-        @aliases = provider.aliases
+        @alias_map = provider.alias_map
         @cache = nil
         @features_with_metadata = nil
-        update_last_modified
+        @last_modified = Time.now
 
         puts "\e[32m[optify] Successfully rebuilt the OptionsProvider.\e[0m"
       rescue StandardError => e
         puts "\e[31m[optify] Failed to rebuild OptionsProvider: #{e.message}\e[0m"
       end
-    end
-
-    private
-
-    #: -> void
-    def update_last_modified
-      @last_modified = calculate_last_modified
-    end
-
-    #: -> Array[Float]
-    def calculate_last_modified
-      timestamps = []
-      @config_directories.each do |dir|
-        next unless Dir.exist?(dir)
-
-        Dir.glob(File.join(dir, '**', '*.{json,json5,yaml,yml}')).each do |file|
-          next if file.include?('/.optify/')
-
-          timestamps << File.mtime(file).to_f
-        end
-
-        timestamps << File.mtime(dir).to_f if File.directory?(dir)
-      end
-      timestamps.sort
     end
   end
 end

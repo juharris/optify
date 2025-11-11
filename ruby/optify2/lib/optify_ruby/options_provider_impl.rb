@@ -6,6 +6,7 @@ require 'json'
 require_relative 'feature'
 require_relative 'conditions'
 require_relative 'configurable_string'
+require_relative 'builder_options'
 
 module Optify
   # Core implementation of OptionsProvider in pure Ruby
@@ -16,16 +17,22 @@ module Optify
     attr_reader :features
 
     #: Hash[String, String]
-    attr_reader :aliases
+    attr_reader :alias_map
 
     #: Array[String]
     attr_reader :config_directories
 
-    #: (Hash[String, Feature] features, Hash[String, String] aliases, Array[String] config_directories) -> void
-    def initialize(features, aliases, config_directories)
-      @features = features
-      @aliases = aliases
-      @config_directories = config_directories
+    #: (
+    #|   Hash[String, Feature] features,
+    #|   Hash[String, String] alias_map,
+    #|   Array[String] config_directories,
+    #|   BuilderOptions builder_options
+    #| ) -> void
+    def initialize(features, alias_map, config_directories, builder_options)
+      @features = features #: Hash[String, Feature]
+      @alias_map = alias_map #: Hash[String, String]
+      @config_directories = config_directories #: Array[String]
+      @builder_options = builder_options #: BuilderOptions
       @cache = nil #: Hash[untyped, untyped]?
       @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
@@ -37,7 +44,8 @@ module Optify
 
     #: -> Array[String]
     def alias_names
-      @aliases.keys.sort
+      # Return only actual aliases from feature metadata, not feature names
+      @features.values.flat_map { |f| f.metadata.aliases }.compact.sort.uniq
     end
 
     #: -> Array[String]
@@ -47,7 +55,7 @@ module Optify
 
     #: (String alias_name) -> String
     def get_canonical_feature_name(alias_name)
-      canonical = @aliases[alias_name.downcase]
+      canonical = @alias_map[alias_name.downcase]
       return canonical if canonical
 
       return alias_name if @features.key?(alias_name)
@@ -95,7 +103,9 @@ module Optify
 
     #: (String key, Array[String] feature_names) -> String
     def get_options_json(key, feature_names)
-      options = build_options(key, feature_names, {}, false)
+      # Canonicalize feature names (aliases to feature names)
+      canonical_names = get_canonical_feature_names(feature_names)
+      options = build_options(key, canonical_names, {}, false)
       JSON.generate(options)
     end
 
@@ -104,9 +114,21 @@ module Optify
       skip_conversion = preferences.skip_feature_name_conversion
       constraints = preferences.constraints || {}
       overrides = preferences.overrides || {}
-      configurable_strings_enabled = preferences.are_configurable_strings_enabled?
+      # Builder config acts as a gate - even if preference enables it, builder must allow it
+      # Preference can enable it only if builder allows, or disable it regardless
+      configurable_strings_enabled = if preferences.configurable_strings_explicitly_set
+                                       # Preference was set explicitly
+                                       preferences.are_configurable_strings_enabled? && @builder_options.are_configurable_strings_enabled
+                                     else
+                                       # Use builder default
+                                       @builder_options.are_configurable_strings_enabled
+                                     end
 
       canonical_names = if skip_conversion
+                          # Validate that all feature names are valid when skipping conversion
+                          feature_names.each do |name|
+                            raise "Feature name \"#{name}\" is not a known feature." unless @features.key?(name)
+                          end
                           feature_names
                         else
                           get_canonical_feature_names(feature_names)
@@ -183,26 +205,59 @@ module Optify
     #|   bool configurable_strings_enabled
     #| ) -> Hash[String, untyped]
     def build_options(key, feature_names, overrides, configurable_strings_enabled)
-      result = {}
+      # Handle nested keys like "myConfig.rootString"
+      key_parts = key.split('.')
+      root_key = key_parts.first
+      return {} unless root_key
+
+      puts "[DEBUG build_options] Building options for key='#{key}', features=#{feature_names.inspect}, root_key='#{root_key}'" if ENV['DEBUG_IMPORTS']
+
+      result = {} #: untyped
 
       feature_names.each do |name|
         feature = @features[name]
         next unless feature
 
-        feature_options = feature.options[key]
+        feature_options = feature.options[root_key]
         next unless feature_options
 
-        deep_merge!(result, feature_options)
+        puts "[DEBUG build_options] Feature '#{name}' options for key '#{root_key}': #{feature_options.inspect[0..200]}" if ENV['DEBUG_IMPORTS']
+
+        if feature_options.is_a?(Hash)
+          deep_merge!(result, feature_options)
+        else
+          # If not a hash, it's a scalar value - just use it directly
+          result = feature_options
+        end
       end
 
-      deep_merge!(result, overrides) unless overrides.empty?
+      # Extract overrides for the root key (if overrides are keyed by config key)
+      # Overrides can be in format: { 'myConfig' => { ... } } or just { ... }
+      key_overrides = overrides[root_key] || {}
+      deep_merge!(result, key_overrides) if !key_overrides.empty? && result.is_a?(Hash)
 
       if configurable_strings_enabled
         base_dir = @config_directories.first
+        return {} unless base_dir
+
         result = ConfigurableString.process_value(result, base_dir)
       end
 
-      result
+      puts "[DEBUG build_options] Final result for key '#{key}': #{result.inspect[0..200]}" if ENV['DEBUG_IMPORTS']
+
+      # Navigate to nested value if key has path
+      if key_parts.length > 1
+        key_rest = key_parts[1..]
+        return {} unless key_rest
+
+        key_rest.each do |part|
+          result = result.is_a?(Hash) ? result[part] : nil
+          break if result.nil?
+        end
+        result || {}
+      else
+        result
+      end
     end
 
     #: (Hash[String, untyped] target, Hash[String, untyped] source) -> Hash[String, untyped]
@@ -210,13 +265,29 @@ module Optify
       source.each do |key, value|
         if value.is_a?(Hash) && target[key].is_a?(Hash)
           deep_merge!(target[key], value)
-        elsif value.is_a?(Array) && target[key].is_a?(Array)
-          target[key] = value
+        elsif value.is_a?(Array)
+          # Deep clone arrays to avoid shared references
+          target[key] = value.map { |v| v.is_a?(Hash) || v.is_a?(Array) ? deep_clone_value(v) : v }
+        elsif value.is_a?(Hash)
+          # Deep clone hashes to avoid shared references
+          target[key] = deep_clone_value(value)
         else
           target[key] = value
         end
       end
       target
+    end
+
+    #: (untyped) -> untyped
+    def deep_clone_value(obj)
+      case obj
+      when Hash
+        obj.transform_values { |v| deep_clone_value(v) }
+      when Array
+        obj.map { |v| deep_clone_value(v) }
+      else
+        obj
+      end
     end
   end
 end

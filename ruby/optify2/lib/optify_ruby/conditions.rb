@@ -89,7 +89,8 @@ module Optify
       current = data
 
       parts.each do |part|
-        part = part.gsub('~1', '/').gsub('~0', '~')
+        part = part.gsub('~1', '/')
+        part.gsub!('~0', '~')
 
         if current.is_a?(Hash)
           current = current[part]

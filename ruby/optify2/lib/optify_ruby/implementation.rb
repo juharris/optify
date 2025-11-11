@@ -31,6 +31,18 @@ module Optify
       provider
     end
 
+    #: (String directory) -> OptionsProvider
+    def self.build(directory)
+      OptionsProviderBuilder.new.add_directory(directory).build
+    end
+
+    #: (Array[String] directories) -> OptionsProvider
+    def self.build_from_directories(directories)
+      builder = OptionsProviderBuilder.new
+      directories.each { |dir| builder.add_directory(dir) }
+      builder.build
+    end
+
     #: -> Array[String]
     def features
       impl.feature_names

@@ -14,20 +14,24 @@ module Optify
     def build
       builder_proc = lambda do
         features = {}
-        aliases = {}
+        alias_map = {}
 
         @directories.each do |dir|
-          load_directory(dir, features, aliases)
+          load_directory(dir, features, alias_map)
         end
 
-        OptionsProviderImpl.new(features, aliases, @directories)
+        # Resolve imports for all features
+        resolve_all_imports(features)
+
+        OptionsProviderImpl.new(features, alias_map, @directories, @builder_options)
       end
 
       provider = builder_proc.call
       OptionsWatcherImpl.new(
         provider.features,
-        provider.aliases,
+        provider.alias_map,
         @directories,
+        @builder_options,
         builder_proc
       )
     end

@@ -30,6 +30,7 @@ Sorbet/EnforceSignatures:
   Enabled: true
   Style: "rbs"
   Exclude:
+    - "**/*.rbi"
     - lib/optify_ruby/options_metadata.rb
     - test/**/*.rb
 
@@ -37,6 +38,7 @@ Sorbet/EnforceSignatures:
 Sorbet/ForbidSig:
   Enabled: true
   Exclude:
+    - "**/*.rbi"
     - lib/optify_ruby/options_metadata.rb
     - test/**/*.rb
 

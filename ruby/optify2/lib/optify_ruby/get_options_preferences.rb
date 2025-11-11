@@ -21,12 +21,16 @@ module Optify
     #: bool
     attr_reader :configurable_strings_enabled
 
+    #: bool
+    attr_reader :configurable_strings_explicitly_set
+
     #: -> void
     def initialize
       @skip_feature_name_conversion = false #: bool
       @constraints_json = nil #: String?
       @overrides_json = nil #: String?
       @configurable_strings_enabled = false #: bool
+      @configurable_strings_explicitly_set = false #: bool
     end
 
     #: (Hash[String, untyped]? constraints) -> void
@@ -56,11 +60,13 @@ module Optify
     #: -> void
     def enable_configurable_strings
       @configurable_strings_enabled = true
+      @configurable_strings_explicitly_set = true
     end
 
     #: -> void
     def disable_configurable_strings
       @configurable_strings_enabled = false
+      @configurable_strings_explicitly_set = true
     end
 
     #: -> bool

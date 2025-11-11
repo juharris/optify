@@ -16,16 +16,14 @@ module Optify
       content = File.read(file_path)
       ext = File.extname(file_path).downcase
 
-      result = case ext
-               when '.json', '.json5'
-                 load_json_with_comments(content)
-               when '.yaml', '.yml'
-                 load_yaml(content)
-               else
-                 raise ArgumentError, "Unsupported file type: #{ext}"
-               end
-
-      result || {}
+      case ext
+      when '.json', '.json5'
+        load_json_with_comments(content)
+      when '.yaml', '.yml'
+        load_yaml(content)
+      else
+        raise ArgumentError, "Unsupported file type: #{ext}"
+      end
     end
 
     #: (String content) -> Hash[String, untyped]
@@ -35,7 +33,9 @@ module Optify
 
     #: (String content) -> Hash[String, untyped]
     def self.load_yaml(content)
-      result = YAML.safe_load(content, permitted_classes: [], permitted_symbols: [], aliases: true)
+      # FIXME: Can we remove other args?
+      result = YAML.safe_load(content, permitted_classes: [], permitted_symbols: [])
+      # FIXME: Assert it is a hash or assume it is.
       result.is_a?(Hash) ? result : {}
     end
   end

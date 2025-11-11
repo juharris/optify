@@ -24,19 +24,24 @@ module Optify
     #: OptionsMetadata
     attr_reader :metadata
 
+    #: Array[String]?
+    attr_reader :imports
+
     #: (
     #|   String name,
     #|   String file_path,
     #|   Hash[String, untyped]? conditions,
     #|   Hash[String, Hash[String, untyped]] options,
-    #|   OptionsMetadata metadata
+    #|   OptionsMetadata metadata,
+    #|   Array[String]? imports
     #| ) -> void
-    def initialize(name, file_path, conditions, options, metadata)
+    def initialize(name, file_path, conditions, options, metadata, imports = nil)
       @name = name
       @file_path = file_path
       @conditions = conditions
       @options = options
       @metadata = metadata
+      @imports = imports
     end
 
     #: (String file_path, String name) -> Feature
@@ -46,6 +51,7 @@ module Optify
 
       conditions = data['conditions']
       options = data['options'] || {}
+      imports = data['imports']
       metadata_data = data['metadata'] || {}
 
       metadata_hash = {
@@ -59,7 +65,7 @@ module Optify
 
       metadata = OptionsMetadata.from_hash(metadata_hash)
 
-      new(name, file_path, conditions, options, metadata)
+      new(name, file_path, conditions, options, metadata, imports)
     end
   end
 end
