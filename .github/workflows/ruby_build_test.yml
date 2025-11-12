@@ -83,7 +83,7 @@ jobs:
       name: "Setup"
       with:
         bundler-cache: true
-        working-directory: ./ruby/optify-from_hash
+        working-directory: ./ruby/from_hash
     - name: "[from_hash] Lint"
       shell: bash
       run: |
@@ -98,10 +98,10 @@ jobs:
         mkdir -p tmp
         bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > tmp/optify_from_hash.rbs~
         diff -u sig/optify_from_hash.rbs tmp/optify_from_hash.rbs~
-      working-directory: ./ruby/optify-from_hash
+      working-directory: ./ruby/from_hash
     - name: "Test"
       run: bundle exec rake test
-      working-directory: ./ruby/optify-from_hash
+      working-directory: ./ruby/from_hash
     - name: "Pre-Publish"
       shell: bash
       run: |
@@ -109,7 +109,7 @@ jobs:
         # From https://github.com/rubygems/release-gem/blob/v1/action.yml until that action can use a different directory.
         git config --global user.email "$(git log -1 --pretty=format:'%ae')"
         git config --global user.name "$(git log -1 --pretty=format:'%an')"
-      working-directory: ./ruby/optify-from_hash
+      working-directory: ./ruby/from_hash
 
     - name: "Build"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
@@ -117,7 +117,7 @@ jobs:
       run: |
         set -ex
         bundle exec rake build
-      working-directory: ./ruby/optify-from_hash
+      working-directory: ./ruby/from_hash
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
@@ -129,7 +129,7 @@ jobs:
       run: |
         set -ex
         bundle exec rake release
-      working-directory: ./ruby/optify-from_hash
+      working-directory: ./ruby/from_hash
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
@@ -159,7 +159,7 @@ jobs:
       name: "Setup"
       with:
         bundler-cache: true
-        working-directory: ./ruby/optify-from_hash
+        working-directory: ./ruby/from_hash
 
     # Rust
     # Required for the main Ruby gem.
@@ -182,7 +182,7 @@ jobs:
         set -ex
         # The Ruby versions must be the same for both gems.
         diff -u .ruby-version ../optify/.ruby-version
-      working-directory: ./ruby/optify-from_hash
+      working-directory: ./ruby/from_hash
     
     - name: "[optify] Install dependencies"
       shell: bash
@@ -245,7 +245,7 @@ jobs:
       run: |
         set -ex
         # The Ruby versions should be the same for both gems.
-        diff -u .ruby-version ../optify-from_hash/.ruby-version
+        diff -u .ruby-version ../from_hash/.ruby-version
       working-directory: ./ruby/optify2
     
     - name: "Install dependencies"
