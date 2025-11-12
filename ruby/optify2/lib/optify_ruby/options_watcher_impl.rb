@@ -32,8 +32,12 @@ module Optify
     def start_watching
       return if @listener
 
-      @listener = Listen.to(*@config_directories) do |_modified, _added, _removed|
-        rebuild_if_needed
+      @listener = Listen.to(*@config_directories, latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
+        # Filter for config files and exclude .optify directory
+        all_changed = modified + added
+        changed_files = all_changed.select { |path| path =~ /\.(json|json5|yaml|yml)$/ }
+                                   .reject { |path| path.include?('/.optify/') }
+        rebuild_if_needed unless changed_files.empty?
       end
       @listener&.start
     end

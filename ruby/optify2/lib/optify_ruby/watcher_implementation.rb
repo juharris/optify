@@ -37,7 +37,7 @@ module Optify
       builder.build
     end
 
-    #: -> Array[Float]?
+    #: -> Time
     def last_modified
       watcher_impl.last_modified
     end

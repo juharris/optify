@@ -27,13 +27,17 @@ module Optify
       end
 
       provider = builder_proc.call
-      OptionsWatcherImpl.new(
+      watcher = OptionsWatcherImpl.new(
         provider.features,
         provider.alias_map,
         @directories,
         @builder_options,
         builder_proc
       )
+      watcher.start_watching
+      # Give Listen time to initialize before returning
+      sleep 0.5
+      watcher
     end
   end
 end
