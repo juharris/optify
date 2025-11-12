@@ -3,3 +3,5 @@
 source 'https://rubygems.org'
 
 gemspec
+
+gem 'optify-from_hash', path: '../from_hash'
