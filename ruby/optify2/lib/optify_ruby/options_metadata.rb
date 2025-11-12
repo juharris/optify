@@ -28,7 +28,7 @@ module Optify
     sig { returns(T.nilable(String)) }
     attr_reader :path
 
-    #: -> String
+    #: (*untyped _args) -> String
     def to_json(*_args)
       {
         'aliases' => @aliases,

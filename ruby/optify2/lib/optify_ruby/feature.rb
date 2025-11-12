@@ -33,7 +33,7 @@ module Optify
     #|   Hash[String, untyped]? conditions,
     #|   Hash[String, Hash[String, untyped]] options,
     #|   OptionsMetadata metadata,
-    #|   Array[String]? imports
+    #|   ?Array[String]? imports
     #| ) -> void
     def initialize(name, file_path, conditions, options, metadata, imports = nil)
       @name = name

@@ -15,7 +15,7 @@ module Optify
     #: -> void
     def initialize
       @directories = [] #: Array[String]
-      @builder_options = BuilderOptions.default #: BuilderOptions
+      @builder_options = BuilderOptions.new #: BuilderOptions
     end
 
     #: (String) -> OptionsProviderBuilderImpl
@@ -25,7 +25,7 @@ module Optify
       # Load .optify/config.json if it exists (use first directory's config)
       if @directories.length == 1
         config_path = File.join(directory, '.optify', 'config.json')
-        @builder_options = File.exist?(config_path) ? BuilderOptions.from_file(config_path) : BuilderOptions.default
+        @builder_options = File.exist?(config_path) ? BuilderOptions.from_file(config_path) : BuilderOptions.new
       end
 
       self
@@ -86,7 +86,7 @@ module Optify
       resolved = Set.new
       features.each_key do |name|
         feature = features[name]
-        next unless feature.imports
+        next unless feature&.imports
 
         resolve_imports_for_feature(name, features, Set.new, resolved)
       end
@@ -95,12 +95,13 @@ module Optify
     #: (String, Hash[String, Feature], Set[String], Set[String]) -> Hash[String, untyped]
     def resolve_imports_for_feature(feature_name, features, resolution_path, resolved)
       feature = features[feature_name]
+      return {} unless feature
 
       # If already resolved, return a deep clone of the (possibly merged) options
       return deep_clone(feature.options) if resolved.include?(feature_name)
 
       # If no imports, mark as resolved and return a deep clone
-      unless feature&.imports
+      unless feature.imports
         resolved.add(feature_name)
         return deep_clone(feature.options)
       end

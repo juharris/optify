@@ -59,7 +59,7 @@ To watch for changes and automatically reload those changes into the provider wh
 provider = Optify::OptionsWatcher.build('path/to/configs')
 ```
 
-See [optify_test.rb](test/optify_test.rb) for more examples.
+See [optify_test.rb](../tests/optify_test.rb) for more examples.
 
 ## Setup
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->

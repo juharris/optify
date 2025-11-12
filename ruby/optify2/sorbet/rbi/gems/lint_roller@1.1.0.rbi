@@ -8,6 +8,86 @@
 # source://lint_roller//lib/lint_roller/context.rb#1
 module LintRoller; end
 
+# source://lint_roller//lib/lint_roller/about.rb#2
+class LintRoller::About < ::Struct
+  # Returns the value of attribute description
+  #
+  # @return [Object] the current value of description
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def description; end
+
+  # Sets the attribute description
+  #
+  # @param value [Object] the value to set the attribute description to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def description=(_); end
+
+  # Returns the value of attribute homepage
+  #
+  # @return [Object] the current value of homepage
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def homepage; end
+
+  # Sets the attribute homepage
+  #
+  # @param value [Object] the value to set the attribute homepage to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def homepage=(_); end
+
+  # Returns the value of attribute name
+  #
+  # @return [Object] the current value of name
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def name; end
+
+  # Sets the attribute name
+  #
+  # @param value [Object] the value to set the attribute name to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def name=(_); end
+
+  # Returns the value of attribute version
+  #
+  # @return [Object] the current value of version
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def version; end
+
+  # Sets the attribute version
+  #
+  # @param value [Object] the value to set the attribute version to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/about.rb#2
+  def version=(_); end
+
+  class << self
+    # source://lint_roller//lib/lint_roller/about.rb#2
+    def [](*_arg0); end
+
+    # source://lint_roller//lib/lint_roller/about.rb#2
+    def inspect; end
+
+    # source://lint_roller//lib/lint_roller/about.rb#2
+    def keyword_init?; end
+
+    # source://lint_roller//lib/lint_roller/about.rb#2
+    def members; end
+
+    # source://lint_roller//lib/lint_roller/about.rb#2
+    def new(*_arg0); end
+  end
+end
+
 # source://lint_roller//lib/lint_roller/context.rb#2
 class LintRoller::Context < ::Struct
   # Returns the value of attribute engine
@@ -117,3 +197,127 @@ class LintRoller::Context < ::Struct
     def new(*_arg0); end
   end
 end
+
+# source://lint_roller//lib/lint_roller/error.rb#2
+class LintRoller::Error < ::StandardError; end
+
+# source://lint_roller//lib/lint_roller/plugin.rb#2
+class LintRoller::Plugin
+  # `config' is a Hash of options passed to the plugin by the user
+  #
+  # @return [Plugin] a new instance of Plugin
+  #
+  # source://lint_roller//lib/lint_roller/plugin.rb#4
+  def initialize(config = T.unsafe(nil)); end
+
+  # @raise [Error]
+  #
+  # source://lint_roller//lib/lint_roller/plugin.rb#8
+  def about; end
+
+  # `context' is an instance of LintRoller::Context provided by the runner
+  #
+  # @raise [Error]
+  #
+  # source://lint_roller//lib/lint_roller/plugin.rb#18
+  def rules(context); end
+
+  # `context' is an instance of LintRoller::Context provided by the runner
+  #
+  # @return [Boolean]
+  #
+  # source://lint_roller//lib/lint_roller/plugin.rb#13
+  def supported?(context); end
+end
+
+# source://lint_roller//lib/lint_roller/rules.rb#2
+class LintRoller::Rules < ::Struct
+  # Returns the value of attribute config_format
+  #
+  # @return [Object] the current value of config_format
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def config_format; end
+
+  # Sets the attribute config_format
+  #
+  # @param value [Object] the value to set the attribute config_format to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def config_format=(_); end
+
+  # Returns the value of attribute error
+  #
+  # @return [Object] the current value of error
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def error; end
+
+  # Sets the attribute error
+  #
+  # @param value [Object] the value to set the attribute error to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def error=(_); end
+
+  # Returns the value of attribute type
+  #
+  # @return [Object] the current value of type
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def type; end
+
+  # Sets the attribute type
+  #
+  # @param value [Object] the value to set the attribute type to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def type=(_); end
+
+  # Returns the value of attribute value
+  #
+  # @return [Object] the current value of value
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def value; end
+
+  # Sets the attribute value
+  #
+  # @param value [Object] the value to set the attribute value to.
+  # @return [Object] the newly set value
+  #
+  # source://lint_roller//lib/lint_roller/rules.rb#2
+  def value=(_); end
+
+  class << self
+    # source://lint_roller//lib/lint_roller/rules.rb#2
+    def [](*_arg0); end
+
+    # source://lint_roller//lib/lint_roller/rules.rb#2
+    def inspect; end
+
+    # source://lint_roller//lib/lint_roller/rules.rb#2
+    def keyword_init?; end
+
+    # source://lint_roller//lib/lint_roller/rules.rb#2
+    def members; end
+
+    # source://lint_roller//lib/lint_roller/rules.rb#2
+    def new(*_arg0); end
+  end
+end
+
+# source://lint_roller//lib/lint_roller/support/merges_upstream_metadata.rb#2
+module LintRoller::Support; end
+
+# source://lint_roller//lib/lint_roller/support/merges_upstream_metadata.rb#3
+class LintRoller::Support::MergesUpstreamMetadata
+  # source://lint_roller//lib/lint_roller/support/merges_upstream_metadata.rb#4
+  def merge(plugin_yaml, upstream_yaml); end
+end
+
+# source://lint_roller//lib/lint_roller/version.rb#2
+LintRoller::VERSION = T.let(T.unsafe(nil), String)

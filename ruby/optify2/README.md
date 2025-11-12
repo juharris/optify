@@ -4,13 +4,14 @@
 
 ## Usage
 
+<!-- FIXME: Fix name -->
 The gem is called `optify-config`, but we would like to call it just `optify`, but that name was taken by a gem that has not been updated since 2012.
 So we use the name `optify-config` to avoid conflicts, but the require statement is `optify` and the namespace is `Optify`.
 
 Set up your configuration files as explained in the [root README.md](../../README.md).
 
 ```shell
-gem install optify-config
+gem install optify-FIXME
 ```
 
 Define your immutable configuration classes:
@@ -60,11 +61,9 @@ To watch for changes and automatically reload those changes into the provider wh
 provider = Optify::OptionsWatcher.build('path/to/configs')
 ```
 
-See [optify_test.rb](test/optify_test.rb) for more examples.
+See [optify_test.rb](../tests/optify_test.rb) for more examples.
 
 ## Setup
-<!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
-
 Use Ruby 3.4+., for example, run:
 ```shell
 chruby 3.4.4

@@ -223,12 +223,7 @@ module Optify
 
         puts "[DEBUG build_options] Feature '#{name}' options for key '#{root_key}': #{feature_options.inspect[0..200]}" if ENV['DEBUG_IMPORTS']
 
-        if feature_options.is_a?(Hash)
-          deep_merge!(result, feature_options)
-        else
-          # If not a hash, it's a scalar value - just use it directly
-          result = feature_options
-        end
+        result = merge_feature_options(result, feature_options)
       end
 
       # Extract overrides for the root key (if overrides are keyed by config key)
@@ -287,6 +282,16 @@ module Optify
         obj.map { |v| deep_clone_value(v) }
       else
         obj
+      end
+    end
+
+    #: (untyped result, untyped feature_options) -> untyped
+    def merge_feature_options(result, feature_options)
+      if feature_options.is_a?(Hash)
+        deep_merge!(result, feature_options)
+        result
+      else
+        feature_options
       end
     end
   end

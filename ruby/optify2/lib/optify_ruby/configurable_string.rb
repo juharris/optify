@@ -44,22 +44,23 @@ module Optify
 
     #: -> String
     def resolve_base
-      case @base
-      when String
-        @base
-      when Hash
-        if @base.key?('liquid')
-          @base['liquid']
-        elsif @base.key?('file')
-          file_path = @base['file']
-          file_path = File.join(@base_dir, file_path) if @base_dir
-          File.read(file_path)
-        else
-          ''
-        end
-      else
-        ''
-      end
+      result = case @base
+               when String
+                 @base
+               when Hash
+                 if @base.key?('liquid')
+                   @base['liquid']
+                 elsif @base.key?('file')
+                   file_path = @base['file']
+                   return '' unless file_path
+
+                   file_path = File.join(@base_dir, file_path) if @base_dir
+                   File.read(file_path)
+                 else
+                   ''
+                 end
+               end
+      result || ''
     end
 
     #: (untyped data, ?String? base_dir) -> untyped

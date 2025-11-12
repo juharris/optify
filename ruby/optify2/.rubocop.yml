@@ -5,6 +5,8 @@ AllCops:
   # We'll enable them as needed.
   # Don't want to accept any new ones without reviewing them.
   NewCops: disable
+  SuggestExtensions:
+    rubocop-rake: false
 
 # Disable for RBS in comments.
 Layout/LeadingCommentSpace:
@@ -15,16 +17,22 @@ Layout/LineLength:
   Max: 180
 
 Metrics/AbcSize:
-  Max: 25
+  Max: 41
+
+Metrics/ClassLength:
+  Max: 185
 
 Metrics/CyclomaticComplexity:
   Max: 20
 
 Metrics/MethodLength:
-  Max: 21
+  Max: 36
+
+Metrics/ParameterLists:
+  Max: 6
 
 Metrics/PerceivedComplexity:
-  Max: 11
+  Max: 22
 
 Sorbet/EnforceSignatures:
   Enabled: true

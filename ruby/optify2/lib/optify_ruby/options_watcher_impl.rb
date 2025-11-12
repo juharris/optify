@@ -31,15 +31,37 @@ module Optify
     #: -> void
     def start_watching
       return if @listener
+      return if @config_directories.empty?
 
-      @listener = Listen.to(*@config_directories, latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
-        # Filter for config files and exclude .optify directory
-        all_changed = modified + added
-        changed_files = all_changed.select { |path| path =~ /\.(json|json5|yaml|yml)$/ }
-                                   .reject { |path| path.include?('/.optify/') }
-        rebuild_if_needed unless changed_files.empty?
-      end
-      @listener&.start
+      dirs = @config_directories
+      @listener = case dirs.size
+                  when 1
+                    Listen.to(dirs.fetch(0), latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
+                      handle_file_changes(modified, added)
+                    end
+                  when 2
+                    Listen.to(dirs.fetch(0), dirs.fetch(1), latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
+                      handle_file_changes(modified, added)
+                    end
+                  else
+                    first_three = dirs.take(3)
+                    d0 = first_three[0] || ''
+                    d1 = first_three[1] || ''
+                    d2 = first_three[2] || ''
+                    Listen.to(d0, d1, d2, latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
+                      handle_file_changes(modified, added)
+                    end
+                  end
+      @listener.start
+    end
+
+    #: (Array[String] modified, Array[String] added) -> void
+    def handle_file_changes(modified, added)
+      # Filter for config files and exclude .optify directory
+      all_changed = modified + added
+      changed_files = all_changed.select { |path| path =~ /\.(json|json5|yaml|yml)$/ }
+                                 .reject { |path| path.include?('/.optify/') }
+      rebuild_if_needed unless changed_files.empty?
     end
 
     #: -> void

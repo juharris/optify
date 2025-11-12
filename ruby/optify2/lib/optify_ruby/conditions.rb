@@ -86,25 +86,30 @@ module Optify
       return data if ['', '/'].include?(pointer)
 
       parts = pointer.split('/').drop(1)
-      current = data
+      resolve_pointer_parts(parts, data)
+    end
 
-      parts.each do |part|
-        part = part.gsub('~1', '/')
-        part.gsub!('~0', '~')
+    #: (Array[String] parts, untyped current) -> untyped
+    def self.resolve_pointer_parts(parts, current)
+      return current if parts.empty?
 
-        if current.is_a?(Hash)
-          current = current[part]
-        elsif current.is_a?(Array)
-          index = part.to_i
-          current = current[index]
-        else
-          return nil
-        end
+      first_part = parts.first
+      return nil unless first_part
 
-        return nil if current.nil?
-      end
+      part = first_part.gsub('~1', '/').gsub('~0', '~')
 
-      current
+      next_value = if current.is_a?(Hash)
+                     current[part]
+                   elsif current.is_a?(Array)
+                     index = part.to_i
+                     current[index]
+                   else
+                     return nil
+                   end
+
+      return nil if next_value.nil?
+
+      resolve_pointer_parts(parts.drop(1), next_value)
     end
   end
 end

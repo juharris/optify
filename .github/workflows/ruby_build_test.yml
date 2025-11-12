@@ -184,11 +184,11 @@ jobs:
         diff -u .ruby-version ../optify/.ruby-version
       working-directory: ./ruby/from_hash
     
-    - name: "[optify] Install dependencies"
+    - name: "Install dependencies"
       shell: bash
       run: bundle install
       working-directory: ./ruby/optify
-    - name: "[optify] Lint"
+    - name: "Lint"
       shell: bash
       run: |
         set -ex
@@ -201,13 +201,13 @@ jobs:
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
         diff -u sig/optify.rbs tmp/optify.rbs~
       working-directory: ./ruby/optify
-    - name: "[optify][Rust] Lint"
+    - name: "[Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./ruby/optify
-    - name: "[optify][Rust] Clippy"
+    - name: "[Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./ruby/optify
-    - name: "[optify] Test"
+    - name: "Test"
       run: bundle exec rake test
       working-directory: ./ruby/optify
 
@@ -259,6 +259,9 @@ jobs:
 
         bundle exec srb tc
         bundle exec rubocop
+
+        # Ensure that the RBI files are the same.
+        diff -u rbi/optify.rbi ../optify/rbi/optify.rbi
 
         # Ensure that the RBS file is up-to-date.
         mkdir -p tmp
