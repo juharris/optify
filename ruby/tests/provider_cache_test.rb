@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 require 'test/unit'
-require_relative '../lib/optify'
+require 'optify'
 require_relative 'conditions_config'
 require_relative 'my_config'
 

@@ -1,7 +1,7 @@
 # typed: true
 # frozen_string_literal: true
 
-require_relative '../lib/optify_ruby/base_config'
+require 'optify-from_hash'
 
 class MyObject < Optify::FromHashable
   sig { returns(Integer) }

@@ -11,5 +11,14 @@ desc 'Run tests'
 task default: :test
 
 Rake::TestTask.new do |t|
-  t.test_files = FileList[File.expand_path('test/*_test.rb', __dir__)]
+  shared_test_dir = File.expand_path('../tests', __dir__)
+  local_test_dir = File.expand_path('test', __dir__)
+  t.test_files = FileList[
+    File.join(shared_test_dir, '*_test.rb'),
+    File.join(local_test_dir, '*_test.rb')
+  ]
+  t.libs << shared_test_dir
+
+  # Allow doing `require 'optify'` in tests.
+  t.libs << File.expand_path('lib', __dir__)
 end
