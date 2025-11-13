@@ -144,6 +144,8 @@ jobs:
       fail-fast: true
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    env:
+      WORKING_DIRECTORY: ./ruby/optify
     permissions:
         # This permission is mandatory for trusted publishing.
       id-token: write
@@ -159,7 +161,7 @@ jobs:
       name: "Setup"
       with:
         bundler-cache: true
-        working-directory: ./ruby/from_hash
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     # Rust
     # Required for the main Ruby gem.
@@ -174,15 +176,15 @@ jobs:
         shared-key: ${{ matrix.os }}-rust
     - name: "[Rust] Build"
       run: cargo build --release
-      working-directory: ./rust/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
     - name: "Check Ruby version"
       shell: bash
       run: |
         set -ex
         # The Ruby versions must be the same for both gems.
-        diff -u .ruby-version ../optify/.ruby-version
-      working-directory: ./ruby/from_hash
+        diff -u .ruby-version ../from_hash/.ruby-version
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     
     - name: "Install dependencies"
       shell: bash
@@ -200,16 +202,16 @@ jobs:
         mkdir -p tmp
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
         diff -u sig/optify.rbs tmp/optify.rbs~
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: "[Rust] Lint"
       run : cargo fmt -- --check
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: "[Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: "Test"
       run: bundle exec rake test
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
   # FIXME Find a better name for this gem.
   # Gem: optify2
@@ -223,6 +225,9 @@ jobs:
       fail-fast: true
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    env:
+      # FIXME Find a better name.
+      WORKING_DIRECTORY: ./ruby/optify2
     permissions:
         # This permission is mandatory for trusted publishing.
       id-token: write
@@ -238,7 +243,7 @@ jobs:
       name: "Setup"
       with:
         bundler-cache: true
-        working-directory: ./ruby/optify2
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     - name: "Check Ruby version"
       shell: bash
@@ -246,12 +251,12 @@ jobs:
         set -ex
         # The Ruby versions should be the same for both gems.
         diff -u .ruby-version ../from_hash/.ruby-version
-      working-directory: ./ruby/optify2
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     
     - name: "Install dependencies"
       shell: bash
       run: bundle install
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: "Lint"
       shell: bash
       run: |
@@ -267,10 +272,10 @@ jobs:
         mkdir -p tmp
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
         diff -u sig/optify.rbs tmp/optify.rbs~
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: "Test"
       run: bundle exec rake test
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: "Pre-Publish"
       shell: bash
       run: |
@@ -278,7 +283,7 @@ jobs:
         # From https://github.com/rubygems/release-gem/blob/v1/action.yml until that action can use a different directory.
         git config --global user.email "$(git log -1 --pretty=format:'%ae')"
         git config --global user.name "$(git log -1 --pretty=format:'%an')"
-      working-directory: ./ruby/optify2
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
     - name: "Build"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
@@ -286,7 +291,7 @@ jobs:
       run: |
         set -ex
         bundle exec rake build
-      working-directory: ./ruby/optify2
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
@@ -298,7 +303,7 @@ jobs:
       run: |
         set -ex
         bundle exec rake release
-      working-directory: ./ruby/optify2
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
