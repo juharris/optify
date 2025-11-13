@@ -22,7 +22,9 @@ Bundler::GemHelper.instance.tap do |helper|
 end
 
 Rake::TestTask.new do |t|
-  shared_test_dir = File.expand_path('../tests', __dir__)
+  shared_test_dir = File.expand_path('../optify/test', __dir__)
+  raise "Shared test directory #{shared_test_dir} does not exist" unless File.exist?(shared_test_dir)
+
   local_test_dir = File.expand_path('test', __dir__)
   t.test_files = FileList[
     File.join(shared_test_dir, '*_test.rb'),

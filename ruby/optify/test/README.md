@@ -1,1 +1,1 @@
-Tests from [../../tests](../../tests) are included for this project as configured in [Rakefile](../Rakefile).
+These tests are shared with the more pure Ruby version of Optify in [optify2](../../optify2).
