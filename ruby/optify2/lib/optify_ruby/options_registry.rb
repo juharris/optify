@@ -5,13 +5,10 @@ require 'sorbet-runtime'
 require_relative 'provider_module'
 
 module Optify
+  # @abstract
   # Base class for options registries
   class OptionsRegistry
-    extend T::Sig
-    extend T::Helpers
     include ProviderModule
-
-    abstract!
 
     #: -> void
     def initialize

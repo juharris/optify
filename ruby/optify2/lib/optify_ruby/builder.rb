@@ -10,8 +10,6 @@ require_relative 'builder_options'
 module Optify
   # Builder for constructing OptionsProvider instances
   class OptionsProviderBuilderImpl
-    extend T::Sig
-
     #: -> void
     def initialize
       @directories = [] #: Array[String]

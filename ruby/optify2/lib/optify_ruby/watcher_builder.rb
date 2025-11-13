@@ -8,8 +8,6 @@ require_relative 'builder'
 module Optify
   # Builder for constructing OptionsWatcher instances
   class OptionsWatcherBuilderImpl < OptionsProviderBuilderImpl
-    extend T::Sig
-
     #: -> OptionsWatcherImpl
     def build
       builder_proc = lambda do

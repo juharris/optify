@@ -7,8 +7,6 @@ require 'liquid'
 module Optify
   # Handles configurable string values with Liquid template support
   class ConfigurableString
-    extend T::Sig
-
     #: (String | Hash[String, String])
     attr_reader :base
 

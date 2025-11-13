@@ -7,8 +7,6 @@ require_relative 'options_metadata'
 module Optify
   # Represents a feature with its configuration options and metadata
   class Feature
-    extend T::Sig
-
     #: String
     attr_reader :name
 

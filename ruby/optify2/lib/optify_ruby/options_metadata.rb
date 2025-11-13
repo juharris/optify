@@ -8,8 +8,6 @@ require_relative './base_config'
 module Optify
   # Information about a feature.
   class OptionsMetadata < FromHashable
-    extend T::Sig
-
     sig { returns(T::Array[String]) }
     attr_reader :aliases
 

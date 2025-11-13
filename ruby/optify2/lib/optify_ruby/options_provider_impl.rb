@@ -11,8 +11,6 @@ require_relative 'builder_options'
 module Optify
   # Core implementation of OptionsProvider in pure Ruby
   class OptionsProviderImpl
-    extend T::Sig
-
     #: Hash[String, Feature]
     attr_reader :features
 

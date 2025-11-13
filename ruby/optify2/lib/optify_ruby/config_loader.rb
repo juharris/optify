@@ -9,8 +9,6 @@ require 'sorbet-runtime'
 module Optify
   # Loads configuration files (JSON, YAML, JSON5)
   module ConfigLoader
-    extend T::Sig
-
     #: (String file_path) -> Hash[String, untyped]
     def self.load_file(file_path)
       content = File.read(file_path)

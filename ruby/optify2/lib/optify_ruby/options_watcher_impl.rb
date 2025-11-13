@@ -8,8 +8,6 @@ require_relative 'options_provider_impl'
 module Optify
   # Watcher implementation that rebuilds provider on file changes
   class OptionsWatcherImpl < OptionsProviderImpl
-    extend T::Sig
-
     #: Time
     attr_reader :last_modified
 

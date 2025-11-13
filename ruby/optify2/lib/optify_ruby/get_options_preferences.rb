@@ -7,8 +7,6 @@ require 'json'
 module Optify
   # Preferences for `get_options`.
   class GetOptionsPreferences
-    extend T::Sig
-
     #: bool
     attr_accessor :skip_feature_name_conversion
 

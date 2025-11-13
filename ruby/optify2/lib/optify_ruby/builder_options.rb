@@ -7,8 +7,6 @@ require 'json'
 module Optify
   # Options for handling files in a directory.
   class BuilderOptions
-    extend T::Sig
-
     #: bool
     attr_reader :are_configurable_strings_enabled
 

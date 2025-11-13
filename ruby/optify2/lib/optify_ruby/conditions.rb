@@ -7,8 +7,6 @@ require 'json'
 module Optify
   # Evaluates conditions for feature filtering based on constraints
   module Conditions
-    extend T::Sig
-
     #: (Hash[String, untyped]? conditions, Hash[String, untyped] constraints) -> bool
     def self.evaluate(conditions, constraints)
       return true if conditions.nil? || conditions.empty?
