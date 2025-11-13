@@ -12,7 +12,7 @@ PATH
       json-schema (~> 5.0)
       liquid (~> 5.0)
       listen (~> 3.0)
-      optify-from_hash (~> 0.2.0)
+      optify-from_hash
       rb_json5 (~> 0.3)
       sorbet-runtime (>= 0.5, < 1)
 

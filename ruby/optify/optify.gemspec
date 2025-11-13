@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   # needed until rubygems Rust support is out of beta
   spec.add_dependency 'rb_sys', '~> 0.9.117'
 
-  spec.add_dependency 'optify-from_hash', '~> 0.1.0'
+  spec.add_dependency 'optify-from_hash'
 
   sorbet_version = '>= 0.5'
   sorbet_version_upper_bound = '< 1'
