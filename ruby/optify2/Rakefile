@@ -13,13 +13,13 @@ task default: :test
 # Customize the git tag format for releases.
 Bundler::GemHelper.instance.tap do |helper|
   helper.instance_eval do
+    #: -> String
     def tag_version
       # FIXME: Find a good name.
       "ruby-optify2-v#{version}"
     end
   end
 end
-
 
 Rake::TestTask.new do |t|
   shared_test_dir = File.expand_path('../tests', __dir__)
