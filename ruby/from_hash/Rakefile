@@ -5,6 +5,15 @@ require 'bundler/gem_tasks'
 require 'rubocop/rake_task'
 require 'rake/testtask'
 
+# Customize the git tag format for releases
+Bundler::GemHelper.instance.tap do |helper|
+  helper.instance_eval do
+    def tag_version
+      "ruby-from_hash-v#{version}"
+    end
+  end
+end
+
 RuboCop::RakeTask.new
 
 desc 'Run tests'
