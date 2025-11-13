@@ -10,6 +10,7 @@ AllCops:
   Exclude:
     - "sorbet/**/*.rbi"
     - "tmp/**/*"
+    - "vendor/**/*"
 
 # Disable for RBS in comments.
 Layout/LeadingCommentSpace:
