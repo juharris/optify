@@ -4,14 +4,15 @@ end
 
 # A base class for classes that can be created from a hash.
 class Optify::FromHashable
-  extend T::Helpers
-
   # Create a new instance of the class from a hash.
   #
   # This is a class method that so that it can set members with private setters.
   # @param hash The hash to create the instance from.
   # @return The new instance.
   def self.from_hash: (::Hash[untyped, untyped] hash) -> instance
+
+  # Convert this object to a JSON string.
+  def to_json: (*untyped args) -> String
 
   # Convert this object to a Hash recursively.
   # This is mostly the reverse operation of `from_hash`,

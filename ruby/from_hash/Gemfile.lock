@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    optify-from_hash (0.1.0)
+    optify-from_hash (0.2.0)
       sorbet-runtime (>= 0.5, < 1)
 
 GEM
@@ -87,7 +87,6 @@ GEM
       yard
 
 PLATFORMS
-  aarch64-linux
   arm64-darwin
   universal-darwin
   x86_64-linux
