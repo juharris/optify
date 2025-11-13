@@ -26,11 +26,11 @@ Gem::Specification.new do |spec|
   spec.files = Dir['lib/**/*.rb', 'rbi/*', 'sig/*']
 
   spec.add_dependency 'base64', '~> 0.2'
-  spec.add_dependency 'json5', '~> 0.0.1'
   spec.add_dependency 'json-schema', '~> 5.0'
   spec.add_dependency 'liquid', '~> 5.0'
   spec.add_dependency 'listen', '~> 3.0'
   spec.add_dependency 'optify-from_hash', '~> 0.2.0'
+  spec.add_dependency 'rb_json5', '~> 0.3'
 
   sorbet_version = '>= 0.5'
   sorbet_version_upper_bound = '< 1'

@@ -3,7 +3,7 @@
 
 require 'json'
 require 'yaml'
-require 'json5'
+require 'rb_json5'
 require 'sorbet-runtime'
 
 module Optify
@@ -28,7 +28,7 @@ module Optify
 
     #: (String content) -> Hash[String, untyped]
     def self.load_json_with_comments(content)
-      JSON5.parse(content)
+      RbJSON5.parse(content)
     end
 
     #: (String content) -> Hash[String, untyped]
