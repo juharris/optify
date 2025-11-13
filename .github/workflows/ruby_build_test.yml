@@ -262,6 +262,8 @@ jobs:
       run: |
         set -ex
 
+        ruby --version
+
         bundle exec srb tc
         bundle exec rubocop
 
