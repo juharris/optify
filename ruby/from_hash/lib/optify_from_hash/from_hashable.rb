@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+require 'json'
 require 'sorbet-runtime'
 require 'tapioca'
 
@@ -112,6 +113,12 @@ module Optify
       instance_variables.all? do |name|
         instance_variable_get(name) == other.instance_variable_get(name)
       end
+    end
+
+    # Convert this object to a JSON string.
+    #: (*untyped) -> String
+    def to_json(*args)
+      to_h.to_json(args)
     end
 
     # Convert this object to a Hash recursively.

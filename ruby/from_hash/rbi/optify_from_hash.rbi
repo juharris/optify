@@ -5,8 +5,6 @@
 module Optify
   # A base class for classes that can be created from a hash.
   class FromHashable
-    extend T::Sig
-    extend T::Helpers
     abstract!
 
     # Create a new instance of the class from a hash.
@@ -16,6 +14,10 @@ module Optify
     # @return The new instance.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
     def self.from_hash(hash); end
+
+    # Convert this object to a JSON string.
+    sig { params(args: T.untyped).returns(String) }
+    def to_json(*args); end
 
     # Convert this object to a Hash recursively.
     # This is mostly the reverse operation of `from_hash`,
