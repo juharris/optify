@@ -8,13 +8,12 @@ require_relative 'implementation'
 
 module Optify
   # Auto-reloading options provider with file watching
-  class OptionsWatcher < OptionsProvider
+  class OptionsWatcher < OptionsRegistry
     #: -> void
     def initialize # rubocop:disable Lint/MissingSuper
       raise 'Do not instantiate OptionsWatcher directly. Use OptionsWatcherBuilder instead.'
     end
 
-    # @override
     #: ((OptionsProviderImpl | OptionsWatcherImpl) impl) -> OptionsWatcher
     def self.from_impl(impl)
       watcher = allocate

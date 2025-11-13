@@ -9,6 +9,7 @@ AllCops:
     rubocop-rake: false
   Exclude:
     - "sorbet/**/*.rbi"
+    - "tmp/**/*"
 
 # Disable for RBS in comments.
 Layout/LeadingCommentSpace:
