@@ -10,6 +10,17 @@ RuboCop::RakeTask.new
 desc 'Run tests'
 task default: :test
 
+# Customize the git tag format for releases.
+Bundler::GemHelper.instance.tap do |helper|
+  helper.instance_eval do
+    def tag_version
+      # FIXME: Find a good name.
+      "ruby-optify2-v#{version}"
+    end
+  end
+end
+
+
 Rake::TestTask.new do |t|
   shared_test_dir = File.expand_path('../tests', __dir__)
   local_test_dir = File.expand_path('test', __dir__)
