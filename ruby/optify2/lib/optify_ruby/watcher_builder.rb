@@ -35,8 +35,6 @@ module Optify
         builder_proc
       )
       watcher.start_watching
-      # Give Listen time to initialize before returning
-      sleep 0.5
       watcher
     end
   end

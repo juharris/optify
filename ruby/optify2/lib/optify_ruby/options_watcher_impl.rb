@@ -53,6 +53,8 @@ module Optify
                     end
                   end
       @listener.start
+      # Give Listen a brief moment to initialize its monitoring threads
+      sleep 0.01
     end
 
     #: (Array[String] modified, Array[String] added) -> void

@@ -1,6 +1,9 @@
 <!-- TODO Add details, correct links, etc. -->
-# Optify for Ruby
-[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+# Optify for Ruby in Ruby
+
+This version is written in pure Ruby and is an alternative to the Rust-backed version in [../optify](../optify).
+
+<!-- [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config) -->
 
 ## Usage
 
