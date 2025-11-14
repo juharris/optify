@@ -13,22 +13,22 @@ module Optify
     #: Hash[String, untyped]
     attr_reader :arguments
 
-    #: String?
-    attr_reader :base_dir
+    #: Hash[String, String]
+    attr_reader :loaded_files
 
-    #: ((String | Hash[String, String]) base, Hash[String, untyped] arguments, ?String? base_dir) -> void
-    def initialize(base, arguments, base_dir = nil)
+    #: ((String | Hash[String, String]) base, Hash[String, untyped] arguments, Hash[String, String] loaded_files) -> void
+    def initialize(base, arguments, loaded_files)
       @base = base
       @arguments = arguments
-      @base_dir = base_dir
+      @loaded_files = loaded_files
     end
 
-    #: (Hash[String, untyped] data, ?String? base_dir) -> ConfigurableString
-    def self.from_hash(data, base_dir = nil)
+    #: (Hash[String, untyped] data, Hash[String, String] loaded_files) -> ConfigurableString
+    def self.from_hash(data, loaded_files)
       base = data['base'] || ''
       arguments = data['arguments'] || {}
 
-      new(base, arguments, base_dir)
+      new(base, arguments, loaded_files)
     end
 
     #: -> String
@@ -52,8 +52,13 @@ module Optify
                    file_path = @base['file']
                    return '' unless file_path
 
-                   file_path = File.join(@base_dir, file_path) if @base_dir
-                   File.read(file_path)
+                   # Look up file from pre-loaded files
+                   contents = @loaded_files[file_path]
+                   if contents.nil?
+                     warn "File '#{file_path}' not found in loaded files"
+                     return ''
+                   end
+                   contents
                  else
                    ''
                  end
@@ -61,17 +66,17 @@ module Optify
       result || ''
     end
 
-    #: (untyped data, ?String? base_dir) -> untyped
-    def self.process_value(data, base_dir = nil)
+    #: (untyped data, Hash[String, String] loaded_files) -> untyped
+    def self.process_value(data, loaded_files)
       case data
       when Hash
         if data.key?('$type') && data['$type'] == 'Optify.ConfigurableString'
-          from_hash(data, base_dir).resolve
+          from_hash(data, loaded_files).resolve
         else
-          data.transform_values { |v| process_value(v, base_dir) }
+          data.transform_values { |v| process_value(v, loaded_files) }
         end
       when Array
-        data.map { |v| process_value(v, base_dir) }
+        data.map { |v| process_value(v, loaded_files) }
       else
         data
       end

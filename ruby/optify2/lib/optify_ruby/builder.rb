@@ -15,6 +15,7 @@ module Optify
       @directories = [] #: Array[String]
       @features = {} #: Hash[String, Feature]
       @alias_map = {} #: Hash[String, String]
+      @loaded_files = {} #: Hash[String, String]
       @builder_options = BuilderOptions.new #: BuilderOptions
       @has_loaded_config = false #: bool
     end
@@ -34,7 +35,7 @@ module Optify
       end
 
       # Load all features from this directory
-      load_directory(directory, @features, @alias_map)
+      load_directory(directory, @features, @alias_map, @loaded_files)
 
       self
     end
@@ -48,16 +49,35 @@ module Optify
         @features,
         @alias_map,
         @directories,
-        @builder_options.are_configurable_strings_enabled
+        @builder_options.are_configurable_strings_enabled,
+        @loaded_files
       )
     end
 
     private
 
-    #: (String, Hash[String, Feature], Hash[String, String]) -> void
-    def load_directory(directory, features, alias_map)
+    #: (String, Hash[String, Feature], Hash[String, String], Hash[String, String]) -> void
+    def load_directory(directory, features, alias_map, loaded_files)
       return unless Dir.exist?(directory)
 
+      # Load all files from directory (not just config files)
+      Dir.glob(File.join(directory, '**', '*')).each do |file_path|
+        next unless File.file?(file_path)
+        next if file_path.include?('/.optify/')
+
+        # Store file contents for configurable string resolution
+        # FIXME: Don't store option files.
+        begin
+          relative_path = file_path.sub("#{directory}/", '')
+          contents = File.read(file_path)
+          loaded_files[relative_path] = contents
+        rescue StandardError => e
+          # FIXME: Give error.
+          warn "Error reading file #{file_path}: #{e.message}. Skipping file."
+        end
+      end
+
+      # Load features from config files
       Dir.glob(File.join(directory, '**', '*.{json,json5,yaml,yml}')).each do |file_path|
         next if file_path.include?('/.optify/')
 

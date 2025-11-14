@@ -19,10 +19,11 @@ module Optify
     #|   Hash[String, String] alias_map,
     #|   Array[String] config_directories,
     #|   bool are_configurable_strings_enabled,
+    #|   Hash[String, String] loaded_files,
     #|   ^-> OptionsProviderImpl builder
     #| ) -> void
-    def initialize(features, alias_map, config_directories, are_configurable_strings_enabled, builder)
-      super(features, alias_map, config_directories, are_configurable_strings_enabled)
+    def initialize(features, alias_map, config_directories, are_configurable_strings_enabled, loaded_files, builder)
+      super(features, alias_map, config_directories, are_configurable_strings_enabled, loaded_files)
       @builder = builder #: ^-> OptionsProviderImpl
       @listener = nil #: Listen::Listener?
       @last_modified = Time.now #: Time
@@ -60,6 +61,8 @@ module Optify
         provider = @builder.call
         @features = provider.features
         @alias_map = provider.alias_map
+        @loaded_files = provider.instance_variable_get(:@loaded_files)
+        @are_configurable_strings_enabled = provider.instance_variable_get(:@are_configurable_strings_enabled)
         @cache = nil
         @features_with_metadata = nil
         @last_modified = Time.now

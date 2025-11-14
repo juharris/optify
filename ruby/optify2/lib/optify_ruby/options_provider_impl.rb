@@ -22,13 +22,15 @@ module Optify
     #|   Hash[String, Feature] features,
     #|   Hash[String, String] alias_map,
     #|   Array[String] config_directories,
-    #|   bool are_configurable_strings_enabled
+    #|   bool are_configurable_strings_enabled,
+    #|   Hash[String, String] loaded_files
     #| ) -> void
-    def initialize(features, alias_map, config_directories, are_configurable_strings_enabled)
+    def initialize(features, alias_map, config_directories, are_configurable_strings_enabled, loaded_files)
       @features = features #: Hash[String, Feature]
       @alias_map = alias_map #: Hash[String, String]
       @config_directories = config_directories #: Array[String]
       @are_configurable_strings_enabled = are_configurable_strings_enabled #: bool
+      @loaded_files = loaded_files #: Hash[String, String]
       @cache = nil #: Hash[untyped, untyped]?
       @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
@@ -226,12 +228,7 @@ module Optify
       key_overrides = overrides[root_key] || {}
       deep_merge!(result, key_overrides) if !key_overrides.empty? && result.is_a?(Hash)
 
-      if configurable_strings_enabled
-        base_dir = @config_directories.first
-        return {} unless base_dir
-
-        result = ConfigurableString.process_value(result, base_dir)
-      end
+      result = ConfigurableString.process_value(result, @loaded_files) if configurable_strings_enabled
 
       # Navigate to nested value if key has path
       if key_parts.length > 1

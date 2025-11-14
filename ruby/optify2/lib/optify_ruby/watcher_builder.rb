@@ -14,10 +14,11 @@ module Optify
       builder_proc = lambda do
         features = {}
         alias_map = {}
+        loaded_files = {}
         are_configurable_strings_enabled = false #: bool
 
         @directories.each do |dir|
-          load_directory(dir, features, alias_map)
+          load_directory(dir, features, alias_map, loaded_files)
         end
 
         # Use builder options from first directory (matching Rust behavior)
@@ -33,7 +34,7 @@ module Optify
         # Resolve imports for all features
         resolve_all_imports(features)
 
-        OptionsProviderImpl.new(features, alias_map, @directories, are_configurable_strings_enabled)
+        OptionsProviderImpl.new(features, alias_map, @directories, are_configurable_strings_enabled, loaded_files)
       end
 
       provider = builder_proc.call
@@ -42,6 +43,7 @@ module Optify
         provider.alias_map,
         @directories,
         provider.instance_variable_get(:@are_configurable_strings_enabled),
+        provider.instance_variable_get(:@loaded_files),
         builder_proc
       )
       watcher.start_watching
