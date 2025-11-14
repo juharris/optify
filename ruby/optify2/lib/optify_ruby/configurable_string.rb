@@ -36,6 +36,8 @@ module Optify
       template_str = resolve_base
       return template_str if @arguments.empty?
 
+      # FIXME: Needs to recursively resolve arguments with a custom context.
+
       template = Liquid::Template.parse(template_str)
       template.render(@arguments)
     end
