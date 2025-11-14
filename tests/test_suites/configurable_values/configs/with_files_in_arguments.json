@@ -1,0 +1,49 @@
+{
+	"options": {
+		"greeting_from_file": {
+			"$type": "Optify.ConfigurableString",
+			"base": {
+				"liquid": "Hello and {{ greeting }}"
+			},
+			"arguments": {
+				"greeting": {
+					"file": "templates/greeting.txt"
+				}
+			}
+		},
+		"info_from_liquid_file": {
+			"$type": "Optify.ConfigurableString",
+			"base": {
+				"file": "templates/info.liquid"
+			},
+			"arguments": {
+				"first": "First",
+				"second": {
+					"file": "templates/app_name.md"
+				}
+			}
+		},
+		"info_from_liquid_file_liquid_argument": {
+			"$type": "Optify.ConfigurableString",
+			"base": {
+				"file": "templates/info.liquid"
+			},
+			"arguments": {
+				"app_name": {
+					"liquid": "THE {{ application_name }}!"
+				},
+				"application_name": "MY APP",
+				"first": {
+					"liquid": "1{{ wtv }}1"
+				},
+				"wtv": "TEXT",
+				"second": {
+					"file": "templates/something.liquid"
+				},
+				"something": {
+					"file": "templates/message.liquid"
+				}
+			}
+		}
+	}
+}
