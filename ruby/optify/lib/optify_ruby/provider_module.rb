@@ -79,8 +79,6 @@ module Optify
       @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
 
-    NOT_FOUND_IN_CACHE_SENTINEL = Object.new
-
     #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, Optify::CacheOptions _cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
     def get_options_with_cache(key, feature_names, config_class, _cache_options, preferences = nil)
       # Cache directly in Ruby instead of Rust because:
@@ -102,23 +100,22 @@ module Optify
       # Features are filtered, so we don't need the constraints in the cache key.
       are_configurable_strings_enabled = preferences&.are_configurable_strings_enabled? || false
       cache_key = [key, feature_names, are_configurable_strings_enabled, config_class]
-      result = @cache #: as !nil
-               .fetch(cache_key, NOT_FOUND_IN_CACHE_SENTINEL)
-      return result unless result.equal?(NOT_FOUND_IN_CACHE_SENTINEL)
-
-      # Handle a cache miss.
-
-      # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
-      # We don't need the constraints because we filtered the features above.
-      # We already know there are no overrides because we checked above.
-      preferences = GetOptionsPreferences.new
-      preferences.skip_feature_name_conversion = true
-      preferences.enable_configurable_strings if are_configurable_strings_enabled
-
-      result = get_options(key, feature_names, config_class, nil, preferences)
-
       @cache #: as !nil
-        .[]= cache_key, result
+        .fetch(cache_key) do
+        # Handle a cache miss.
+
+        # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
+        # We don't need the constraints because we filtered the features above.
+        # We already know there are no overrides because we checked above.
+        preferences = GetOptionsPreferences.new
+        preferences.skip_feature_name_conversion = true
+        preferences.enable_configurable_strings if are_configurable_strings_enabled
+
+        result = get_options(key, feature_names, config_class, nil, preferences)
+
+        @cache #: as !nil
+          .[]= cache_key, result
+      end
     end
   end
 end

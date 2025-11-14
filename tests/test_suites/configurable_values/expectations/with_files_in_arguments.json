@@ -1,0 +1,10 @@
+{
+	"features": [
+		"with_files_in_arguments"
+	],
+	"options": {
+		"greeting_from_file": "Hello and Hello from template file!",
+		"info_from_liquid_file": "First Optify",
+		"info_from_liquid_file_liquid_argument": "1TEXT1 Here is Welcome to THE MY APP!! This message is from a template file.!"
+	}
+}
