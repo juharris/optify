@@ -13,40 +13,43 @@ module Optify
     #: -> void
     def initialize
       @directories = [] #: Array[String]
+      @features = {} #: Hash[String, Feature]
+      @alias_map = {} #: Hash[String, String]
       @builder_options = BuilderOptions.new #: BuilderOptions
+      @has_loaded_config = false #: bool
     end
 
     #: (String) -> OptionsProviderBuilderImpl
     def add_directory(directory)
-      # FIXME: Load the directory right away via this method and use ./optify/config.json to determine the options to use.
+      # Load the directory immediately and read its config
       @directories << directory
+
+      # Load config from this directory if we haven't loaded one yet
+      unless @has_loaded_config
+        config_path = File.join(directory, '.optify', 'config.json')
+        if File.exist?(config_path)
+          @builder_options = BuilderOptions.from_file(config_path)
+          @has_loaded_config = true
+        end
+      end
+
+      # Load all features from this directory
+      load_directory(directory, @features, @alias_map)
+
       self
     end
 
     #: -> OptionsProviderImpl
     def build
-      features = {}
-      alias_map = {}
-      are_configurable_strings_enabled = false #: bool
+      # Resolve imports for all features (already loaded in add_directory)
+      resolve_all_imports(@features)
 
-      @directories.each do |dir|
-        load_directory(dir, features, alias_map)
-      end
-
-      # Use builder options from first directory (matching Rust behavior)
-      first_dir = @directories.first
-      if first_dir
-        config_path = File.join(first_dir, '.optify', 'config.json')
-        if File.exist?(config_path)
-          builder_options = BuilderOptions.from_file(config_path)
-          are_configurable_strings_enabled = builder_options.are_configurable_strings_enabled
-        end
-      end
-
-      # Resolve imports for all features
-      resolve_all_imports(features)
-
-      OptionsProviderImpl.new(features, alias_map, @directories, are_configurable_strings_enabled)
+      OptionsProviderImpl.new(
+        @features,
+        @alias_map,
+        @directories,
+        @builder_options.are_configurable_strings_enabled
+      )
     end
 
     private
