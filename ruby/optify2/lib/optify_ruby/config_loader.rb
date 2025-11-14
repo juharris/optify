@@ -15,18 +15,15 @@ module Optify
       ext = File.extname(file_path).downcase
 
       case ext
-      when '.json', '.json5'
-        load_json_with_comments(content)
+      when '.json'
+        JSON.parse(content)
+      when '.json5'
+        RbJSON5.parse(content)
       when '.yaml', '.yml'
         load_yaml(content)
       else
         raise ArgumentError, "Unsupported file type: #{ext}"
       end
-    end
-
-    #: (String content) -> Hash[String, untyped]
-    def self.load_json_with_comments(content)
-      RbJSON5.parse(content)
     end
 
     #: (String content) -> Hash[String, untyped]

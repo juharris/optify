@@ -15,11 +15,11 @@ module Optify
     #|   Hash[String, Feature] features,
     #|   Hash[String, String] alias_map,
     #|   Array[String] config_directories,
-    #|   BuilderOptions builder_options,
+    #|   bool are_configurable_strings_enabled,
     #|   ^-> OptionsProviderImpl builder
     #| ) -> void
-    def initialize(features, alias_map, config_directories, builder_options, builder)
-      super(features, alias_map, config_directories, builder_options)
+    def initialize(features, alias_map, config_directories, are_configurable_strings_enabled, builder)
+      super(features, alias_map, config_directories, are_configurable_strings_enabled)
       @builder = builder #: ^-> OptionsProviderImpl
       @listener = nil #: Listen::Listener?
       @last_modified = Time.now #: Time

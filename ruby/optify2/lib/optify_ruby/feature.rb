@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require_relative 'options_metadata'
+require_relative 'condition_expression'
 
 module Optify
   # Represents a feature with its configuration options and metadata
@@ -13,7 +14,7 @@ module Optify
     #: String
     attr_reader :file_path
 
-    #: Hash[String, untyped]?
+    #: Optify::ConditionExpression?
     attr_reader :conditions
 
     #: Hash[String, Hash[String, untyped]]
@@ -28,7 +29,7 @@ module Optify
     #: (
     #|   String name,
     #|   String file_path,
-    #|   Hash[String, untyped]? conditions,
+    #|   Optify::ConditionExpression? conditions,
     #|   Hash[String, Hash[String, untyped]] options,
     #|   OptionsMetadata metadata,
     #|   ?Array[String]? imports
@@ -47,7 +48,12 @@ module Optify
       require_relative 'config_loader'
       data = ConfigLoader.load_file(file_path)
 
-      conditions = data['conditions']
+      conditions_data = data['conditions']
+      conditions = if conditions_data.nil? || conditions_data.empty?
+                     nil
+                   else
+                     ConditionExpression.from_hash(conditions_data)
+                   end
       options = data['options'] || {}
       imports = data['imports']
       metadata_data = data['metadata'] || {}

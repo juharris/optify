@@ -4,12 +4,11 @@
 require 'sorbet-runtime'
 require 'json'
 require_relative 'feature'
-require_relative 'conditions'
 require_relative 'configurable_string'
-require_relative 'builder_options'
 
 module Optify
   # Core implementation of OptionsProvider in pure Ruby
+  # rubocop:disable Metrics/ClassLength
   class OptionsProviderImpl
     #: Hash[String, Feature]
     attr_reader :features
@@ -24,13 +23,13 @@ module Optify
     #|   Hash[String, Feature] features,
     #|   Hash[String, String] alias_map,
     #|   Array[String] config_directories,
-    #|   BuilderOptions builder_options
+    #|   bool are_configurable_strings_enabled
     #| ) -> void
-    def initialize(features, alias_map, config_directories, builder_options)
+    def initialize(features, alias_map, config_directories, are_configurable_strings_enabled)
       @features = features #: Hash[String, Feature]
       @alias_map = alias_map #: Hash[String, String]
       @config_directories = config_directories #: Array[String]
-      @builder_options = builder_options #: BuilderOptions
+      @are_configurable_strings_enabled = are_configurable_strings_enabled #: bool
       @cache = nil #: Hash[untyped, untyped]?
       @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
@@ -116,10 +115,10 @@ module Optify
       # Preference can enable it only if builder allows, or disable it regardless
       configurable_strings_enabled = if preferences.configurable_strings_explicitly_set
                                        # Preference was set explicitly
-                                       preferences.are_configurable_strings_enabled? && @builder_options.are_configurable_strings_enabled
+                                       preferences.are_configurable_strings_enabled? && @are_configurable_strings_enabled
                                      else
                                        # Use builder default
-                                       @builder_options.are_configurable_strings_enabled
+                                       @are_configurable_strings_enabled
                                      end
 
       canonical_names = if skip_conversion
@@ -192,7 +191,10 @@ module Optify
         feature = @features[name]
         next true unless feature
 
-        Conditions.evaluate(feature.conditions, constraints)
+        conditions = feature.conditions
+        next true if conditions.nil?
+
+        conditions.evaluate(constraints)
       end
     end
 
@@ -293,4 +295,5 @@ module Optify
       end
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

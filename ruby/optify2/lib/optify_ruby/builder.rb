@@ -19,13 +19,6 @@ module Optify
     #: (String) -> OptionsProviderBuilderImpl
     def add_directory(directory)
       @directories << directory
-
-      # Load .optify/config.json if it exists (use first directory's config)
-      if @directories.length == 1
-        config_path = File.join(directory, '.optify', 'config.json')
-        @builder_options = File.exist?(config_path) ? BuilderOptions.from_file(config_path) : BuilderOptions.new
-      end
-
       self
     end
 
@@ -33,15 +26,26 @@ module Optify
     def build
       features = {}
       alias_map = {}
+      are_configurable_strings_enabled = false #: bool
 
       @directories.each do |dir|
         load_directory(dir, features, alias_map)
       end
 
+      # Use builder options from first directory (matching Rust behavior)
+      first_dir = @directories.first
+      if first_dir
+        config_path = File.join(first_dir, '.optify', 'config.json')
+        if File.exist?(config_path)
+          builder_options = BuilderOptions.from_file(config_path)
+          are_configurable_strings_enabled = builder_options.are_configurable_strings_enabled
+        end
+      end
+
       # Resolve imports for all features
       resolve_all_imports(features)
 
-      OptionsProviderImpl.new(features, alias_map, @directories, @builder_options)
+      OptionsProviderImpl.new(features, alias_map, @directories, are_configurable_strings_enabled)
     end
 
     private
@@ -117,7 +121,7 @@ module Optify
         raise "Import '#{import_name}' not found for feature '#{feature_name}'" unless imported_feature
 
         # Check that imported feature doesn't have conditions
-        raise "Import '#{import_name}' has conditions. Imported features cannot have conditions." if imported_feature.conditions
+        raise "Import '#{import_name}' has conditions. Imported features cannot have conditions." unless imported_feature.conditions.nil?
 
         # Recursively resolve imports for the imported feature
         import_options = resolve_imports_for_feature(import_name, features, new_path, resolved)
