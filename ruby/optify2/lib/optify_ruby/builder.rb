@@ -18,6 +18,7 @@ module Optify
 
     #: (String) -> OptionsProviderBuilderImpl
     def add_directory(directory)
+      # FIXME: Load the directory right away via this method and use ./optify/config.json to determine the options to use.
       @directories << directory
       self
     end

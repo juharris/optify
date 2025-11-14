@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Elegant benchmark runner for optify2
+# Works by pre-loading optify2's implementation into the require cache,
+# so when benchmarks do `require_relative '../lib/optify'`, Ruby sees
+# it's already loaded and uses our implementation.
+
+require 'pathname'
+
+# Paths
+OPTIFY2_ROOT = Pathname.new(__dir__).parent
+OPTIFY_ROOT = OPTIFY2_ROOT.parent.join('optify')
+BENCHMARKS_DIR = OPTIFY_ROOT.join('benchmarks')
+
+unless BENCHMARKS_DIR.exist?
+  warn "Error: Shared benchmarks not found at #{BENCHMARKS_DIR}"
+  exit 1
+end
+
+# Pre-load optify2's implementation
+# Skip watcher to avoid 'listen' gem dependency
+ENV['OPTIFY_SKIP_WATCHER'] = '1'
+$LOAD_PATH.unshift(OPTIFY2_ROOT.join('lib').to_s)
+require 'optify'
+
+# Register optify as loaded from the path the benchmarks will use
+# This prevents the benchmarks from reloading optify from the original location
+optify_path_from_benchmarks = OPTIFY_ROOT.join('lib', 'optify.rb').expand_path.to_s
+$LOADED_FEATURES << optify_path_from_benchmarks unless $LOADED_FEATURES.include?(optify_path_from_benchmarks)
+
+# Find benchmarks
+benchmarks = Dir[BENCHMARKS_DIR.join('*.rb')].sort
+
+if benchmarks.empty?
+  warn "No benchmarks found in #{BENCHMARKS_DIR}"
+  exit 1
+end
+
+puts 'Running benchmarks with optify2 implementation'
+puts '=' * 60
+puts
+
+# Run each benchmark
+benchmarks.each do |benchmark|
+  name = File.basename(benchmark)
+
+  puts
+  puts "#{name}:"
+  puts '-' * 60
+
+  # Load the benchmark - it will skip require_relative '../lib/optify'
+  # because we registered it as already loaded
+  load benchmark
+end
+
+puts
+puts '=' * 60
+puts 'Complete!'
