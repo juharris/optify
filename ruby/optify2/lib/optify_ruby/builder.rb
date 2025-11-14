@@ -142,10 +142,13 @@ module Optify
     #: (Hash[String, untyped], Hash[String, untyped]) -> Hash[String, untyped]
     def deep_merge!(target, source)
       source.each do |key, value|
-        if value.is_a?(Hash) && target[key].is_a?(Hash)
-          deep_merge!(target[key], value)
-        elsif value.is_a?(Array) && target[key].is_a?(Array)
-          target[key] = value
+        case value
+        when Hash
+          if target[key].is_a?(Hash)
+            deep_merge!(target[key], value)
+          else
+            target[key] = value
+          end
         else
           target[key] = value
         end

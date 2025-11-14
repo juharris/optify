@@ -8,6 +8,9 @@ require_relative 'options_provider_impl'
 module Optify
   # Watcher implementation that rebuilds provider on file changes
   class OptionsWatcherImpl < OptionsProviderImpl
+    # Let us send a splat to `Listen.to`.
+    ListenClass = Listen #: untyped
+
     #: Time
     attr_reader :last_modified
 
@@ -32,47 +35,20 @@ module Optify
       return if @config_directories.empty?
 
       dirs = @config_directories
-      @listener = case dirs.size
-                  when 1
-                    Listen.to(dirs.fetch(0), latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
-                      handle_file_changes(modified, added)
-                    end
-                  when 2
-                    Listen.to(dirs.fetch(0), dirs.fetch(1), latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
-                      handle_file_changes(modified, added)
-                    end
-                  else
-                    first_three = dirs.take(3)
-                    d0 = first_three[0] || ''
-                    d1 = first_three[1] || ''
-                    d2 = first_three[2] || ''
-                    Listen.to(d0, d1, d2, latency: 0.1, wait_for_delay: 0.1) do |modified, added, _removed|
-                      handle_file_changes(modified, added)
-                    end
-                  end
+      latency = 1
+      wait_for_delay = 1
+      @listener = ListenClass.to(*dirs, latency: latency, wait_for_delay: wait_for_delay) do |_modified, _added, _removed|
+        rebuild
+      end
       @listener.start
       # Give Listen a brief moment to initialize its monitoring threads
       sleep 0.01
-    end
-
-    #: (Array[String] modified, Array[String] added) -> void
-    def handle_file_changes(modified, added)
-      # Filter for config files and exclude .optify directory
-      all_changed = modified + added
-      changed_files = all_changed.select { |path| path =~ /\.(json|json5|yaml|yml)$/ }
-                                 .reject { |path| path.include?('/.optify/') }
-      rebuild_if_needed unless changed_files.empty?
     end
 
     #: -> void
     def stop_watching
       @listener&.stop
       @listener = nil
-    end
-
-    #: -> void
-    def rebuild_if_needed
-      rebuild
     end
 
     #: -> void

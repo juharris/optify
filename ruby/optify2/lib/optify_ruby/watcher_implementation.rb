@@ -51,11 +51,6 @@ module Optify
       watcher_impl.stop_watching
     end
 
-    #: -> void
-    def rebuild_if_needed
-      watcher_impl.rebuild_if_needed
-    end
-
     #: -> OptionsWatcher
     def init
       super
