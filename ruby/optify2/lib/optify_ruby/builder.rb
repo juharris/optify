@@ -131,15 +131,7 @@ module Optify
       # Merge feature's own options on top (deep clone to avoid shared references)
       deep_merge!(merged_options, deep_clone(feature.options))
 
-      # Debug output
-      puts "[DEBUG] Resolved imports for '#{feature_name}': #{merged_options.inspect[0..200]}" if ENV['DEBUG_IMPORTS']
-
       # Update the feature's options with merged result and mark as resolved
-      if ENV['DEBUG_IMPORTS']
-        old_opts = feature.options
-        puts "[DEBUG] Updating '#{feature_name}' options from #{old_opts.dig('message', 'arguments',
-                                                                             'name').inspect} to #{merged_options.dig('message', 'arguments', 'name').inspect}"
-      end
       feature.instance_variable_set(:@options, merged_options)
       resolved.add(feature_name)
 

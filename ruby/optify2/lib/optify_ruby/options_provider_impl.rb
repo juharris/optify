@@ -8,7 +8,6 @@ require_relative 'configurable_string'
 
 module Optify
   # Core implementation of OptionsProvider in pure Ruby
-  # rubocop:disable Metrics/ClassLength
   class OptionsProviderImpl
     #: Hash[String, Feature]
     attr_reader :features
@@ -210,8 +209,6 @@ module Optify
       root_key = key_parts.first
       return {} unless root_key
 
-      puts "[DEBUG build_options] Building options for key='#{key}', features=#{feature_names.inspect}, root_key='#{root_key}'" if ENV['DEBUG_IMPORTS']
-
       result = {} #: untyped
 
       feature_names.each do |name|
@@ -220,8 +217,6 @@ module Optify
 
         feature_options = feature.options[root_key]
         next unless feature_options
-
-        puts "[DEBUG build_options] Feature '#{name}' options for key '#{root_key}': #{feature_options.inspect[0..200]}" if ENV['DEBUG_IMPORTS']
 
         result = merge_feature_options(result, feature_options)
       end
@@ -237,8 +232,6 @@ module Optify
 
         result = ConfigurableString.process_value(result, base_dir)
       end
-
-      puts "[DEBUG build_options] Final result for key '#{key}': #{result.inspect[0..200]}" if ENV['DEBUG_IMPORTS']
 
       # Navigate to nested value if key has path
       if key_parts.length > 1
@@ -295,5 +288,4 @@ module Optify
       end
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end
