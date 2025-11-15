@@ -5,6 +5,11 @@ AllCops:
   # We'll enable them as needed.
   # Don't want to accept any new ones without reviewing them.
   NewCops: disable
+  Exclude:
+    - "pkg/**/*"
+    - "sorbet/**/*.rbi"
+    - "tmp/**/*"
+    - "vendor/**/*"
 
 # Disable for RBS in comments.
 Layout/LeadingCommentSpace:
