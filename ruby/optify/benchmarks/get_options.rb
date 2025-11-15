@@ -6,7 +6,7 @@ require_relative '../lib/optify'
 
 puts "PID: #{Process.pid}"
 
-N = 100_000
+N = 10_000
 
 # Simple test suite
 simple_provider = Optify::OptionsProvider.build('../../tests/test_suites/simple/configs')
@@ -31,13 +31,14 @@ configurable_preferences.enable_configurable_strings
 
 configurable_feature_trials = [
   ['simple'],
-  ['imports'],
   %w[simple imports],
   ['imports_imports'],
   %w[simple override_name],
   %w[simple raw_overrides],
   ['with_files'],
-  %w[simple with_files]
+  %w[simple with_files],
+  ['with_files_in_arguments'],
+  %w[simple with_files_in_arguments]
 ]
 
 Benchmark.bm do |x|
