@@ -1,0 +1,533 @@
+{
+	"options": {
+		"config1": {
+			"level1": {
+				"level2": {
+					"key1": "This is a very long string value that contains many characters and should test the system's ability to handle lengthy text content in configuration files. It includes various types of content like descriptions, explanations, and detailed information that might be used in real-world scenarios.",
+					"key2": "Another extremely long string value that demonstrates the complexity of configuration data. This string contains multiple sentences, various punctuation marks, and represents the kind of detailed configuration information that applications might need to store and process efficiently.",
+					"key3": "Yet another lengthy string value that tests the limits of configuration handling. This particular string includes numbers like 123456789, special characters like !@#$%^&*(), and demonstrates how configuration systems need to handle diverse content types.",
+					"key4": "A fourth long string value that continues to test the system's robustness. This string might contain URLs like https://example.com/path/to/resource?param=value&other=123, email addresses like user@example.com, and other complex data formats.",
+					"key5": "The fifth key contains an even longer string value that spans multiple conceptual areas. It discusses various topics, includes technical terminology, and represents the kind of comprehensive configuration data that modern applications require.",
+					"key6": "String value number six with extensive content. This includes various language elements, demonstrates text processing capabilities, and shows how configuration systems handle rich textual data.",
+					"key7": "Seventh key with another substantial string value. This content includes formatting considerations, demonstrates encoding handling, and tests the system's ability to preserve complex text structures.",
+					"key8": "Eighth key containing a long string value. This demonstrates how configuration systems handle verbose descriptions, detailed explanations, and comprehensive documentation within configuration data.",
+					"key9": "Ninth key with extensive string content. This value includes various data representations, demonstrates content diversity, and tests the robustness of configuration parsing and merging mechanisms.",
+					"key10": "Tenth key with another lengthy string value. This content represents the kind of detailed information that might be stored in configuration files, including descriptions, metadata, and other comprehensive data.",
+					"key11": "Eleventh key containing a substantial string value. This demonstrates how configuration systems handle large amounts of textual data, including descriptions, explanations, and detailed information.",
+					"key12": "Twelfth key with extensive string content. This value includes various types of information, demonstrates content complexity, and tests the system's ability to handle diverse data formats.",
+					"key13": "Thirteenth key containing another long string value. This demonstrates how configuration systems process verbose content, including detailed descriptions and comprehensive information.",
+					"key14": "Fourteenth key with substantial string content. This value includes various data types, demonstrates content richness, and tests the robustness of configuration handling mechanisms.",
+					"key15": "Fifteenth key containing an extensive string value. This demonstrates how configuration systems handle large amounts of textual data, including descriptions, metadata, and other comprehensive information.",
+					"key16": "Sixteenth key with another lengthy string value. This content represents the kind of detailed information that might be stored in configuration files, including various types of data and comprehensive descriptions.",
+					"key17": "Seventeenth key containing substantial string content. This demonstrates how configuration systems process verbose data, including detailed explanations and comprehensive information.",
+					"key18": "Eighteenth key with extensive string value. This includes various content types, demonstrates data complexity, and tests the system's ability to handle diverse information formats.",
+					"key19": "Nineteenth key containing another long string value. This demonstrates how configuration systems handle large amounts of textual content, including descriptions and detailed information.",
+					"key20": "Twentieth key with substantial string content. This value includes various data representations, demonstrates content diversity, and tests the robustness of configuration parsing mechanisms.",
+					"key21": "Twenty-first key containing an extensive string value. This demonstrates how configuration systems process comprehensive data, including detailed descriptions and various types of information.",
+					"key22": "Twenty-second key with another lengthy string value. This content represents the kind of detailed information that might be stored in configuration files, including descriptions and comprehensive data.",
+					"key23": "Twenty-third key containing substantial string content. This demonstrates how configuration systems handle verbose information, including detailed explanations and comprehensive descriptions.",
+					"key24": "Twenty-fourth key with extensive string value. This includes various content types, demonstrates data richness, and tests the system's ability to handle diverse information formats.",
+					"key25": "Twenty-fifth key containing another long string value. This demonstrates how configuration systems process large amounts of textual data, including descriptions and detailed information.",
+					"key26": "Twenty-sixth key with substantial string content. This value includes various data types, demonstrates content complexity, and tests the robustness of configuration handling mechanisms.",
+					"key27": "Twenty-seventh key containing an extensive string value. This demonstrates how configuration systems handle comprehensive data, including detailed descriptions and various types of information.",
+					"key28": "Twenty-eighth key with another lengthy string value. This content represents the kind of detailed information that might be stored in configuration files, including descriptions and comprehensive data.",
+					"key29": "Twenty-ninth key containing substantial string content. This demonstrates how configuration systems process verbose information, including detailed explanations and comprehensive descriptions.",
+					"key30": "Thirtieth key with extensive string value. This includes various content types, demonstrates data richness, and tests the system's ability to handle diverse information formats.",
+					"key31": "Thirty-first key containing another long string value. This demonstrates how configuration systems process large amounts of textual data, including descriptions and detailed information.",
+					"key32": "Thirty-second key with substantial string content. This value includes various data types, demonstrates content complexity, and tests the robustness of configuration handling mechanisms.",
+					"key33": "Thirty-third key containing an extensive string value. This demonstrates how configuration systems handle comprehensive data, including detailed descriptions and various types of information.",
+					"key34": "Thirty-fourth key with another lengthy string value. This content represents the kind of detailed information that might be stored in configuration files, including descriptions and comprehensive data.",
+					"key35": "Thirty-fifth key containing substantial string content. This demonstrates how configuration systems process verbose information, including detailed explanations and comprehensive descriptions.",
+					"key36": "Thirty-sixth key with extensive string value. This includes various content types, demonstrates data richness, and tests the system's ability to handle diverse information formats.",
+					"key37": "Thirty-seventh key containing another long string value. This demonstrates how configuration systems process large amounts of textual data, including descriptions and detailed information.",
+					"key38": "Thirty-eighth key with substantial string content. This value includes various data types, demonstrates content complexity, and tests the robustness of configuration handling mechanisms.",
+					"key39": "Thirty-ninth key containing an extensive string value. This demonstrates how configuration systems handle comprehensive data, including detailed descriptions and various types of information.",
+					"key40": "Fortieth key with another lengthy string value. This content represents the kind of detailed information that might be stored in configuration files, including descriptions and comprehensive data.",
+					"key41": "Forty-first key containing substantial string content. This demonstrates how configuration systems process verbose information, including detailed explanations and comprehensive descriptions.",
+					"key42": "Forty-second key with extensive string value. This includes various content types, demonstrates data richness, and tests the system's ability to handle diverse information formats.",
+					"key43": "Forty-third key containing another long string value. This demonstrates how configuration systems process large amounts of textual data, including descriptions and detailed information.",
+					"key44": "Forty-fourth key with substantial string content. This value includes various data types, demonstrates content complexity, and tests the robustness of configuration handling mechanisms.",
+					"key45": "Forty-fifth key containing an extensive string value. This demonstrates how configuration systems handle comprehensive data, including detailed descriptions and various types of information.",
+					"key46": "Forty-sixth key with another lengthy string value. This content represents the kind of detailed information that might be stored in configuration files, including descriptions and comprehensive data.",
+					"key47": "Forty-seventh key containing substantial string content. This demonstrates how configuration systems process verbose information, including detailed explanations and comprehensive descriptions.",
+					"key48": "Forty-eighth key with extensive string value. This includes various content types, demonstrates data richness, and tests the system's ability to handle diverse information formats.",
+					"key49": "Forty-ninth key containing another long string value. This demonstrates how configuration systems process large amounts of textual data, including descriptions and detailed information.",
+					"key50": "Fiftieth key with substantial string content. This value includes various data types, demonstrates content complexity, and tests the robustness of configuration handling mechanisms."
+				}
+			}
+		},
+		"config2": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "First nested key with long string value",
+						"key2": "Second nested key with another long string value",
+						"key3": "Third nested key with yet another long string value"
+					}
+				}
+			}
+		},
+		"config3": {
+			"level1": {
+				"key1": "Simple two-level key with long string value",
+				"key2": "Another simple two-level key with long string value"
+			}
+		},
+		"config4": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep key with long string value",
+							"key2": "Another four-level deep key"
+						}
+					}
+				}
+			}
+		},
+		"config5": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"level5": {
+								"key1": "Five-level deep key with long string value",
+								"key2": "Another five-level deep key"
+							}
+						}
+					}
+				}
+			}
+		},
+		"config6": {
+			"level1": {
+				"level2": {
+					"key1": "Three-level key one",
+					"key2": "Three-level key two",
+					"key3": "Three-level key three"
+				}
+			}
+		},
+		"config7": {
+			"level1": {
+				"key1": "Two-level key one",
+				"key2": "Two-level key two"
+			}
+		},
+		"config8": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"config9": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level nested key",
+					"key2": "Another two-level nested key"
+				}
+			}
+		},
+		"config10": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"config11": {
+			"level1": {
+				"key1": "Simple configuration key",
+				"key2": "Another simple configuration key"
+			}
+		},
+		"config12": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"config13": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"config14": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep key",
+							"key2": "Another four-level deep key"
+						}
+					}
+				}
+			}
+		},
+		"config15": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"config16": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"config17": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"config18": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"config19": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"config20": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"config21": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"config22": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"config23": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"config24": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"config25": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"config26": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"config27": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"config28": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"config29": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"config30": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"config31": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"config32": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"config33": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"config34": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"config35": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"config36": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"config37": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"config38": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"config39": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"config40": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"level5": {
+								"key1": "Five-level deep configuration",
+								"key2": "Another five-level deep configuration",
+								"key3": "Third five-level deep configuration",
+								"key4": "Fourth five-level deep configuration",
+								"key5": "Fifth five-level deep configuration",
+								"key6": "Sixth five-level deep configuration",
+								"key7": "Seventh five-level deep configuration",
+								"key8": "Eighth five-level deep configuration",
+								"key9": "Ninth five-level deep configuration",
+								"key10": "Tenth five-level deep configuration",
+								"key11": "Eleventh five-level deep configuration",
+								"key12": "Twelfth five-level deep configuration",
+								"key13": "Thirteenth five-level deep configuration",
+								"key14": "Fourteenth five-level deep configuration",
+								"key15": "Fifteenth five-level deep configuration",
+								"key16": "Sixteenth five-level deep configuration",
+								"key17": "Seventeenth five-level deep configuration",
+								"key18": "Eighteenth five-level deep configuration",
+								"key19": "Nineteenth five-level deep configuration",
+								"key20": "Twentieth five-level deep configuration",
+								"key21": "Twenty-first five-level deep configuration",
+								"key22": "Twenty-second five-level deep configuration",
+								"key23": "Twenty-third five-level deep configuration",
+								"key24": "Twenty-fourth five-level deep configuration",
+								"key25": "Twenty-fifth five-level deep configuration",
+								"key26": "Twenty-sixth five-level deep configuration",
+								"key27": "Twenty-seventh five-level deep configuration",
+								"key28": "Twenty-eighth five-level deep configuration",
+								"key29": "Twenty-ninth five-level deep configuration",
+								"key30": "Thirtieth five-level deep configuration",
+								"key31": "Thirty-first five-level deep configuration",
+								"key32": "Thirty-second five-level deep configuration",
+								"key33": "Thirty-third five-level deep configuration",
+								"key34": "Thirty-fourth five-level deep configuration",
+								"key35": "Thirty-fifth five-level deep configuration",
+								"key36": "Thirty-sixth five-level deep configuration",
+								"key37": "Thirty-seventh five-level deep configuration",
+								"key38": "Thirty-eighth five-level deep configuration",
+								"key39": "Thirty-ninth five-level deep configuration",
+								"key40": "Fortieth five-level deep configuration",
+								"key41": "Forty-first five-level deep configuration",
+								"key42": "Forty-second five-level deep configuration",
+								"key43": "Forty-third five-level deep configuration",
+								"key44": "Forty-fourth five-level deep configuration",
+								"key45": "Forty-fifth five-level deep configuration",
+								"key46": "Forty-sixth five-level deep configuration",
+								"key47": "Forty-seventh five-level deep configuration",
+								"key48": "Forty-eighth five-level deep configuration",
+								"key49": "Forty-ninth five-level deep configuration",
+								"key50": "Fiftieth five-level deep configuration"
+							}
+						}
+					}
+				}
+			}
+		},
+		"listConfig": [
+			"First item in a very long list that contains many elements",
+			"Second item with extensive content that demonstrates list handling",
+			"Third item that includes various types of data and information",
+			"Fourth item containing detailed descriptions and comprehensive data",
+			"Fifth item with substantial content that tests list processing",
+			"Sixth item including various language elements and text structures",
+			"Seventh item with formatting considerations and encoding handling",
+			"Eighth item demonstrating verbose descriptions and detailed explanations",
+			"Ninth item containing various data representations and content diversity",
+			"Tenth item with detailed information and comprehensive data storage",
+			"Eleventh item including descriptions, metadata, and other information",
+			"Twelfth item with various types of information and content complexity",
+			"Thirteenth item containing detailed descriptions and comprehensive information",
+			"Fourteenth item including various data types and content richness",
+			"Fifteenth item with large amounts of textual data and descriptions",
+			"Sixteenth item containing detailed information and comprehensive data",
+			"Seventeenth item including detailed explanations and comprehensive information",
+			"Eighteenth item with various content types and data complexity",
+			"Nineteenth item containing large amounts of textual content and descriptions",
+			"Twentieth item including various data representations and content diversity",
+			"Twenty-first item with comprehensive data and detailed descriptions",
+			"Twenty-second item containing detailed information and comprehensive data",
+			"Twenty-third item including detailed explanations and comprehensive descriptions",
+			"Twenty-fourth item with various content types and data richness",
+			"Twenty-fifth item containing large amounts of textual data and descriptions",
+			"Twenty-sixth item including various data types and content complexity",
+			"Twenty-seventh item with comprehensive data and detailed descriptions",
+			"Twenty-eighth item containing detailed information and comprehensive data",
+			"Twenty-ninth item including detailed explanations and comprehensive descriptions",
+			"Thirtieth item with various content types and data richness",
+			"Thirty-first item containing large amounts of textual data and descriptions",
+			"Thirty-second item including various data types and content complexity",
+			"Thirty-third item with comprehensive data and detailed descriptions",
+			"Thirty-fourth item containing detailed information and comprehensive data",
+			"Thirty-fifth item including detailed explanations and comprehensive descriptions",
+			"Thirty-sixth item with various content types and data richness",
+			"Thirty-seventh item containing large amounts of textual data and descriptions",
+			"Thirty-eighth item including various data types and content complexity",
+			"Thirty-ninth item with comprehensive data and detailed descriptions",
+			"Fortieth item containing detailed information and comprehensive data",
+			"Forty-first item including detailed explanations and comprehensive descriptions",
+			"Forty-second item with various content types and data richness",
+			"Forty-third item containing large amounts of textual data and descriptions",
+			"Forty-fourth item including various data types and content complexity",
+			"Forty-fifth item with comprehensive data and detailed descriptions",
+			"Forty-sixth item containing detailed information and comprehensive data",
+			"Forty-seventh item including detailed explanations and comprehensive descriptions",
+			"Forty-eighth item with various content types and data richness",
+			"Forty-ninth item containing large amounts of textual data and descriptions",
+			"Fiftieth item including various data types and content complexity"
+		],
+		"configurableString1": {
+			"$type": "Optify.ConfigurableString",
+			"base": "This is a configurable string with a very long value that contains many characters and should test the system's ability to handle lengthy text content in configuration files."
+		},
+		"configurableString2": {
+			"$type": "Optify.ConfigurableString",
+			"base": {
+				"liquid": "Welcome to {{ name }}! This is a very long liquid template string that contains many characters and should test the system's ability to handle lengthy text content in configuration files."
+			},
+			"arguments": {
+				"name": "Optify Configuration System"
+			}
+		}
+	}
+}

@@ -1,0 +1,205 @@
+# Tools for working with configurations declared in files.
+module Optify
+end
+
+# DEPRECATED: Use `Optify::FromHashable` instead.
+# A base class for classes from configuration files.
+# Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`
+# because they will have an implementation of `from_hash` that works recursively.
+# This class is a work in progress with minimal error handling
+# and doesn't handle certain cases such as nilable types yet.
+# It may be moved to another gem in the future.
+class Optify::BaseConfig < FromHashable
+end
+
+# Options for caching.
+# Only enabling or disabling caching is supported for now.
+class Optify::CacheOptions < FromHashable
+end
+
+# Information about a feature.
+class Optify::OptionsMetadata < FromHashable
+  def aliases: () -> ::Array[String]?
+
+  # The canonical names of features that import this one.
+  def dependents: () -> ::Array[String]?
+
+  def details: () -> untyped
+
+  def name: () -> String
+
+  def owners: () -> String?
+
+  def path: () -> String?
+end
+
+# Preferences when getting options.
+class Optify::GetOptionsPreferences
+  # Indicates if configurable strings are enabled.
+  # They are disabled by default.
+  def are_configurable_strings_enabled?: () -> bool
+
+  # Disable configurable strings which default to disabled.
+  def disable_configurable_strings: () -> void
+
+  # Enable configurable strings which default to disabled.
+  def enable_configurable_strings: () -> void
+
+  # Set constraints for the current request to limit the features that can be enabled.
+  def constraints=: (::Hash[untyped, untyped]? value) -> void
+
+  def constraints_json=: (String? value) -> void
+
+  def constraints_json: () -> String?
+
+  # Indicates if overrides are set.
+  def overrides?: () -> bool
+
+  # Set overrides to apply after building the options based on the feature names.
+  # Do not provide overrides when requesting cached options.
+  # @param value The overrides to apply.
+  def overrides=: (::Hash[untyped, untyped]? value) -> void
+
+  # Set overrides to apply after building the options based on the feature names.
+  # Do not provide overrides when requesting cached options.
+  # @param value The overrides to apply as serialized JSON.
+  def overrides_json=: (String? value) -> void
+
+  def overrides_json: () -> String?
+
+  def skip_feature_name_conversion=: (bool value) -> void
+
+  def skip_feature_name_conversion: () -> bool
+end
+
+# A registry of features that provides configurations.
+class Optify::OptionsRegistry
+  include ProviderModule
+
+  # Build using just one directory.
+  # @param directory The directory to build the provider from.
+  # @return The instance.
+  def build: (String directory) -> instance
+
+  # Build using just one directory and enforce a schema for all feature files.
+  # @param directory The directory to build the provider from.
+  # @param schema_path The path to the file of the schema to enforce.
+  # @return The instance.
+  def build_with_schema: (String directory, String schema_path) -> instance
+
+  # Build from multiple directories.
+  # @param directories The directories to build the provider from.
+  # @return The instance.
+  def build_from_directories: (::Array[String] directories) -> instance
+
+  # Build from multiple directories and enforce a schema for all feature files.
+  # @param directories The directories to build the provider from.
+  # @param schema The schema to enforce.
+  # @return The instance.
+  def build_from_directories_with_schema: (::Array[String] directories, String schema_path) -> instance
+
+  # @return All of the aliases.
+  def aliases: () -> ::Array[String]
+
+  # @return All of the aliases and features.
+  def features_and_aliases: () -> ::Array[String]
+
+  # @return All of the canonical feature names.
+  def features: () -> ::Array[String]
+
+  # @return All of the keys and values for the the features.
+  def features_with_metadata: () -> ::Hash[String, OptionsMetadata]
+
+  def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+end
+
+# A module only for internal use that provides the methods to help implement providers.
+# Some of the methods shown within this module are implemented in Rust
+# and are declared in this common module to avoid duplicate declarations in different classes.
+module Optify::ProviderModule
+  # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
+  # Canonical feature names map to themselves.
+  #
+  # @param feature_name The name of an alias or a feature.
+  # @return The canonical feature name.
+  def get_canonical_feature_name: (String feature_name) -> String
+
+  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+  # Canonical feature names map to themselves.
+  # This implementation may do an optimization for small arrays.
+  #
+  # @param feature_names The names of aliases or features.
+  # @return The canonical feature names.
+  def get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
+
+  # @return The metadata for the feature.
+  def get_feature_metadata: (String canonical_feature_name) -> OptionsMetadata?
+
+  def get_filtered_features: (::Array[String] feature_names, GetOptionsPreferences preferences) -> ::Array[String]
+
+  def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+
+  # Fetches options in JSON format based on the provided key and feature names.
+  #
+  # @param key [String] the key to fetch options for.
+  # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+  # @return [String] the options in JSON.
+  def get_options_json: (String key, ::Array[String] feature_names) -> String
+
+  def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
+
+  # (Optional) Eagerly initializes the cache.
+  # @return `self`.
+  def init: () -> self
+
+  # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
+  # Canonical feature names map to themselves.
+  # This implementation calls the Rust implementation directly.
+  #
+  # @param feature_names The names of aliases or features.
+  # @return The canonical feature names.
+  def _get_canonical_feature_names: (::Array[String] feature_names) -> ::Array[String]
+
+  # @return The metadata for the feature.
+  def get_feature_metadata_json: (String canonical_feature_name) -> String?
+
+  # @return All of the keys and values for the the features.
+  def features_with_metadata_json: () -> String
+end
+
+# Provides configurations based on keys and enabled feature names.
+class Optify::OptionsProvider < OptionsRegistry
+end
+
+# A builder for creating an `OptionsProvider` instance.
+class Optify::OptionsProviderBuilder
+  # Adds a directory to the builder.
+  #
+  # @param path [String] The path of the directory to add.
+  # @return [OptionsProviderBuilder] `self`.
+  def add_directory: (String path) -> OptionsProviderBuilder
+
+  # @return [OptionsProvider] A newly built `OptionsProvider`.
+  def build: () -> OptionsProvider
+end
+
+# Like `OptionsProvider` but also watches for changes to the files and reloads the options.
+class Optify::OptionsWatcher < OptionsRegistry
+  # @return [Time] Returns the time when the provider was finished building.
+  def last_modified: () -> Time
+end
+
+# A builder for creating an `OptionsWatcher` instance.
+#
+# This builder is kept separate from the `OptionsProviderBuilder`
+# in order to keep `OptionsProviderBuilder` and `OptionsProvider` as simple and efficient as possible for production use.
+class Optify::OptionsWatcherBuilder
+  # Adds a directory to watch for changes.
+  #
+  # @param path [String] The path of the directory to add.
+  # @return [OptionsWatcherBuilder] `self`.
+  def add_directory: (String path) -> OptionsWatcherBuilder
+
+  # @return [OptionsWatcher] A newly built `OptionsWatcher`.
+  def build: () -> OptionsWatcher
+end

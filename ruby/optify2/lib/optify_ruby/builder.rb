@@ -1,0 +1,195 @@
+# typed: strict
+# frozen_string_literal: true
+
+require 'sorbet-runtime'
+require_relative 'feature'
+require_relative 'options_provider_impl'
+require_relative 'config_loader'
+require_relative 'builder_options'
+
+module Optify
+  # Builder for constructing OptionsProvider instances
+  class OptionsProviderBuilderImpl
+    #: -> void
+    def initialize
+      @directories = [] #: Array[String]
+      @features = {} #: Hash[String, Feature]
+      @alias_map = {} #: Hash[String, String]
+      @loaded_files = {} #: Hash[String, String]
+      @builder_options = BuilderOptions.new #: BuilderOptions
+      @has_loaded_config = false #: bool
+    end
+
+    #: (String) -> OptionsProviderBuilderImpl
+    def add_directory(directory)
+      # Load the directory immediately and read its config
+      @directories << directory
+
+      # Load config from this directory if we haven't loaded one yet
+      unless @has_loaded_config
+        config_path = File.join(directory, '.optify', 'config.json')
+        if File.exist?(config_path)
+          @builder_options = BuilderOptions.from_file(config_path)
+          @has_loaded_config = true
+        end
+      end
+
+      # Load all features from this directory
+      load_directory(directory, @features, @alias_map, @loaded_files)
+
+      self
+    end
+
+    #: -> OptionsProviderImpl
+    def build
+      # Resolve imports for all features (already loaded in add_directory)
+      resolve_all_imports(@features)
+
+      OptionsProviderImpl.new(
+        @features,
+        @alias_map,
+        @directories,
+        @builder_options.are_configurable_strings_enabled,
+        @loaded_files
+      )
+    end
+
+    private
+
+    #: (String, Hash[String, Feature], Hash[String, String], Hash[String, String]) -> void
+    def load_directory(directory, features, alias_map, loaded_files)
+      return unless Dir.exist?(directory)
+
+      # Load all files from directory (not just config files)
+      Dir.glob(File.join(directory, '**', '*')).each do |file_path|
+        next unless File.file?(file_path)
+        next if file_path.include?('/.optify/')
+
+        # Store file contents for configurable string resolution
+        # FIXME: Don't store option files.
+        begin
+          relative_path = file_path.sub("#{directory}/", '')
+          contents = File.read(file_path)
+          loaded_files[relative_path] = contents
+        rescue StandardError => e
+          # FIXME: Give error.
+          warn "Error reading file #{file_path}: #{e.message}. Skipping file."
+        end
+      end
+
+      # Load features from config files
+      Dir.glob(File.join(directory, '**', '*.{json,json5,yaml,yml}')).each do |file_path|
+        next if file_path.include?('/.optify/')
+
+        feature_name = extract_feature_name(file_path, directory)
+        next unless feature_name
+
+        feature = Feature.from_file(file_path, feature_name)
+        features[feature_name] = feature
+
+        # Add actual aliases to the map
+        feature.metadata.aliases&.each do |alias_name|
+          alias_map[alias_name.downcase] = feature_name
+        end
+      end
+
+      # Add feature names themselves for case-insensitive lookup
+      features.each_key do |fname|
+        alias_map[fname.downcase] = fname
+      end
+    end
+
+    #: (String, String) -> String?
+    def extract_feature_name(file_path, base_dir)
+      relative_path = file_path.sub(base_dir, '').sub(%r{^/}, '')
+      return nil if relative_path.start_with?('.optify')
+
+      relative_path.sub(File.extname(relative_path), '').tr('/', '/')
+    end
+
+    #: (Hash[String, Feature]) -> void
+    def resolve_all_imports(features)
+      resolved = Set.new
+      features.each_key do |name|
+        feature = features[name]
+        next unless feature&.imports
+
+        resolve_imports_for_feature(name, features, Set.new, resolved)
+      end
+    end
+
+    #: (String, Hash[String, Feature], Set[String], Set[String]) -> Hash[String, untyped]
+    def resolve_imports_for_feature(feature_name, features, resolution_path, resolved)
+      feature = features[feature_name]
+      return {} unless feature
+
+      # If already resolved, return a deep clone of the (possibly merged) options
+      return deep_clone(feature.options) if resolved.include?(feature_name)
+
+      # If no imports, mark as resolved and return a deep clone
+      unless feature.imports
+        resolved.add(feature_name)
+        return deep_clone(feature.options)
+      end
+
+      # Check for cycles
+      raise "Cycle detected when resolving imports for '#{feature_name}'. Path: #{resolution_path.to_a}" if resolution_path.include?(feature_name)
+
+      # Add current feature to resolution path
+      new_path = resolution_path.dup.add(feature_name)
+
+      # Build merged options from imports
+      merged_options = {}
+      feature.imports&.each do |import_name|
+        imported_feature = features[import_name]
+        raise "Import '#{import_name}' not found for feature '#{feature_name}'" unless imported_feature
+
+        # Check that imported feature doesn't have conditions
+        raise "Import '#{import_name}' has conditions. Imported features cannot have conditions." unless imported_feature.conditions.nil?
+
+        # Recursively resolve imports for the imported feature
+        import_options = resolve_imports_for_feature(import_name, features, new_path, resolved)
+        deep_merge!(merged_options, import_options)
+      end
+
+      # Merge feature's own options on top (deep clone to avoid shared references)
+      deep_merge!(merged_options, deep_clone(feature.options))
+
+      # Update the feature's options with merged result and mark as resolved
+      feature.instance_variable_set(:@options, merged_options)
+      resolved.add(feature_name)
+
+      # Return a deep clone to avoid shared references
+      deep_clone(merged_options)
+    end
+
+    #: (Hash[String, untyped], Hash[String, untyped]) -> Hash[String, untyped]
+    def deep_merge!(target, source)
+      source.each do |key, value|
+        case value
+        when Hash
+          if target[key].is_a?(Hash)
+            deep_merge!(target[key], value)
+          else
+            target[key] = value
+          end
+        else
+          target[key] = value
+        end
+      end
+      target
+    end
+
+    #: (untyped) -> untyped
+    def deep_clone(obj)
+      case obj
+      when Hash
+        obj.transform_values { |v| deep_clone(v) }
+      when Array
+        obj.map { |v| deep_clone(v) }
+      else
+        obj
+      end
+    end
+  end
+end

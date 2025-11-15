@@ -1,0 +1,476 @@
+{
+	"features": [
+		"complex_wide_structure"
+	],
+	"options": {
+		"wideConfig1": {
+			"level1": {
+				"key1": "Simple two-level key with long string value",
+				"key2": "Another simple two-level key with long string value"
+			}
+		},
+		"wideConfig2": {
+			"level1": {
+				"level2": {
+					"key1": "Three-level key one",
+					"key2": "Three-level key two",
+					"key3": "Three-level key three"
+				}
+			}
+		},
+		"wideConfig3": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"wideConfig4": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep key",
+							"key2": "Another four-level deep key"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig5": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"level5": {
+								"key1": "Five-level deep key",
+								"key2": "Another five-level deep key"
+							}
+						}
+					}
+				}
+			}
+		},
+		"wideConfig6": {
+			"level1": {
+				"key1": "Two-level key one",
+				"key2": "Two-level key two"
+			}
+		},
+		"wideConfig7": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level nested key",
+					"key2": "Another two-level nested key"
+				}
+			}
+		},
+		"wideConfig8": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig9": {
+			"level1": {
+				"key1": "Simple configuration key",
+				"key2": "Another simple configuration key"
+			}
+		},
+		"wideConfig10": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"wideConfig11": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"wideConfig12": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep key",
+							"key2": "Another four-level deep key"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig13": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"wideConfig14": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"wideConfig15": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"wideConfig16": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig17": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"wideConfig18": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"wideConfig19": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"wideConfig20": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig21": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"wideConfig22": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"wideConfig23": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"wideConfig24": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig25": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"wideConfig26": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"wideConfig27": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"wideConfig28": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig29": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"wideConfig30": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"wideConfig31": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"wideConfig32": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig33": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"wideConfig34": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"wideConfig35": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"wideConfig36": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"wideConfig37": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"wideConfig38": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"wideConfig39": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"wideConfig40": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"level5": {
+								"field_01": "This is field number one with a very long string value that contains extensive content to test the system's ability to handle lengthy text data in configuration files. It includes various types of information and demonstrates comprehensive data storage capabilities.",
+								"field_02": "Field number two contains another extremely long string value that demonstrates the complexity of configuration data. This string includes multiple sentences, various punctuation marks, and represents detailed configuration information.",
+								"field_03": "Third field with yet another lengthy string value that tests the limits of configuration handling. This particular string includes numbers like 987654321, special characters, and demonstrates diverse content types.",
+								"field_04": "Fourth field containing a long string value that continues to test system robustness. This string might contain URLs, email addresses, and other complex data formats that need proper handling.",
+								"field_05": "Fifth field with an even longer string value that spans multiple conceptual areas. It discusses various topics, includes technical terminology, and represents comprehensive configuration data.",
+								"field_06": "Sixth field containing extensive content with various language elements. This demonstrates text processing capabilities and shows how configuration systems handle rich textual data.",
+								"field_07": "Seventh field with substantial string value including formatting considerations. This demonstrates encoding handling and tests the system's ability to preserve complex text structures.",
+								"field_08": "Eighth field containing verbose descriptions and detailed explanations. This demonstrates how configuration systems handle comprehensive documentation within configuration data.",
+								"field_09": "Ninth field with extensive string content including various data representations. This demonstrates content diversity and tests the robustness of configuration parsing mechanisms.",
+								"field_10": "Tenth field containing detailed information that might be stored in configuration files. This includes descriptions, metadata, and other comprehensive data representations.",
+								"field_11": "Eleventh field with substantial string value demonstrating configuration system capabilities. This includes descriptions, explanations, and detailed information handling.",
+								"field_12": "Twelfth field containing various types of information and content complexity. This demonstrates the system's ability to handle diverse data formats effectively.",
+								"field_13": "Thirteenth field with verbose content including detailed descriptions. This demonstrates how configuration systems process comprehensive information efficiently.",
+								"field_14": "Fourteenth field containing various data types and content richness. This tests the robustness of configuration handling mechanisms and data processing.",
+								"field_15": "Fifteenth field with large amounts of textual data and descriptions. This demonstrates how configuration systems handle comprehensive information storage.",
+								"field_16": "Sixteenth field containing detailed information and comprehensive data. This represents the kind of content that might be stored in configuration files.",
+								"field_17": "Seventeenth field with detailed explanations and comprehensive information. This demonstrates how configuration systems process verbose data effectively.",
+								"field_18": "Eighteenth field containing various content types and data complexity. This tests the system's ability to handle diverse information formats properly.",
+								"field_19": "Nineteenth field with large amounts of textual content and descriptions. This demonstrates how configuration systems handle extensive data storage.",
+								"field_20": "Twentieth field containing various data representations and content diversity. This tests the robustness of configuration parsing and merging mechanisms.",
+								"field_21": "Twenty-first field with comprehensive data and detailed descriptions. This demonstrates how configuration systems process large amounts of information.",
+								"field_22": "Twenty-second field containing detailed information and comprehensive data. This represents content that might be stored in configuration files.",
+								"field_23": "Twenty-third field with detailed explanations and comprehensive descriptions. This demonstrates how configuration systems handle verbose information.",
+								"field_24": "Twenty-fourth field containing various content types and data richness. This tests the system's ability to handle diverse information formats.",
+								"field_25": "Twenty-fifth field with large amounts of textual data and descriptions. This demonstrates how configuration systems process comprehensive data.",
+								"field_26": "Twenty-sixth field containing various data types and content complexity. This tests the robustness of configuration handling mechanisms.",
+								"field_27": "Twenty-seventh field with comprehensive data and detailed descriptions. This demonstrates how configuration systems handle extensive information.",
+								"field_28": "Twenty-eighth field containing detailed information and comprehensive data. This represents the kind of content stored in configuration files.",
+								"field_29": "Twenty-ninth field with detailed explanations and comprehensive descriptions. This demonstrates how configuration systems process verbose data.",
+								"field_30": "Thirtieth field containing various content types and data richness. This tests the system's ability to handle diverse information formats effectively.",
+								"field_31": "Thirty-first field with large amounts of textual data and descriptions. This demonstrates how configuration systems handle comprehensive information.",
+								"field_32": "Thirty-second field containing various data types and content complexity. This tests the robustness of configuration handling and processing mechanisms.",
+								"field_33": "Thirty-third field with comprehensive data and detailed descriptions. This demonstrates how configuration systems process extensive information storage.",
+								"field_34": "Thirty-fourth field containing detailed information and comprehensive data. This represents content that might be stored in configuration files.",
+								"field_35": "Thirty-fifth field with detailed explanations and comprehensive descriptions. This demonstrates how configuration systems handle verbose information processing.",
+								"field_36": "Thirty-sixth field containing various content types and data richness. This tests the system's ability to handle diverse information formats properly.",
+								"field_37": "Thirty-seventh field with large amounts of textual data and descriptions. This demonstrates how configuration systems handle comprehensive data storage.",
+								"field_38": "Thirty-eighth field containing various data types and content complexity. This tests the robustness of configuration parsing and merging mechanisms.",
+								"field_39": "Thirty-ninth field with comprehensive data and detailed descriptions. This demonstrates how configuration systems process large amounts of information effectively.",
+								"field_40": "Fortieth field containing detailed information and comprehensive data. This represents the kind of content stored in configuration files for applications.",
+								"field_41": "Forty-first field with detailed explanations and comprehensive descriptions. This demonstrates how configuration systems handle verbose information processing.",
+								"field_42": "Forty-second field containing various content types and data richness. This tests the system's ability to handle diverse information formats effectively.",
+								"field_43": "Forty-third field with large amounts of textual data and descriptions. This demonstrates how configuration systems handle comprehensive data storage capabilities.",
+								"field_44": "Forty-fourth field containing various data types and content complexity. This tests the robustness of configuration handling and processing mechanisms.",
+								"field_45": "Forty-fifth field with comprehensive data and detailed descriptions. This demonstrates how configuration systems process extensive information storage efficiently.",
+								"field_46": "Forty-sixth field containing detailed information and comprehensive data. This represents content that might be stored in configuration files for various applications.",
+								"field_47": "Forty-seventh field with detailed explanations and comprehensive descriptions. This demonstrates how configuration systems handle verbose information processing effectively.",
+								"field_48": "Forty-eighth field containing various content types and data richness. This tests the system's ability to handle diverse information formats properly and efficiently.",
+								"field_49": "Forty-ninth field with large amounts of textual data and descriptions. This demonstrates how configuration systems handle comprehensive data storage and processing.",
+								"field_50": "Fiftieth field containing various data types and content complexity. This tests the robustness of configuration handling mechanisms and demonstrates comprehensive data processing capabilities."
+							}
+						}
+					}
+				}
+			}
+		},
+		"longListConfig": [
+			"First item in a very long list that contains many elements",
+			"Second item with extensive content that demonstrates list handling",
+			"Third item that includes various types of data and information",
+			"Fourth item containing detailed descriptions and comprehensive data",
+			"Fifth item with substantial content that tests list processing",
+			"Sixth item including various language elements and text structures",
+			"Seventh item with formatting considerations and encoding handling",
+			"Eighth item demonstrating verbose descriptions and detailed explanations",
+			"Ninth item containing various data representations and content diversity",
+			"Tenth item with detailed information and comprehensive data storage",
+			"Eleventh item including descriptions, metadata, and other information",
+			"Twelfth item with various types of information and content complexity",
+			"Thirteenth item containing detailed descriptions and comprehensive information",
+			"Fourteenth item including various data types and content richness",
+			"Fifteenth item with large amounts of textual data and descriptions",
+			"Sixteenth item containing detailed information and comprehensive data",
+			"Seventeenth item including detailed explanations and comprehensive information",
+			"Eighteenth item with various content types and data complexity",
+			"Nineteenth item containing large amounts of textual content and descriptions",
+			"Twentieth item including various data representations and content diversity",
+			"Twenty-first item with comprehensive data and detailed descriptions",
+			"Twenty-second item containing detailed information and comprehensive data",
+			"Twenty-third item including detailed explanations and comprehensive descriptions",
+			"Twenty-fourth item with various content types and data richness",
+			"Twenty-fifth item containing large amounts of textual data and descriptions",
+			"Twenty-sixth item including various data types and content complexity",
+			"Twenty-seventh item with comprehensive data and detailed descriptions",
+			"Twenty-eighth item containing detailed information and comprehensive data",
+			"Twenty-ninth item including detailed explanations and comprehensive descriptions",
+			"Thirtieth item with various content types and data richness",
+			"Thirty-first item containing large amounts of textual data and descriptions",
+			"Thirty-second item including various data types and content complexity",
+			"Thirty-third item with comprehensive data and detailed descriptions",
+			"Thirty-fourth item containing detailed information and comprehensive data",
+			"Thirty-fifth item including detailed explanations and comprehensive descriptions",
+			"Thirty-sixth item with various content types and data richness",
+			"Thirty-seventh item containing large amounts of textual data and descriptions",
+			"Thirty-eighth item including various data types and content complexity",
+			"Thirty-ninth item with comprehensive data and detailed descriptions",
+			"Fortieth item containing detailed information and comprehensive data",
+			"Forty-first item including detailed explanations and comprehensive descriptions",
+			"Forty-second item with various content types and data richness",
+			"Forty-third item containing large amounts of textual data and descriptions",
+			"Forty-fourth item including various data types and content complexity",
+			"Forty-fifth item with comprehensive data and detailed descriptions",
+			"Forty-sixth item containing detailed information and comprehensive data",
+			"Forty-seventh item including detailed explanations and comprehensive descriptions",
+			"Forty-eighth item with various content types and data richness",
+			"Forty-ninth item containing large amounts of textual data and descriptions",
+			"Fiftieth item including various data types and content complexity"
+		],
+		"configurableString1": "This is a configurable string with a very long value that contains many characters and should test the system's ability to handle lengthy text content in configuration files.",
+		"configurableString2": "Welcome to Optify Configuration System! This is a very long liquid template string that contains many characters and should test the system's ability to handle lengthy text content in configuration files."
+	}
+}

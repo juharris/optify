@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Compare benchmarks between optify and optify2
+
+require 'pathname'
+
+THIS_OPTIFY_ROOT = Pathname.new(__dir__).parent
+OPTIFY_ROOT = THIS_OPTIFY_ROOT.parent.join('optify')
+
+unless OPTIFY_ROOT.exist?
+  warn "Error: Original optify not found at #{OPTIFY_ROOT}"
+  exit 1
+end
+
+puts 'Benchmark Comparison: Rust-backed vs pure Ruby'
+puts '=' * 60
+puts
+
+puts 'Running with Rust-backed...'
+puts '-' * 60
+system("cd #{OPTIFY_ROOT} && bash benchmarks/run.sh", exception: true)
+
+puts
+puts
+puts '=' * 60
+puts
+
+puts 'Running with pure Ruby...'
+puts '-' * 60
+exec("#{__dir__}/run")
