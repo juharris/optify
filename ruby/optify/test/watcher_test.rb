@@ -1,10 +1,10 @@
-# frozen_string_literal: true
 # typed: true
+# frozen_string_literal: true
 
 require 'json'
 require 'test/unit'
 require 'tmpdir'
-require_relative '../lib/optify'
+require 'optify'
 require_relative 'my_config'
 
 class OptifyWatcherTest < Test::Unit::TestCase
@@ -18,6 +18,7 @@ class OptifyWatcherTest < Test::Unit::TestCase
                                             .add_directory(temp_dir)
                                             .build
     last_modified = provider.last_modified
+    assert_instance_of(Time, last_modified)
     assert_equal(last_modified, provider.last_modified)
 
     config_a = provider.get_options('myConfig', ['test'], MyConfig)

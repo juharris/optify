@@ -1,5 +1,5 @@
-# frozen_string_literal: true
 # typed: strong
+# frozen_string_literal: true
 
 # Tools for working with configurations declared in files.
 module Optify
