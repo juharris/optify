@@ -1,9 +1,9 @@
-# frozen_string_literal: true
 # typed: true
+# frozen_string_literal: true
 
 require 'json'
 require 'test/unit'
-require_relative '../lib/optify'
+require 'optify'
 require_relative 'my_config'
 
 class OptifyTest < Test::Unit::TestCase

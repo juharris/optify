@@ -1,7 +1,7 @@
 # typed: true
 # frozen_string_literal: true
 
-require_relative '../lib/optify_ruby/base_config'
+require 'optify-from_hash'
 
 # A custom configuration for testing for the conditions folder.
 class MyConditionsConfig < Optify::FromHashable
