@@ -52,8 +52,5 @@ Rake::TestTask.new do |t|
     puts "RB_SYS_CARGO_PROFILE: #{ENV['RB_SYS_CARGO_PROFILE']}"
   end
   t.deps << :compile
-  local_test_dir = File.expand_path('test', __dir__)
-  t.test_files = FileList[
-    File.join(local_test_dir, '*_test.rb')
-  ]
+  t.test_files = FileList[File.expand_path('test/*_test.rb', __dir__)]
 end
