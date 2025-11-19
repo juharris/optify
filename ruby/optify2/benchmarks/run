@@ -19,8 +19,6 @@ unless BENCHMARKS_DIR.exist?
 end
 
 # Pre-load optify2's implementation
-# Skip watcher to avoid 'listen' gem dependency
-ENV['OPTIFY_SKIP_WATCHER'] = '1'
 $LOAD_PATH.unshift(OPTIFY2_ROOT.join('lib').to_s)
 require 'optify'
 
