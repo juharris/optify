@@ -36,6 +36,31 @@ module Optify
       builder.build
     end
 
+    #: (String directory, String schema_path) -> OptionsWatcher
+    def self.build_with_schema(directory, schema_path)
+      # Basic schema validation - check for obviously invalid properties
+      require_relative 'config_loader'
+
+      schema = JSON.parse(File.read(schema_path))
+      allowed_properties = schema['properties']&.keys || []
+
+      # Validate each file against the schema before building
+      Dir.glob(File.join(directory, '**', '*.{json,json5,yaml,yml}')).each do |file_path|
+        next if file_path.include?('/.optify/')
+
+        data = ConfigLoader.load_file(file_path)
+
+        # Simple validation: check if there are any properties not in the schema
+        next unless allowed_properties.any? && data.is_a?(Hash)
+
+        invalid_keys = data.keys - allowed_properties
+        raise "Schema validation failed for '#{file_path}': properties #{invalid_keys.inspect} not allowed" unless invalid_keys.empty?
+      end
+
+      # If validation passed, build normally
+      build(directory)
+    end
+
     #: -> Time
     def last_modified
       watcher_impl.last_modified

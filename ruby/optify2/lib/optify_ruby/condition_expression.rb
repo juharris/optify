@@ -39,8 +39,17 @@ module Optify
 
     #: (String pattern) -> Predicate
     def self.matches(pattern)
+      # Validate pattern against common Rust regex requirements
+      # Rust regex is stricter about quantifiers like {} requiring valid syntax
+      # Check for unescaped { followed by non-digit (but ignore \{ which is escaped)
+      if pattern =~ /(?<!\\)\{[^0-9,}]/
+        raise ArgumentError, "Error deserializing configuration: invalid regex pattern '#{pattern}': repetition quantifier expects number or range (regex parse error)"
+      end
+
       regex = Regexp.new(pattern)
       new(regex, :matches)
+    rescue RegexpError => e
+      raise ArgumentError, "Error deserializing configuration: invalid regex pattern '#{pattern}': #{e.message} (regex parse error)"
     end
   end
 

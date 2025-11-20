@@ -2,6 +2,8 @@
 # Optify for Ruby in Ruby
 
 This version is written in pure Ruby and is an alternative to the Rust-backed version in [../optify](../optify).
+It is made to be a drop-in replacement for the Rust-backed version as this version uses the same tests as the Rust-backed version.
+This version was written with a lot of help from AI and will be reviewed closer and improved before releasing.
 
 <!-- [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config) -->
 

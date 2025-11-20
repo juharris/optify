@@ -45,6 +45,8 @@ module Optify
       # Resolve imports for all features (already loaded in add_directory)
       resolve_all_imports(@features)
 
+      build_dependents_graph(@features)
+
       OptionsProviderImpl.new(
         @features,
         @alias_map,
@@ -84,18 +86,40 @@ module Optify
         feature_name = extract_feature_name(file_path, directory)
         next unless feature_name
 
-        feature = Feature.from_file(file_path, feature_name)
+        begin
+          feature = Feature.from_file(file_path, feature_name)
+        rescue StandardError => e
+          # Re-raise with more context about which file failed
+          raise ArgumentError, "Error loading file '#{file_path}': #{e.message}"
+        end
         features[feature_name] = feature
 
-        # Add actual aliases to the map
+        # Add actual aliases to the map with duplicate checking
         feature.metadata.aliases&.each do |alias_name|
-          alias_map[alias_name.downcase] = feature_name
+          lowercase_alias = alias_name.downcase
+          lowercase_feature = feature_name.downcase
+
+          # Check if alias is the same as the feature name
+          if lowercase_alias == lowercase_feature
+            raise ArgumentError, "The alias '#{alias_name}' for canonical feature name '#{feature_name}' is already mapped to '#{feature_name}'."
+          end
+
+          if alias_map.key?(lowercase_alias)
+            existing = alias_map[lowercase_alias]
+            raise ArgumentError, "The alias '#{alias_name}' for canonical feature name '#{feature_name}' is already mapped to '#{existing}'."
+          end
+          alias_map[lowercase_alias] = feature_name
         end
       end
 
-      # Add feature names themselves for case-insensitive lookup
+      # Add feature names themselves for case-insensitive lookup with duplicate checking
       features.each_key do |fname|
-        alias_map[fname.downcase] = fname
+        lowercase_fname = fname.downcase
+        if alias_map.key?(lowercase_fname) && alias_map[lowercase_fname] != fname
+          existing = alias_map[lowercase_fname]
+          raise ArgumentError, "The alias '#{fname}' for canonical feature name '#{fname}' is already mapped to '#{existing}'."
+        end
+        alias_map[lowercase_fname] = fname
       end
     end
 
@@ -118,6 +142,47 @@ module Optify
       end
     end
 
+    #: (Hash[String, Feature]) -> void
+    def build_dependents_graph(features)
+      # Build a map of which features depend on each feature
+      dependents_map = {} #: Hash[String, Array[String]]
+
+      # First pass: build the dependents map
+      features.each do |name, feature|
+        imports = feature.imports
+        next unless imports
+
+        imports.each do |imported_name|
+          dependents_map[imported_name] ||= []
+          list = dependents_map[imported_name]
+          next unless list
+
+          list << name unless list.include?(name)
+        end
+      end
+
+      # Second pass: update each feature's metadata with its dependents
+      # rubocop:disable Style/CombinableLoops
+      features.each do |name, feature|
+        dependents = dependents_map[name]
+        next if dependents.nil? || dependents.empty?
+
+        # Create a new metadata hash with the dependents
+        metadata_hash = {
+          'name' => feature.metadata.name,
+          'path' => feature.metadata.path,
+          'aliases' => feature.metadata.aliases,
+          'dependents' => dependents.sort,
+          'details' => feature.metadata.details,
+          'owners' => feature.metadata.owners
+        }
+
+        new_metadata = OptionsMetadata.from_hash(metadata_hash)
+        feature.instance_variable_set(:@metadata, new_metadata)
+      end
+      # rubocop:enable Style/CombinableLoops
+    end
+
     #: (String, Hash[String, Feature], Set[String], Set[String]) -> Hash[String, untyped]
     def resolve_imports_for_feature(feature_name, features, resolution_path, resolved)
       feature = features[feature_name]
@@ -133,7 +198,9 @@ module Optify
       end
 
       # Check for cycles
-      raise "Cycle detected when resolving imports for '#{feature_name}'. Path: #{resolution_path.to_a}" if resolution_path.include?(feature_name)
+      if resolution_path.include?(feature_name)
+        raise "Error when resolving imports for '#{feature_name}': Cycle detected with import '#{feature_name}'. Path: #{resolution_path.to_a}"
+      end
 
       # Add current feature to resolution path
       new_path = resolution_path.dup.add(feature_name)
@@ -145,7 +212,9 @@ module Optify
         raise "Import '#{import_name}' not found for feature '#{feature_name}'" unless imported_feature
 
         # Check that imported feature doesn't have conditions
-        raise "Import '#{import_name}' has conditions. Imported features cannot have conditions." unless imported_feature.conditions.nil?
+        unless imported_feature.conditions.nil?
+          raise "Error when resolving imports for '#{feature_name}': The import '#{import_name}' has conditions. Conditions cannot be used in imported features."
+        end
 
         # Recursively resolve imports for the imported feature
         import_options = resolve_imports_for_feature(import_name, features, new_path, resolved)

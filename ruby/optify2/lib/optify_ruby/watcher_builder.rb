@@ -34,6 +34,8 @@ module Optify
         # Resolve imports for all features
         resolve_all_imports(features)
 
+        build_dependents_graph(features)
+
         OptionsProviderImpl.new(features, alias_map, @directories, are_configurable_strings_enabled, loaded_files)
       end
 

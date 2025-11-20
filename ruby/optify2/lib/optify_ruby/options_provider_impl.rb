@@ -156,7 +156,9 @@ module Optify
     #: (Array[String] feature_names, GetOptionsPreferences preferences) -> String
     def get_all_options_json(feature_names, preferences)
       skip_conversion = preferences.skip_feature_name_conversion
+      # FIXME: Handle nils instead of creating empty hashes.
       constraints = preferences.constraints || {}
+      overrides = preferences.overrides || {}
       configurable_strings_enabled = preferences.are_configurable_strings_enabled?
 
       canonical_names = if skip_conversion
@@ -173,9 +175,12 @@ module Optify
         all_keys.merge(feature.options.keys) if feature
       end
 
+      # Also include keys from overrides
+      all_keys.merge(overrides.keys)
+
       result = {}
       all_keys.each do |key|
-        options = build_options(key, filtered_names, {}, configurable_strings_enabled)
+        options = build_options(key, filtered_names, overrides, configurable_strings_enabled)
         result[key] = options
       end
 
@@ -209,9 +214,21 @@ module Optify
       # Handle nested keys like "myConfig.rootString"
       key_parts = key.split('.')
       root_key = key_parts.first
+      # FIXME: Don't return empty, instead raise an error because the key was not found since the key was not found... actually how does this even happen?
       return {} unless root_key
 
       result = {} #: untyped
+
+      # Check if key exists in any feature or overrides
+      key_found_in_override = overrides.key?(root_key) && !overrides[root_key].nil?
+      key_found_in_any_feature = feature_names.any? do |name|
+        feature = @features[name]
+        feature&.options&.key?(root_key)
+      end
+
+      unless key_found_in_any_feature || key_found_in_override
+        raise ArgumentError, "Error getting options with features #{feature_names}: missing configuration field \"#{root_key}\""
+      end
 
       feature_names.each do |name|
         feature = @features[name]
