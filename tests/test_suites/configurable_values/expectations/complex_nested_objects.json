@@ -1,0 +1,477 @@
+{
+	"features": [
+		"complex_nested_objects"
+	],
+	"options": {
+		"nestedConfig1": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "First nested key with long string value",
+						"key2": "Second nested key with another long string value",
+						"key3": "Third nested key with yet another long string value"
+					}
+				}
+			}
+		},
+		"nestedConfig2": {
+			"level1": {
+				"key1": "Simple two-level key with long string value",
+				"key2": "Another simple two-level key with long string value"
+			}
+		},
+		"nestedConfig3": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep key with long string value",
+							"key2": "Another four-level deep key"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig4": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"level5": {
+								"key1": "Five-level deep key with long string value",
+								"key2": "Another five-level deep key"
+							}
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig5": {
+			"level1": {
+				"level2": {
+					"key1": "Three-level key one",
+					"key2": "Three-level key two",
+					"key3": "Three-level key three"
+				}
+			}
+		},
+		"nestedConfig6": {
+			"level1": {
+				"key1": "Two-level key one",
+				"key2": "Two-level key two"
+			}
+		},
+		"nestedConfig7": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"nestedConfig8": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level nested key",
+					"key2": "Another two-level nested key"
+				}
+			}
+		},
+		"nestedConfig9": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig10": {
+			"level1": {
+				"key1": "Simple configuration key",
+				"key2": "Another simple configuration key"
+			}
+		},
+		"nestedConfig11": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"nestedConfig12": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"nestedConfig13": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep key",
+							"key2": "Another four-level deep key"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig14": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"nestedConfig15": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"nestedConfig16": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"nestedConfig17": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig18": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"nestedConfig19": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"nestedConfig20": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"nestedConfig21": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig22": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"nestedConfig23": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"nestedConfig24": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"nestedConfig25": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig26": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"nestedConfig27": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"nestedConfig28": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"nestedConfig29": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig30": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"nestedConfig31": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"nestedConfig32": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level key",
+					"key2": "Another two-level key"
+				}
+			}
+		},
+		"nestedConfig33": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep",
+							"key2": "Another four-level deep"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig34": {
+			"level1": {
+				"key1": "Simple configuration",
+				"key2": "Another simple configuration"
+			}
+		},
+		"nestedConfig35": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level configuration",
+						"key2": "Another three-level configuration"
+					}
+				}
+			}
+		},
+		"nestedConfig36": {
+			"level1": {
+				"level2": {
+					"key1": "Two-level configuration",
+					"key2": "Another two-level configuration"
+				}
+			}
+		},
+		"nestedConfig37": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep configuration",
+							"key2": "Another four-level deep configuration"
+						}
+					}
+				}
+			}
+		},
+		"nestedConfig38": {
+			"level1": {
+				"key1": "Simple key",
+				"key2": "Another simple key"
+			}
+		},
+		"nestedConfig39": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"key1": "Three-level key",
+						"key2": "Another three-level key"
+					}
+				}
+			}
+		},
+		"nestedConfig40": {
+			"level1": {
+				"level2": {
+					"level3": {
+						"level4": {
+							"key1": "Four-level deep key one with very long string value",
+							"key2": "Four-level deep key two with very long string value",
+							"key3": "Four-level deep key three with very long string value",
+							"key4": "Four-level deep key four with very long string value",
+							"key5": "Four-level deep key five with very long string value",
+							"key6": "Four-level deep key six with very long string value",
+							"key7": "Four-level deep key seven with very long string value",
+							"key8": "Four-level deep key eight with very long string value",
+							"key9": "Four-level deep key nine with very long string value",
+							"key10": "Four-level deep key ten with very long string value",
+							"key11": "Four-level deep key eleven with very long string value",
+							"key12": "Four-level deep key twelve with very long string value",
+							"key13": "Four-level deep key thirteen with very long string value",
+							"key14": "Four-level deep key fourteen with very long string value",
+							"key15": "Four-level deep key fifteen with very long string value",
+							"key16": "Four-level deep key sixteen with very long string value",
+							"key17": "Four-level deep key seventeen with very long string value",
+							"key18": "Four-level deep key eighteen with very long string value",
+							"key19": "Four-level deep key nineteen with very long string value",
+							"key20": "Four-level deep key twenty with very long string value",
+							"key21": "Four-level deep key twenty-one with very long string value",
+							"key22": "Four-level deep key twenty-two with very long string value",
+							"key23": "Four-level deep key twenty-three with very long string value",
+							"key24": "Four-level deep key twenty-four with very long string value",
+							"key25": "Four-level deep key twenty-five with very long string value",
+							"key26": "Four-level deep key twenty-six with very long string value",
+							"key27": "Four-level deep key twenty-seven with very long string value",
+							"key28": "Four-level deep key twenty-eight with very long string value",
+							"key29": "Four-level deep key twenty-nine with very long string value",
+							"key30": "Four-level deep key thirty with very long string value",
+							"key31": "Four-level deep key thirty-one with very long string value",
+							"key32": "Four-level deep key thirty-two with very long string value",
+							"key33": "Four-level deep key thirty-three with very long string value",
+							"key34": "Four-level deep key thirty-four with very long string value",
+							"key35": "Four-level deep key thirty-five with very long string value",
+							"key36": "Four-level deep key thirty-six with very long string value",
+							"key37": "Four-level deep key thirty-seven with very long string value",
+							"key38": "Four-level deep key thirty-eight with very long string value",
+							"key39": "Four-level deep key thirty-nine with very long string value",
+							"key40": "Four-level deep key forty with very long string value",
+							"key41": "Four-level deep key forty-one with very long string value",
+							"key42": "Four-level deep key forty-two with very long string value",
+							"key43": "Four-level deep key forty-three with very long string value",
+							"key44": "Four-level deep key forty-four with very long string value",
+							"key45": "Four-level deep key forty-five with very long string value",
+							"key46": "Four-level deep key forty-six with very long string value",
+							"key47": "Four-level deep key forty-seven with very long string value",
+							"key48": "Four-level deep key forty-eight with very long string value",
+							"key49": "Four-level deep key forty-nine with very long string value",
+							"key50": "Four-level deep key fifty with very long string value"
+						}
+					}
+				}
+			}
+		},
+		"longListConfig": [
+			"First item in a very long list that contains many elements",
+			"Second item with extensive content that demonstrates list handling",
+			"Third item that includes various types of data and information",
+			"Fourth item containing detailed descriptions and comprehensive data",
+			"Fifth item with substantial content that tests list processing",
+			"Sixth item including various language elements and text structures",
+			"Seventh item with formatting considerations and encoding handling",
+			"Eighth item demonstrating verbose descriptions and detailed explanations",
+			"Ninth item containing various data representations and content diversity",
+			"Tenth item with detailed information and comprehensive data storage",
+			"Eleventh item including descriptions, metadata, and other information",
+			"Twelfth item with various types of information and content complexity",
+			"Thirteenth item containing detailed descriptions and comprehensive information",
+			"Fourteenth item including various data types and content richness",
+			"Fifteenth item with large amounts of textual data and descriptions",
+			"Sixteenth item containing detailed information and comprehensive data",
+			"Seventeenth item including detailed explanations and comprehensive information",
+			"Eighteenth item with various content types and data complexity",
+			"Nineteenth item containing large amounts of textual content and descriptions",
+			"Twentieth item including various data representations and content diversity",
+			"Twenty-first item with comprehensive data and detailed descriptions",
+			"Twenty-second item containing detailed information and comprehensive data",
+			"Twenty-third item including detailed explanations and comprehensive descriptions",
+			"Twenty-fourth item with various content types and data richness",
+			"Twenty-fifth item containing large amounts of textual data and descriptions",
+			"Twenty-sixth item including various data types and content complexity",
+			"Twenty-seventh item with comprehensive data and detailed descriptions",
+			"Twenty-eighth item containing detailed information and comprehensive data",
+			"Twenty-ninth item including detailed explanations and comprehensive descriptions",
+			"Thirtieth item with various content types and data richness",
+			"Thirty-first item containing large amounts of textual data and descriptions",
+			"Thirty-second item including various data types and content complexity",
+			"Thirty-third item with comprehensive data and detailed descriptions",
+			"Thirty-fourth item containing detailed information and comprehensive data",
+			"Thirty-fifth item including detailed explanations and comprehensive descriptions",
+			"Thirty-sixth item with various content types and data richness",
+			"Thirty-seventh item containing large amounts of textual data and descriptions",
+			"Thirty-eighth item including various data types and content complexity",
+			"Thirty-ninth item with comprehensive data and detailed descriptions",
+			"Fortieth item containing detailed information and comprehensive data",
+			"Forty-first item including detailed explanations and comprehensive descriptions",
+			"Forty-second item with various content types and data richness",
+			"Forty-third item containing large amounts of textual data and descriptions",
+			"Forty-fourth item including various data types and content complexity",
+			"Forty-fifth item with comprehensive data and detailed descriptions",
+			"Forty-sixth item containing detailed information and comprehensive data",
+			"Forty-seventh item including detailed explanations and comprehensive descriptions",
+			"Forty-eighth item with various content types and data richness",
+			"Forty-ninth item containing large amounts of textual data and descriptions",
+			"Fiftieth item including various data types and content complexity"
+		],
+		"configurableString1": "This is a configurable string with a very long value that contains many characters and should test the system's ability to handle lengthy text content in configuration files.",
+		"configurableString2": "Welcome to Optify Configuration System! This is a very long liquid template string that contains many characters and should test the system's ability to handle lengthy text content in configuration files."
+	}
+}
