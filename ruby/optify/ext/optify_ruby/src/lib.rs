@@ -1,4 +1,4 @@
-use magnus::{function, method, prelude::*, wrap, Object, Ruby};
+use magnus::{function, method, prelude::*, wrap, Object, Ruby, Value as RbValue};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
 use optify::builder::OptionsWatcherBuilder;
@@ -12,6 +12,40 @@ use crate::preferences::convert_preferences;
 use crate::preferences::MutGetOptionsPreferences;
 
 mod preferences;
+
+fn json_value_to_ruby(ruby: &Ruby, value: &serde_json::Value) -> Result<RbValue, magnus::Error> {
+    match value {
+        serde_json::Value::Null => Ok(ruby.qnil().as_value()),
+        serde_json::Value::Bool(b) => Ok(ruby.into_value(*b)),
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Ok(ruby.into_value(i))
+            } else if let Some(f) = n.as_f64() {
+                Ok(ruby.into_value(f))
+            } else {
+                Err(magnus::Error::new(
+                    ruby.exception_type_error(),
+                    "Invalid number",
+                ))
+            }
+        }
+        serde_json::Value::String(s) => Ok(ruby.into_value(s.as_str())),
+        serde_json::Value::Array(arr) => {
+            let rb_arr = ruby.ary_new_capa(arr.len());
+            for item in arr {
+                rb_arr.push(json_value_to_ruby(ruby, item)?)?;
+            }
+            Ok(rb_arr.as_value())
+        }
+        serde_json::Value::Object(obj) => {
+            let rb_hash = ruby.hash_new_capa(obj.len());
+            for (key, val) in obj {
+                rb_hash.aset(key.as_str(), json_value_to_ruby(ruby, val)?)?;
+            }
+            Ok(rb_hash.as_value())
+        }
+    }
+}
 
 #[wrap(class = "Optify::OptionsProvider")]
 struct WrappedOptionsProvider(RefCell<OptionsProvider>);
@@ -83,6 +117,23 @@ impl WrappedOptionsProvider {
             .get_all_options(&feature_names, None, Some(preferences))
         {
             Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn get_all_options_hash(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<RbValue, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self
+            .0
+            .borrow()
+            .get_all_options(&feature_names, None, Some(preferences))
+        {
+            Ok(options) => json_value_to_ruby(ruby, &options),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
@@ -176,6 +227,41 @@ impl WrappedOptionsProvider {
             Some(preferences),
         ) {
             Ok(options) => Ok(options.to_string()),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn get_options_hash(
+        ruby: &Ruby,
+        rb_self: &Self,
+        key: String,
+        feature_names: Vec<String>,
+    ) -> Result<RbValue, magnus::Error> {
+        match rb_self
+            .0
+            .borrow()
+            .get_options_with_preferences(&key, &feature_names, None, None)
+        {
+            Ok(options) => json_value_to_ruby(ruby, &options),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn get_options_hash_with_preferences(
+        ruby: &Ruby,
+        rb_self: &Self,
+        key: String,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<RbValue, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self.0.borrow().get_options_with_preferences(
+            &key,
+            &feature_names,
+            None,
+            Some(preferences),
+        ) {
+            Ok(options) => json_value_to_ruby(ruby, &options),
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
@@ -277,6 +363,23 @@ impl WrappedOptionsWatcher {
         }
     }
 
+    fn get_all_options_hash(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<RbValue, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self
+            .0
+            .borrow()
+            .get_all_options(&feature_names, None, Some(preferences))
+        {
+            Ok(options) => json_value_to_ruby(ruby, &options),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
     fn get_canonical_feature_name(
         ruby: &Ruby,
         rb_self: &Self,
@@ -368,6 +471,41 @@ impl WrappedOptionsWatcher {
         }
     }
 
+    fn get_options_hash(
+        ruby: &Ruby,
+        rb_self: &Self,
+        key: String,
+        feature_names: Vec<String>,
+    ) -> Result<RbValue, magnus::Error> {
+        match rb_self
+            .0
+            .borrow()
+            .get_options_with_preferences(&key, &feature_names, None, None)
+        {
+            Ok(options) => json_value_to_ruby(ruby, &options),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
+    fn get_options_hash_with_preferences(
+        ruby: &Ruby,
+        rb_self: &Self,
+        key: String,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<RbValue, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self.0.borrow().get_options_with_preferences(
+            &key,
+            &feature_names,
+            None,
+            Some(preferences),
+        ) {
+            Ok(options) => json_value_to_ruby(ruby, &options),
+            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+        }
+    }
+
     fn last_modified(&self) -> std::time::SystemTime {
         self.0.borrow().last_modified()
     }
@@ -443,6 +581,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         method!(WrappedOptionsProvider::get_all_options_json, 2),
     )?;
     provider_class.define_method(
+        "get_all_options_hash",
+        method!(WrappedOptionsProvider::get_all_options_hash, 2),
+    )?;
+    provider_class.define_method(
         "get_canonical_feature_name",
         method!(WrappedOptionsProvider::get_canonical_feature_name, 1),
     )?;
@@ -457,6 +599,14 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     provider_class.define_method(
         "get_options_json_with_preferences",
         method!(WrappedOptionsProvider::get_options_json_with_preferences, 3),
+    )?;
+    provider_class.define_method(
+        "get_options_hash",
+        method!(WrappedOptionsProvider::get_options_hash, 2),
+    )?;
+    provider_class.define_method(
+        "get_options_hash_with_preferences",
+        method!(WrappedOptionsProvider::get_options_hash_with_preferences, 3),
     )?;
 
     // Private methods for internal use.
@@ -562,6 +712,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         method!(WrappedOptionsWatcher::get_all_options_json, 2),
     )?;
     watcher_class.define_method(
+        "get_all_options_hash",
+        method!(WrappedOptionsWatcher::get_all_options_hash, 2),
+    )?;
+    watcher_class.define_method(
         "get_canonical_feature_name",
         method!(WrappedOptionsWatcher::get_canonical_feature_name, 1),
     )?;
@@ -576,6 +730,14 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_method(
         "get_options_json_with_preferences",
         method!(WrappedOptionsWatcher::get_options_json_with_preferences, 3),
+    )?;
+    watcher_class.define_method(
+        "get_options_hash",
+        method!(WrappedOptionsWatcher::get_options_hash, 2),
+    )?;
+    watcher_class.define_method(
+        "get_options_hash_with_preferences",
+        method!(WrappedOptionsWatcher::get_options_hash_with_preferences, 3),
     )?;
     watcher_class.define_method(
         "last_modified",

@@ -1,7 +1,10 @@
 {
 	"cSpell.words": [
+		"aset",
+		"capa",
 		"chruby",
 		"Magnus",
+		"qnil",
 		"rubocop",
 		"serde"
 	],

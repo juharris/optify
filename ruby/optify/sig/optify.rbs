@@ -110,6 +110,8 @@ class Optify::OptionsRegistry
   # @return All of the keys and values for the the features.
   def features_with_metadata: () -> ::Hash[String, OptionsMetadata]
 
+  def get_all_options_hash: (::Array[String] feature_names, GetOptionsPreferences preferences) -> ::Hash[String, untyped]
+
   def get_all_options_json: (::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 end
 
@@ -138,6 +140,15 @@ module Optify::ProviderModule
   def get_filtered_features: (::Array[String] feature_names, GetOptionsPreferences preferences) -> ::Array[String]
 
   def get_options: [Config] (String key, ::Array[String] feature_names, T::Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+
+  # Fetches options based on the provided key and feature names.
+  #
+  # @param key [String] the key to fetch options for.
+  # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+  # @return [Hash[String, T.untyped]] the options.
+  def get_options_hash: (String key, ::Array[String] feature_names) -> ::Hash[String, untyped]
+
+  def get_options_hash_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> ::Hash[String, untyped]
 
   # Fetches options in JSON format based on the provided key and feature names.
   #
