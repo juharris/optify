@@ -394,6 +394,11 @@ impl OptionsRegistry for OptionsProvider {
         }
 
         let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        // TODO Optimization: Don't build entire config, just get what is needed from each one.
+        // It might be tricky to use the overrides, but it should be much faster overall.
+        // It was done this way to just get something working adequately
+        // because it was assumed that each language can optimize
+        // by caching results including conversion to immutable types.
         let config = self.get_entire_config(&filtered_feature_names, cache_options, preferences)?;
 
         match config.get::<serde_json::Value>(key) {

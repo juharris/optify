@@ -14,15 +14,15 @@ pub struct OptionsMetadata {
     /// This is helpful for using custom short names for the group of options.
     pub aliases: Option<Vec<String>>,
 
+    /// The canonical names of features that import this one.
+    pub dependents: Option<Vec<String>>,
+
     /// Other metadata that may be custom and application specific.
     ///
     /// This is a good place for documentation that should be available to the application.
     /// Comments that are not parsed are still great to have in files, when supported,
     /// but some comments are useful to have here because they can be accessed programmatically.
     pub details: Option<Details>,
-
-    /// The canonical names of features that import this one.
-    pub dependents: Option<Vec<String>>,
 
     /// The name of the group of options.
     ///
