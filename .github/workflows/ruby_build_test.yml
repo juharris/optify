@@ -176,7 +176,7 @@ jobs:
         shared-key: ruby-${{ matrix.os }}-rust
     - name: "[Rust] Build"
       run: cargo build --release
-      working-directory: ${{ env.WORKING_DIRECTORY }}
+      working-directory: ./rust/optify
 
     - name: "Check Ruby version"
       shell: bash
@@ -301,7 +301,7 @@ jobs:
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
-  # Publish a gem with the Rust source code so that versions of ruby and platforms that aren't built by this action can compile the Rust code when they build.
+  # Publish a gem with the Rust source code so that versions of Ruby and platforms that aren't built by this action can compile the Rust code when they build.
   # This allows future versions of Ruby to be used that aren't explicitly supported by this action.
   source-gem:
     name: "Source Gem"
