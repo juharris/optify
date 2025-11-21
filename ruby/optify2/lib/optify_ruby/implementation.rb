@@ -18,6 +18,7 @@ module Optify
   class OptionsProvider < OptionsRegistry
     #: ((OptionsProviderImpl | OptionsWatcherImpl) impl) -> OptionsProvider
     def self.from_impl(impl)
+      # FIXME: We don't need the indirection.
       provider = allocate
       provider.instance_variable_set(:@impl, impl)
       provider.instance_variable_set(:@cache, nil)
@@ -39,6 +40,7 @@ module Optify
 
     #: (String directory, String schema_path) -> OptionsProvider
     def self.build_with_schema(directory, schema_path)
+      # FIXME: Do proper full schema validation with a library.
       # Basic schema validation - check for obviously invalid properties
       schema = JSON.parse(File.read(schema_path))
       allowed_properties = schema['properties']&.keys || []
@@ -72,6 +74,7 @@ module Optify
   class OptionsProviderBuilder
     #: -> void
     def initialize
+      # FIXME: We don't need the indirection.
       @builder = OptionsProviderBuilderImpl.new #: OptionsProviderBuilderImpl
     end
 

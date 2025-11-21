@@ -16,6 +16,7 @@ module Optify
 
     #: ((OptionsProviderImpl | OptionsWatcherImpl) impl) -> OptionsWatcher
     def self.from_impl(impl)
+      # FIXME: We don't need the indirection.
       watcher = allocate
       watcher.instance_variable_set(:@impl, impl)
       watcher.instance_variable_set(:@cache, nil)
@@ -38,6 +39,9 @@ module Optify
 
     #: (String directory, String schema_path) -> OptionsWatcher
     def self.build_with_schema(directory, schema_path)
+      # FIXME: Re-use the code from the OptionsProvider implementation which will do proper full schema validation.
+      # We should not need to eagerly validate the schema here since the OptionsProvider implementation will do it when loading
+      # and this class should hold an implementation of an `OptionsProvider`.
       # Basic schema validation - check for obviously invalid properties
       require_relative 'config_loader'
 
@@ -120,6 +124,7 @@ module Optify
   class OptionsWatcherBuilder
     #: -> void
     def initialize
+      # FIXME: We don't need the indirection.
       @builder = OptionsWatcherBuilderImpl.new #: OptionsWatcherBuilderImpl
     end
 
