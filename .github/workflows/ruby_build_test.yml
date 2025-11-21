@@ -173,7 +173,7 @@ jobs:
           ruby/optify
           rust/optify
         cache-on-failure: true
-        shared-key: ruby-${{ matrix.os }}-rust
+        shared-key: ruby-${{ runner.os }}-rust
     - name: "[Rust] Build"
       run: cargo build --release
       working-directory: ./rust/optify
@@ -240,7 +240,7 @@ jobs:
           ruby/optify
           rust/optify
         cache-on-failure: true
-        shared-key: cross-gem-ruby-${{ matrix.ruby_platform }}-rust
+        shared-key: ruby-${{ runner.os }}-rust
 
     # This is file is mainly for local development and to help Sorbet.
     # It should not be needed for the build as we'll set a specific version of Ruby.
@@ -319,7 +319,7 @@ jobs:
           ruby/optify
           rust/optify
         cache-on-failure: true
-        shared-key: source-gem-rust
+        shared-key: ruby-${{ runner.os }}-rust
 
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
