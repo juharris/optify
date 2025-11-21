@@ -59,7 +59,7 @@ Benchmark.bm do |x|
       simple_provider.get_options_json('myConfig', features)
     end
 
-    x.report("  get_options_json (features: #{features.join(', ')})") do
+    x.report("  get_options_json 'myConfig' (features: #{features.join(', ')})") do
       N.times do
         _json = simple_provider.get_options_json('myConfig', features)
       end

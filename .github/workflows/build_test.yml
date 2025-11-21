@@ -24,8 +24,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RB_SYS_CARGO_PROFILE: release
-  RB_SYS_CROSS_COMPILE: true
 
 jobs:
   setup:
