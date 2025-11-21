@@ -4,7 +4,7 @@ set -e
 # Go to the root directory of the Ruby project.
 cd "$(dirname "$0")/.."
 
-rm -rf tmp/
+rm -rf target/ tmp/ pkg/ ext/optify_ruby/target/
 
 RB_SYS_CARGO_PROFILE='release' RB_SYS_CROSS_COMPILE=true rake native gem
 

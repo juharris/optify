@@ -6,7 +6,7 @@ require_relative '../lib/optify'
 
 puts "PID: #{Process.pid}"
 
-N = 10_000
+N = 1000
 
 # Simple test suite
 simple_provider = Optify::OptionsProvider.build('../../tests/test_suites/simple/configs')
@@ -38,7 +38,14 @@ configurable_feature_trials = [
   ['with_files'],
   %w[simple with_files],
   ['with_files_in_arguments'],
-  %w[simple with_files_in_arguments]
+  %w[simple with_files_in_arguments],
+  ['complex_deep_merge'],
+  %w[simple complex_deep_merge],
+  ['complex_wide_structure'],
+  %w[simple complex_wide_structure],
+  ['complex_nested_objects'],
+  %w[simple complex_nested_objects],
+  %w[complex_deep_merge complex_nested_objects complex_wide_structure]
 ]
 
 Benchmark.bm do |x|
@@ -52,7 +59,7 @@ Benchmark.bm do |x|
       simple_provider.get_options_json('myConfig', features)
     end
 
-    x.report("  get_options_json (features: #{features.join(', ')})") do
+    x.report("  get_options_json 'myConfig' (features: #{features.join(', ')})") do
       N.times do
         _json = simple_provider.get_options_json('myConfig', features)
       end
