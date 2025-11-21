@@ -38,7 +38,7 @@ fn json_value_to_ruby(ruby: &Ruby, value: &serde_json::Value) -> Result<RbValue,
             Ok(rb_arr.as_value())
         }
         serde_json::Value::Object(obj) => {
-            let rb_hash = ruby.hash_new();
+            let rb_hash = ruby.hash_new_capa(obj.len());
             for (key, val) in obj {
                 rb_hash.aset(key.as_str(), json_value_to_ruby(ruby, val)?)?;
             }
