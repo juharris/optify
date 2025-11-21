@@ -173,7 +173,7 @@ jobs:
           ruby/optify
           rust/optify
         cache-on-failure: true
-        shared-key: ${{ matrix.os }}-rust
+        shared-key: ruby-${{ matrix.os }}-rust
     - name: "[Rust] Build"
       run: cargo build --release
       working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -215,7 +215,7 @@ jobs:
 
   # Build the gem for specific Ruby versions and platforms so that devs don't have to build it locally.
   cross-gem:
-    name: "Build"
+    name: "Cross Gem"
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     needs:
@@ -240,7 +240,7 @@ jobs:
           ruby/optify
           rust/optify
         cache-on-failure: true
-        shared-key: ${{ matrix.ruby_platform }}-rust
+        shared-key: cross-gem-ruby-${{ matrix.ruby_platform }}-rust
 
     # This is file is mainly for local development and to help Sorbet.
     # It should not be needed for the build as we'll set a specific version of Ruby.
