@@ -57,8 +57,8 @@ jobs:
           stable-ruby-versions: |
             exclude: [head]
 
-  build:
-    name: "Build & Test"
+  build_from_hash:
+    name: "[from_hash] Build & Test"
     needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
@@ -99,10 +99,10 @@ jobs:
         bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > tmp/optify_from_hash.rbs~
         diff -u sig/optify_from_hash.rbs tmp/optify_from_hash.rbs~
       working-directory: ./ruby/from_hash
-    - name: "[from_hash] Test"
+    - name: "Test"
       run: bundle exec rake test
       working-directory: ./ruby/from_hash
-    - name: "[from_hash] Pre-Publish"
+    - name: "Pre-Publish"
       shell: bash
       run: |
         set -ex
@@ -110,9 +110,8 @@ jobs:
         git config --global user.email "$(git log -1 --pretty=format:'%ae')"
         git config --global user.name "$(git log -1 --pretty=format:'%an')"
       working-directory: ./ruby/from_hash
-      
 
-    - name: "[from_hash] Build"
+    - name: "Build"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
@@ -122,7 +121,7 @@ jobs:
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
-    - name: "[from_hash] Publish"
+    - name: "Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       # It probably just fails if the gem is already published.
       continue-on-error: true
@@ -134,7 +133,35 @@ jobs:
       env:
         GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
-    # Gem: optify
+  # Gem: optify-config
+  build_optify:
+    name: "[optify] Build & Test"
+    needs:
+      - build_from_hash
+      - setup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    env:
+      WORKING_DIRECTORY: ./ruby/optify
+    permissions:
+        # This permission is mandatory for trusted publishing.
+      id-token: write
+      # This permission is required for `rake release` to push the release tag.
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    # setup-ruby also runs `bundle install`.
+    # It uses the Ruby version from .ruby-version.
+    - uses: ruby/setup-ruby@v1
+      name: "Setup"
+      with:
+        bundler-cache: true
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     # Rust
     # Required for the main Ruby gem.
@@ -149,21 +176,21 @@ jobs:
         shared-key: ${{ matrix.os }}-rust
     - name: "[Rust] Build"
       run: cargo build --release
-      working-directory: ./rust/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
     - name: "Check Ruby version"
       shell: bash
       run: |
         set -ex
         # The Ruby versions must be the same for both gems.
-        diff -u .ruby-version ../optify/.ruby-version
-      working-directory: ./ruby/from_hash
+        diff -u .ruby-version ../from_hash/.ruby-version
+      working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    - name: "[optify] Install dependencies"
+    - name: "Install dependencies"
       shell: bash
       run: bundle install
       working-directory: ./ruby/optify
-    - name: "[optify] Lint"
+    - name: "Lint"
       shell: bash
       run: |
         set -ex
@@ -175,16 +202,16 @@ jobs:
         mkdir -p tmp
         bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
         diff -u sig/optify.rbs tmp/optify.rbs~
-      working-directory: ./ruby/optify
-    - name: "[optify][Rust] Lint"
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "[Rust] Lint"
       run : cargo fmt -- --check
-      working-directory: ./ruby/optify
-    - name: "[optify][Rust] Clippy"
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "[Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
-      working-directory: ./ruby/optify
-    - name: "[optify] Test"
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "Test"
       run: bundle exec rake test
-      working-directory: ./ruby/optify
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
   # Build the gem for specific Ruby versions and platforms so that devs don't have to build it locally.
   cross-gem:
@@ -192,7 +219,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     needs:
-      - build
+      - build_optify
       - ci-data
     strategy:
       fail-fast: true
@@ -279,7 +306,7 @@ jobs:
   source-gem:
     name: "Source Gem"
     needs:
-      - build
+      - build_optify
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     steps:
