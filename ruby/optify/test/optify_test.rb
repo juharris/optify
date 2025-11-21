@@ -23,10 +23,8 @@ class OptifyTest < Test::Unit::TestCase
 
   #: (String suite_path) -> void
   def run_suite(suite_path)
-    BUILDERS.each do |klass|
-      provider = klass.new
-                      .add_directory(File.join(suite_path, 'configs'))
-                      .build
+    PROVIDERS.each do |klass|
+      provider = klass.build(File.join(suite_path, 'configs'))
       expectations_path = File.join(suite_path, 'expectations')
       Dir.each_child(expectations_path) do |test_case|
         expectation_path = File.join(expectations_path, test_case)
@@ -38,11 +36,8 @@ class OptifyTest < Test::Unit::TestCase
         preferences.enable_configurable_strings
         preferences.constraints = constraints
         expected_options.each do |key, expected_value|
-          expected_json = provider.get_options_json_with_preferences(key, features, preferences)
-          options = JSON.parse(expected_json, object_class: Hash)
-          expected_json = expected_value.to_json
-          expected_open_struct = JSON.parse(expected_json, object_class: Hash)
-          assert_equal(expected_open_struct, options,
+          options = provider.get_options_hash_with_preferences(key, features, preferences)
+          assert_equal(expected_value, options,
                        "Options for key \"#{key}\" with features #{features}
                      do not match for test suite at #{expectation_path}")
         end

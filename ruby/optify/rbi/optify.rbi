@@ -145,6 +145,13 @@ module Optify
     # @return All of the keys and values for the the features.
     sig do
       params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
+        .returns(T::Hash[String, T.untyped])
+    end
+    def get_all_options_hash(feature_names, preferences); end
+
+    # @return All of the keys and values for the the features.
+    sig do
+      params(feature_names: T::Array[String], preferences: GetOptionsPreferences)
         .returns(String)
     end
     def get_all_options_json(feature_names, preferences); end
@@ -209,6 +216,26 @@ module Optify
         .returns(T.type_parameter(:Config))
     end
     def get_options(key, feature_names, config_class, cache_options = nil, preferences = nil); end
+
+    # Fetches options based on the provided key and feature names.
+    #
+    # @param key [String] the key to fetch options for.
+    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+    # @return [Hash[String, T.untyped]] the options.
+    sig { params(key: String, feature_names: T::Array[String]).returns(T::Hash[String, T.untyped]) }
+    def get_options_hash(key, feature_names); end
+
+    # Fetches options based on the provided key and feature names.
+    #
+    # @param key [String] the key to fetch options for.
+    # @param feature_names [Array<String>] The enabled feature names to use to build the options.
+    # @param preferences [GetOptionsPreferences] The preferences to use when getting options.
+    # @return [String] the options in JSON.
+    sig do
+      params(key: String, feature_names: T::Array[String], preferences: GetOptionsPreferences)
+        .returns(T::Hash[String, T.untyped])
+    end
+    def get_options_hash_with_preferences(key, feature_names, preferences); end
 
     # Fetches options in JSON format based on the provided key and feature names.
     #
