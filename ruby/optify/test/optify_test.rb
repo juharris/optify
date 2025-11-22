@@ -23,10 +23,8 @@ class OptifyTest < Test::Unit::TestCase
 
   #: (String suite_path) -> void
   def run_suite(suite_path)
-    BUILDERS.each do |klass|
-      provider = klass.new
-                      .add_directory(File.join(suite_path, 'configs'))
-                      .build
+    PROVIDERS.each do |klass|
+      provider = klass.build(File.join(suite_path, 'configs'))
       expectations_path = File.join(suite_path, 'expectations')
       Dir.each_child(expectations_path) do |test_case|
         expectation_path = File.join(expectations_path, test_case)
@@ -38,11 +36,8 @@ class OptifyTest < Test::Unit::TestCase
         preferences.enable_configurable_strings
         preferences.constraints = constraints
         expected_options.each do |key, expected_value|
-          expected_json = provider.get_options_json_with_preferences(key, features, preferences)
-          options = JSON.parse(expected_json, object_class: Hash)
-          expected_json = expected_value.to_json
-          expected_open_struct = JSON.parse(expected_json, object_class: Hash)
-          assert_equal(expected_open_struct, options,
+          options = provider.get_options_hash_with_preferences(key, features, preferences)
+          assert_equal(expected_value, options,
                        "Options for key \"#{key}\" with features #{features}
                      do not match for test suite at #{expectation_path}")
         end
@@ -67,10 +62,17 @@ class OptifyTest < Test::Unit::TestCase
                       .build
       features = ['a']
       all_opts = provider.get_all_options_json(features, Optify::GetOptionsPreferences.new)
-      key = 'myConfig'
-      opts = provider.get_options_json(key, features)
-      expected = { key => JSON.parse(opts) }
-      assert_equal(expected, JSON.parse(all_opts))
+      opts = JSON.parse(all_opts)
+      my_config = opts['myConfig'] #: as !nil
+      assert_equal ['example item 1'], my_config['myArray']
+      assert_equal 'root string same', my_config['rootString']
+      assert_equal 'gets overridden', my_config['rootString2']
+
+      my_config_json = provider.get_options_json('myConfig', features)
+      assert_equal(my_config, JSON.parse(my_config_json))
+
+      all_opts_hash = provider.get_all_options_hash(features, Optify::GetOptionsPreferences.new)
+      assert_equal opts, all_opts_hash
     end
   end
 

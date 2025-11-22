@@ -3,10 +3,12 @@
 
 require 'benchmark'
 require_relative '../lib/optify'
+require_relative '../test/my_config'
 
 puts "PID: #{Process.pid}"
 
 N = 1000
+WARMUP_COUNT = 22
 
 # Simple test suite
 simple_provider = Optify::OptionsProvider.build('../../tests/test_suites/simple/configs')
@@ -54,14 +56,27 @@ Benchmark.bm do |x|
   end
 
   simple_feature_trials.each do |features|
-    # Warm up.
-    100.times do
+    WARMUP_COUNT.times do
       simple_provider.get_options_json('myConfig', features)
     end
 
-    x.report("  get_options_json 'myConfig' (features: #{features.join(', ')})") do
+    WARMUP_COUNT.times do
+      simple_provider.get_options_hash('myConfig', features)
+    end
+
+    x.report("  get_options_hash 'myConfig' (features: #{features.join(', ')})") do
       N.times do
-        _json = simple_provider.get_options_json('myConfig', features)
+        _options = simple_provider.get_options_hash('myConfig', features)
+      end
+    end
+
+    WARMUP_COUNT.times do
+      simple_provider.get_options('myConfig', features, MyConfig)
+    end
+
+    x.report("  get_options 'myConfig' (features: #{features.join(', ')})") do
+      N.times do
+        _options = simple_provider.get_options('myConfig', features, MyConfig)
       end
     end
   end
@@ -73,14 +88,13 @@ Benchmark.bm do |x|
   end
 
   configurable_feature_trials.each do |features|
-    # Warm up.
-    100.times do
-      configurable_provider.get_all_options_json(features, configurable_preferences)
+    WARMUP_COUNT.times do
+      configurable_provider.get_all_options_hash(features, configurable_preferences)
     end
 
-    x.report("  get_all_options_json (features: #{features.join(', ')})") do
+    x.report("  get_all_options_hash (features: #{features.join(', ')})") do
       N.times do
-        _json = configurable_provider.get_all_options_json(features, configurable_preferences)
+        _options = configurable_provider.get_all_options_hash(features, configurable_preferences)
       end
     end
   end

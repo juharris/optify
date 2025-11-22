@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+require 'json'
 require 'sorbet-runtime'
 
 module Optify
@@ -63,12 +64,11 @@ module Optify
               Recommended: extend `Optify::FromHashable`."
       end
 
-      options_json = if preferences
-                       get_options_json_with_preferences(key, feature_names, preferences)
-                     else
-                       get_options_json(key, feature_names)
-                     end
-      hash = JSON.parse(options_json)
+      hash = if preferences
+               get_options_hash_with_preferences(key, feature_names, preferences)
+             else
+               get_options_hash(key, feature_names)
+             end
       config_class #: as untyped
         .from_hash(hash)
     end
