@@ -58,12 +58,11 @@ module Optify
               Recommended: extend `Optify::FromHashable`."
       end
 
-      options_json = if preferences
-                       get_options_json_with_preferences(key, feature_names, preferences)
-                     else
-                       get_options_json(key, feature_names)
-                     end
-      hash = JSON.parse(options_json)
+      hash = if preferences
+               get_options_hash_with_preferences(key, feature_names, preferences)
+             else
+               get_options_hash(key, feature_names)
+             end
       config_class #: as untyped
         .from_hash(hash)
     end
@@ -106,7 +105,7 @@ module Optify
         preferences.skip_feature_name_conversion = true
         preferences.enable_configurable_strings if are_configurable_strings_enabled
 
-        result = get_options(key, feature_names, config_class, nil, preferences)
+        result = _get_options(key, feature_names, config_class, nil, preferences)
         @cache #: as !nil
           .[]= cache_key, result
       end

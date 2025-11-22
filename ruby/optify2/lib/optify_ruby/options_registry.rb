@@ -40,6 +40,16 @@ module Optify
       impl.get_canonical_feature_names(feature_names)
     end
 
+    #: (String key, Array[String] feature_names) -> Hash[String, untyped]
+    def get_options_hash(key, feature_names)
+      impl.get_options_hash(key, feature_names)
+    end
+
+    #: (String key, Array[String] feature_names, GetOptionsPreferences preferences) -> Hash[String, untyped]
+    def get_options_hash_with_preferences(key, feature_names, preferences)
+      impl.get_options_hash_with_preferences(key, feature_names, preferences)
+    end
+
     #: (String key, Array[String] feature_names) -> String
     def get_options_json(key, feature_names)
       impl.get_options_json(key, feature_names)
@@ -63,6 +73,11 @@ module Optify
     #: -> Hash[String, OptionsMetadata]
     def features_with_metadata
       _features_with_metadata
+    end
+
+    #: (Array[String] feature_names, GetOptionsPreferences preferences) -> Hash[String, untyped]
+    def get_all_options_hash(feature_names, preferences)
+      impl.get_all_options_hash(feature_names, preferences)
     end
 
     #: (Array[String] feature_names, GetOptionsPreferences preferences) -> String

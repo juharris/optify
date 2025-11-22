@@ -99,16 +99,20 @@ module Optify
       result
     end
 
-    #: (String key, Array[String] feature_names) -> String
-    def get_options_json(key, feature_names)
+    #: (String key, Array[String] feature_names) -> Hash[String, untyped]
+    def get_options_hash(key, feature_names)
       # Canonicalize feature names (aliases to feature names)
       canonical_names = get_canonical_feature_names(feature_names)
-      options = build_options(key, canonical_names, {}, false)
-      JSON.generate(options)
+      build_options(key, canonical_names, {}, false)
     end
 
-    #: (String key, Array[String] feature_names, GetOptionsPreferences preferences) -> String
-    def get_options_json_with_preferences(key, feature_names, preferences)
+    #: (String key, Array[String] feature_names) -> String
+    def get_options_json(key, feature_names)
+      JSON.generate(get_options_hash(key, feature_names))
+    end
+
+    #: (String key, Array[String] feature_names, GetOptionsPreferences preferences) -> Hash[String, untyped]
+    def get_options_hash_with_preferences(key, feature_names, preferences)
       skip_conversion = preferences.skip_feature_name_conversion
       constraints = preferences.constraints || {}
       overrides = preferences.overrides || {}
@@ -134,9 +138,12 @@ module Optify
 
       filtered_names = filter_features_by_constraints(canonical_names, constraints)
 
-      options = build_options(key, filtered_names, overrides, configurable_strings_enabled)
+      build_options(key, filtered_names, overrides, configurable_strings_enabled)
+    end
 
-      JSON.generate(options)
+    #: (String key, Array[String] feature_names, GetOptionsPreferences preferences) -> String
+    def get_options_json_with_preferences(key, feature_names, preferences)
+      JSON.generate(get_options_hash_with_preferences(key, feature_names, preferences))
     end
 
     #: (Array[String] feature_names, GetOptionsPreferences preferences) -> Array[String]
@@ -153,8 +160,8 @@ module Optify
       filter_features_by_constraints(canonical_names, constraints)
     end
 
-    #: (Array[String] feature_names, GetOptionsPreferences preferences) -> String
-    def get_all_options_json(feature_names, preferences)
+    #: (Array[String] feature_names, GetOptionsPreferences preferences) -> Hash[String, untyped]
+    def get_all_options_hash(feature_names, preferences)
       skip_conversion = preferences.skip_feature_name_conversion
       # FIXME: Handle nils instead of creating empty hashes.
       constraints = preferences.constraints || {}
@@ -184,7 +191,12 @@ module Optify
         result[key] = options
       end
 
-      JSON.generate(result)
+      result
+    end
+
+    #: (Array[String] feature_names, GetOptionsPreferences preferences) -> String
+    def get_all_options_json(feature_names, preferences)
+      JSON.generate(get_all_options_hash(feature_names, preferences))
     end
 
     private
