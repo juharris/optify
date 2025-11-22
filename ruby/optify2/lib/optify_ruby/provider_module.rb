@@ -1,7 +1,6 @@
 # typed: strict
 # frozen_string_literal: true
 
-require 'json'
 require 'sorbet-runtime'
 
 module Optify
@@ -9,18 +8,12 @@ module Optify
   module ProviderModule
     #: (Array[String] feature_names) -> Array[String]
     def get_canonical_feature_names(feature_names)
-      # Try to optimize a typical case where there are just a few features.
-      # Ideally in production, a single feature that imports many other features is used for the most common scenarios.
-      # Benchmarks show that it is faster to use a loop than to call the Rust implementation which involves making a `Vec<String>` and returning a `Vec<String>`.
-      if feature_names.length < 4
-        feature_names.map { |feature_name| get_canonical_feature_name(feature_name) }
-      else
-        _get_canonical_feature_names(feature_names)
-      end
+      _get_canonical_feature_names(feature_names)
     end
 
     #: (String canonical_feature_name) -> Optify::OptionsMetadata?
     def get_feature_metadata(canonical_feature_name)
+      # FIXME: Avoid the conversion to JSON. Get the hash directly.
       metadata_json = get_feature_metadata_json(canonical_feature_name)
       return nil if metadata_json.nil?
 
@@ -33,6 +26,7 @@ module Optify
     def _features_with_metadata
       return @features_with_metadata if @features_with_metadata
 
+      # FIXME: Avoid the conversion to JSON. Get the hash directly.
       result = JSON.parse(features_with_metadata_json)
       result.each do |key, value|
         result[key] = OptionsMetadata.from_hash(value)
@@ -53,7 +47,7 @@ module Optify
     # @param cache_options Set this if caching is desired. Only very simple caching is supported for now.
     # @param preferences The preferences to use when getting options.
     # @return The options.
-    #: [Config] (String, Array[String], Class[Config], ?CacheOptions?, ?Optify::GetOptionsPreferences?) -> Config
+    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, ?CacheOptions? cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
     def _get_options(key, feature_names, config_class, cache_options = nil, preferences = nil)
       return get_options_with_cache(key, feature_names, config_class, cache_options, preferences) if cache_options
 
@@ -112,7 +106,6 @@ module Optify
         preferences.enable_configurable_strings if are_configurable_strings_enabled
 
         result = _get_options(key, feature_names, config_class, nil, preferences)
-
         @cache #: as !nil
           .[]= cache_key, result
       end

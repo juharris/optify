@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 
 rm -rf target/ tmp/ pkg/ ext/optify_ruby/target/
 
-RB_SYS_CARGO_PROFILE='release' RB_SYS_CROSS_COMPILE=true rake native gem
+RB_SYS_CARGO_PROFILE='release' rake native gem
 
 echo "Running benchmarks..."
 for benchmark_file in benchmarks/*.rb; do
