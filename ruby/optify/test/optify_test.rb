@@ -62,10 +62,17 @@ class OptifyTest < Test::Unit::TestCase
                       .build
       features = ['a']
       all_opts = provider.get_all_options_json(features, Optify::GetOptionsPreferences.new)
-      key = 'myConfig'
-      opts = provider.get_options_json(key, features)
-      expected = { key => JSON.parse(opts) }
-      assert_equal(expected, JSON.parse(all_opts))
+      opts = JSON.parse(all_opts)
+      my_config = opts['myConfig'] #: as !nil
+      assert_equal ['example item 1'], my_config['myArray']
+      assert_equal 'root string same', my_config['rootString']
+      assert_equal 'gets overridden', my_config['rootString2']
+
+      my_config_json = provider.get_options_json('myConfig', features)
+      assert_equal(my_config, JSON.parse(my_config_json))
+
+      all_opts_hash = provider.get_all_options_hash(features, Optify::GetOptionsPreferences.new)
+      assert_equal opts, all_opts_hash
     end
   end
 

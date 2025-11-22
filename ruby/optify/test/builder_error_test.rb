@@ -1,8 +1,9 @@
 # typed: true
 # frozen_string_literal: true
 
-require 'test/unit'
+require 'json'
 require 'optify'
+require 'test/unit'
 
 class BuilderErrorTest < Test::Unit::TestCase
   BUILDERS = [Optify::OptionsProviderBuilder, Optify::OptionsWatcherBuilder].freeze
@@ -90,7 +91,6 @@ class BuilderErrorTest < Test::Unit::TestCase
       assert_nil(metadata.dependents)
       opts_json = provider.get_options_json('wtv', ['subdir/a'])
       # The result should be a JSON value, parse it to check
-      require 'json'
       parsed = JSON.parse(opts_json)
       assert_equal(3, parsed)
     end
