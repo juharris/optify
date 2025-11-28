@@ -11,6 +11,7 @@ use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
 use crate::configurable_string::LoadedFiles;
+use crate::json::merge::merge_json_value;
 use crate::json::reader::read_json_from_file_as;
 use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
@@ -78,7 +79,7 @@ fn resolve_imports(
     conditions: &Conditions,
 ) -> Result<(), String> {
     // Build full configuration for the feature so that we don't need to traverse imports for the feature when configurations are requested from the provider.
-    let mut config_builder = config::Config::builder();
+    let mut merged_config = serde_json::Value::Object(serde_json::Map::new());
     for import in imports_for_feature {
         // Validate imports.
         if features_in_resolution_path.contains(import) {
@@ -145,36 +146,15 @@ fn resolve_imports(
             source = sources.get(import).unwrap();
         }
 
-        config_builder = config_builder.add_source(source.clone());
+        merge_json_value(&mut merged_config, source);
     }
 
     // Include the current feature's configuration last to override any imports.
     let source = sources.get(canonical_feature_name).unwrap();
-    config_builder = config_builder.add_source(source.clone());
+    merge_json_value(&mut merged_config, source);
 
-    // Build the configuration and store it.
-    match config_builder.build() {
-        Ok(new_config) => {
-            // Convert to something that can be inserted in a source.
-            let options_as_json: serde_json::Value = match new_config.try_deserialize() {
-                Ok(v) => v,
-                Err(e) => {
-                    // Should never happen.
-                    return Err(format!(
-                        "Error deserializing feature configuration for '{canonical_feature_name}': {e}"
-                    ));
-                }
-            };
-            let options_as_json_str = serde_json::to_string(&options_as_json).unwrap();
-            let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
-            sources.insert(canonical_feature_name.to_owned(), source);
-        }
-        Err(e) => {
-            return Err(format!(
-                "Error building configuration for feature {canonical_feature_name:?}: {e:?}"
-            ))
-        }
-    }
+    // Store the merged configuration.
+    sources.insert(canonical_feature_name.to_owned(), merged_config);
 
     Ok(())
 }
@@ -323,12 +303,11 @@ impl OptionsProviderBuilder {
             }
         };
 
-        let options_as_json_str = match feature_config.options {
-            Some(options_as_json) => serde_json::to_string(&options_as_json).unwrap(),
-            None => "{}".to_owned(),
-        };
+        let source = feature_config
+            .options
+            .clone()
+            .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
 
-        let source = config::File::from_str(&options_as_json_str, config::FileFormat::Json);
         let canonical_feature_name = get_canonical_feature_name(path, directory);
 
         // Ensure the name is set in the metadata.
