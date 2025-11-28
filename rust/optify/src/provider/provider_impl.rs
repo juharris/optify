@@ -392,21 +392,16 @@ impl OptionsRegistry for OptionsProvider {
         // because it was assumed that each language can optimize
         // by caching results including conversion to immutable types.
         let config = self.get_entire_config(&filtered_feature_names, cache_options, preferences)?;
-        let key_parts: Vec<&str> = key.split('.').collect();
-        let mut current = &config;
-        for part in &key_parts {
-            current = match current.get(*part) {
-                Some(v) => v,
-                None => {
-                    return Err(format!(
-                        "Error getting options with features {:?}: key '{}' not found",
-                        feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>(),
-                        key
-                    ))
-                }
-            };
-        }
-        let mut value = current.clone();
+        let mut value = match config.get(key) {
+            Some(v) => v.clone(),
+            None => {
+                return Err(format!(
+                    "Error getting options with features {:?}: key '{}' not found",
+                    feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>(),
+                    key
+                ))
+            }
+        };
 
         self.process_configurable_strings(&mut value, Some(key), preferences)?;
         if cache_options.is_some() {

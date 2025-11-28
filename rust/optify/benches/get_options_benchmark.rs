@@ -184,24 +184,6 @@ fn benchmark_different_keys(c: &mut Criterion) {
         })
     });
 
-    // Getting nested key
-    group.bench_function("nested_config1_level1", |b| {
-        b.iter(|| {
-            provider
-                .get_options(black_box("config1.level1"), black_box(&features))
-                .unwrap()
-        })
-    });
-
-    // Getting deeply nested key
-    group.bench_function("deep_nested_config1_level1_level2", |b| {
-        b.iter(|| {
-            provider
-                .get_options(black_box("config1.level1.level2"), black_box(&features))
-                .unwrap()
-        })
-    });
-
     // Getting all options (entire merged config)
     group.bench_function("get_all_options", |b| {
         b.iter(|| {
