@@ -153,7 +153,6 @@ fn resolve_imports(
     let source = sources.get(canonical_feature_name).unwrap();
     merge_json_value(&mut merged_config, source);
 
-    // Store the merged configuration.
     sources.insert(canonical_feature_name.to_owned(), merged_config);
 
     Ok(())
@@ -305,7 +304,6 @@ impl OptionsProviderBuilder {
 
         let source = feature_config
             .options
-            .clone()
             .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
 
         let canonical_feature_name = get_canonical_feature_name(path, directory);

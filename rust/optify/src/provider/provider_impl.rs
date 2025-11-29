@@ -105,7 +105,7 @@ impl OptionsProvider {
             let cache_key = feature_names.to_owned();
             self.entire_config_cache
                 .write()
-                .expect("the json config cache lock should be held")
+                .expect("the entire config cache lock should be held")
                 .insert(cache_key, result.clone());
         }
 
@@ -396,10 +396,10 @@ impl OptionsRegistry for OptionsProvider {
             Some(v) => v.clone(),
             None => {
                 return Err(format!(
-                    "Error getting options with features {:?}: configuration property \"{}\" not found",
-                    feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>(),
-                    key
-                ))
+                "Error getting options with features {:?}: configuration property \"{}\" not found",
+                feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>(),
+                key
+            ))
             }
         };
 
