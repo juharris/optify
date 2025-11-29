@@ -47,4 +47,7 @@ harness = false
 name = "caching_benchmark"
 harness = false
 
+[[bench]]
+name = "get_options_benchmark"
+harness = false
 

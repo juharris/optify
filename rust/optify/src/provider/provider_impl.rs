@@ -3,6 +3,7 @@ use std::{collections::HashMap, path::Path, sync::RwLock};
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
+    json::merge::merge_json_value,
     provider::GetOptionsPreferences,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
@@ -13,15 +14,14 @@ use crate::configurable_string::ConfigurableString;
 // Replicating https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/IOptionsProvider.cs
 // and https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/OptionsProviderWithDefaults.cs
 
-// We won't truly use files at runtime, we're just using fake files that are backed by strings because that's easy to use with the `config` library.
-pub(crate) type SourceValue = config::File<config::FileSourceString, config::FileFormat>;
+pub(crate) type SourceValue = serde_json::Value;
 
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
-pub(crate) type EntireConfigCache = HashMap<Vec<String>, config::Config>;
+pub(crate) type EntireConfigCache = HashMap<Vec<String>, serde_json::Value>;
 pub(crate) type OptionsCache = HashMap<(String, Vec<String>, bool), serde_json::Value>;
 
 pub struct CacheOptions {}
@@ -67,7 +67,7 @@ impl OptionsProvider {
         feature_names: &[String],
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
-    ) -> Result<config::Config, String> {
+    ) -> Result<serde_json::Value, String> {
         if let Some(_cache_options) = cache_options {
             match self.get_entire_config_from_cache(feature_names, preferences) {
                 Ok(Some(config)) => return Ok(config),
@@ -75,7 +75,9 @@ impl OptionsProvider {
                 Err(e) => return Err(e),
             }
         };
-        let mut config_builder = config::Config::builder();
+
+        let mut result = serde_json::Value::Object(serde_json::Map::new());
+
         for canonical_feature_name in feature_names {
             let source = match self.sources.get(canonical_feature_name) {
                 Some(src) => src,
@@ -88,37 +90,33 @@ impl OptionsProvider {
                     ));
                 }
             };
-            config_builder = config_builder.add_source(source.clone());
+            merge_json_value(&mut result, source);
         }
+
         if let Some(preferences) = preferences {
             if let Some(overrides) = &preferences.overrides_json {
-                config_builder = config_builder
-                    .add_source(config::File::from_str(overrides, config::FileFormat::Json));
+                let overrides_value: serde_json::Value = serde_json::from_str(overrides)
+                    .map_err(|e| format!("Failed to parse overrides JSON: {e}"))?;
+                merge_json_value(&mut result, &overrides_value);
             }
         }
 
-        match config_builder.build() {
-            Ok(cfg) => {
-                if let Some(_cache_options) = cache_options {
-                    let cache_key = feature_names.to_owned();
-                    self.entire_config_cache
-                        .write()
-                        .expect("the entire config cache lock should be held")
-                        .insert(cache_key, cfg.clone());
-                }
-                Ok(cfg)
-            }
-            Err(e) => Err(format!(
-                "Error combining features to build the configuration: {e}"
-            )),
+        if let Some(_cache_options) = cache_options {
+            let cache_key = feature_names.to_owned();
+            self.entire_config_cache
+                .write()
+                .expect("the entire config cache lock should be held")
+                .insert(cache_key, result.clone());
         }
+
+        Ok(result)
     }
 
     fn get_entire_config_from_cache(
         &self,
         feature_names: &[String],
         preferences: Option<&GetOptionsPreferences>,
-    ) -> Result<Option<config::Config>, String> {
+    ) -> Result<Option<serde_json::Value>, String> {
         if let Some(preferences) = preferences {
             if preferences.overrides_json.is_some() {
                 return Err("Caching when overrides are given is not supported.".to_owned());
@@ -290,15 +288,9 @@ impl OptionsRegistry for OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
         let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        let config = self.get_entire_config(&feature_names, cache_options, preferences)?;
-
-        match config.try_deserialize::<serde_json::Value>() {
-            Ok(mut value) => {
-                self.process_configurable_strings(&mut value, None, preferences)?;
-                Ok(value)
-            }
-            Err(e) => Err(e.to_string()),
-        }
+        let mut value = self.get_entire_config(&feature_names, cache_options, preferences)?;
+        self.process_configurable_strings(&mut value, None, preferences)?;
+        Ok(value)
     }
 
     fn get_canonical_feature_name(&self, feature_name: &str) -> Result<String, String> {
@@ -400,31 +392,33 @@ impl OptionsRegistry for OptionsProvider {
         // because it was assumed that each language can optimize
         // by caching results including conversion to immutable types.
         let config = self.get_entire_config(&filtered_feature_names, cache_options, preferences)?;
-
-        match config.get::<serde_json::Value>(key) {
-            Ok(mut value) => {
-                self.process_configurable_strings(&mut value, Some(key), preferences)?;
-                if cache_options.is_some() {
-                    let are_configurable_strings_enabled = preferences
-                        .map(|p| p.are_configurable_strings_enabled)
-                        .unwrap_or(false);
-                    let cache_key = (
-                        key.to_owned(),
-                        filtered_feature_names.clone(),
-                        are_configurable_strings_enabled,
-                    );
-                    self.options_cache
-                        .write()
-                        .expect("the options cache lock should be held")
-                        .insert(cache_key, value.clone());
-                }
-                Ok(value)
+        let mut value = match config.get(key) {
+            Some(v) => v.clone(),
+            None => {
+                return Err(format!(
+                "Error getting options with features {:?}: configuration property \"{}\" not found",
+                feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>(),
+                key
+            ))
             }
-            Err(e) => Err(format!(
-                "Error getting options with features {:?}: {e}",
-                feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>()
-            )),
+        };
+
+        self.process_configurable_strings(&mut value, Some(key), preferences)?;
+        if cache_options.is_some() {
+            let are_configurable_strings_enabled = preferences
+                .map(|p| p.are_configurable_strings_enabled)
+                .unwrap_or(false);
+            let cache_key = (
+                key.to_owned(),
+                filtered_feature_names.clone(),
+                are_configurable_strings_enabled,
+            );
+            self.options_cache
+                .write()
+                .expect("the options cache lock should be held")
+                .insert(cache_key, value.clone());
         }
+        Ok(value)
     }
 
     fn has_conditions(&self, canonical_feature_name: &str) -> bool {
