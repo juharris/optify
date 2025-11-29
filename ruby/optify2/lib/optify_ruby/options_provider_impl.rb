@@ -223,55 +223,35 @@ module Optify
     #|   bool configurable_strings_enabled
     #| ) -> Hash[String, untyped]
     def build_options(key, feature_names, overrides, configurable_strings_enabled)
-      # Handle nested keys like "myConfig.rootString"
-      key_parts = key.split('.')
-      root_key = key_parts.first
-      # FIXME: Don't return empty, instead raise an error because the key was not found since the key was not found... actually how does this even happen?
-      return {} unless root_key
-
       result = {} #: untyped
 
       # Check if key exists in any feature or overrides
-      key_found_in_override = overrides.key?(root_key) && !overrides[root_key].nil?
+      key_found_in_override = overrides.key?(key) && !overrides[key].nil?
       key_found_in_any_feature = feature_names.any? do |name|
         feature = @features[name]
-        feature&.options&.key?(root_key)
+        feature&.options&.key?(key)
       end
 
-      unless key_found_in_any_feature || key_found_in_override
-        raise ArgumentError, "Error getting options with features #{feature_names}: missing configuration field \"#{root_key}\""
-      end
+      raise ArgumentError, "Error getting options with features #{feature_names}: missing configuration field \"#{key}\"" unless key_found_in_any_feature || key_found_in_override
 
       feature_names.each do |name|
         feature = @features[name]
         next unless feature
 
-        feature_options = feature.options[root_key]
+        feature_options = feature.options[key]
         next unless feature_options
 
         result = merge_feature_options(result, feature_options)
       end
 
-      # Extract overrides for the root key (if overrides are keyed by config key)
+      # Extract overrides for the key (if overrides are keyed by config key)
       # Overrides can be in format: { 'myConfig' => { ... } } or just { ... }
-      key_overrides = overrides[root_key] || {}
+      key_overrides = overrides[key] || {}
       deep_merge!(result, key_overrides) if !key_overrides.empty? && result.is_a?(Hash)
 
       result = ConfigurableString.process_value(result, @loaded_files) if configurable_strings_enabled
 
-      # Navigate to nested value if key has path
-      if key_parts.length > 1
-        key_rest = key_parts[1..]
-        return {} unless key_rest
-
-        key_rest.each do |part|
-          result = result.is_a?(Hash) ? result[part] : nil
-          break if result.nil?
-        end
-        result || {}
-      else
-        result
-      end
+      result
     end
 
     #: (Hash[String, untyped] target, Hash[String, untyped] source) -> Hash[String, untyped]
