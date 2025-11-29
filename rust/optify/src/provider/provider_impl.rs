@@ -76,22 +76,37 @@ impl OptionsProvider {
             }
         };
 
-        let mut result = serde_json::Value::Object(serde_json::Map::new());
-
-        for canonical_feature_name in feature_names {
-            let source = match self.sources.get(canonical_feature_name) {
-                Some(src) => src,
+        let mut result = if feature_names.len() == 1 {
+            // Avoid merging to an empty object.
+            let feature_name = &feature_names[0];
+            match self.sources.get(feature_name) {
+                Some(src) => src.clone(),
                 None => {
-                    // Should not happen.
-                    // All canonical feature names are included as keys in the sources map.
-                    // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                     return Err(format!(
-                        "Feature name {canonical_feature_name:?} is not a known feature."
+                        "Feature name {feature_name:?} is not a known feature."
                     ));
                 }
-            };
-            merge_json_value(&mut result, source);
-        }
+            }
+        } else {
+            let mut result = serde_json::Value::Object(serde_json::Map::new());
+
+            for canonical_feature_name in feature_names {
+                let source = match self.sources.get(canonical_feature_name) {
+                    Some(src) => src,
+                    None => {
+                        // Should not happen.
+                        // All canonical feature names are included as keys in the sources map.
+                        // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
+                        return Err(format!(
+                            "Feature name {canonical_feature_name:?} is not a known feature."
+                        ));
+                    }
+                };
+                merge_json_value(&mut result, source);
+            }
+
+            result
+        };
 
         if let Some(preferences) = preferences {
             if let Some(overrides) = &preferences.overrides_json {
@@ -110,6 +125,61 @@ impl OptionsProvider {
         }
 
         Ok(result)
+    }
+
+    /// Get options for a specific key by extracting and merging only that key from each source.
+    /// This avoids building the entire config when only one key is needed.
+    fn get_options_for_key(
+        &self,
+        key: &str,
+        feature_names: &[String],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<serde_json::Value, String> {
+        let mut result = if feature_names.len() == 1 {
+            // Avoid merging to an empty object.
+            let feature_name = &feature_names[0];
+            let source = self
+                .sources
+                .get(feature_name)
+                .ok_or_else(|| format!("Feature name {feature_name:?} is not a known feature."))?;
+            source.get(key).cloned()
+        } else {
+            let mut result = None;
+            for canonical_feature_name in feature_names {
+                let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
+                    format!("Feature name {canonical_feature_name:?} is not a known feature.")
+                })?;
+
+                if let Some(source_value) = source.get(key) {
+                    match &mut result {
+                        Some(existing) => merge_json_value(existing, source_value),
+                        None => result = Some(source_value.clone()),
+                    }
+                }
+            }
+            result
+        };
+
+        // Apply overrides for this specific key.
+        if let Some(preferences) = preferences {
+            if let Some(overrides) = &preferences.overrides_json {
+                let overrides_value: serde_json::Value = serde_json::from_str(overrides)
+                    .map_err(|e| format!("Failed to parse overrides JSON: {e}"))?;
+                if let Some(override_for_key) = overrides_value.get(key) {
+                    match &mut result {
+                        Some(existing) => merge_json_value(existing, override_for_key),
+                        None => result = Some(override_for_key.clone()),
+                    }
+                }
+            }
+        }
+
+        result.ok_or_else(|| {
+            format!(
+                "Error getting options with features {:?}: configuration property \"{}\" not found",
+                feature_names, key
+            )
+        })
     }
 
     fn get_entire_config_from_cache(
@@ -386,22 +456,7 @@ impl OptionsRegistry for OptionsProvider {
         }
 
         let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        // TODO Optimization: Don't build entire config, just get what is needed from each one.
-        // It might be tricky to use the overrides, but it should be much faster overall.
-        // It was done this way to just get something working adequately
-        // because it was assumed that each language can optimize
-        // by caching results including conversion to immutable types.
-        let config = self.get_entire_config(&filtered_feature_names, cache_options, preferences)?;
-        let mut value = match config.get(key) {
-            Some(v) => v.clone(),
-            None => {
-                return Err(format!(
-                "Error getting options with features {:?}: configuration property \"{}\" not found",
-                feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>(),
-                key
-            ))
-            }
-        };
+        let mut value = self.get_options_for_key(key, &filtered_feature_names, preferences)?;
 
         self.process_configurable_strings(&mut value, Some(key), preferences)?;
         if cache_options.is_some() {
