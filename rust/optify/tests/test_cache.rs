@@ -49,27 +49,6 @@ fn test_options_cache_hit() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_cache_different_keys() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = get_new_provider();
-    let cache_options = CacheOptions {};
-
-    // Different keys should not share cache entries
-    let result1 =
-        provider.get_options_with_preferences("myConfig", &["a"], Some(&cache_options), None)?;
-    let result2 = provider.get_options_with_preferences(
-        "myConfig.rootString",
-        &["a"],
-        Some(&cache_options),
-        None,
-    )?;
-
-    // Results should be different
-    assert_ne!(result1, result2);
-
-    Ok(())
-}
-
-#[test]
 fn test_cache_different_features() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_new_provider();
     let cache_options = CacheOptions {};
@@ -108,7 +87,7 @@ fn test_cache_with_overrides() -> Result<(), Box<dyn std::error::Error>> {
     let cache_options = CacheOptions {};
 
     let mut preferences = GetOptionsPreferences::new();
-    preferences.overrides_json = Some(r#"{"test": "override"}"#.to_string());
+    preferences.overrides = Some(serde_json::json!({"test": "override"}));
 
     let result = provider.get_all_options(&["a"], Some(&cache_options), Some(&preferences));
 

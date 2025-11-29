@@ -243,15 +243,6 @@ class OptifyTest < Test::Unit::TestCase
       options = provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       assert_equal('root string same', options.rootString)
 
-      # It's nice that these JSON Paths like keys work, but it's not guaranteed to work in the future and
-      # wouldn't work when there are configurable strings.
-      s = provider.get_options_json('myConfig.rootString', feature_names)
-      assert_equal('"root string same"', s)
-      assert_equal('root string same', JSON.parse(s))
-      s = provider.get_options_json('myConfig.myObject.two', feature_names)
-      assert_equal('22', s)
-      assert_equal(22, JSON.parse(s))
-
       preferences.skip_feature_name_conversion = true
       err = assert_raise(RuntimeError) do
         provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
