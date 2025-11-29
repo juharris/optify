@@ -405,7 +405,7 @@
 				"key2": "Another simple key"
 			}
 		},
-		"config40": {
+		"config40.with.dots": {
 			"level1": {
 				"level2": {
 					"level3": {

@@ -33,6 +33,13 @@ To automatically change code, run:
 cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 ```
 
+## Benchmarking
+Run:
+```shell
+cargo build --release
+cargo bench
+```
+
 ## Publishing
 ```shell
 cargo login

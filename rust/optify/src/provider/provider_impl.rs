@@ -396,7 +396,7 @@ impl OptionsRegistry for OptionsProvider {
             Some(v) => v.clone(),
             None => {
                 return Err(format!(
-                    "Error getting options with features {:?}: key '{}' not found",
+                    "Error getting options with features {:?}: configuration property \"{}\" not found",
                     feature_names.iter().map(|f| f.as_ref()).collect::<Vec<_>>(),
                     key
                 ))
