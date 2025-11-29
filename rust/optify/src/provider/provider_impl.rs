@@ -109,10 +109,8 @@ impl OptionsProvider {
         };
 
         if let Some(preferences) = preferences {
-            if let Some(overrides) = &preferences.overrides_json {
-                let overrides_value: serde_json::Value = serde_json::from_str(overrides)
-                    .map_err(|e| format!("Failed to parse overrides JSON: {e}"))?;
-                merge_json_value(&mut result, &overrides_value);
+            if let Some(overrides) = &preferences.overrides {
+                merge_json_value(&mut result, overrides);
             }
         }
 
@@ -162,10 +160,8 @@ impl OptionsProvider {
 
         // Apply overrides for this specific key.
         if let Some(preferences) = preferences {
-            if let Some(overrides) = &preferences.overrides_json {
-                let overrides_value: serde_json::Value = serde_json::from_str(overrides)
-                    .map_err(|e| format!("Failed to parse overrides JSON: {e}"))?;
-                if let Some(override_for_key) = overrides_value.get(key) {
+            if let Some(overrides) = &preferences.overrides {
+                if let Some(override_for_key) = overrides.get(key) {
                     match &mut result {
                         Some(existing) => merge_json_value(existing, override_for_key),
                         None => result = Some(override_for_key.clone()),
@@ -188,7 +184,7 @@ impl OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
         if let Some(preferences) = preferences {
-            if preferences.overrides_json.is_some() {
+            if preferences.overrides.is_some() {
                 return Err("Caching when overrides are given is not supported.".to_owned());
             }
         }

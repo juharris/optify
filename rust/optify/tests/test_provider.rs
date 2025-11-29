@@ -108,12 +108,9 @@ fn test_provider_get_options_missing_key() -> Result<(), Box<dyn std::error::Err
     assert_eq!(opts.unwrap_err(), "Error getting options with features [\"feature_A\"]: configuration property \"does not exist\" not found");
 
     let mut preferences = GetOptionsPreferences::new();
-    preferences.overrides_json = Some(
-        serde_json::json!({
-            "does not exist": 42
-        })
-        .to_string(),
-    );
+    preferences.overrides = Some(serde_json::json!({
+        "does not exist": 42
+    }));
     let opts = provider.get_options_with_preferences(key, &feature_names, None, Some(&preferences));
     let value = opts.expect("should be able to get options");
     assert_eq!(value, serde_json::json!(42));
@@ -134,12 +131,9 @@ fn test_provider_get_options_no_features() -> Result<(), Box<dyn std::error::Err
     );
 
     let mut preferences = GetOptionsPreferences::new();
-    preferences.overrides_json = Some(
-        serde_json::json!({
-            key: 42
-        })
-        .to_string(),
-    );
+    preferences.overrides = Some(serde_json::json!({
+        key: 42
+    }));
     let opts = provider.get_options_with_preferences(key, &feature_names, None, Some(&preferences));
     let value = opts.expect("should be able to get options");
     assert_eq!(value, serde_json::json!(42));
@@ -150,19 +144,16 @@ fn test_provider_get_options_no_features() -> Result<(), Box<dyn std::error::Err
 fn test_provider_get_options_with_overrides() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let mut preferences = GetOptionsPreferences::new();
-    preferences.overrides_json = Some(
-        serde_json::json!({
-            "myConfig": {
-                "new key": 33,
-                "rootString": "new string",
-                "myObject": {
-                    "one": 1321,
-                    "something new for test_provider_get_options_with_overrides": "hello"
-                }
+    preferences.overrides = Some(serde_json::json!({
+        "myConfig": {
+            "new key": 33,
+            "rootString": "new string",
+            "myObject": {
+                "one": 1321,
+                "something new for test_provider_get_options_with_overrides": "hello"
             }
-        })
-        .to_string(),
-    );
+        }
+    }));
     let opts = provider.get_options_with_preferences("myConfig", &["a"], None, Some(&preferences));
 
     let expected = serde_json::json!({
@@ -311,20 +302,17 @@ fn test_configurable_values_get_all_options_with_overrides(
     let provider = get_configurable_values_provider();
     let mut preferences = GetOptionsPreferences::new();
     preferences.are_configurable_strings_enabled = true;
-    preferences.overrides_json = Some(
-        serde_json::json!({
-            "message": {
-                "$type": "Optify.ConfigurableString",
-                "base": {
-                    "liquid": "Hello {{ name }}!"
-                },
-                "arguments": {
-                    "name": "from the test"
-                }
+    preferences.overrides = Some(serde_json::json!({
+        "message": {
+            "$type": "Optify.ConfigurableString",
+            "base": {
+                "liquid": "Hello {{ name }}!"
+            },
+            "arguments": {
+                "name": "from the test"
             }
-        })
-        .to_string(),
-    );
+        }
+    }));
 
     let features: Vec<&str> = vec![];
     let opts = provider.get_all_options(&features, None, Some(&preferences))?;
