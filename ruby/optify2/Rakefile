@@ -1,0 +1,37 @@
+# typed: false
+# frozen_string_literal: true
+
+require 'bundler/gem_tasks'
+require 'rubocop/rake_task'
+require 'rake/testtask'
+
+RuboCop::RakeTask.new
+
+desc 'Run tests'
+task default: :test
+
+# Customize the git tag format for releases.
+Bundler::GemHelper.instance.tap do |helper|
+  helper.instance_eval do
+    #: -> String
+    def tag_version
+      # FIXME: Find a good name.
+      "ruby-optify2-v#{version}"
+    end
+  end
+end
+
+Rake::TestTask.new do |t|
+  shared_test_dir = File.expand_path('../optify/test', __dir__)
+  raise "Shared test directory #{shared_test_dir} does not exist" unless File.exist?(shared_test_dir)
+
+  local_test_dir = File.expand_path('test', __dir__)
+  t.test_files = FileList[
+    File.join(shared_test_dir, '*_test.rb'),
+    File.join(local_test_dir, '*_test.rb')
+  ]
+  t.libs << shared_test_dir
+
+  # Allow doing `require 'optify'` in tests.
+  t.libs << File.expand_path('lib', __dir__)
+end
