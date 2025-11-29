@@ -38,6 +38,9 @@ Run:
 ```shell
 cargo build --release
 cargo bench
+
+# Open one of the reports
+open target/criterion/*/report/index.html 
 ```
 
 ## Publishing

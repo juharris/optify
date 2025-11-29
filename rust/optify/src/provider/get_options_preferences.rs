@@ -1,6 +1,6 @@
-use crate::provider::constraints::Constraints;
+use crate::provider::{constraints::Constraints, SourceValue};
 
-#[derive(Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct GetOptionsPreferences {
     /// Allows resolving configurable strings.
     /// Defaults to false: no configurable strings will be resolved.
@@ -8,23 +8,10 @@ pub struct GetOptionsPreferences {
     pub are_configurable_strings_enabled: bool,
     pub constraints: Option<Constraints>,
     /// Overrides to apply after the built configuration.
-    /// A string is used because it makes it easier to pass to the `config` library, but this may change in the future.
-    /// It also makes it simpler and maybe faster to get from other programming languages.
-    pub overrides_json: Option<String>,
+    pub overrides: Option<SourceValue>,
     /// Determines if the feature names should be converted to canonical feature names.
     /// Defaults to false: given features names will be converted to canonical feature names before looking for features or options.
     pub skip_feature_name_conversion: bool,
-}
-
-impl Clone for GetOptionsPreferences {
-    fn clone(&self) -> Self {
-        Self {
-            are_configurable_strings_enabled: self.are_configurable_strings_enabled,
-            constraints: self.constraints.clone(),
-            overrides_json: self.overrides_json.clone(),
-            skip_feature_name_conversion: self.skip_feature_name_conversion,
-        }
-    }
 }
 
 impl Default for GetOptionsPreferences {
@@ -38,7 +25,7 @@ impl GetOptionsPreferences {
         Self {
             are_configurable_strings_enabled: false,
             constraints: None,
-            overrides_json: None,
+            overrides: None,
             skip_feature_name_conversion: false,
         }
     }

@@ -87,7 +87,7 @@ fn test_cache_with_overrides() -> Result<(), Box<dyn std::error::Error>> {
     let cache_options = CacheOptions {};
 
     let mut preferences = GetOptionsPreferences::new();
-    preferences.overrides_json = Some(r#"{"test": "override"}"#.to_string());
+    preferences.overrides = Some(serde_json::json!({"test": "override"}));
 
     let result = provider.get_all_options(&["a"], Some(&cache_options), Some(&preferences));
 

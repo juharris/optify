@@ -215,7 +215,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
     // With small override
     group.bench_function("small_override", |b| {
         let mut preferences = GetOptionsPreferences::new();
-        preferences.overrides_json = Some(r#"{"config1": {"extra": "value"}}"#.to_string());
+        preferences.overrides = Some(serde_json::json!({"config1": {"extra": "value"}}));
 
         b.iter(|| {
             provider
@@ -232,20 +232,17 @@ fn benchmark_with_overrides(c: &mut Criterion) {
     // With larger override
     group.bench_function("larger_override", |b| {
         let mut preferences = GetOptionsPreferences::new();
-        preferences.overrides_json = Some(
-            r#"{
-                "config1": {
-                    "level1": {
-                        "level2": {
-                            "key1": "overridden value 1",
-                            "key2": "overridden value 2",
-                            "newKey": "brand new value"
-                        }
+        preferences.overrides = Some(serde_json::json!({
+            "config1": {
+                "level1": {
+                    "level2": {
+                        "key1": "overridden value 1",
+                        "key2": "overridden value 2",
+                        "newKey": "brand new value"
                     }
                 }
-            }"#
-            .to_string(),
-        );
+            }
+        }));
 
         b.iter(|| {
             provider
