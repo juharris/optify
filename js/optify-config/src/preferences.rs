@@ -40,7 +40,8 @@ impl JsGetOptionsPreferences {
 
   #[napi]
   pub fn set_overrides_json(&mut self, overrides_json: Option<String>) {
-    self.inner.overrides_json = overrides_json;
+    self.inner.overrides =
+      overrides_json.map(|s| serde_json::from_str(&s).expect("overrides should be valid JSON"));
   }
 
   #[napi]

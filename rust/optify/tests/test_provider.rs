@@ -105,7 +105,7 @@ fn test_provider_get_options_missing_key() -> Result<(), Box<dyn std::error::Err
     let provider = get_provider();
     let opts = provider.get_options(key, &feature_names);
     assert!(opts.is_err());
-    assert_eq!(opts.unwrap_err(), "Error getting options with features [\"feature_A\"]: configuration property \"does not exist\" not found");
+    assert_eq!(opts.unwrap_err(), "Error getting options with features [\"a\"]: configuration property \"does not exist\" not found");
 
     let mut preferences = GetOptionsPreferences::new();
     preferences.overrides = Some(serde_json::json!({

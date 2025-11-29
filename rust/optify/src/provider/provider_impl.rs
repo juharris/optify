@@ -130,12 +130,13 @@ impl OptionsProvider {
     fn get_options_for_key(
         &self,
         key: &str,
-        feature_names: &[String],
+        filtered_feature_names: &[String],
+        original_feature_names: &[impl AsRef<str>],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let mut result = if feature_names.len() == 1 {
+        let mut result = if filtered_feature_names.len() == 1 {
             // Avoid merging to an empty object.
-            let feature_name = &feature_names[0];
+            let feature_name = &filtered_feature_names[0];
             let source = self
                 .sources
                 .get(feature_name)
@@ -143,7 +144,7 @@ impl OptionsProvider {
             source.get(key).cloned()
         } else {
             let mut result = None;
-            for canonical_feature_name in feature_names {
+            for canonical_feature_name in filtered_feature_names {
                 let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
                     format!("Feature name {canonical_feature_name:?} is not a known feature.")
                 })?;
@@ -173,7 +174,11 @@ impl OptionsProvider {
         result.ok_or_else(|| {
             format!(
                 "Error getting options with features {:?}: configuration property \"{}\" not found",
-                feature_names, key
+                original_feature_names
+                    .iter()
+                    .map(|f| f.as_ref())
+                    .collect::<Vec<&str>>(),
+                key
             )
         })
     }
@@ -452,7 +457,8 @@ impl OptionsRegistry for OptionsProvider {
         }
 
         let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        let mut value = self.get_options_for_key(key, &filtered_feature_names, preferences)?;
+        let mut value =
+            self.get_options_for_key(key, &filtered_feature_names, feature_names, preferences)?;
 
         self.process_configurable_strings(&mut value, Some(key), preferences)?;
         if cache_options.is_some() {

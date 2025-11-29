@@ -47,15 +47,20 @@ impl MutGetOptionsPreferences {
 
     // Overrides Section
     pub fn has_overrides(&self) -> bool {
-        self.0.borrow().overrides_json.is_some()
+        self.0.borrow().overrides.is_some()
     }
 
     pub fn set_overrides_json(&self, overrides: Option<String>) {
-        self.0.borrow_mut().overrides_json = overrides;
+        self.0.borrow_mut().overrides =
+            overrides.map(|s| serde_json::from_str(&s).expect("overrides should be valid JSON"));
     }
 
     pub fn get_overrides_json(&self) -> Option<String> {
-        self.0.borrow().overrides_json.clone()
+        self.0
+            .borrow()
+            .overrides
+            .as_ref()
+            .map(|o| serde_json::to_string(&o).unwrap())
     }
 
     // Skip Feature Name Conversion Section
