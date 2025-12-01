@@ -4,7 +4,7 @@ use napi::Env;
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
 use optify::provider::{OptionsProvider, OptionsRegistry};
 
-use crate::convert::convert_to_js_object;
+use crate::convert::convert_to_js;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::preferences::JsGetOptionsPreferences;
 
@@ -60,24 +60,12 @@ impl JsOptionsProvider {
       .collect()
   }
 
-  #[napi]
-  pub fn get_all_options_json(
-    &self,
-    feature_names: Vec<String>,
-    preferences: Option<&JsGetOptionsPreferences>,
-  ) -> napi::Result<String> {
-    let preferences = preferences.map(|p| &p.inner);
-    match self
-      .inner
-      .as_ref()
-      .unwrap()
-      .get_all_options(&feature_names, None, preferences)
-    {
-      Ok(json) => Ok(json.to_string()),
-      Err(e) => Err(napi::Error::from_reason(e.to_string())),
-    }
-  }
-
+  /// Gets all options for the specified feature names.
+  /// Should return a JavaScript object.
+  ///
+  /// There normally isn't much of a performance difference between using
+  /// `JSON.parse(get_all_options_json(...))` and `get_all_options(...)`.
+  /// Large JSON objects with over 50 keys may be slightly slower with `get_all_options(...)`.
   #[napi]
   pub fn get_all_options(
     &self,
@@ -92,7 +80,31 @@ impl JsOptionsProvider {
       .unwrap()
       .get_all_options(&feature_names, None, preferences)
     {
-      Ok(options) => Ok(convert_to_js_object(env, &options)),
+      Ok(options) => Ok(convert_to_js(env, &options)),
+      Err(e) => Err(napi::Error::from_reason(e.to_string())),
+    }
+  }
+
+  /// Gets all options for the specified feature names.
+  /// Returns a string which can be parsed as JSON to get the options.
+  ///
+  /// There normally isn't much of a performance difference between using
+  /// `JSON.parse(get_all_options_json(...))` and `get_all_options(...)`.
+  /// Large JSON objects with over 50 keys may be slightly slower with `get_all_options(...)`.
+  #[napi]
+  pub fn get_all_options_json(
+    &self,
+    feature_names: Vec<String>,
+    preferences: Option<&JsGetOptionsPreferences>,
+  ) -> napi::Result<String> {
+    let preferences = preferences.map(|p| &p.inner);
+    match self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_all_options(&feature_names, None, preferences)
+    {
+      Ok(json) => Ok(json.to_string()),
       Err(e) => Err(napi::Error::from_reason(e.to_string())),
     }
   }

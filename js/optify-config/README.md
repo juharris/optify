@@ -62,6 +62,16 @@ yarn build:ts
 yarn test
 ```
 
+## Benchmarking
+
+Run:
+```shell
+rm -rf target
+yarn build
+yarn build:ts
+node benchmarks/get_all_options.mjs
+```
+
 ## Formatting
 
 To automatically change the Rust code, run:
