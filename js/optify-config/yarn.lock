@@ -738,6 +738,7 @@ __metadata:
     "@types/mocha": "npm:^10.0.10"
     corepack: "npm:^0.32.0"
     jest: "npm:^29.7.0"
+    tinybench: "npm:^5.1.0"
     ts-jest: "npm:^29.3.4"
     typescript: "npm:^5.8.3"
   languageName: unknown
@@ -3273,6 +3274,13 @@ __metadata:
     glob: "npm:^7.1.4"
     minimatch: "npm:^3.0.4"
   checksum: 10c0/019d33d81adff3f9f1bfcff18125fb2d3c65564f437d9be539270ee74b994986abb8260c7c2ce90e8f30162178b09dbbce33c6389273afac4f36069c48521f57
+  languageName: node
+  linkType: hard
+
+"tinybench@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "tinybench@npm:5.1.0"
+  checksum: 10c0/a9d53204888711c6e67d374b96b9a8a096aac80dda755562de3ed7afa2a39f04abd3cd2a64e401a3f0ece4d49ae20230be0986c733030756bde2f0d56e78cd0f
   languageName: node
   linkType: hard
 

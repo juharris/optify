@@ -37,7 +37,7 @@ pub trait OptionsRegistry {
     /// Gets all feature names and alias names.
     fn get_features_and_aliases(&self) -> Vec<String>;
 
-    /// Gets all options for the specified feature names
+    /// Gets all options for the specified feature names.
     fn get_all_options(
         &self,
         feature_names: &[impl AsRef<str>],

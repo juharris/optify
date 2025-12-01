@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 
+mod convert;
 mod metadata;
 mod preferences;
 mod provider;

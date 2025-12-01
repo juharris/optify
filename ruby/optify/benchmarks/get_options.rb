@@ -17,10 +17,8 @@ feature_a = simple_provider.get_canonical_feature_name('a')
 feature_b = simple_provider.get_canonical_feature_name('b')
 
 simple_feature_trials = [
-  ['a'],
   [feature_a],
   ['a', feature_a, 'b', feature_b],
-  ['a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B'],
   ['a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B', 'a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B', 'a', feature_a, 'b', feature_b, 'A_with_comments',
    'a', 'B']
 ]
@@ -37,17 +35,11 @@ configurable_feature_trials = [
   ['imports_imports'],
   %w[simple override_name],
   %w[simple raw_overrides],
-  ['with_files'],
   %w[simple with_files],
-  ['with_files_in_arguments'],
   %w[simple with_files_in_arguments],
-  ['complex_deep_merge'],
   %w[simple complex_deep_merge],
-  ['complex_wide_structure'],
   %w[simple complex_wide_structure],
-  ['complex_nested_objects'],
-  %w[simple complex_nested_objects],
-  %w[complex_deep_merge complex_nested_objects complex_wide_structure]
+  %w[simple complex_deep_merge complex_nested_objects complex_wide_structure]
 ]
 
 Benchmark.bm do |x|
