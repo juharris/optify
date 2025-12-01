@@ -16,7 +16,12 @@ This is just meant to be minimal to get started and help build Python and Ruby l
 
 ## How It Works
 
-The [`config`][config] crate (library) is used to help combine configuration files.
+The [`config`][config] crate (library) is used to help load configuration files.
+This allows us to load many different types of files, including JSON, JSON5, YAML, and more.
+We no longer use the `config` crate to combine configuration files because it was slower to merge them and deserialize the result than our custom merging logic since we know that we want to use `serde_json::Value`s.
+
+We merge configurations starting with the first one given and thus the final feature overrides the previous ones.
+We may try to optimize further in the future, but this is fine now when there are just a few features or imports and when keys are mostly unique.
 
 Optionally, when working locally, there is support to watch for changes to the configuration files and folders using the [`notify-debouncer-full`][notify-debouncer-full] crate (library).
 

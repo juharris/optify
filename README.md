@@ -259,7 +259,7 @@ Eventually we can facilitate validation after a configuration is built.
 | YAML | Short and simple files that are not edited often.<br/> Good support for strings with newlines. <br/> Since JSON is valid YAML, JSON with comments can be used. | Getting the indentation wrong can mean that properties are ignored.<br/> If you try to use JSON, your editor may automatically convert the JSON to simpler YAML depending on your settings or your project might have certain style checks enabled for YAML files. |
 | JSON5 | Good mix of features from JSON and YAML. | Your IDE may require an extension to help with validation. |
 
-Other types are supported as the [config](https://crates.io/crates/config) Rust crate is used to back this project, but those other types are not as well-known and not as nice for working with deep objects so they are not recommended.
+Other types are supported as the [config](https://crates.io/crates/config) Rust crate is used to load files (but not merge them anymore), but those other types are not as well known and not as nice for working with deep objects so they are not recommended.
 In most cases, JSON should be preferred to help with some basic static structural validation at load time.
 Standard JSON validation will easily catch issues such as a bad merge conflict resolution, whereas it is easy to have valid YAML, but would not work as expected at runtime because of incorrect indentation.
 
