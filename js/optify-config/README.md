@@ -66,7 +66,7 @@ yarn test
 
 Run:
 ```shell
-rm -rf target
+rm -rf target config.*.node
 yarn build
 yarn build:ts
 node benchmarks/get_all_options.mjs
