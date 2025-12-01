@@ -68,7 +68,7 @@ impl OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        if let Some(_cache_options) = cache_options {
+        if cache_options.is_some() {
             match self.get_entire_config_from_cache(feature_names, preferences) {
                 Ok(Some(config)) => return Ok(config),
                 Ok(None) => (),
@@ -114,7 +114,7 @@ impl OptionsProvider {
             }
         }
 
-        if let Some(_cache_options) = cache_options {
+        if cache_options.is_some() {
             let cache_key = feature_names.to_owned();
             self.entire_config_cache
                 .write()
@@ -404,9 +404,9 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<Vec<String>, String> {
         let mut skip_feature_name_conversion = false;
         let mut constraints = None;
-        if let Some(_preferences) = preferences {
-            skip_feature_name_conversion = _preferences.skip_feature_name_conversion;
-            constraints = _preferences.constraints.as_ref();
+        if let Some(preferences) = preferences {
+            skip_feature_name_conversion = preferences.skip_feature_name_conversion;
+            constraints = preferences.constraints.as_ref();
         }
 
         let mut result = Vec::new();
@@ -448,7 +448,7 @@ impl OptionsRegistry for OptionsProvider {
         cache_options: Option<&CacheOptions>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        if let Some(_cache_options) = cache_options {
+        if cache_options.is_some() {
             match self.get_options_from_cache(key, feature_names, cache_options, preferences) {
                 Ok(Some(options)) => return Ok(options),
                 Ok(None) => (),
