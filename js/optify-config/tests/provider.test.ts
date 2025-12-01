@@ -33,6 +33,9 @@ describe('Provider', () => {
 			const options = JSON.parse(provider.getAllOptionsJson(['feature_A']))
 			const expectedOptions = JSON.parse(fs.readFileSync(path.join(configsPath, 'feature_A.json'), 'utf8'))['options']
 			expect(options).toEqual(expectedOptions)
+
+			const optionsObj = provider.getAllOptions(['feature_A'])
+			expect(optionsObj).toEqual(expectedOptions)
 		})
 
 		test(`${name} get_all_options_json A and B`, () => {
