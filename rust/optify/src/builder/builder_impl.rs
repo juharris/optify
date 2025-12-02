@@ -11,7 +11,7 @@ use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
 use crate::configurable_string::LoadedFiles;
-use crate::json::merge::merge_json_value;
+use crate::json::merge::merge_json_with_defaults;
 use crate::json::reader::read_json_from_file_as;
 use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
 use crate::schema::feature::FeatureConfiguration;
@@ -79,8 +79,8 @@ fn resolve_imports(
     conditions: &Conditions,
 ) -> Result<(), String> {
     // Build full configuration for the feature so that we don't need to traverse imports for the feature when configurations are requested from the provider.
-    let mut merged_config = serde_json::Value::Object(serde_json::Map::new());
-    for import in imports_for_feature {
+    let mut merged_config = sources.get(canonical_feature_name).unwrap().clone();
+    for import in imports_for_feature.iter().rev() {
         // Validate imports.
         if features_in_resolution_path.contains(import) {
             // The import is already in the path, so there is a cycle.
@@ -146,15 +146,12 @@ fn resolve_imports(
             source = sources.get(import).unwrap();
         }
 
-        merge_json_value(&mut merged_config, source);
+        // let source = sources.get(import).unwrap();
+        merge_json_with_defaults(&mut merged_config, source);
     }
 
-    // Include the current feature's configuration last to override any imports.
-    let source = sources.get(canonical_feature_name).unwrap();
-    merge_json_value(&mut merged_config, source);
-
+    // TODO Return source to avoid getting it again.
     sources.insert(canonical_feature_name.to_owned(), merged_config);
-
     Ok(())
 }
 

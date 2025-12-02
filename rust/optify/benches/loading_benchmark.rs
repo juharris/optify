@@ -37,7 +37,10 @@ fn create_test_files(dir: &Path, num_files: usize) {
     }},
     "options": {{
         "setting1": "value1",
-        "setting2": 42,
+        "setting2": {{
+            "existing_value": "exists",
+            "value{i}": "abc"
+        }},
         "setting3": true,
         "nested": {{
             "field1": "nested_value",
@@ -72,12 +75,16 @@ fn create_test_files(dir: &Path, num_files: usize) {
 {imports}
 options:
     setting1: value1
-    setting2: 42
+    setting2:
+      existing_value: "exists"
+      value{i}: "abc"
     setting3: true
+    setting{i}:
+      value{i}: 32
     nested:
       field1: nested_value
       field2: [1, 2, 3]
-"#,
+"#
         );
         file.write_all(content.as_bytes()).unwrap();
     }
