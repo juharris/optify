@@ -53,7 +53,7 @@ fn create_test_files(dir: &Path, num_files: usize) {
     for i in num_files / 2..num_files {
         let file_path = dir.join(format!("test_{i}.yaml"));
         let mut file = fs::File::create(&file_path).unwrap();
-        let imports = if i > 2 {
+        let imports = if i > (num_files / 2 + 3) {
             format!(
                 "imports:
   - import_{}
@@ -95,7 +95,7 @@ fn benchmark_loading(c: &mut Criterion) {
 
     create_test_files(test_dir, num_files);
 
-    let mut group = c.benchmark_group(format!("file_loading-{num_files}"));
+    let mut group = c.benchmark_group(format!("loading-{num_files}"));
 
     group.bench_function("parallel loading", |b| {
         b.iter(|| {
