@@ -139,18 +139,16 @@ fn resolve_imports(
                     all_imports,
                     sources,
                     conditions,
-                )?
-            }
+                )?;
 
-            // Get the source again because it may have been updated after resolving imports.
-            source = sources.get(import).unwrap();
+                // Get the source again because it may have been updated after resolving imports.
+                source = sources.get(import).unwrap();
+            }
         }
 
-        // let source = sources.get(import).unwrap();
         merge_json_with_defaults(&mut merged_config, source);
     }
 
-    // TODO Return source to avoid getting it again.
     sources.insert(canonical_feature_name.to_owned(), merged_config);
     Ok(())
 }
