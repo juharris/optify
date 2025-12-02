@@ -132,7 +132,7 @@
 				}
 			}
 		},
-		"wideConfig15": {
+		"config15": {
 			"level1": {
 				"level2": {
 					"key1": "Two-level key",

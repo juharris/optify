@@ -13,7 +13,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
     let features_a = ["a"];
 
     // Benchmark without caching
-    group.bench_function("no_cache", |b| {
+    group.bench_function("get_all_options/no_cache", |b| {
         b.iter(|| {
             let _ = provider
                 .get_all_options(black_box(&features_a), None, None)
@@ -22,7 +22,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
     });
 
     // Benchmark with caching (should be faster after first call)
-    group.bench_function("with_cache", |b| {
+    group.bench_function("get_all_options/with_cache", |b| {
         // Pre-populate cache
         let _ = provider
             .get_all_options(&features_a, Some(&cache_options), None)
@@ -36,7 +36,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
     });
 
     // Benchmark specific config retrieval without cache
-    group.bench_function("no_cache_specific_config", |b| {
+    group.bench_function("specific_config/no_cache", |b| {
         b.iter(|| {
             let _ = provider
                 .get_options_with_preferences(
@@ -50,7 +50,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
     });
 
     // Benchmark specific config retrieval with cache
-    group.bench_function("with_cache_specific_config", |b| {
+    group.bench_function("specific_config/with_cache", |b| {
         // Pre-populate cache
         let _ = provider
             .get_options_with_preferences("myConfig", &features_a, Some(&cache_options), None)

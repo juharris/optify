@@ -53,12 +53,23 @@ fn create_test_files(dir: &Path, num_files: usize) {
     for i in num_files / 2..num_files {
         let file_path = dir.join(format!("test_{i}.yaml"));
         let mut file = fs::File::create(&file_path).unwrap();
+        let imports = if i > 2 {
+            format!(
+                "imports:
+  - import_{}
+",
+                i - 1
+            )
+        } else {
+            "".to_string()
+        };
 
         let content = format!(
             r#"metadata:
     aliases:
         - alias_y_{i}_1
         - alias_y_{i}_2
+{imports}
 options:
     setting1: value1
     setting2: 42
