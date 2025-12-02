@@ -76,36 +76,44 @@ impl OptionsProvider {
             }
         };
 
-        let mut result = if feature_names.len() == 1 {
-            // Avoid merging to an empty object.
-            let feature_name = &feature_names[0];
-            match self.sources.get(feature_name) {
-                Some(src) => src.clone(),
-                None => {
-                    return Err(format!(
-                        "Feature name {feature_name:?} is not a known feature."
-                    ));
-                }
-            }
-        } else {
-            let mut result = serde_json::Value::Object(serde_json::Map::new());
-
-            for canonical_feature_name in feature_names.iter().rev() {
-                let source = match self.sources.get(canonical_feature_name) {
-                    Some(src) => src,
+        let mut result = match feature_names.len() {
+            0 => serde_json::Value::Object(serde_json::Map::new()),
+            1 => {
+                // Avoid merging to an empty object.
+                let feature_name = &feature_names[0];
+                match self.sources.get(feature_name) {
+                    Some(src) => src.clone(),
                     None => {
-                        // Should not happen.
-                        // All canonical feature names are included as keys in the sources map.
-                        // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                         return Err(format!(
-                            "Feature name {canonical_feature_name:?} is not a known feature."
+                            "Feature name {feature_name:?} is not a known feature."
                         ));
                     }
-                };
-                merge_json_with_defaults(&mut result, source);
+                }
             }
+            _ => {
+                let mut result = self
+                    .sources
+                    .get(feature_names.last().unwrap())
+                    .unwrap()
+                    .clone();
 
-            result
+                for canonical_feature_name in feature_names.iter().rev().skip(1) {
+                    let source = match self.sources.get(canonical_feature_name) {
+                        Some(src) => src,
+                        None => {
+                            // Should not happen.
+                            // All canonical feature names are included as keys in the sources map.
+                            // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
+                            return Err(format!(
+                                "Feature name {canonical_feature_name:?} is not a known feature."
+                            ));
+                        }
+                    };
+                    merge_json_with_defaults(&mut result, source);
+                }
+
+                result
+            }
         };
 
         if let Some(preferences) = preferences {
@@ -134,29 +142,31 @@ impl OptionsProvider {
         original_feature_names: &[impl AsRef<str>],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let mut result = if filtered_feature_names.len() == 1 {
-            // Avoid merging to an empty object.
-            let feature_name = &filtered_feature_names[0];
-            let source = self
-                .sources
-                .get(feature_name)
-                .ok_or_else(|| format!("Feature name {feature_name:?} is not a known feature."))?;
-            source.get(key).cloned()
-        } else {
-            let mut result = None;
-            for canonical_feature_name in filtered_feature_names.iter().rev() {
-                let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
-                    format!("Feature name {canonical_feature_name:?} is not a known feature.")
+        let mut result: Option<serde_json::Value> = match filtered_feature_names.len() {
+            1 => {
+                // Avoid merging to an empty object.
+                let feature_name = &filtered_feature_names[0];
+                let source = self.sources.get(feature_name).ok_or_else(|| {
+                    format!("Feature name {feature_name:?} is not a known feature.")
                 })?;
+                source.get(key).cloned()
+            }
+            _ => {
+                let mut result = None;
+                for canonical_feature_name in filtered_feature_names.iter().rev() {
+                    let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
+                        format!("Feature name {canonical_feature_name:?} is not a known feature.")
+                    })?;
 
-                if let Some(source_value) = source.get(key) {
-                    match &mut result {
-                        Some(existing) => merge_json_with_defaults(existing, source_value),
-                        None => result = Some(source_value.clone()),
+                    if let Some(source_value) = source.get(key) {
+                        match &mut result {
+                            Some(existing) => merge_json_with_defaults(existing, source_value),
+                            None => result = Some(source_value.clone()),
+                        }
                     }
                 }
+                result
             }
-            result
         };
 
         // Apply overrides for this specific key.
