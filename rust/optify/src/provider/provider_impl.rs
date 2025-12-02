@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::Path, sync::RwLock};
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
-    json::merge::merge_json_value,
+    json::merge::{merge_json_value, merge_json_with_defaults},
     provider::GetOptionsPreferences,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
@@ -90,7 +90,7 @@ impl OptionsProvider {
         } else {
             let mut result = serde_json::Value::Object(serde_json::Map::new());
 
-            for canonical_feature_name in feature_names {
+            for canonical_feature_name in feature_names.iter().rev() {
                 let source = match self.sources.get(canonical_feature_name) {
                     Some(src) => src,
                     None => {
@@ -102,7 +102,7 @@ impl OptionsProvider {
                         ));
                     }
                 };
-                merge_json_value(&mut result, source);
+                merge_json_with_defaults(&mut result, source);
             }
 
             result
@@ -144,14 +144,14 @@ impl OptionsProvider {
             source.get(key).cloned()
         } else {
             let mut result = None;
-            for canonical_feature_name in filtered_feature_names {
+            for canonical_feature_name in filtered_feature_names.iter().rev() {
                 let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
                     format!("Feature name {canonical_feature_name:?} is not a known feature.")
                 })?;
 
                 if let Some(source_value) = source.get(key) {
                     match &mut result {
-                        Some(existing) => merge_json_value(existing, source_value),
+                        Some(existing) => merge_json_with_defaults(existing, source_value),
                         None => result = Some(source_value.clone()),
                     }
                 }
