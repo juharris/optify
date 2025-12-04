@@ -253,7 +253,7 @@ class OptifyTest < Test::Unit::TestCase
       rescue Exception => e # rubocop:disable Lint/RescueException
         flunk "Expected RuntimeError that can be caught by `rescue => e`, got #{e.class}"
       end
-      assert_equal('Feature name "A" is not a known feature.', err.message)
+      assert_equal('Feature name "B" is not a known feature.', err.message)
     end
   end
 
