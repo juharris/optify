@@ -59,7 +59,7 @@ fn create_test_files(dir: &Path, num_files: usize) {
         let imports = if i > (num_files / 2 + 3) {
             format!(
                 "imports:
-  - import_{}
+  - test_{}
 ",
                 i - 1
             )
@@ -98,7 +98,6 @@ fn benchmark_loading(c: &mut Criterion) {
     let test_dir = Path::new("bench_test_files");
     let num_files = 100;
     let _guard = TestDirGuard::new(test_dir);
-    let test_build = false;
 
     create_test_files(test_dir, num_files);
 
@@ -108,10 +107,8 @@ fn benchmark_loading(c: &mut Criterion) {
         b.iter(|| {
             let mut builder = OptionsProviderBuilder::new();
             builder.add_directory(black_box(test_dir)).unwrap();
-            if test_build {
-                // Ensure that there are no errors in the builder.
-                builder.build().unwrap();
-            }
+            // Ensure that there are no errors in the builder.
+            builder.build().unwrap();
         })
     });
 

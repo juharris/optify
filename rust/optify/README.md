@@ -41,9 +41,6 @@ cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 ## Benchmarking
 Run:
 ```shell
-# Clear old benchmarks
-rm -rf target
-
 cargo build --release
 cargo bench
 
