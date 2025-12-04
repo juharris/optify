@@ -38,9 +38,9 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
     ];
 
     for (name, feature_names, key) in &feature_sets {
-        // Benchmark: Full get_options call (no cache, no preferences)
+        // Benchmark: get_options call (no cache, no preferences)
         group.bench_with_input(
-            BenchmarkId::new("full_no_cache", name),
+            BenchmarkId::new("get_options", name),
             &(feature_names, key),
             |b, (features, key)| {
                 b.iter(|| {
@@ -53,7 +53,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
 
         // Benchmark: Full get_options_with_preferences (no cache)
         group.bench_with_input(
-            BenchmarkId::new("full_with_prefs_no_cache", name),
+            BenchmarkId::new("get_options_with_preferences no cache", name),
             &(feature_names, key),
             |b, (features, key)| {
                 let preferences = GetOptionsPreferences::new();
@@ -72,7 +72,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
 
         // Benchmark: With cache (cache miss then hits)
         group.bench_with_input(
-            BenchmarkId::new("with_cache_hit", name),
+            BenchmarkId::new("get_options_with_preferences with cache", name),
             &(feature_names, key),
             |b, (features, key)| {
                 let cache_options = CacheOptions {};
@@ -89,19 +89,6 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
                             Some(&cache_options),
                             None,
                         )
-                        .unwrap()
-                })
-            },
-        );
-
-        // Benchmark: get_all_options (entire config)
-        group.bench_with_input(
-            BenchmarkId::new("get_all_options", name),
-            feature_names,
-            |b, features| {
-                b.iter(|| {
-                    provider
-                        .get_all_options(black_box(features), None, None)
                         .unwrap()
                 })
             },
@@ -137,69 +124,10 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
     group.finish();
 }
 
-fn benchmark_configurable_strings(c: &mut Criterion) {
-    let provider = get_provider();
-
-    let mut group = c.benchmark_group("configurable_strings");
-
-    let features_with_files = vec!["with_files"];
-
-    // Without configurable strings enabled (default)
-    group.bench_function("disabled", |b| {
-        b.iter(|| {
-            provider
-                .get_all_options(black_box(&features_with_files), None, None)
-                .unwrap()
-        })
-    });
-
-    // With configurable strings enabled
-    group.bench_function("enabled", |b| {
-        let mut preferences = GetOptionsPreferences::new();
-        preferences.are_configurable_strings_enabled = true;
-
-        b.iter(|| {
-            provider
-                .get_all_options(black_box(&features_with_files), None, Some(&preferences))
-                .unwrap()
-        })
-    });
-
-    group.finish();
-}
-
-fn benchmark_different_keys(c: &mut Criterion) {
-    let provider = get_provider();
-
-    let mut group = c.benchmark_group("different_keys");
-
-    let features = vec!["complex_deep_merge"];
-
-    // Getting top-level config key
-    group.bench_function("top_level_config1", |b| {
-        b.iter(|| {
-            provider
-                .get_options(black_box("config1"), black_box(&features))
-                .unwrap()
-        })
-    });
-
-    // Getting all options (entire merged config)
-    group.bench_function("get_all_options", |b| {
-        b.iter(|| {
-            provider
-                .get_all_options(black_box(&features), None, None)
-                .unwrap()
-        })
-    });
-
-    group.finish();
-}
-
 fn benchmark_with_overrides(c: &mut Criterion) {
     let provider = get_provider();
 
-    let mut group = c.benchmark_group("with_overrides");
+    let mut group = c.benchmark_group("get_options/with_overrides");
 
     let features = vec!["complex_deep_merge"];
 
@@ -207,7 +135,12 @@ fn benchmark_with_overrides(c: &mut Criterion) {
     group.bench_function("no_overrides", |b| {
         b.iter(|| {
             provider
-                .get_options(black_box("config1"), black_box(&features))
+                .get_options_with_preferences(
+                    black_box("config1"),
+                    black_box(&features),
+                    None,
+                    None,
+                )
                 .unwrap()
         })
     });
@@ -262,7 +195,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
 fn benchmark_skip_feature_name_conversion(c: &mut Criterion) {
     let provider = get_provider();
 
-    let mut group = c.benchmark_group("skip_feature_name_conversion");
+    let mut group = c.benchmark_group("get_options/skip_feature_name_conversion");
 
     let features = vec!["complex_deep_merge", "complex_nested_objects"];
 
@@ -301,11 +234,57 @@ fn benchmark_skip_feature_name_conversion(c: &mut Criterion) {
     group.finish();
 }
 
+fn benchmark_many_features(c: &mut Criterion) {
+    let provider = get_provider();
+
+    let mut group = c.benchmark_group("get_options/many features");
+
+    let keys = vec![
+        "config1",
+        "config2",
+        "config3",
+        "config6",
+        "config10",
+        "config11",
+        "config15",
+        "greeting",
+        "wideConfig3",
+    ];
+    let features = vec![
+        "simple",
+        "complex_wide_structure",
+        "complex_deep_merge",
+        "complex_nested_objects",
+        "type_other_string",
+        "simple",
+        "with_files",
+    ];
+
+    for key in keys {
+        group.bench_function(key, |b| {
+            let mut preferences = GetOptionsPreferences::new();
+            preferences.are_configurable_strings_enabled = true;
+            let preferences = Some(&preferences);
+            b.iter(|| {
+                provider
+                    .get_options_with_preferences(
+                        black_box(key),
+                        black_box(&features),
+                        None,
+                        preferences,
+                    )
+                    .unwrap()
+            })
+        });
+    }
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_get_options_with_preferences_breakdown,
-    benchmark_configurable_strings,
-    benchmark_different_keys,
+    benchmark_many_features,
     benchmark_with_overrides,
     benchmark_skip_feature_name_conversion,
 );

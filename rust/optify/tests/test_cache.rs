@@ -392,3 +392,22 @@ fn test_cache_constraints() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_cache_get_options_with_invalid_feature() {
+    let provider = get_new_provider();
+    let cache_options = CacheOptions {};
+
+    let result = provider.get_options_with_preferences(
+        "myConfig",
+        &["invalid_feature"],
+        Some(&cache_options),
+        None,
+    );
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err(),
+        "Feature name \"invalid_feature\" is not a known feature."
+    );
+}

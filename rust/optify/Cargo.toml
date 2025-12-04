@@ -40,14 +40,17 @@ criterion = "0.5.1"
 tempfile = "3"
 
 [[bench]]
-name = "loading_benchmark"
+name = "caching_benchmark"
 harness = false
 
 [[bench]]
-name = "caching_benchmark"
+name = "get_all_options_benchmark"
 harness = false
 
 [[bench]]
 name = "get_options_benchmark"
 harness = false
 
+[[bench]]
+name = "loading_benchmark"
+harness = false

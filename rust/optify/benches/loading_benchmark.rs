@@ -37,7 +37,10 @@ fn create_test_files(dir: &Path, num_files: usize) {
     }},
     "options": {{
         "setting1": "value1",
-        "setting2": 42,
+        "setting2": {{
+            "existing_value": "exists",
+            "value{i}": "abc"
+        }},
         "setting3": true,
         "nested": {{
             "field1": "nested_value",
@@ -53,20 +56,35 @@ fn create_test_files(dir: &Path, num_files: usize) {
     for i in num_files / 2..num_files {
         let file_path = dir.join(format!("test_{i}.yaml"));
         let mut file = fs::File::create(&file_path).unwrap();
+        let imports = if i > (num_files / 2 + 3) {
+            format!(
+                "imports:
+  - test_{}
+",
+                i - 1
+            )
+        } else {
+            "".to_string()
+        };
 
         let content = format!(
             r#"metadata:
     aliases:
         - alias_y_{i}_1
         - alias_y_{i}_2
+{imports}
 options:
     setting1: value1
-    setting2: 42
+    setting2:
+      existing_value: "exists"
+      value{i}: "abc"
     setting3: true
+    setting{i}:
+      value{i}: 32
     nested:
       field1: nested_value
       field2: [1, 2, 3]
-"#,
+"#
         );
         file.write_all(content.as_bytes()).unwrap();
     }
@@ -80,20 +98,17 @@ fn benchmark_loading(c: &mut Criterion) {
     let test_dir = Path::new("bench_test_files");
     let num_files = 100;
     let _guard = TestDirGuard::new(test_dir);
-    let test_build = false;
 
     create_test_files(test_dir, num_files);
 
-    let mut group = c.benchmark_group(format!("file_loading-{num_files}"));
+    let mut group = c.benchmark_group(format!("loading-{num_files}"));
 
     group.bench_function("parallel loading", |b| {
         b.iter(|| {
             let mut builder = OptionsProviderBuilder::new();
             builder.add_directory(black_box(test_dir)).unwrap();
-            if test_build {
-                // Ensure that there are no errors in the builder.
-                builder.build().unwrap();
-            }
+            // Ensure that there are no errors in the builder.
+            builder.build().unwrap();
         })
     });
 
