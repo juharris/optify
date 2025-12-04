@@ -133,3 +133,23 @@ fn test_builder_used_canonical_alias() {
         }
     }
 }
+
+#[test]
+fn test_build_from_directories_with_schema() -> Result<(), Box<dyn std::error::Error>> {
+    let configs_dir = std::path::Path::new("../../tests/test_suites/inheritance/configs");
+    let schema_path = configs_dir.join(".optify/schema.json");
+    let provider =
+        OptionsProvider::build_from_directories_with_schema(&[configs_dir], &schema_path)?;
+
+    let features = provider.get_features();
+    assert!(!features.is_empty());
+    let feature_c = "feature_C".to_string();
+    assert!(features.contains(&feature_c));
+
+    let options = provider.get_options("myConfig", &[feature_c])?;
+    assert_eq!(options["myObject"]["one"], 11);
+    assert_eq!(options["myObject"]["two"], 2);
+    assert_eq!(options["myObject"]["three"], 3);
+
+    Ok(())
+}
