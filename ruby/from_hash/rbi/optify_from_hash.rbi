@@ -9,15 +9,14 @@ module Optify
 
     # Create a new instance of the class from a hash.
     #
-    # This is a class method that so that it can set members with private setters.
     # @param hash The hash to create the instance from.
     # @return The new instance.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
     def self.from_hash(hash); end
 
     # Convert this object to a JSON string.
-    sig { params(args: T.untyped).returns(String) }
-    def to_json(*args); end
+    sig { params(state: T.nilable(JSON::State)).returns(String) }
+    def to_json(state = nil); end
 
     # Convert this object to a Hash recursively.
     # This is mostly the reverse operation of `from_hash`,
