@@ -14,7 +14,6 @@ module Optify
 
     # Create a new immutable instance of the class from a hash.
     #
-    # This is a class method so that it can set members with private setters.
     # @param hash The hash to create the instance from.
     # @return The new instance.
     #: (Hash[untyped, untyped]) -> instance
@@ -40,7 +39,7 @@ module Optify
       instance.freeze
     end
 
-    #: (untyped, untyped) -> untyped
+    #: (untyped, T::Types::Base) -> untyped
     def self._convert_value(value, type)
       if type.is_a?(T::Types::Untyped)
         # No preferred type is given, so return the value as is.
@@ -52,7 +51,10 @@ module Optify
       case value
       when Array
         # Handle `T.nilable(T::Array[...])`
-        type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)
+        if type.respond_to?(:unwrap_nilable)
+          type = type #: as untyped
+                 .unwrap_nilable
+        end
         inner_type = type.type
         return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
@@ -61,7 +63,8 @@ module Optify
         # `T.any(...)` because using `.types` works for both cases.
         if type.respond_to?(:types)
           # Find a type that works for the hash.
-          type.types.each do |t|
+          type #: as untyped
+            .types.each do |t|
             return _convert_hash(value, t).freeze
           rescue StandardError
             # Ignore and try the next type.
@@ -76,12 +79,13 @@ module Optify
       value
     end
 
-    #: (Hash[untyped, untyped], untyped) -> untyped
+    #: (Hash[untyped, untyped], T::Types::Base) -> untyped
     def self._convert_hash(hash, type)
       if type.respond_to?(:raw_type)
         # There is an object for the hash.
         # It could be a custom class, a String, or maybe something else.
-        type_for_hash = type.raw_type
+        type_for_hash = type #: as untyped
+                        .raw_type
         return type_for_hash.from_hash(hash) if type_for_hash.respond_to?(:from_hash)
       elsif type.is_a?(T::Types::TypedHash)
         # The hash should be a hash, but the values might be objects to convert.
@@ -116,9 +120,9 @@ module Optify
     end
 
     # Convert this object to a JSON string.
-    #: (*untyped) -> String
-    def to_json(*args)
-      to_h.to_json(args)
+    #: (?JSON::State?) -> String
+    def to_json(state = nil)
+      to_h.to_json(state)
     end
 
     # Convert this object to a Hash recursively.
@@ -134,21 +138,19 @@ module Optify
         # Remove the @ prefix to get the method name
         method_name = var_name.to_s[1..] #: as !nil
         value = instance_variable_get(var_name)
-        result[method_name.to_sym] = _convert_value_to_hash(value)
+        result[method_name.to_sym] = self.class.send(:_convert_value_for_to_h, value)
       end
 
       result
     end
 
-    private
-
     #: (untyped) -> untyped
-    def _convert_value_to_hash(value)
+    def self._convert_value_for_to_h(value)
       case value
       when Array
-        value.map { |v| _convert_value_to_hash(v) }
+        value.map { |v| _convert_value_for_to_h(v) }
       when Hash
-        value.transform_values { |v| _convert_value_to_hash(v) }
+        value.transform_values { |v| _convert_value_for_to_h(v) }
       when nil
         nil
       else
@@ -159,5 +161,7 @@ module Optify
         end
       end
     end
+
+    private_class_method :_convert_value_for_to_h
   end
 end
