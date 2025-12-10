@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::Path, sync::RwLock};
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
-    json::merge::merge_json_value,
+    json::merge::merge_json_with_defaults,
     provider::GetOptionsPreferences,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
@@ -76,43 +76,56 @@ impl OptionsProvider {
             }
         };
 
-        let mut result = if feature_names.len() == 1 {
-            // Avoid merging to an empty object.
-            let feature_name = &feature_names[0];
-            match self.sources.get(feature_name) {
-                Some(src) => src.clone(),
-                None => {
-                    return Err(format!(
-                        "Feature name {feature_name:?} is not a known feature."
-                    ));
-                }
-            }
-        } else {
-            let mut result = serde_json::Value::Object(serde_json::Map::new());
+        let overrides = preferences.and_then(|p| p.overrides.as_ref());
 
-            for canonical_feature_name in feature_names {
-                let source = match self.sources.get(canonical_feature_name) {
-                    Some(src) => src,
+        let result = match (overrides, feature_names.len()) {
+            (None, 0) => serde_json::Value::Object(serde_json::Map::new()),
+            (None, 1) => {
+                // Avoid merging to an empty object and eagerly take the right configuration.
+                let feature_name = &feature_names[0];
+                self.sources
+                    .get(feature_name)
+                    .ok_or_else(|| {
+                        format!("Feature name {feature_name:?} is not a known feature.")
+                    })?
+                    .clone()
+            }
+            (Some(overrides), 0) => overrides.clone(),
+            _ => {
+                // Start with overrides as base (highest priority), or last source if no overrides.
+                // Sources are ordered from lowest to highest priority, so we iterate in reverse.
+                let mut result = match overrides {
+                    Some(overrides) => overrides.clone(),
                     None => {
+                        let canonical_feature_name = feature_names.last().unwrap();
+                        self.sources
+                            .get(canonical_feature_name)
+                            .ok_or_else(|| {
+                                // Should not happen.
+                                // All canonical feature names are included as keys in the sources map.
+                                // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
+                                format!("Feature name {canonical_feature_name:?} is not a known feature.")
+                            })?
+                            .clone()
+                    }
+                };
+
+                // Merge sources as defaults in reverse (highest to lowest priority).
+                // Skip last source if no overrides (already used as base).
+                let skip_count = if overrides.is_some() { 0 } else { 1 };
+                for canonical_feature_name in feature_names.iter().rev().skip(skip_count) {
+                    let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
                         // Should not happen.
                         // All canonical feature names are included as keys in the sources map.
                         // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
-                        return Err(format!(
-                            "Feature name {canonical_feature_name:?} is not a known feature."
-                        ));
-                    }
-                };
-                merge_json_value(&mut result, source);
-            }
+                        format!("Feature name {canonical_feature_name:?} is not a known feature.")
+                    })?;
+                    merge_json_with_defaults(&mut result, source);
+                }
 
-            result
+                result
+            }
         };
-
-        if let Some(preferences) = preferences {
-            if let Some(overrides) = &preferences.overrides {
-                merge_json_value(&mut result, overrides);
-            }
-        }
 
         if cache_options.is_some() {
             let cache_key = feature_names.to_owned();
@@ -134,42 +147,59 @@ impl OptionsProvider {
         original_feature_names: &[impl AsRef<str>],
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<serde_json::Value, String> {
-        let mut result = if filtered_feature_names.len() == 1 {
-            // Avoid merging to an empty object.
-            let feature_name = &filtered_feature_names[0];
-            let source = self
-                .sources
-                .get(feature_name)
-                .ok_or_else(|| format!("Feature name {feature_name:?} is not a known feature."))?;
-            source.get(key).cloned()
-        } else {
-            let mut result = None;
-            for canonical_feature_name in filtered_feature_names {
-                let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
-                    format!("Feature name {canonical_feature_name:?} is not a known feature.")
-                })?;
+        let override_for_key = preferences
+            .and_then(|p| p.overrides.as_ref())
+            .and_then(|o| o.get(key));
 
-                if let Some(source_value) = source.get(key) {
-                    match &mut result {
-                        Some(existing) => merge_json_value(existing, source_value),
-                        None => result = Some(source_value.clone()),
-                    }
+        let result: Option<serde_json::Value> =
+            match (override_for_key, filtered_feature_names.len()) {
+                (None, 0) => None,
+                (None, 1) => {
+                    let feature_name = &filtered_feature_names[0];
+                    let source = self.sources.get(feature_name).ok_or_else(|| {
+                        format!("Feature name {feature_name:?} is not a known feature.")
+                    })?;
+                    source.get(key).cloned()
                 }
-            }
-            result
-        };
+                (None, _) => {
+                    // No override. Find first source with key (iterating in reverse = highest priority first).
+                    // Use the last source with the key to avoid merging to an empty object.
+                    let mut result = None;
+                    for canonical_feature_name in filtered_feature_names.iter().rev() {
+                        let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
+                            format!(
+                                "Feature name {canonical_feature_name:?} is not a known feature."
+                            )
+                        })?;
 
-        // Apply overrides for this specific key.
-        if let Some(preferences) = preferences {
-            if let Some(overrides) = &preferences.overrides {
-                if let Some(override_for_key) = overrides.get(key) {
-                    match &mut result {
-                        Some(existing) => merge_json_value(existing, override_for_key),
-                        None => result = Some(override_for_key.clone()),
+                        if let Some(source_value) = source.get(key) {
+                            match &mut result {
+                                Some(existing) => merge_json_with_defaults(existing, source_value),
+                                None => result = Some(source_value.clone()),
+                            }
+                        }
                     }
+                    result
                 }
-            }
-        }
+                (Some(override_value), 0) => Some(override_value.clone()),
+                (Some(override_value), _) => {
+                    // Start with override as base (highest priority).
+                    // Sources are ordered from lowest to highest priority, so we iterate in reverse.
+                    let mut result = override_value.clone();
+                    for canonical_feature_name in filtered_feature_names.iter().rev() {
+                        let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
+                            format!(
+                                "Feature name {canonical_feature_name:?} is not a known feature."
+                            )
+                        })?;
+
+                        if let Some(source_value) = source.get(key) {
+                            merge_json_with_defaults(&mut result, source_value);
+                        }
+                    }
+                    Some(result)
+                }
+            };
 
         result.ok_or_else(|| {
             format!(

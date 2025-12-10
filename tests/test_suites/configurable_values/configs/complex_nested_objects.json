@@ -11,13 +11,13 @@
 				}
 			}
 		},
-		"nestedConfig2": {
+		"config2": {
 			"level1": {
 				"key1": "Simple two-level key with long string value",
 				"key2": "Another simple two-level key with long string value"
 			}
 		},
-		"nestedConfig3": {
+		"config3": {
 			"level1": {
 				"level2": {
 					"level3": {
@@ -94,7 +94,7 @@
 				"key2": "Another simple configuration key"
 			}
 		},
-		"nestedConfig11": {
+		"config11": {
 			"level1": {
 				"level2": {
 					"level3": {

@@ -44,6 +44,9 @@ Run:
 cargo build --release
 cargo bench
 
+# Run one specific benchmark, example:
+cargo bench --bench get_options_benchmark
+
 # Open one of the reports
 open target/criterion/*/report/index.html 
 ```

@@ -210,6 +210,48 @@ fn test_provider_get_all_options() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn test_provider_get_all_options_multiple_features() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider();
+    let feature_names: Vec<&str> = vec!["a", "b"];
+    let entire_config = provider.get_all_options(&feature_names, None, None)?;
+    let key = "myConfig";
+    let opts = provider.get_options(key, &feature_names)?;
+    let expected = serde_json::json!({
+        key: opts
+    });
+    assert_eq!(entire_config, expected);
+    Ok(())
+}
+
+#[test]
+fn test_provider_get_all_options_multiple_features_with_overrides(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider();
+    let feature_names: Vec<&str> = vec!["a", "b"];
+    let mut preferences = GetOptionsPreferences::new();
+    let time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let value = format!("from the overrides {time}");
+    preferences.overrides = Some(serde_json::json!({
+        "myConfig": {
+            "rootString": value
+        }
+    }));
+    let entire_config = provider.get_all_options(&feature_names, None, Some(&preferences))?;
+    let key = "myConfig";
+    let opts =
+        provider.get_options_with_preferences(key, &feature_names, None, Some(&preferences))?;
+    let expected = serde_json::json!({
+        key: opts
+    });
+    assert_eq!(entire_config, expected);
+    assert_eq!(opts["rootString"], value);
+    Ok(())
+}
+
+#[test]
 fn test_provider_get_dependents() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_inheritance_provider();
     let grandparent_metadata = provider.get_feature_metadata("grandparent").unwrap();
