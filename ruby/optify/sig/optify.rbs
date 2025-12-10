@@ -159,6 +159,10 @@ module Optify::ProviderModule
 
   def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
+  # @param canonical_feature_name [String] A canonical feature name
+  # @return Whether the feature has conditions.
+  def conditions?: (String canonical_feature_name) -> bool
+
   # (Optional) Eagerly initializes the cache.
   # @return `self`.
   def init: () -> self

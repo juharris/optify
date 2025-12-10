@@ -280,4 +280,12 @@ class OptifyTest < Test::Unit::TestCase
       assert_equal(%w[B], filtered)
     end
   end
+
+  def test_has_conditions
+    PROVIDERS.each do |klass|
+      provider = klass.build('../../tests/test_suites/conditions/configs')
+      assert_true(provider.conditions?('A'))
+      assert_false(provider.conditions?('B'))
+    end
+  end
 end

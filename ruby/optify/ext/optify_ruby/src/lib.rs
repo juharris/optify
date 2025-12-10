@@ -265,6 +265,10 @@ impl WrappedOptionsProvider {
             Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
         }
     }
+
+    fn has_conditions(&self, canonical_feature_name: String) -> bool {
+        self.0.borrow().has_conditions(&canonical_feature_name)
+    }
 }
 
 #[derive(Clone)]
@@ -506,6 +510,10 @@ impl WrappedOptionsWatcher {
         }
     }
 
+    fn has_conditions(&self, canonical_feature_name: String) -> bool {
+        self.0.borrow().has_conditions(&canonical_feature_name)
+    }
+
     fn last_modified(&self) -> std::time::SystemTime {
         self.0.borrow().last_modified()
     }
@@ -607,6 +615,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     provider_class.define_method(
         "get_options_hash_with_preferences",
         method!(WrappedOptionsProvider::get_options_hash_with_preferences, 3),
+    )?;
+    provider_class.define_method(
+        "conditions?",
+        method!(WrappedOptionsProvider::has_conditions, 1),
     )?;
 
     // Private methods for internal use.
@@ -738,6 +750,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_method(
         "get_options_hash_with_preferences",
         method!(WrappedOptionsWatcher::get_options_hash_with_preferences, 3),
+    )?;
+    watcher_class.define_method(
+        "conditions?",
+        method!(WrappedOptionsWatcher::has_conditions, 1),
     )?;
     watcher_class.define_method(
         "last_modified",
