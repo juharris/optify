@@ -257,6 +257,11 @@ module Optify
     end
     def get_options_json_with_preferences(key, feature_names, preferences); end
 
+    # @param canonical_feature_name [String] A canonical feature name
+    # @return Whether the feature has conditions.
+    sig { params(canonical_feature_name: String).returns(T::Boolean) }
+    def conditions?(canonical_feature_name); end
+
     # (Optional) Eagerly initializes the cache.
     # @return `self`.
     sig { returns(T.self_type) }
