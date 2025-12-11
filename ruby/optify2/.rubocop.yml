@@ -1,0 +1,76 @@
+plugins:
+  - rubocop-sorbet
+
+AllCops:
+  # We'll enable them as needed.
+  # Don't want to accept any new ones without reviewing them.
+  NewCops: disable
+  SuggestExtensions:
+    rubocop-rake: false
+  Exclude:
+    - "sorbet/**/*.rbi"
+    - "tmp/**/*"
+    - "vendor/**/*"
+
+# Disable for RBS in comments.
+Layout/LeadingCommentSpace:
+  Enabled: false
+
+# Need to allow long lines for RBS in comments because it doesn't support line breaks yet.
+Layout/LineLength:
+  Max: 180
+
+Metrics/AbcSize:
+  Max: 46
+
+Metrics/ClassLength:
+  Max: 199
+
+Metrics/CyclomaticComplexity:
+  Max: 21
+
+Metrics/MethodLength:
+  Max: 44
+
+Metrics/ParameterLists:
+  Max: 6
+
+Metrics/PerceivedComplexity:
+  Max: 22
+
+Sorbet/EnforceSignatures:
+  Enabled: true
+  Style: "rbs"
+  Exclude:
+    - "**/*.rbi"
+    - lib/optify_ruby/options_metadata.rb
+    - test/**/*.rb
+
+# Ensure all new files RBS.
+Sorbet/ForbidSig:
+  Enabled: true
+  Exclude:
+    - "**/*.rbi"
+    - lib/optify_ruby/options_metadata.rb
+    - test/**/*.rb
+
+Sorbet/ForbidTAbsurd:
+  Enabled: true
+
+Sorbet/ForbidTBind:
+  Enabled: true
+
+Sorbet/ForbidTCast:
+  Enabled: true
+
+Sorbet/ForbidTLet:
+  Enabled: true
+
+Sorbet/ForbidTMust:
+  Enabled: true
+
+Sorbet/ForbidTTypeAlias:
+  Enabled: true
+
+Sorbet/ForbidTUnsafe:
+  Enabled: true
