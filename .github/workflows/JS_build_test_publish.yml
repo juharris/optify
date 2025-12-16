@@ -77,15 +77,19 @@ jobs:
               yarn build:ts
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            # Use node:22-alpine (official Docker image) because @napi-rs/cli@3.x requires Node.js 20+
+            # and the napi-rs lts-alpine image uses Node.js 18
+            docker: node:22-alpine
             build: |-
               set -eux
-              rustc --version
-              rustup update stable
+              # Install build dependencies and Rust
+              apk add --no-cache bash curl build-base
+              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+              source "$HOME/.cargo/env"
+              rustup target add aarch64-unknown-linux-musl
               rustc --version
               npm install -g corepack
               corepack enable
-              rustup target add aarch64-unknown-linux-musl
               yarn build --target aarch64-unknown-linux-musl
               yarn build:ts
     name: "[${{ matrix.settings.target }}] Build & Test"
@@ -430,7 +434,8 @@ jobs:
       - name: Setup and run tests
         uses: addnab/docker-run-action@v3
         with:
-          image: node:lts-alpine
+          # Use node:20-alpine instead of lts-alpine because @napi-rs/cli@3.x requires Node.js 20+
+          image: node:20-alpine
           options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
