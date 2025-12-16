@@ -77,19 +77,20 @@ jobs:
               yarn build:ts
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            # Use node:22-alpine (official Docker image) because @napi-rs/cli@3.x requires Node.js 20+
-            # and the napi-rs lts-alpine image uses Node.js 18
-            docker: node:22-alpine
+            # Use napi-rs image for the musl cross-compiler toolchain, but upgrade Node.js
+            # because @napi-rs/cli@3.x requires Node.js 20+ (via @inquirer/core dependency)
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
               set -eux
-              # Install build dependencies and Rust
-              apk add --no-cache bash curl build-base
-              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-              source "$HOME/.cargo/env"
-              rustup target add aarch64-unknown-linux-musl
+              # Upgrade Node.js from 18 to 22 (napi-rs image has Node 18, but CLI v3 needs 20+)
+              apk add --no-cache nodejs-current npm
+              node --version
+              rustc --version
+              rustup update stable
               rustc --version
               npm install -g corepack
               corepack enable
+              rustup target add aarch64-unknown-linux-musl
               yarn build --target aarch64-unknown-linux-musl
               yarn build:ts
     name: "[${{ matrix.settings.target }}] Build & Test"
