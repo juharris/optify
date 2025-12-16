@@ -35,6 +35,10 @@ describe('Provider', () => {
 			expect(options).toEqual(expectedOptions)
 
 			const optionsObj = provider.getAllOptions(['feature_A'])
+			// NOTE: `instanceof Object` is not reliable under Jest because test files run in a VM
+			// context with their own `Object` constructor; values coming from native bindings may
+			// be created in a different realm. Prefer structural/type checks instead.
+			expect(typeof optionsObj).toBe('object')
 			expect(optionsObj).toEqual(expectedOptions)
 		})
 
