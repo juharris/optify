@@ -77,9 +77,15 @@ jobs:
               yarn build:ts
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
+            # Use napi-rs image for the musl cross-compiler toolchain, but upgrade Node.js
+            # because @napi-rs/cli@3.x requires Node.js 20+ (via @inquirer/core dependency)
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
               set -eux
+              # Upgrade Node.js from 18 to 22 (napi-rs image has Node 18, but CLI v3 needs 20+)
+              # Download official Node.js musl binary (Alpine packages have library incompatibilities)
+              wget -qO- https://unofficial-builds.nodejs.org/download/release/v22.12.0/node-v22.12.0-linux-x64-musl.tar.gz | tar xz -C /usr/local --strip-components=1
+              node --version
               rustc --version
               rustup update stable
               rustc --version
@@ -430,7 +436,8 @@ jobs:
       - name: Setup and run tests
         uses: addnab/docker-run-action@v3
         with:
-          image: node:lts-alpine
+          # Use node:20-alpine instead of lts-alpine because @napi-rs/cli@3.x requires Node.js 20+
+          image: node:20-alpine
           options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
@@ -478,6 +485,7 @@ jobs:
         run: |
           set -ex
           ls -lRh ./artifacts/
+          mv ./artifacts/*.node .
           yarn universal
           ls -lh .
         shell: bash

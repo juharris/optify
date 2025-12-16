@@ -1,11 +1,9 @@
 #![deny(clippy::all)]
 
-use napi::Env;
 use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::{OptionsRegistry, OptionsWatcher};
 use std::sync::Arc;
 
-use crate::convert::convert_to_js;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::preferences::JsGetOptionsPreferences;
 use crate::watcher_options::JsWatcherOptions;
@@ -130,20 +128,16 @@ impl JsOptionsWatcher {
   #[napi]
   pub fn get_all_options(
     &self,
-    env: Env,
     feature_names: Vec<String>,
     preferences: Option<&JsGetOptionsPreferences>,
-  ) -> napi::Result<napi::JsUnknown> {
+  ) -> napi::Result<serde_json::Value> {
     let preferences = preferences.map(|p| &p.inner);
-    match self
+    self
       .inner
       .as_ref()
       .unwrap()
       .get_all_options(&feature_names, None, preferences)
-    {
-      Ok(options) => Ok(convert_to_js(env, &options)),
-      Err(e) => Err(napi::Error::from_reason(e.to_string())),
-    }
+      .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
 
   /// Gets all options for the specified feature names.
