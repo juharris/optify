@@ -82,7 +82,9 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
               set -eux
-              # Upgrade Node.js from 18 to 22 (napi-rs image has Node 18, but CLI v3 needs 20+)
+              # Upgrade Node.js from 18 to 20+ (napi-rs image has Node 18, but CLI v3 needs 20+)
+              # First remove the old Node 18 that comes with the image, then install nodejs-current
+              rm -f /usr/local/bin/node /usr/local/bin/npm /usr/local/bin/npx
               apk add --no-cache nodejs-current npm
               node --version
               rustc --version
