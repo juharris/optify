@@ -485,6 +485,7 @@ jobs:
         run: |
           set -ex
           ls -lRh ./artifacts/
+          mv ./artifacts/*.node .
           yarn universal
           ls -lh .
         shell: bash
