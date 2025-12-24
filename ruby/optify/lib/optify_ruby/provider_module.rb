@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'lru_redux'
 require 'sorbet-runtime'
 
 module Optify
@@ -75,7 +76,9 @@ module Optify
 
     #: -> void
     def _init
-      @cache = {} #: Hash[untyped, untyped]?
+      # TODO: Allow configuring size.
+      cache_size = 1000
+      @cache = LruRedux::ThreadSafeCache.new(cache_size) #: LruRedux::ThreadSafeCache?
       @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
 
@@ -101,20 +104,17 @@ module Optify
       are_configurable_strings_enabled = preferences&.are_configurable_strings_enabled? || false
       cache_key = [key, feature_names, are_configurable_strings_enabled, config_class]
       @cache #: as !nil
-        .fetch(cache_key) do
+        .getset(cache_key) do
           # Handle a cache miss.
 
           # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
           # We don't need the constraints because we filtered the features above.
           # We already know there are no overrides because we checked above.
-          preferences = GetOptionsPreferences.new
-          preferences.skip_feature_name_conversion = true
-          preferences.enable_configurable_strings if are_configurable_strings_enabled
+          cache_miss_preferences = GetOptionsPreferences.new
+          cache_miss_preferences.skip_feature_name_conversion = true
+          cache_miss_preferences.enable_configurable_strings if are_configurable_strings_enabled
 
-          result = _get_options(key, feature_names, config_class, nil, preferences)
-
-          @cache #: as !nil
-            .[]= cache_key, result
+          _get_options(key, feature_names, config_class, nil, cache_miss_preferences)
       end
     end
   end
