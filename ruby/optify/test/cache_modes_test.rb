@@ -8,11 +8,11 @@ require_relative 'my_config'
 class CacheModesTest < Test::Unit::TestCase
   PROVIDERS = [
     Optify::OptionsProvider,
-    Optify::OptionsWatcher
+    Optify::OptionsWatcher,
   ].freeze
   CACHE_MODES = [
     Optify::CacheMode::NOT_THREAD_SAFE,
-    Optify::CacheMode::THREAD_SAFE
+    Optify::CacheMode::THREAD_SAFE,
   ].freeze
 
   def test_cache_respects_max_size
@@ -20,7 +20,7 @@ class CacheModesTest < Test::Unit::TestCase
       CACHE_MODES.each do |mode|
         cache_init_options = Optify::CacheInitOptions.new(
           max_size: 2,
-          mode: mode
+          mode: mode,
         )
         provider = klass.build('../../tests/test_suites/simple/configs')
                         .init(cache_init_options)
