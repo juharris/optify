@@ -8,6 +8,41 @@ require 'sorbet-runtime'
 module Optify
   # @!visibility private
   module ProviderModule
+    #: [T] (LruRedux::Cache | Hash[untyped, untyped], Array[untyped]) { -> T } -> T
+    def self._cache_getset(cache, cache_key, &block)
+      if cache.is_a? LruRedux::Cache
+        cache.getset(cache_key, &block)
+      else
+        # Plain Hash - use fetch with block and store result
+        cache.fetch(cache_key) do
+          result = block.call
+          cache[cache_key] = result
+        end
+      end
+    end
+
+    #: (CacheInitOptions?) -> ( Hash[Array[untyped], untyped] | LruRedux::Cache)
+    def self._create_cache(cache_init_options)
+      # Be backwards compatible with the original implementation of this library.
+      return {} if cache_init_options.nil?
+
+      max_size = cache_init_options.max_size
+      mode = cache_init_options.mode
+      if max_size.nil?
+        Kernel.raise ArgumentError, 'Thread-safe cache is not supported when max_size is nil' if mode == CacheMode::THREAD_SAFE
+        {}
+      else
+        case mode
+        when CacheMode::THREAD_SAFE
+          LruRedux::ThreadSafeCache.new(max_size)
+        when CacheMode::NOT_THREAD_SAFE
+          LruRedux::Cache.new(max_size)
+        else
+          Kernel.raise ArgumentError, "Invalid cache mode: #{mode}"
+        end
+      end
+    end
+
     #: (Array[String] feature_names) -> Array[String]
     def get_canonical_feature_names(feature_names)
       # Try to optimize a typical case where there are just a few features.
@@ -56,7 +91,7 @@ module Optify
     # @return The options.
     #: [Config] (String, Array[String], Class[Config], ?CacheOptions?, ?Optify::GetOptionsPreferences?) -> Config
     def _get_options(key, feature_names, config_class, cache_options = nil, preferences = nil)
-      return get_options_with_cache(key, feature_names, config_class, cache_options, preferences) if cache_options
+      return _get_options_with_cache(key, feature_names, config_class, cache_options, preferences) if cache_options
 
       unless config_class.respond_to?(:from_hash)
         Kernel.raise NotImplementedError,
@@ -74,16 +109,8 @@ module Optify
         .from_hash(hash)
     end
 
-    #: -> void
-    def _init
-      # TODO: Allow configuring size.
-      cache_size = 1000
-      @cache = LruRedux::ThreadSafeCache.new(cache_size) #: LruRedux::ThreadSafeCache?
-      @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
-    end
-
     #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, Optify::CacheOptions _cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
-    def get_options_with_cache(key, feature_names, config_class, _cache_options, preferences = nil)
+    def _get_options_with_cache(key, feature_names, config_class, _cache_options, preferences = nil)
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
@@ -103,19 +130,27 @@ module Optify
       # Features are filtered, so we don't need the constraints in the cache key.
       are_configurable_strings_enabled = preferences&.are_configurable_strings_enabled? || false
       cache_key = [key, feature_names, are_configurable_strings_enabled, config_class]
-      @cache #: as !nil
-        .getset(cache_key) do
-          # Handle a cache miss.
+      ProviderModule._cache_getset(
+        @cache, #: as !nil
+        cache_key,
+      ) do
+        # Handle a cache miss.
 
-          # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
-          # We don't need the constraints because we filtered the features above.
-          # We already know there are no overrides because we checked above.
-          cache_miss_preferences = GetOptionsPreferences.new
-          cache_miss_preferences.skip_feature_name_conversion = true
-          cache_miss_preferences.enable_configurable_strings if are_configurable_strings_enabled
+        # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
+        # We don't need the constraints because we filtered the features above.
+        # We already know there are no overrides because we checked above.
+        cache_miss_preferences = GetOptionsPreferences.new
+        cache_miss_preferences.skip_feature_name_conversion = true
+        cache_miss_preferences.enable_configurable_strings if are_configurable_strings_enabled
 
-          _get_options(key, feature_names, config_class, nil, cache_miss_preferences)
+        _get_options(key, feature_names, config_class, nil, cache_miss_preferences)
       end
+    end
+
+    #: (?CacheInitOptions?) -> void
+    def _init(cache_init_options = nil)
+      @cache = ProviderModule._create_cache(cache_init_options) #: ( Hash[untyped, untyped] | LruRedux::Cache)?
+      @features_with_metadata = nil #: Hash[String, OptionsMetadata]?
     end
   end
 end
