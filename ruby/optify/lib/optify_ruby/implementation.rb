@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 
 require_relative './base_config'
+require_relative './cache_init_options'
 require_relative './options_metadata'
 require_relative './provider_module'
 
@@ -31,10 +32,11 @@ module Optify
     end
 
     # (Optional) Eagerly initializes the cache.
+    # @param cache_init_options Options for initializing the cache.
     # @return [OptionsProvider] `self`.
-    #: -> OptionsProvider
-    def init
-      _init
+    #: (?CacheInitOptions?) -> OptionsProvider
+    def init(cache_init_options = nil)
+      _init(cache_init_options)
       self
     end
   end

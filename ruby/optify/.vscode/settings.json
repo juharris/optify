@@ -3,6 +3,7 @@
 		"aset",
 		"capa",
 		"chruby",
+		"getset",
 		"Magnus",
 		"qnil",
 		"rubocop",

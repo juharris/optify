@@ -29,10 +29,11 @@ module Optify
     end
 
     # (Optional) Eagerly initializes the cache.
+    # @param cache_init_options Options for initializing the cache.
     # @return [OptionsWatcher] `self`.
-    #: -> OptionsWatcher
-    def init
-      _init
+    #: (?CacheInitOptions?) -> OptionsWatcher
+    def init(cache_init_options = nil)
+      _init(cache_init_options)
       @cache_creation_time = Time.now #: Time?
       self
     end
