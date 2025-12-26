@@ -49,9 +49,9 @@ class AdditionalFeaturesTest < Test::Unit::TestCase
           'rootString' => 'new string',
           'myObject' => {
             'one' => 1321,
-            'something new for test_provider_get_options_with_overrides' => 'hello'
-          }
-        }
+            'something new for test_provider_get_options_with_overrides' => 'hello',
+          },
+        },
       }
 
       opts_json = provider.get_options_json_with_preferences('myConfig', ['a'], preferences)
@@ -78,12 +78,12 @@ class AdditionalFeaturesTest < Test::Unit::TestCase
         'message' => {
           '$type' => 'Optify.ConfigurableString',
           'base' => {
-            'liquid' => 'Hello {{ name }}!'
+            'liquid' => 'Hello {{ name }}!',
           },
           'arguments' => {
-            'name' => 'from the test'
-          }
-        }
+            'name' => 'from the test',
+          },
+        },
       }
 
       features = []

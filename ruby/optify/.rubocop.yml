@@ -67,3 +67,12 @@ Sorbet/ForbidTTypeAlias:
 
 Sorbet/ForbidTUnsafe:
   Enabled: true
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: diff_comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: diff_comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: diff_comma

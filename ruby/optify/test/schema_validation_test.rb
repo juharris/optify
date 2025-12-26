@@ -26,7 +26,7 @@ class SchemaValidationTest < Test::Unit::TestCase
     invalid_file_path = File.join(temp_dir, 'invalid.json')
 
     invalid_config = {
-      invalidProperty: 'this property is not allowed by the schema'
+      invalidProperty: 'this property is not allowed by the schema',
     }
     File.write(invalid_file_path, JSON.dump(invalid_config))
 
@@ -45,7 +45,7 @@ class SchemaValidationTest < Test::Unit::TestCase
     invalid_file_path = File.join(temp_dir, 'invalid.json')
 
     invalid_config = {
-      invalidProperty: 'this property is not allowed by the schema'
+      invalidProperty: 'this property is not allowed by the schema',
     }
     File.write(invalid_file_path, JSON.dump(invalid_config))
 

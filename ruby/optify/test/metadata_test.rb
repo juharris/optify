@@ -15,8 +15,8 @@ class OptifyTest < Test::Unit::TestCase
         name: 'feature_A',
         aliases: ['a'],
         details: 'The file is for testing.',
-        owners: 'a-team@company.com'
-      }
+        owners: 'a-team@company.com',
+      },
     )
     assert_equal(expected_metadata, a_metadata)
 
@@ -26,8 +26,8 @@ class OptifyTest < Test::Unit::TestCase
         name: 'feature_B/initial',
         aliases: ['b'],
         details: { 'description' => 'This is a description of the feature.' },
-        owners: 'team-b@company.com'
-      }
+        owners: 'team-b@company.com',
+      },
     )
     assert_equal(expected_metadata, b_metadata)
 

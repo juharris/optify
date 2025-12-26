@@ -21,7 +21,7 @@ feature_trials = [
   ['a', feature_a, 'b', feature_b],
   ['a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B'],
   ['a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B', 'a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B', 'a', feature_a, 'b', feature_b, 'A_with_comments',
-   'a', 'B']
+   'a', 'B'],
 ]
 
 #: (Optify::OptionsProvider, Array[String]) -> Array[String]

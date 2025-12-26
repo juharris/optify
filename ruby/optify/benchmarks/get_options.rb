@@ -20,7 +20,7 @@ simple_feature_trials = [
   [feature_a],
   ['a', feature_a, 'b', feature_b],
   ['a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B', 'a', feature_a, 'b', feature_b, 'A_with_comments', 'a', 'B', 'a', feature_a, 'b', feature_b, 'A_with_comments',
-   'a', 'B']
+   'a', 'B'],
 ]
 
 # Configurable values test suite
@@ -39,7 +39,7 @@ configurable_feature_trials = [
   %w[simple with_files_in_arguments],
   %w[simple complex_deep_merge],
   %w[simple complex_wide_structure],
-  %w[simple complex_deep_merge complex_nested_objects complex_wide_structure]
+  %w[simple complex_deep_merge complex_nested_objects complex_wide_structure],
 ]
 
 Benchmark.bm do |x|
