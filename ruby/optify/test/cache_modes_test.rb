@@ -47,6 +47,13 @@ class CacheModesTest < Test::Unit::TestCase
 
         config_a3 = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
         assert_not_same(config_a, config_a3, 'config_a should have been evicted and recreated')
+
+        config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
+        assert_same(config_a, config_a3)
+
+        # A B should be evicted
+        config_ab3 = provider.get_options('myConfig', %w[A B], MyConfig, cache_options)
+        assert_not_same(config_ab, config_ab3, 'config_ab should have been evicted and recreated')
       end
     end
   end

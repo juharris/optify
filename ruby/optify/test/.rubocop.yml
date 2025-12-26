@@ -3,6 +3,9 @@ inherit_from: ../.rubocop.yml
 Metrics/AbcSize:
   Max: 45
 
+Metrics/BlockLength:
+  Max: 27
+
 Metrics/ClassLength:
   Max: 256
 
