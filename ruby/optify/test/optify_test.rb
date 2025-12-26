@@ -182,7 +182,7 @@ class OptifyTest < Test::Unit::TestCase
          'b',
          'feature_A',
          'feature_B/initial'],
-        features_and_aliases
+        features_and_aliases,
       )
     end
   end

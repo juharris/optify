@@ -102,19 +102,19 @@ module Optify
       cache_key = [key, feature_names, are_configurable_strings_enabled, config_class]
       @cache #: as !nil
         .fetch(cache_key) do
-        # Handle a cache miss.
+          # Handle a cache miss.
 
-        # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
-        # We don't need the constraints because we filtered the features above.
-        # We already know there are no overrides because we checked above.
-        preferences = GetOptionsPreferences.new
-        preferences.skip_feature_name_conversion = true
-        preferences.enable_configurable_strings if are_configurable_strings_enabled
+          # We can avoid converting the features names because they're already converted from filtering above, if that was desired.
+          # We don't need the constraints because we filtered the features above.
+          # We already know there are no overrides because we checked above.
+          preferences = GetOptionsPreferences.new
+          preferences.skip_feature_name_conversion = true
+          preferences.enable_configurable_strings if are_configurable_strings_enabled
 
-        result = _get_options(key, feature_names, config_class, nil, preferences)
+          result = _get_options(key, feature_names, config_class, nil, preferences)
 
-        @cache #: as !nil
-          .[]= cache_key, result
+          @cache #: as !nil
+            .[]= cache_key, result
       end
     end
   end

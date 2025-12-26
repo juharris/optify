@@ -54,8 +54,9 @@ jobs:
         with:
           # Can see versions using `curl https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json`
           # We don't need the latest bleeding edge.
+          # Ruby 4.0 is not yet released, so exclude it.
           stable-ruby-versions: |
-            exclude: [head]
+            exclude: [head, "4.0"]
 
   build_from_hash:
     name: "[from_hash] Build & Test"
