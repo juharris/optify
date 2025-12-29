@@ -17,6 +17,22 @@ end
 class Optify::CacheOptions < FromHashable
 end
 
+# The mode for the cache.
+module Optify::CacheMode
+end
+
+Optify::Optify::CacheMode::NOT_THREAD_SAFE: Symbol
+
+Optify::Optify::CacheMode::THREAD_SAFE: Symbol
+
+# Options for initializing the cache.
+class Optify::CacheInitOptions
+  # A value from `CacheMode`.
+  def initialize: () -> Integer?
+                | () -> Symbol
+                | (?max_size: Integer? max_size, ?mode: Symbol mode) -> void
+end
+
 # Information about a feature.
 class Optify::OptionsMetadata < FromHashable
   def aliases: () -> ::Array[String]?
@@ -163,9 +179,7 @@ module Optify::ProviderModule
   # @return Whether the feature has conditions.
   def conditions?: (String canonical_feature_name) -> bool
 
-  # (Optional) Eagerly initializes the cache.
-  # @return `self`.
-  def init: () -> self
+  def init: (?CacheInitOptions? cache_init_options) -> self
 
   # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
   # Canonical feature names map to themselves.

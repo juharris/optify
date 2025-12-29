@@ -58,6 +58,8 @@ Sorbet/ForbidTCast:
 
 Sorbet/ForbidTLet:
   Enabled: true
+  Exclude:
+    - "**/*.rbi"
 
 Sorbet/ForbidTMust:
   Enabled: true
