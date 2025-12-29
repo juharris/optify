@@ -19,6 +19,37 @@ module Optify
   class CacheOptions < FromHashable
   end
 
+  # The mode for the cache.
+  module CacheMode
+    # Non-thread-safe LRU cache.
+    # Should be faster than `THREAD_SAFE` for single-threaded applications.
+    NOT_THREAD_SAFE = T.let(:not_thread_safe, Symbol)
+    # Thread-safe LRU cache.
+    THREAD_SAFE = T.let(:thread_safe, Symbol)
+  end
+
+  # Options for initializing the cache.
+  class CacheInitOptions
+    sig { returns(T.nilable(Integer)) }
+    attr_reader :max_size
+
+    # A value from `CacheMode`.
+    sig { returns(Symbol) }
+    attr_reader :mode
+
+    # Initializes the cache options.
+    # Defaults to a non-thread-safe unlimited size cache for backwards compatibility
+    # with how this library was originally configured with an unbounded hash as the case.
+    # @param mode A value from `CacheMode`.
+    sig do
+      params(
+        max_size: T.nilable(Integer),
+        mode: Symbol,
+      ).void
+    end
+    def initialize(max_size: nil, mode: CacheMode::NOT_THREAD_SAFE); end
+  end
+
   # Information about a feature.
   class OptionsMetadata < FromHashable
     sig { returns(T.nilable(T::Array[String])) }
@@ -188,7 +219,7 @@ module Optify
     sig do
       params(
         feature_names: T::Array[String],
-        preferences: GetOptionsPreferences
+        preferences: GetOptionsPreferences,
       )
         .returns(T::Array[String])
     end
@@ -211,7 +242,7 @@ module Optify
           feature_names: T::Array[String],
           config_class: T::Class[T.type_parameter(:Config)],
           cache_options: T.nilable(CacheOptions),
-          preferences: T.nilable(Optify::GetOptionsPreferences)
+          preferences: T.nilable(Optify::GetOptionsPreferences),
         )
         .returns(T.type_parameter(:Config))
     end
@@ -264,8 +295,11 @@ module Optify
 
     # (Optional) Eagerly initializes the cache.
     # @return `self`.
-    sig { returns(T.self_type) }
-    def init; end
+    sig do
+      params(cache_init_options: T.nilable(CacheInitOptions))
+        .returns(T.self_type)
+    end
+    def init(cache_init_options = nil); end
 
     private
 

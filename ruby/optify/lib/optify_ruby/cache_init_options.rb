@@ -4,11 +4,11 @@
 module Optify
   # The mode for the cache.
   module CacheMode
-    # Thread-safe LRU cache.
-    THREAD_SAFE = :thread_safe #: Symbol
     # Non-thread-safe LRU cache.
     # Should be faster than `THREAD_SAFE` for single-threaded applications.
     NOT_THREAD_SAFE = :not_thread_safe #: Symbol
+    # Thread-safe LRU cache.
+    THREAD_SAFE = :thread_safe #: Symbol
   end
 
   # Options for initializing the cache.
