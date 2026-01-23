@@ -3,6 +3,10 @@
 
 # Tools for working with configurations declared in files.
 module Optify
+  # Raised when a feature name is not found in the registry.
+  class UnknownFeatureError < StandardError
+  end
+
   # DEPRECATED: Use `Optify::FromHashable` instead.
   # A base class for classes from configuration files.
   # Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`

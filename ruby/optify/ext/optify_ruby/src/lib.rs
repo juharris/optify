@@ -1,4 +1,7 @@
-use magnus::{function, method, prelude::*, wrap, Object, Ruby, Value as RbValue};
+use magnus::{
+    exception::ExceptionClass, function, method, prelude::*, wrap, Object, RModule, Ruby,
+    Value as RbValue,
+};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
 use optify::builder::OptionsWatcherBuilder;
@@ -12,6 +15,24 @@ use crate::preferences::convert_preferences;
 use crate::preferences::MutGetOptionsPreferences;
 
 mod preferences;
+
+const UNKNOWN_FEATURE_PATTERN: &str = "is not a known feature.";
+
+fn get_unknown_feature_error(ruby: &Ruby) -> Result<ExceptionClass, magnus::Error> {
+    let module: RModule = ruby.class_object().const_get("Optify")?;
+    module.const_get("UnknownFeatureError")
+}
+
+fn map_feature_error(ruby: &Ruby, error: String) -> magnus::Error {
+    if error.contains(UNKNOWN_FEATURE_PATTERN) {
+        match get_unknown_feature_error(ruby) {
+            Ok(exception_class) => magnus::Error::new(exception_class, error),
+            Err(_) => magnus::Error::new(ruby.exception_runtime_error(), error),
+        }
+    } else {
+        magnus::Error::new(ruby.exception_runtime_error(), error)
+    }
+}
 
 fn json_value_to_ruby(ruby: &Ruby, value: &serde_json::Value) -> Result<RbValue, magnus::Error> {
     match value {
@@ -117,7 +138,7 @@ impl WrappedOptionsProvider {
             .get_all_options(&feature_names, None, Some(preferences))
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -134,7 +155,7 @@ impl WrappedOptionsProvider {
             .get_all_options(&feature_names, None, Some(preferences))
         {
             Ok(options) => json_value_to_ruby(ruby, &options),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -147,7 +168,7 @@ impl WrappedOptionsProvider {
             .0
             .borrow()
             .get_canonical_feature_name(&feature_name)
-            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
+            .map_err(|e| map_feature_error(ruby, e))
     }
 
     fn get_canonical_feature_names(
@@ -159,7 +180,7 @@ impl WrappedOptionsProvider {
             .0
             .borrow()
             .get_canonical_feature_names(&feature_names)
-            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
+            .map_err(|e| map_feature_error(ruby, e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -191,7 +212,7 @@ impl WrappedOptionsProvider {
             .get_filtered_feature_names(&feature_names, Some(preferences))
         {
             Ok(features) => Ok(features),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -208,7 +229,7 @@ impl WrappedOptionsProvider {
             .get_options_with_preferences(&key, &feature_names, None, None)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -227,7 +248,7 @@ impl WrappedOptionsProvider {
             Some(preferences),
         ) {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -243,7 +264,7 @@ impl WrappedOptionsProvider {
             .get_options_with_preferences(&key, &feature_names, None, None)
         {
             Ok(options) => json_value_to_ruby(ruby, &options),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -262,7 +283,7 @@ impl WrappedOptionsProvider {
             Some(preferences),
         ) {
             Ok(options) => json_value_to_ruby(ruby, &options),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -363,7 +384,7 @@ impl WrappedOptionsWatcher {
             .get_all_options(&feature_names, None, Some(preferences))
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -380,7 +401,7 @@ impl WrappedOptionsWatcher {
             .get_all_options(&feature_names, None, Some(preferences))
         {
             Ok(options) => json_value_to_ruby(ruby, &options),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -393,7 +414,7 @@ impl WrappedOptionsWatcher {
             .0
             .borrow()
             .get_canonical_feature_name(&feature_name)
-            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
+            .map_err(|e| map_feature_error(ruby, e))
     }
 
     fn get_canonical_feature_names(
@@ -405,7 +426,7 @@ impl WrappedOptionsWatcher {
             .0
             .borrow()
             .get_canonical_feature_names(&feature_names)
-            .map_err(|e| magnus::Error::new(ruby.exception_arg_error(), e))
+            .map_err(|e| map_feature_error(ruby, e))
     }
 
     fn get_feature_metadata_json(&self, canonical_feature_name: String) -> Option<String> {
@@ -436,7 +457,7 @@ impl WrappedOptionsWatcher {
             .get_filtered_feature_names(&feature_names, Some(preferences))
         {
             Ok(features) => Ok(features),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -452,7 +473,7 @@ impl WrappedOptionsWatcher {
             .get_options_with_preferences(&key, &feature_names, None, None)
         {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -471,7 +492,7 @@ impl WrappedOptionsWatcher {
             Some(preferences),
         ) {
             Ok(options) => Ok(options.to_string()),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -487,7 +508,7 @@ impl WrappedOptionsWatcher {
             .get_options_with_preferences(&key, &feature_names, None, None)
         {
             Ok(options) => json_value_to_ruby(ruby, &options),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -506,7 +527,7 @@ impl WrappedOptionsWatcher {
             Some(preferences),
         ) {
             Ok(options) => json_value_to_ruby(ruby, &options),
-            Err(e) => Err(magnus::Error::new(ruby.exception_runtime_error(), e)),
+            Err(e) => Err(map_feature_error(ruby, e)),
         }
     }
 
@@ -550,6 +571,8 @@ impl WrappedOptionsWatcherBuilder {
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let module = ruby.define_module("Optify")?;
+
+    module.define_error("UnknownFeatureError", ruby.exception_standard_error())?;
 
     let builder_class = module.define_class("OptionsProviderBuilder", ruby.class_object())?;
 

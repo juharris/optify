@@ -112,16 +112,53 @@ class BuilderErrorTest < Test::Unit::TestCase
       provider = klass.new
                       .add_directory('../../tests/test_suites/simple/configs')
                       .build
-      err = assert_raise(ArgumentError, RuntimeError) do
+      err = assert_raise(Optify::UnknownFeatureError) do
         provider.get_options_json('myConfig', ['nonexistent_feature'])
       end
       assert_equal('Feature name "nonexistent_feature" is not a known feature.', err.message)
 
-      err = assert_raise(ArgumentError, RuntimeError) do
+      err = assert_raise(Optify::UnknownFeatureError) do
         provider.get_canonical_feature_name('nonexistent_feature')
       end
       assert_equal('Feature name "nonexistent_feature" is not a known feature.', err.message)
     end
+  end
+
+  def test_unknown_feature_error_is_raised_from_all_methods
+    BUILDERS.each do |klass|
+      provider = klass.new
+                      .add_directory('../../tests/test_suites/simple/configs')
+                      .build
+      prefs = Optify::GetOptionsPreferences.new
+
+      assert_raise(Optify::UnknownFeatureError) do
+        provider.get_filtered_features(['nonexistent_feature'], prefs)
+      end
+
+      assert_raise(Optify::UnknownFeatureError) do
+        provider.get_all_options_json(['nonexistent_feature'], prefs)
+      end
+
+      assert_raise(Optify::UnknownFeatureError) do
+        provider.get_all_options_hash(['nonexistent_feature'], prefs)
+      end
+
+      assert_raise(Optify::UnknownFeatureError) do
+        provider.get_options_hash('myConfig', ['nonexistent_feature'])
+      end
+
+      assert_raise(Optify::UnknownFeatureError) do
+        provider.get_options_hash_with_preferences('myConfig', ['nonexistent_feature'], prefs)
+      end
+
+      assert_raise(Optify::UnknownFeatureError) do
+        provider.get_options_json_with_preferences('myConfig', ['nonexistent_feature'], prefs)
+      end
+    end
+  end
+
+  def test_unknown_feature_error_inherits_from_standard_error
+    assert(Optify::UnknownFeatureError < StandardError)
   end
 
   def test_get_options_with_invalid_key
