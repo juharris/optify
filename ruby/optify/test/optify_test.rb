@@ -244,14 +244,14 @@ class OptifyTest < Test::Unit::TestCase
       assert_equal('root string same', options.rootString)
 
       preferences.skip_feature_name_conversion = true
-      err = assert_raise(RuntimeError) do
+      err = assert_raise(Optify::UnknownFeatureError) do
         provider.get_options('myConfig', feature_names, MyConfig, nil, preferences)
       # Ensure that consumers of this library can use `rescue => e`.
       rescue => e # rubocop:disable Style/RescueStandardError
         # Expected error.
         raise e
       rescue Exception => e # rubocop:disable Lint/RescueException
-        flunk "Expected RuntimeError that can be caught by `rescue => e`, got #{e.class}"
+        flunk "Expected Optify::UnknownFeatureError that can be caught by `rescue => e`, got #{e.class}"
       end
       assert_equal('Feature name "B" is not a known feature.', err.message)
     end

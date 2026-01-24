@@ -138,12 +138,12 @@ class AdditionalFeaturesTest < Test::Unit::TestCase
       preferences = Optify::GetOptionsPreferences.new
       preferences.skip_feature_name_conversion = true
 
-      err = assert_raise(RuntimeError) do
+      err = assert_raise(Optify::UnknownFeatureError) do
         provider.get_options('myConfig', ['a'], MyConfig, nil, preferences)
       end
       assert_match(/Feature name "a" is not a known feature/, err.message)
 
-      err = assert_raise(RuntimeError) do
+      err = assert_raise(Optify::UnknownFeatureError) do
         provider.get_options('myConfig', ['A'], MyConfig, nil, preferences)
       end
       assert_match(/Feature name "A" is not a known feature/, err.message)
