@@ -1,0 +1,1 @@
+Tests from [../../optify/test](../../optify/test) are included for this project as configured in [Rakefile](../Rakefile).

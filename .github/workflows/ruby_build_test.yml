@@ -214,6 +214,104 @@ jobs:
       run: bundle exec rake test
       working-directory: ${{ env.WORKING_DIRECTORY }}
 
+  # FIXME Find a better name for this gem.
+  # Gem: optify2
+  build_optify2:
+    name: "[optify2] Build & Test"
+    needs:
+      - build_from_hash
+      - setup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    env:
+      # FIXME Find a better name.
+      WORKING_DIRECTORY: ./ruby/optify2
+    permissions:
+        # This permission is mandatory for trusted publishing.
+      id-token: write
+      # This permission is required for `rake release` to push the release tag.
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    # setup-ruby also runs `bundle install`.
+    # It uses the Ruby version from .ruby-version.
+    - uses: ruby/setup-ruby@v1
+      name: "Setup"
+      with:
+        bundler-cache: true
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+    - name: "Check Ruby version"
+      shell: bash
+      run: |
+        set -ex
+        # The Ruby versions should be the same for both gems.
+        diff -u .ruby-version ../from_hash/.ruby-version
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    - name: "Install dependencies"
+      shell: bash
+      run: bundle install
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "Lint"
+      shell: bash
+      run: |
+        set -ex
+
+        ruby --version
+
+        bundle exec srb tc
+        bundle exec rubocop
+
+        # Ensure that the RBI files are the same.
+        diff -u rbi/optify.rbi ../optify/rbi/optify.rbi
+
+        # Ensure that the RBS file is up-to-date.
+        mkdir -p tmp
+        bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
+        diff -u sig/optify.rbs tmp/optify.rbs~
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "Test"
+      run: bundle exec rake test
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "Pre-Publish"
+      shell: bash
+      run: |
+        set -ex
+        # From https://github.com/rubygems/release-gem/blob/v1/action.yml until that action can use a different directory.
+        git config --global user.email "$(git log -1 --pretty=format:'%ae')"
+        git config --global user.name "$(git log -1 --pretty=format:'%an')"
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+
+    - name: "Build"
+      if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        set -ex
+        bundle exec rake build
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+      env:
+        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
+
+    - name: "Publish"
+      # Disabled because we don't want to publish the gem yet.
+      if: false
+      # if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      # It probably just fails if the gem is already published.
+      continue-on-error: true
+      shell: bash
+      run: |
+        set -ex
+        bundle exec rake release
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+      env:
+        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
+
   # Build the gem for specific Ruby versions and platforms so that devs don't have to build it locally.
   cross-gem:
     name: "Cross Gem"
