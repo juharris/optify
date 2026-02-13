@@ -21,6 +21,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 magnus = "0.8.2"
-optify = { path = "../../../../rust/optify", version = "0.20.5" }
+optify = "0.20.5"
 rb-sys = { version = "0.9.124", default-features = false, features = ["ruby-static"] }
 serde_json = "1.0.143"

@@ -2,3 +2,8 @@
 [workspace]
 members = ["ext/optify_ruby"]
 resolver = "2"
+
+# Use the local optify crate for development and CI.
+# When building from the source gem (no workspace), Cargo fetches from crates.io instead.
+[patch.crates-io]
+optify = { path = "../../rust/optify" }
