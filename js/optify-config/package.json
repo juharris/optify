@@ -1,6 +1,6 @@
 {
 	"name": "@optify/config",
-	"version": "1.1.7",
+	"version": "1.2.0",
 	"description": "Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.",
 	"repository": {
 		"type": "git",
@@ -38,7 +38,8 @@
 		"jest": "^29.7.0",
 		"tinybench": "^5.1.0",
 		"ts-jest": "^29.3.4",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"zod": "^4.3.6"
 	},
 	"engines": {
 		"node": ">= 20"
