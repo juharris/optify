@@ -178,6 +178,22 @@ impl JsOptionsWatcher {
       .ok()
   }
 
+  #[napi(js_name = "_getOptions")]
+  pub fn get_options(
+    &self,
+    key: String,
+    feature_names: Vec<String>,
+    preferences: Option<&JsGetOptionsPreferences>,
+  ) -> napi::Result<serde_json::Value> {
+    let preferences = preferences.map(|p| &p.inner);
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_options_with_preferences(&key, &feature_names, None, preferences)
+      .map_err(|e| napi::Error::from_reason(e.to_string()))
+  }
+
   #[napi]
   pub fn get_options_json(
     &self,

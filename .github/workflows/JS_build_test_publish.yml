@@ -179,7 +179,6 @@ jobs:
           path: ./js/optify-config/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   build-freebsd:
-    # Disabled for now because it gives too many installation errors such as when trying to install `yarn`.
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     name: "[FreeBSD] Build"
@@ -210,7 +209,8 @@ jobs:
             set -ex
 
             cd js/optify-config
-            sudo pkg install -y -f curl node libnghttp2 npm
+            # ca_root_nss: Helps with downloading Rust toolchains and Node.js binaries.
+            sudo pkg install -y -f ca_root_nss curl node libnghttp2 npm
             sudo npm install -g yarn --ignore-scripts
             curl https://sh.rustup.rs -sSf --output rustup.sh
             sh rustup.sh -y --profile minimal --default-toolchain stable
