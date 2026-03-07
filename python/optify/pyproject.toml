@@ -26,11 +26,11 @@ build-backend = "maturin"
 
 [package]
 name = "optify"
-version = "0.8.5"
+version = "0.8.6"
 
 [tool.poetry]
 name = "optify"
-version = "0.8.5"
+version = "0.8.6"
 description = "Simplifies getting the right configuration options for a process using pre-loaded configurations from files to manage options for experiments or flights."
 authors = ["Justin D. Harris"]
 maintainers = ["Justin D. Harris"]
@@ -45,10 +45,16 @@ maturin = "^1.12.6"
 python = "^3.11"
 
 [tool.poetry.dev-dependencies]
+dacite = "^1.9.2"
+pydantic = "^2.12.5"
 pytest = "^8.3.4"
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = [
+    "dacite>=1.9.2",
+    "pydantic>=2.12.5",
+    "pytest",
+]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
