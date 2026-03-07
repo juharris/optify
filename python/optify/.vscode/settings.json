@@ -5,5 +5,10 @@
 	},
 	"[python]": {
 		"editor.formatOnSave": true
-	}
+	},
+	"cSpell.words": [
+		"dacite",
+		"dataclass",
+		"Pydantic"
+	]
 }

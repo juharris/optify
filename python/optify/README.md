@@ -39,6 +39,86 @@ Outputs:
 
 See the [tests directory](./tests/) for more examples.
 
+### Getting Typed Objects
+
+The JSON output can be deserialized into typed objects using different libraries such as [dacite](https://github.com/konradhalas/dacite) (for dataclasses) or [Pydantic](https://docs.pydantic.dev/).
+
+#### Using `dacite` with `dataclasses`
+
+Install with `pip install dacite`
+
+```Python
+import json
+from dataclasses import dataclass
+
+import dacite
+
+from optify import OptionsProvider
+
+
+@dataclass
+class Deeper:
+    newValue: str
+    num: int
+
+
+@dataclass
+class MyObject:
+    key: str
+    deeper: Deeper
+
+
+@dataclass
+class MyConfig:
+    rootString: str
+    myArray: list[str]
+    myObject: MyObject
+
+
+provider = OptionsProvider.build('path/to/configs')
+options_json = provider.get_options_json('myConfig', ['feature_A', 'feature_B'])
+config = dacite.from_dict(data_class=MyConfig, data=json.loads(options_json))
+
+print(config.rootString)
+print(config.myObject.deeper.newValue)
+```
+
+#### Using Pydantic
+
+Install with `pip install pydantic`
+
+```Python
+import json
+
+from pydantic import BaseModel
+
+from optify import OptionsProvider
+
+
+class Deeper(BaseModel):
+    newValue: str
+    num: int
+
+
+class MyObject(BaseModel):
+    key: str
+    deeper: Deeper
+
+
+class MyConfig(BaseModel):
+    rootString: str
+    myArray: list[str]
+    myObject: MyObject
+
+
+provider = OptionsProvider.build('path/to/configs')
+options_json = provider.get_options_json('myConfig', ['feature_A', 'feature_B'])
+config = MyConfig.model_validate_json(options_json)
+
+print(config.rootString)
+print(config.myObject.deeper.newValue)
+```
+
 ### Watching for Changes
 
 Use `OptionsWatcher` instead of `OptionsProvider` during development to have it automatically reload the options it stores when the files change:
