@@ -18,6 +18,7 @@ develop-eggs/
 dist/
 eggs/
 lib/
+*.dylib.dSYM/
 lib64/
 parts/
 sdist/
