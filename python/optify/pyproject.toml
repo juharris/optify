@@ -53,7 +53,7 @@ pytest = "^8.3.4"
 dev = [
     "dacite>=1.9.2",
     "pydantic>=2.12.5",
-    "pytest",
+    "pytest>=8.3.4,<9",
 ]
 
 [tool.maturin]
