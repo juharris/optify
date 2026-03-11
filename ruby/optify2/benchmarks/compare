@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Compare benchmarks between optify and optify2
+
+require 'pathname'
+
+THIS_OPTIFY_ROOT = Pathname.new(__dir__).parent
+OPTIFY_ROOT = THIS_OPTIFY_ROOT.parent.join('optify')
+BENCHMARKS_DIR = OPTIFY_ROOT.join('benchmarks')
+
+unless OPTIFY_ROOT.exist?
+  warn "Error: Original optify not found at #{OPTIFY_ROOT}"
+  exit 1
+end
+
+unless BENCHMARKS_DIR.exist?
+  warn "Error: Benchmarks directory not found at #{BENCHMARKS_DIR}"
+  exit 1
+end
+
+# Build Rust-backed version once
+puts 'Building Rust-backed version...'
+puts '=' * 60
+system("cd #{OPTIFY_ROOT} && rm -rf target/ tmp/ pkg/ ext/optify_ruby/target/ && RB_SYS_CARGO_PROFILE='release' rake native gem", exception: true)
+puts
+
+# Find benchmark files
+benchmarks = Dir[BENCHMARKS_DIR.join('*.rb')].sort
+
+if benchmarks.empty?
+  warn "No benchmarks found in #{BENCHMARKS_DIR}"
+  exit 1
+end
+
+puts 'Benchmark Comparison: Rust-backed vs pure Ruby'
+puts '=' * 60
+puts
+
+# Run each benchmark for both versions before moving to the next
+benchmarks.each do |benchmark|
+  name = File.basename(benchmark)
+
+  puts
+  puts "#{name}:"
+  puts '=' * 60
+
+  puts
+  puts 'Rust-backed:'
+  puts '-' * 60
+  system("cd #{OPTIFY_ROOT} && bundle exec ruby #{benchmark}", exception: true)
+
+  puts
+  puts 'Pure Ruby (optify2):'
+  puts '-' * 60
+  system("cd #{THIS_OPTIFY_ROOT} && bundle exec ruby benchmarks/run_single.rb #{benchmark}", exception: true)
+
+  puts
+end
+
+puts '=' * 60
+puts 'Complete!'
