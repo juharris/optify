@@ -1,0 +1,7 @@
+conditions:
+    jsonPointer: /top/next
+    equals: 3
+options:
+    config:
+        key: "from deeper"
+        key_deeper: "only in deeper"
