@@ -1,0 +1,18 @@
+{
+	"features": [
+		"B",
+		"deeper"
+	],
+	"constraints": {
+		"top": {
+			"next": 3
+		}
+	},
+	"options": {
+		"config": {
+			"key": "from deeper",
+			"key_b": "only in B",
+			"key_deeper": "only in deeper"
+		}
+	}
+}
