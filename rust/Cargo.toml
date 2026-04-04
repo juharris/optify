@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "optify",
+    "optify-cli",
+]
+resolver = "2"

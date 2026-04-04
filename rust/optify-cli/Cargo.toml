@@ -1,0 +1,22 @@
+[package]
+name = "optify-cli"
+version = "0.1.0"
+edition = "2021"
+
+description = "CLI for inspecting and querying Optify configuration options."
+homepage = "https://github.com/juharris/optify/tree/main/rust/optify-cli"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/juharris/optify/tree/main/rust/optify-cli"
+
+categories = ["command-line-utilities", "config"]
+keywords = ["cli", "configuration", "options"]
+
+[[bin]]
+name = "optify"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.6.0", features = ["derive"] }
+optify = { version = "0.20.5", path = "../optify" }
+serde_json = "1.0.142"

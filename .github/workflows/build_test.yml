@@ -62,6 +62,7 @@ jobs:
           js/optify-config
           python/optify
           rust/optify
+          rust/optify-cli
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
     - name: "[Rust] Build"
@@ -99,6 +100,36 @@ jobs:
       run: |
         cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify
+    - name: "[Rust CLI] Build"
+      run: cargo build --release
+      working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Lint"
+      run: cargo fmt -- --check
+      working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Clippy"
+      run: cargo clippy --release --no-deps -- -D warnings
+      working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Test"
+      run: cargo test --release
+      working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Integration tests"
+      run: bash tests/test_cli.sh
+      working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Publish"
+      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      shell: bash
+      continue-on-error: true
+      run: |
+        cargo publish --allow-dirty --token ${CARGO_REGISTRY_TOKEN}
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Publish (dry run)"
+      if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        cargo publish --allow-dirty --dry-run
+      working-directory: ./rust/optify-cli
 
 
     # JavaScript

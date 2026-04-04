@@ -6,6 +6,7 @@ Powers **configuration driven development**: getting the right configuration opt
 Configurations for different experiments or feature flags are mergeable to support multiple experiments or feature flags for the same request.
 
 [![Crates.io](https://img.shields.io/crates/v/optify?logo=Rust)](https://crates.io/crates/optify)
+[![Crates.io CLI](https://img.shields.io/crates/v/optify-cli?logo=Rust&label=optify-cli)](https://crates.io/crates/optify-cli)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
 [![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
@@ -534,6 +535,29 @@ For more details, how to enable configurable strings, and examples, see [here](.
 # Language Support
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.
 Below are implementations for a few languages.
+
+## CLI
+[![Crates.io CLI](https://img.shields.io/crates/v/optify-cli?logo=Rust&label=optify-cli)](https://crates.io/crates/optify-cli)
+
+Install the `optify` command-line tool to inspect and query configurations without writing code:
+
+```shell
+cargo install optify-cli
+```
+
+```shell
+# List all feature names
+optify --dir ./configs list-features
+
+# Get options for a key with features applied (last feature wins)
+optify --dir ./configs get-options myConfig -f A B
+# {"myArray":["different item 1","item 2"],"myObject":{...}}
+
+# Get the full merged configuration for a set of features
+optify --dir ./configs get-all-options -f A B
+```
+
+See [rust/optify-cli](./rust/optify-cli/) for full documentation.
 
 ## .NET
 [![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
