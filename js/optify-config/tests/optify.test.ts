@@ -87,6 +87,80 @@ describe('getOptions', () => {
       });
       expect(() => provider.getOptions('myConfig', ['A'], StrictSchema)).toThrow();
     });
+
+    test(`${name} caches deserialized objects`, () => {
+      // Test that calling getOptions multiple times returns the same cached object
+      const config1 = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+      const config2 = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+
+      // Should return the exact same object reference (cached)
+      expect(config1).toBe(config2);
+
+      // Verify it still has the expected values
+      expect(config1.rootString).toBe('root string same');
+    });
+
+    test(`${name} cache differentiates by key`, () => {
+      // Different keys should have different cache entries
+      const configMyConfig = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+
+      // Verify it has the expected values
+      expect(configMyConfig.rootString).toBe('root string same');
+
+      // Calling with same key again should return cached object
+      const configMyConfig2 = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+      expect(configMyConfig).toBe(configMyConfig2);
+    });
+
+    test(`${name} cache differentiates by feature names`, () => {
+      const configA = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+      const configAB = provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema);
+
+      // Should be different objects (different feature combinations)
+      expect(configA).not.toBe(configAB);
+
+      // But calling again with same parameters should return cached
+      expect(provider.getOptions('myConfig', ['A'], MyConfigSchema)).toBe(configA);
+      expect(provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema)).toBe(configAB);
+    });
+
+    test(`${name} cache is order-independent for feature names`, () => {
+      // Cache should treat ['A', 'B'] and ['B', 'A'] as the same
+      const configAB = provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema);
+      const configBA = provider.getOptions('myConfig', ['B', 'A'], MyConfigSchema);
+
+      // Should return the same cached object regardless of order
+      expect(configAB).toBe(configBA);
+    });
+
+    test(`${name} cache differentiates by schema`, () => {
+      // Different schemas should have different cache entries
+      const config1 = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+
+      // Create a different schema
+      const PartialSchema = z.object({
+        rootString: z.string(),
+      });
+      const config2 = provider.getOptions('myConfig', ['A'], PartialSchema);
+
+      // Should be different objects (different schemas)
+      expect(config1).not.toBe(config2);
+    });
+
+    test(`${name} cache differentiates by configurable strings preference`, () => {
+      const config1 = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+
+      const preferences = new GetOptionsPreferences();
+      preferences.enableConfigurableStrings();
+      const config2 = provider.getOptions('myConfig', ['A'], MyConfigSchema, preferences);
+
+      // Should be different objects (different preferences)
+      expect(config1).not.toBe(config2);
+
+      // But calling again with same preferences should return cached
+      const config2Again = provider.getOptions('myConfig', ['A'], MyConfigSchema, preferences);
+      expect(config2).toBe(config2Again);
+    });
   }
 });
 
