@@ -34,10 +34,6 @@ enum Commands {
         /// Feature names to apply, in order from lowest to highest priority.
         #[arg(short, long, value_name = "FEATURE", num_args = 0..)]
         features: Vec<String>,
-
-        /// Output compact JSON instead of pretty-printed JSON.
-        #[arg(long)]
-        compact: bool,
     },
 
     /// Get options for a specific configuration key with the given features.
@@ -48,10 +44,6 @@ enum Commands {
         /// Feature names to apply, in order from lowest to highest priority.
         #[arg(short, long, value_name = "FEATURE", num_args = 0..)]
         features: Vec<String>,
-
-        /// Output compact JSON instead of pretty-printed JSON.
-        #[arg(long)]
-        compact: bool,
     },
 }
 
@@ -60,15 +52,6 @@ fn build_provider(dirs: &[PathBuf], schema: Option<&PathBuf>) -> Result<OptionsP
         Some(schema_path) => OptionsProvider::build_from_directories_with_schema(dirs, schema_path),
         None => OptionsProvider::build_from_directories(dirs),
     }
-}
-
-fn serialize(value: &serde_json::Value, compact: bool) -> Result<String, String> {
-    if compact {
-        serde_json::to_string(value)
-    } else {
-        serde_json::to_string_pretty(value)
-    }
-    .map_err(|e| format!("Failed to serialize options: {e}"))
 }
 
 fn run() -> Result<(), String> {
@@ -89,19 +72,23 @@ fn run() -> Result<(), String> {
             }
         }
 
-        Commands::GetAllOptions { features, compact } => {
+        Commands::GetAllOptions { features } => {
             // No caching or preferences needed for a one-shot CLI invocation.
             let value = provider.get_all_options(&features, None, None)?;
-            println!("{}", serialize(&value, compact)?);
+            println!(
+                "{}",
+                serde_json::to_string(&value)
+                    .map_err(|e| format!("Failed to serialize options: {e}"))?
+            );
         }
 
-        Commands::GetOptions {
-            key,
-            features,
-            compact,
-        } => {
+        Commands::GetOptions { key, features } => {
             let value = provider.get_options(&key, &features)?;
-            println!("{}", serialize(&value, compact)?);
+            println!(
+                "{}",
+                serde_json::to_string(&value)
+                    .map_err(|e| format!("Failed to serialize options: {e}"))?
+            );
         }
     }
 

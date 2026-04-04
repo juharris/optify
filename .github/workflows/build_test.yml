@@ -109,6 +109,12 @@ jobs:
     - name: "[Rust CLI] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings
       working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Test"
+      run: cargo test --release
+      working-directory: ./rust/optify-cli
+    - name: "[Rust CLI] Integration tests"
+      run: bash tests/test_cli.sh
+      working-directory: ./rust/optify-cli
     - name: "[Rust CLI] Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash

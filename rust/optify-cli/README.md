@@ -22,6 +22,13 @@ The binary will be at `target/release/optify`.
 optify --dir <DIR> [--dir <DIR>...] [--schema <PATH>] <COMMAND>
 ```
 
+Output is always compact single-line JSON.
+Use [`jq`](https://jqlang.org) to pretty-print or further process the output:
+
+```shell
+optify --dir ./configs get-options myConfig -f A | jq
+```
+
 ### Global Options
 
 | Option | Description |
@@ -55,10 +62,10 @@ Get the options for a specific configuration key, merged across the given featur
 optify --dir ./configs get-options myConfig --features A B
 ```
 
-Use `--compact` for single-line JSON output:
+Feature names with spaces must be quoted:
 
 ```shell
-optify --dir ./configs get-options myConfig -f A B --compact
+optify --dir ./configs get-options myConfig -f "feature with spaces" A
 ```
 
 ---
@@ -84,6 +91,9 @@ optify --dir tests/test_suites/simple/configs get-options myConfig -f A
 
 # Get options for the "myConfig" key with features A and B active (B overrides A)
 optify --dir tests/test_suites/simple/configs get-options myConfig -f A B
+
+# Pretty-print with jq
+optify --dir tests/test_suites/simple/configs get-options myConfig -f A | jq
 
 # Get the full merged configuration for features A and B
 optify --dir tests/test_suites/simple/configs get-all-options -f A B
