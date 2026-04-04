@@ -40,7 +40,8 @@ declare module '../index' {
     /** Returns canonical feature names after applying constraints and conversions. */
     getFilteredFeatures(featureNames: Array<string>, preferences?: GetOptionsPreferences | null): Array<string>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions?: CacheOptions | null, preferences?: GetOptionsPreferences | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null, preferences?: GetOptionsPreferences | null): T;
   }
 
   interface OptionsWatcher {
@@ -49,7 +50,8 @@ declare module '../index' {
     /** Returns canonical feature names after applying constraints and conversions. */
     getFilteredFeatures(featureNames: Array<string>, preferences?: GetOptionsPreferences | null): Array<string>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions?: CacheOptions | null, preferences?: GetOptionsPreferences | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null, preferences?: GetOptionsPreferences | null): T;
   }
 }
 

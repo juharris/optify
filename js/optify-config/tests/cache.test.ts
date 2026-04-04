@@ -13,6 +13,16 @@ const buildProviders = () => ([
 ]);
 
 describe('getOptions cache', () => {
+  test('supports legacy preferences-only signature', () => {
+    for (const { provider } of buildProviders()) {
+      const preferences = new GetOptionsPreferences();
+      preferences.enableConfigurableStrings();
+
+      const config = provider.getOptions('myConfig', ['A'], LooseConfigSchema, preferences);
+      expect(config.rootString).toBe('root string same');
+    }
+  });
+
   test('caches parsed objects per canonical feature set and schema', () => {
     for (const { name, provider } of buildProviders()) {
       const cacheOptions = new CacheOptions();
