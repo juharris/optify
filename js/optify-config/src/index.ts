@@ -72,12 +72,12 @@ function createOptionsCacheKey(
     (schema as any).__optifyCacheId = ++schemaIdCounter;
   }
 
-  return JSON.stringify({
+  return JSON.stringify([
     key,
     featureNames,
     areConfigurableStringsEnabled,
-    schemaId: (schema as any).__optifyCacheId
-  });
+    (schema as any).__optifyCacheId
+  ]);
 }
 
 // Extend OptionsProvider prototype with extra methods.
@@ -96,8 +96,9 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
   const cache = getOptionsCache(this);
   const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled, schema);
 
-  if (cache.has(cacheKey)) {
-    return cache.get(cacheKey);
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const result = schema.parse(this._getOptions(key, featureNames, preferences));
@@ -123,8 +124,9 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   const cache = getOptionsCache(this);
   const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled, schema);
 
-  if (cache.has(cacheKey)) {
-    return cache.get(cacheKey);
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const result = schema.parse(this._getOptions(key, featureNames, preferences));
