@@ -551,12 +551,10 @@ optify --dir ./configs list-features
 
 # Get options for a key with features applied (last feature wins)
 optify --dir ./configs get-options myConfig -f A B
+# {"myArray":["different item 1","item 2"],"myObject":{...}}
 
 # Get the full merged configuration for a set of features
 optify --dir ./configs get-all-options -f A B
-
-# Use jq for pretty-printing
-optify --dir ./configs get-options myConfig -f A | jq
 ```
 
 See [rust/optify-cli](./rust/optify-cli/) for full documentation.
