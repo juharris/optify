@@ -210,6 +210,7 @@ jobs:
     permissions:
       # This permission is mandatory for trusted publishing.
       id-token: write
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -303,6 +304,7 @@ jobs:
     permissions:
       # This permission is mandatory for trusted publishing.
       id-token: write
+      contents: read
     steps:
     - uses: actions/checkout@v4
 
