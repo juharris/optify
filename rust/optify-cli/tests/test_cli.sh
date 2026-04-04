@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Integration tests for the optify CLI binary.
-# Run from the rust/optify-cli directory after building with:
-#   cargo build --release
+# Installs the binary via cargo and then invokes it as `optify`.
+# Run from the rust/optify-cli directory.
 
 set -euo pipefail
 
-BINARY="../target/release/optify"
 CONFIGS="../../tests/test_suites/simple/configs"
+
+echo "Installing optify CLI..."
+cargo install --path . --quiet
+echo "Installed $(optify --version)"
 
 pass=0
 fail=0
@@ -29,30 +32,30 @@ check() {
 # list-features returns canonical names sorted
 check "list-features" \
     "$(printf 'A_with_comments\nfeature_A\nfeature_B/initial')" \
-    "$("$BINARY" --dir "$CONFIGS" list-features)"
+    "$(optify --dir "$CONFIGS" list-features)"
 
 # --include-aliases also emits aliases, still sorted
 check "list-features --include-aliases" \
     "$(printf 'A_with_comments\na\nb\nfeature_A\nfeature_B/initial')" \
-    "$("$BINARY" --dir "$CONFIGS" list-features --include-aliases)"
+    "$(optify --dir "$CONFIGS" list-features --include-aliases)"
 
 # get-options outputs compact (single-line) JSON
 check "get-options myConfig -f A" \
     '{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"root string same","rootString2":"gets overridden"}' \
-    "$("$BINARY" --dir "$CONFIGS" get-options myConfig -f A)"
+    "$(optify --dir "$CONFIGS" get-options myConfig -f A)"
 
 # get-options with multiple features — later feature overrides earlier
 check "get-options myConfig -f A B" \
     '{"myArray":["different item 1","item 2"],"myObject":{"deeper":{"list":[55],"new":"new value","wtv":3333},"one":1,"string":"string","three":3,"two":22},"rootString":"root string same","rootString2":"override"}' \
-    "$("$BINARY" --dir "$CONFIGS" get-options myConfig -f A B)"
+    "$(optify --dir "$CONFIGS" get-options myConfig -f A B)"
 
 # get-all-options returns the full merged configuration
 check "get-all-options -f A" \
     '{"myConfig":{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"root string same","rootString2":"gets overridden"}}' \
-    "$("$BINARY" --dir "$CONFIGS" get-all-options -f A)"
+    "$(optify --dir "$CONFIGS" get-all-options -f A)"
 
 # error on unknown feature exits non-zero and prints to stderr
-if "$BINARY" --dir "$CONFIGS" get-options myConfig -f unknown_feature 2>/dev/null; then
+if optify --dir "$CONFIGS" get-options myConfig -f unknown_feature 2>/dev/null; then
     echo "FAIL: unknown feature should exit non-zero"
     (( ++fail ))
 else
