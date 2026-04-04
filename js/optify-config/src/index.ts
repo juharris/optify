@@ -50,17 +50,20 @@ declare module '../index' {
 const CACHE_KEY = Symbol('featuresWithMetadataCache');
 const CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 const OPTIONS_CACHE_KEY = Symbol('optionsCache');
+const SCHEMA_IDS_KEY = Symbol('schemaIds');
+const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
 
-// WeakMap to store schema IDs without mutating the schema objects.
-// JavaScript runs on a single event-loop thread; worker threads have isolated heaps,
-// so this counter is safe in all standard Node.js usage.
-const schemaIds = new WeakMap<object, number>();
-let schemaIdCounter = 0;
+function getSchemaId(instance: any, schema: any): number {
+  // Initialize schema tracking on first use
+  if (!instance[SCHEMA_IDS_KEY]) {
+    instance[SCHEMA_IDS_KEY] = new WeakMap<object, number>();
+    instance[SCHEMA_ID_COUNTER_KEY] = 0;
+  }
 
-function getSchemaId(schema: any): number {
+  const schemaIds = instance[SCHEMA_IDS_KEY];
   let id = schemaIds.get(schema);
   if (id === undefined) {
-    id = ++schemaIdCounter;
+    id = ++instance[SCHEMA_ID_COUNTER_KEY];
     schemaIds.set(schema, id);
   }
   return id;
@@ -71,6 +74,7 @@ function getSchemaId(schema: any): number {
  * Mirrors Ruby's cache_key: [key, feature_names, are_configurable_strings_enabled, config_class]
  */
 function createOptionsCacheKey(
+  instance: any,
   key: string,
   featureNames: string[],
   areConfigurableStringsEnabled: boolean,
@@ -80,9 +84,45 @@ function createOptionsCacheKey(
     key,
     featureNames,
     areConfigurableStringsEnabled,
-    getSchemaId(schema)
+    getSchemaId(instance, schema)
   ]);
 }
+
+/**
+ * Shared implementation of getOptions with optional caching support.
+ * Used by both OptionsProvider and OptionsWatcher.
+ */
+function getOptionsWithCaching(
+  instance: any,
+  key: string,
+  featureNames: string[],
+  schema: any,
+  preferences?: nativeBinding.GetOptionsPreferences | null,
+  cacheOptions?: CacheOptions | null
+): any {
+  if (cacheOptions) {
+    const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
+
+    let cache: Map<string, any> = instance[OPTIONS_CACHE_KEY];
+    if (!cache) {
+      cache = new Map();
+      instance[OPTIONS_CACHE_KEY] = cache;
+    }
+
+    const cacheKey = createOptionsCacheKey(instance, key, featureNames, areConfigurableStringsEnabled, schema);
+    const cached = cache.get(cacheKey);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const result = schema.parse(instance._getOptions(key, featureNames, preferences));
+    cache.set(cacheKey, result);
+    return result;
+  }
+
+  return schema.parse(instance._getOptions(key, featureNames, preferences));
+}
+
 
 // Extend OptionsProvider prototype with extra methods.
 export const OptionsProvider = nativeBinding.OptionsProvider;
@@ -95,27 +135,7 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
   return this[CACHE_KEY] = this._featuresWithMetadata();
 };
 (OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
-  if (cacheOptions) {
-    const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
-
-    let cache: Map<string, any> = this[OPTIONS_CACHE_KEY];
-    if (!cache) {
-      cache = new Map();
-      this[OPTIONS_CACHE_KEY] = cache;
-    }
-
-    const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled, schema);
-    const cached = cache.get(cacheKey);
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    const result = schema.parse(this._getOptions(key, featureNames, preferences));
-    cache.set(cacheKey, result);
-    return result;
-  }
-
-  return schema.parse(this._getOptions(key, featureNames, preferences));
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
 
 // Extend OptionsWatcher prototype with extra methods.
@@ -131,25 +151,5 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   return this[CACHE_KEY] = this._featuresWithMetadata();
 };
 (OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
-  if (cacheOptions) {
-    const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
-
-    let cache: Map<string, any> = this[OPTIONS_CACHE_KEY];
-    if (!cache) {
-      cache = new Map();
-      this[OPTIONS_CACHE_KEY] = cache;
-    }
-
-    const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled, schema);
-    const cached = cache.get(cacheKey);
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    const result = schema.parse(this._getOptions(key, featureNames, preferences));
-    cache.set(cacheKey, result);
-    return result;
-  }
-
-  return schema.parse(this._getOptions(key, featureNames, preferences));
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
