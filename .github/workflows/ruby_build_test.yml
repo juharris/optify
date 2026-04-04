@@ -115,7 +115,7 @@ jobs:
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       # It probably just fails if the gem is already published.
       continue-on-error: true
-      uses: rubygems/release-gem@v1
+      uses: rubygems/release-gem@v1.2.0
       with:
         working-directory: ./ruby/from_hash
 
