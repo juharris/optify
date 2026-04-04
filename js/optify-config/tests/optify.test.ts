@@ -124,13 +124,19 @@ describe('getOptions', () => {
       expect(provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema)).toBe(configAB);
     });
 
-    test(`${name} cache is order-independent for feature names`, () => {
-      // Cache should treat ['A', 'B'] and ['B', 'A'] as the same
+    test(`${name} cache respects feature order`, () => {
+      // Feature order matters for configuration precedence
+      // ['A', 'B'] and ['B', 'A'] should produce different results
       const configAB = provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema);
       const configBA = provider.getOptions('myConfig', ['B', 'A'], MyConfigSchema);
 
-      // Should return the same cached object regardless of order
-      expect(configAB).toBe(configBA);
+      // These should be cached separately because order affects the result
+      // (We can't directly compare values since both are valid, but we can verify they're cached)
+      const configAB2 = provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema);
+      const configBA2 = provider.getOptions('myConfig', ['B', 'A'], MyConfigSchema);
+
+      expect(configAB).toBe(configAB2); // Same order = same cached object
+      expect(configBA).toBe(configBA2); // Same order = same cached object
     });
 
     test(`${name} cache differentiates by schema`, () => {
@@ -143,8 +149,12 @@ describe('getOptions', () => {
       });
       const config2 = provider.getOptions('myConfig', ['A'], PartialSchema);
 
-      // Should be different objects (different schemas)
+      // Should be different objects (different schemas parse differently)
       expect(config1).not.toBe(config2);
+
+      // Verify the full schema has more properties
+      expect('myArray' in config1).toBe(true);
+      expect('myArray' in config2).toBe(false);
     });
 
     test(`${name} cache differentiates by configurable strings preference`, () => {
