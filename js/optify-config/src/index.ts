@@ -50,13 +50,17 @@ declare module '../index' {
 const CACHE_KEY = Symbol('featuresWithMetadataCache');
 const CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 const OPTIONS_CACHE_KEY = Symbol('optionsCache');
+const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
 const SCHEMA_IDS_KEY = Symbol('schemaIds');
 const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
 
 /** Instance with dynamic properties for caching. */
 interface CacheableInstance {
   _getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
+  _getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
+  lastModified?(): number;
   [OPTIONS_CACHE_KEY]?: Map<string, unknown>;
+  [CACHE_CREATION_TIME_KEY]?: number;
   [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
   [SCHEMA_ID_COUNTER_KEY]?: number;
 }
@@ -111,6 +115,10 @@ function getOptionsWithCaching<T>(
   cacheOptions?: CacheOptions | null
 ): T {
   if (cacheOptions) {
+    // Filter features before cache lookup, matching Ruby implementation
+    const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
+    const filteredFeatures = instance._getFilteredFeatures(featureNames, filterPreferences);
+
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
     let cache = instance[OPTIONS_CACHE_KEY];
@@ -119,13 +127,21 @@ function getOptionsWithCaching<T>(
       instance[OPTIONS_CACHE_KEY] = cache;
     }
 
-    const cacheKey = createOptionsCacheKey(instance, key, featureNames, areConfigurableStringsEnabled, schema);
+    // Use filtered features in cache key
+    const cacheKey = createOptionsCacheKey(instance, key, filteredFeatures, areConfigurableStringsEnabled, schema);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) {
       return cached as T;
     }
 
-    const result = schema.parse(instance._getOptions(key, featureNames, preferences));
+    // For cache miss, create preferences that skip feature name conversion since features are already filtered
+    const cacheMissPreferences = new nativeBinding.GetOptionsPreferences();
+    cacheMissPreferences.setSkipFeatureNameConversion(true);
+    if (areConfigurableStringsEnabled) {
+      cacheMissPreferences.enableConfigurableStrings();
+    }
+
+    const result = schema.parse(instance._getOptions(key, filteredFeatures, cacheMissPreferences));
     cache.set(cacheKey, result);
     return result;
   }
@@ -161,5 +177,17 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   return this[CACHE_KEY] = this._featuresWithMetadata();
 };
 (OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
+  // Check cache validity for watcher - reset if files have been modified
+  if (cacheOptions) {
+    const lastModifiedTime = this.lastModified();
+    const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
+
+    if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
+      // Cache is stale, reset it
+      this[OPTIONS_CACHE_KEY] = new Map();
+      this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
+    }
+  }
+
   return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
