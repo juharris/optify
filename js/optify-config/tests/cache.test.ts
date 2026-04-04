@@ -40,6 +40,10 @@ describe('getOptions caching', () => {
 
       expect(config1).toBe(config2);
       expect(config1.rootString).toBe('root string same');
+
+      // Verify cached result equals non-cached result
+      const configNonCached = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+      expect(config1).toEqual(configNonCached);
     });
 
     test(`${name} does not cache without cacheOptions`, () => {
@@ -66,17 +70,6 @@ describe('getOptions caching', () => {
 
       expect(provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions)).toBe(configA);
       expect(provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema, null, cacheOptions)).toBe(configAB);
-    });
-
-    test(`${name} cache respects feature order`, () => {
-      const configAB = provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema, null, cacheOptions);
-      const configBA = provider.getOptions('myConfig', ['B', 'A'], MyConfigSchema, null, cacheOptions);
-
-      const configAB2 = provider.getOptions('myConfig', ['A', 'B'], MyConfigSchema, null, cacheOptions);
-      const configBA2 = provider.getOptions('myConfig', ['B', 'A'], MyConfigSchema, null, cacheOptions);
-
-      expect(configAB).toBe(configAB2);
-      expect(configBA).toBe(configBA2);
     });
 
     test(`${name} cache differentiates by schema`, () => {

@@ -53,20 +53,30 @@ const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 const SCHEMA_IDS_KEY = Symbol('schemaIds');
 const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
 
-function getSchemaId(instance: any, schema: any): number {
+/** Instance with dynamic properties for caching. */
+interface CacheableInstance {
+  _getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
+  [OPTIONS_CACHE_KEY]?: Map<string, unknown>;
+  [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
+  [SCHEMA_ID_COUNTER_KEY]?: number;
+}
+
+function getSchemaId(instance: CacheableInstance, schema: object): number {
   // Initialize schema tracking on first use
   if (!instance[SCHEMA_IDS_KEY]) {
     instance[SCHEMA_IDS_KEY] = new WeakMap<object, number>();
     instance[SCHEMA_ID_COUNTER_KEY] = 0;
   }
 
-  const schemaIds = instance[SCHEMA_IDS_KEY];
-  let id = schemaIds.get(schema);
-  if (id === undefined) {
-    id = ++instance[SCHEMA_ID_COUNTER_KEY];
-    schemaIds.set(schema, id);
+  const schemaIds: WeakMap<object, number> = instance[SCHEMA_IDS_KEY];
+  const existingId = schemaIds.get(schema);
+  if (existingId !== undefined) {
+    return existingId;
   }
-  return id;
+
+  const newId = ++instance[SCHEMA_ID_COUNTER_KEY]!;
+  schemaIds.set(schema, newId);
+  return newId;
 }
 
 /**
@@ -74,11 +84,11 @@ function getSchemaId(instance: any, schema: any): number {
  * Mirrors Ruby's cache_key: [key, feature_names, are_configurable_strings_enabled, config_class]
  */
 function createOptionsCacheKey(
-  instance: any,
+  instance: CacheableInstance,
   key: string,
   featureNames: string[],
   areConfigurableStringsEnabled: boolean,
-  schema: any
+  schema: object
 ): string {
   return JSON.stringify([
     key,
@@ -92,18 +102,18 @@ function createOptionsCacheKey(
  * Shared implementation of getOptions with optional caching support.
  * Used by both OptionsProvider and OptionsWatcher.
  */
-function getOptionsWithCaching(
-  instance: any,
+function getOptionsWithCaching<T>(
+  instance: CacheableInstance,
   key: string,
   featureNames: string[],
-  schema: any,
+  schema: TypeSchema<T>,
   preferences?: nativeBinding.GetOptionsPreferences | null,
   cacheOptions?: CacheOptions | null
-): any {
+): T {
   if (cacheOptions) {
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
-    let cache: Map<string, any> = instance[OPTIONS_CACHE_KEY];
+    let cache = instance[OPTIONS_CACHE_KEY];
     if (!cache) {
       cache = new Map();
       instance[OPTIONS_CACHE_KEY] = cache;
@@ -112,7 +122,7 @@ function getOptionsWithCaching(
     const cacheKey = createOptionsCacheKey(instance, key, featureNames, areConfigurableStringsEnabled, schema);
     const cached = cache.get(cacheKey);
     if (cached !== undefined) {
-      return cached;
+      return cached as T;
     }
 
     const result = schema.parse(instance._getOptions(key, featureNames, preferences));
