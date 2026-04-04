@@ -6,7 +6,7 @@ on:
     paths:
       - ".github/workflows/ruby_build_test.yml"
       - "ruby/**"
-      - "rust/**"
+      - "rust/optify/**"
       - "tests/**"
   pull_request:
     branches: [ "main" ]
@@ -14,7 +14,7 @@ on:
     paths:
       - ".github/workflows/ruby_build_test.yml"
       - "ruby/**"
-      - "rust/**"
+      - "rust/optify/**"
       - "tests/**"
 
   # Allows you to run this workflow manually from the Actions tab.
