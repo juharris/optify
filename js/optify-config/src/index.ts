@@ -44,12 +44,13 @@ const CACHE_KEY = Symbol('featuresWithMetadataCache');
 const CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 
+// Schema ID counter for cache key generation
+let schemaIdCounter = 0;
+
 /**
  * Gets or initializes the options cache for an instance.
- * Uses a two-level map structure: Map<schema, Map<stringKey, result>>
- * This allows us to use the schema object itself as a key component without generating IDs.
  */
-function getOptionsCache(instance: any): Map<any, Map<string, any>> {
+function getOptionsCache(instance: any): Map<string, any> {
   if (!instance[OPTIONS_CACHE_KEY]) {
     instance[OPTIONS_CACHE_KEY] = new Map();
   }
@@ -57,18 +58,26 @@ function getOptionsCache(instance: any): Map<any, Map<string, any>> {
 }
 
 /**
- * Creates a cache key string for getOptions caching.
- * Similar to Ruby's cache_key = [key, feature_names, are_configurable_strings_enabled, config_class]
- * Note: Feature order is preserved (not sorted) as it affects configuration merging precedence.
+ * Creates a cache key for getOptions caching.
+ * Mirrors Ruby's cache_key: [key, feature_names, are_configurable_strings_enabled, config_class]
  */
 function createOptionsCacheKey(
   key: string,
   featureNames: string[],
-  areConfigurableStringsEnabled: boolean
+  areConfigurableStringsEnabled: boolean,
+  schema: any
 ): string {
-  // Feature names order matters for configuration precedence - do NOT sort
-  const featuresKey = featureNames.join(',');
-  return `${key}|${featuresKey}|${areConfigurableStringsEnabled}`;
+  // Assign a unique ID to each schema object for cache differentiation
+  if (!(schema as any).__optifyCacheId) {
+    (schema as any).__optifyCacheId = ++schemaIdCounter;
+  }
+
+  return JSON.stringify({
+    key,
+    featureNames,
+    areConfigurableStringsEnabled,
+    schemaId: (schema as any).__optifyCacheId
+  });
 }
 
 // Extend OptionsProvider prototype with extra methods.
@@ -85,22 +94,14 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
   const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
   const cache = getOptionsCache(this);
+  const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled, schema);
 
-  // Get or create the inner map for this schema
-  let schemaCache = cache.get(schema);
-  if (!schemaCache) {
-    schemaCache = new Map();
-    cache.set(schema, schemaCache);
-  }
-
-  const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled);
-
-  if (schemaCache.has(cacheKey)) {
-    return schemaCache.get(cacheKey);
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey);
   }
 
   const result = schema.parse(this._getOptions(key, featureNames, preferences));
-  schemaCache.set(cacheKey, result);
+  cache.set(cacheKey, result);
   return result;
 };
 
@@ -120,21 +121,13 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
   const cache = getOptionsCache(this);
+  const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled, schema);
 
-  // Get or create the inner map for this schema
-  let schemaCache = cache.get(schema);
-  if (!schemaCache) {
-    schemaCache = new Map();
-    cache.set(schema, schemaCache);
-  }
-
-  const cacheKey = createOptionsCacheKey(key, featureNames, areConfigurableStringsEnabled);
-
-  if (schemaCache.has(cacheKey)) {
-    return schemaCache.get(cacheKey);
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey);
   }
 
   const result = schema.parse(this._getOptions(key, featureNames, preferences));
-  schemaCache.set(cacheKey, result);
+  cache.set(cacheKey, result);
   return result;
 };
