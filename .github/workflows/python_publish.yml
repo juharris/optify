@@ -14,14 +14,14 @@ on:
     paths:
       - ".github/workflows/python_publish.yml"
       - "python/**"
-      - "rust/**"
+      - "rust/optify/**"
   pull_request:
     branches: [ "main" ]
     types: [ opened, synchronize, reopened, ready_for_review ]
     paths:
       - ".github/workflows/python_publish.yml"
       - "python/**"
-      - "rust/**"
+      - "rust/optify/**"
 
 permissions:
   contents: read
