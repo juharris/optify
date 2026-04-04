@@ -2,7 +2,6 @@
 
 // Import the generated native bindings.
 import * as nativeBinding from '../index';
-import { randomUUID } from 'crypto';
 
 // Re-export types that don't need modifications.
 export {
@@ -32,16 +31,18 @@ declare module '../index' {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null): T;
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null, preferences?: GetOptionsPreferences | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null, preferences: GetOptionsPreferences | null): T;
   }
 
   interface OptionsWatcher {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null): T;
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null, preferences?: GetOptionsPreferences | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, cacheOptions: CacheOptions | null, preferences: GetOptionsPreferences | null): T;
   }
 }
 
@@ -51,21 +52,7 @@ const FEATURES_CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 const OPTIONS_CACHE_TIME_KEY = Symbol('optionsCacheTime');
 
-// Assign unique IDs to schema objects for use in flat cache keys
-const _schemaIds = new WeakMap<object, string>();
-
-function getSchemaId(schema: object): string {
-  let id = _schemaIds.get(schema);
-  if (id === undefined) {
-    id = randomUUID();
-    _schemaIds.set(schema, id);
-  }
-  return id;
-}
-
-function buildCacheKey(key: string, featureNames: string[], configurableStringsEnabled: boolean, schemaId: string): string {
-  return JSON.stringify([key, featureNames, configurableStringsEnabled, schemaId]);
-}
+type OptionsCache = WeakMap<object, Map<string, Map<string, Map<boolean, any>>>>;
 
 function maybeResetWatcherOptionsCache(instance: any) {
   if (typeof instance.lastModified !== 'function') {
@@ -75,7 +62,7 @@ function maybeResetWatcherOptionsCache(instance: any) {
   const cachedTime = instance[OPTIONS_CACHE_TIME_KEY];
   const lastModifiedTime = instance.lastModified();
   if (!cachedTime || lastModifiedTime > cachedTime) {
-    instance[OPTIONS_CACHE_KEY] = new Map<string, any>();
+    instance[OPTIONS_CACHE_KEY] = new WeakMap<object, Map<string, Map<string, Map<boolean, any>>>>();
     instance[OPTIONS_CACHE_TIME_KEY] = lastModifiedTime;
   }
 }
@@ -89,16 +76,33 @@ function getOptionsWithCache(
 ): any {
   const configurableStringsEnabled = preferences?.areConfigurableStringsEnabled() ?? false;
   const canonicalFeatures: string[] = instance.getFilteredFeatures(featureNames, preferences ?? null);
-  const schemaId = getSchemaId(schema);
-  const cacheKey = buildCacheKey(key, canonicalFeatures, configurableStringsEnabled, schemaId);
 
   if (!instance[OPTIONS_CACHE_KEY]) {
-    instance[OPTIONS_CACHE_KEY] = new Map<string, any>();
+    instance[OPTIONS_CACHE_KEY] = new WeakMap<object, Map<string, Map<string, Map<boolean, any>>>>();
   }
-  const cache: Map<string, any> = instance[OPTIONS_CACHE_KEY];
+  const cache: OptionsCache = instance[OPTIONS_CACHE_KEY];
 
-  if (cache.has(cacheKey)) {
-    return cache.get(cacheKey);
+  let schemaCache = cache.get(schema);
+  if (!schemaCache) {
+    schemaCache = new Map<string, Map<string, Map<boolean, any>>>();
+    cache.set(schema, schemaCache);
+  }
+
+  let keyCache = schemaCache.get(key);
+  if (!keyCache) {
+    keyCache = new Map<string, Map<boolean, any>>();
+    schemaCache.set(key, keyCache);
+  }
+
+  const featuresKey = canonicalFeatures.join('\u0001');
+  let featureCache = keyCache.get(featuresKey);
+  if (!featureCache) {
+    featureCache = new Map<boolean, any>();
+    keyCache.set(featuresKey, featureCache);
+  }
+
+  if (featureCache.has(configurableStringsEnabled)) {
+    return featureCache.get(configurableStringsEnabled);
   }
 
   const cachePreferences = new nativeBinding.GetOptionsPreferences();
@@ -108,7 +112,7 @@ function getOptionsWithCache(
   }
 
   const parsed = schema.parse(instance._getOptions(key, canonicalFeatures, cachePreferences));
-  cache.set(cacheKey, parsed);
+  featureCache.set(configurableStringsEnabled, parsed);
   return parsed;
 }
 
@@ -127,14 +131,19 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
   key: string,
   featureNames: string[],
   schema: any,
-  cacheOptionsOrPreferences?: CacheOptions | nativeBinding.GetOptionsPreferences | null,
-  preferences?: nativeBinding.GetOptionsPreferences | null
+  preferencesOrCache?: nativeBinding.GetOptionsPreferences | CacheOptions | null,
+  cacheOptionsOrPreferences?: CacheOptions | nativeBinding.GetOptionsPreferences | null
 ): any {
-  const legacyPreferences = cacheOptionsOrPreferences instanceof nativeBinding.GetOptionsPreferences ? cacheOptionsOrPreferences : null;
-  const cacheOptions = legacyPreferences ? null : cacheOptionsOrPreferences;
-  const resolvedPreferences = legacyPreferences ?? preferences ?? null;
+  const resolvedCacheOptions =
+    (preferencesOrCache instanceof CacheOptions ? preferencesOrCache : null) ??
+    (cacheOptionsOrPreferences instanceof CacheOptions ? cacheOptionsOrPreferences : null);
 
-  if (!cacheOptions) {
+  const resolvedPreferences =
+    preferencesOrCache instanceof CacheOptions
+      ? (cacheOptionsOrPreferences instanceof nativeBinding.GetOptionsPreferences ? cacheOptionsOrPreferences : null)
+      : (preferencesOrCache instanceof nativeBinding.GetOptionsPreferences ? preferencesOrCache : null);
+
+  if (!resolvedCacheOptions) {
     return schema.parse(this._getOptions(key, featureNames, resolvedPreferences));
   }
   return getOptionsWithCache(this, key, featureNames, schema, resolvedPreferences);
@@ -157,14 +166,19 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   key: string,
   featureNames: string[],
   schema: any,
-  cacheOptionsOrPreferences?: CacheOptions | nativeBinding.GetOptionsPreferences | null,
-  preferences?: nativeBinding.GetOptionsPreferences | null
+  preferencesOrCache?: nativeBinding.GetOptionsPreferences | CacheOptions | null,
+  cacheOptionsOrPreferences?: CacheOptions | nativeBinding.GetOptionsPreferences | null
 ): any {
-  const legacyPreferences = cacheOptionsOrPreferences instanceof nativeBinding.GetOptionsPreferences ? cacheOptionsOrPreferences : null;
-  const cacheOptions = legacyPreferences ? null : cacheOptionsOrPreferences;
-  const resolvedPreferences = legacyPreferences ?? preferences ?? null;
+  const resolvedCacheOptions =
+    (preferencesOrCache instanceof CacheOptions ? preferencesOrCache : null) ??
+    (cacheOptionsOrPreferences instanceof CacheOptions ? cacheOptionsOrPreferences : null);
 
-  if (!cacheOptions) {
+  const resolvedPreferences =
+    preferencesOrCache instanceof CacheOptions
+      ? (cacheOptionsOrPreferences instanceof nativeBinding.GetOptionsPreferences ? cacheOptionsOrPreferences : null)
+      : (preferencesOrCache instanceof nativeBinding.GetOptionsPreferences ? preferencesOrCache : null);
+
+  if (!resolvedCacheOptions) {
     return schema.parse(this._getOptions(key, featureNames, resolvedPreferences));
   }
 
