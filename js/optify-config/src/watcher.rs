@@ -223,7 +223,7 @@ impl JsOptionsWatcher {
 
   /// Filters feature names based on constraints and preferences.
   /// Returns canonical feature names that pass the filters.
-  #[napi(js_name = "_getFilteredFeatures")]
+  #[napi(js_name = "getFilteredFeatures")]
   pub fn get_filtered_features(
     &self,
     feature_names: Vec<String>,

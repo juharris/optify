@@ -57,7 +57,7 @@ const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
 /** Instance with dynamic properties for caching. */
 interface CacheableInstance {
   _getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
-  _getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
+  getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
   lastModified?(): number;
   [OPTIONS_CACHE_KEY]?: Map<string, unknown>;
   [CACHE_CREATION_TIME_KEY]?: number;
@@ -103,6 +103,17 @@ function createOptionsCacheKey(
 }
 
 /**
+ * Resets all caches for the instance.
+ * Used by OptionsWatcher when files are modified.
+ */
+function resetCaches(instance: any): void {
+  instance[OPTIONS_CACHE_KEY] = new Map();
+  instance[CACHE_KEY] = undefined;
+  instance[SCHEMA_IDS_KEY] = new WeakMap<object, number>();
+  instance[SCHEMA_ID_COUNTER_KEY] = 0;
+}
+
+/**
  * Shared implementation of getOptions with optional caching support.
  * Used by both OptionsProvider and OptionsWatcher.
  */
@@ -117,7 +128,7 @@ function getOptionsWithCaching<T>(
   if (cacheOptions) {
     // Filter features before cache lookup, matching Ruby implementation
     const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
-    const filteredFeatures = instance._getFilteredFeatures(featureNames, filterPreferences);
+    const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
 
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
@@ -173,6 +184,8 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
     return this[CACHE_KEY];
   }
 
+  // Cache is stale, reset all caches
+  resetCaches(this);
   this[CACHE_TIME_KEY] = lastModifiedTime;
   return this[CACHE_KEY] = this._featuresWithMetadata();
 };
@@ -183,8 +196,8 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
     const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
 
     if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-      // Cache is stale, reset it
-      this[OPTIONS_CACHE_KEY] = new Map();
+      // Cache is stale, reset all caches
+      resetCaches(this);
       this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
     }
   }
