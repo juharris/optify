@@ -23,6 +23,16 @@ describe('getOptions cache', () => {
     }
   });
 
+  test('supports the legacy call shape with preferences as the 4th argument', () => {
+    for (const { provider } of buildProviders()) {
+      const preferences = new GetOptionsPreferences();
+      preferences.enableConfigurableStrings();
+
+      const config = provider.getOptions('myConfig', ['A'], LooseConfigSchema, preferences);
+      expect(config.rootString).toBe('root string same');
+    }
+  });
+
   test('caches parsed objects per canonical feature set and schema', () => {
     for (const { name, provider } of buildProviders()) {
       const cacheOptions = new CacheOptions();
@@ -44,6 +54,20 @@ describe('getOptions cache', () => {
       const configABAlias = provider.getOptions('myConfig', ['A', 'featUre_B/iNITial'], LooseConfigSchema, cacheOptions);
       expect(configABAlias).toBe(configAB);
 
+    }
+  });
+
+  test('keeps cache entries separate for different schema objects', () => {
+    for (const { provider } of buildProviders()) {
+      const cacheOptions = new CacheOptions();
+      const SchemaOne = z.object({ rootString: z.string() });
+      const SchemaTwo = z.object({ rootString: z.string() });
+
+      const first = provider.getOptions('myConfig', ['A'], SchemaOne, cacheOptions);
+      const second = provider.getOptions('myConfig', ['A'], SchemaTwo, cacheOptions);
+
+      expect(first).toEqual(second);
+      expect(first).not.toBe(second);
     }
   });
 
