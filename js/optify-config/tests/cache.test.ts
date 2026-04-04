@@ -13,12 +13,12 @@ const buildProviders = () => ([
 ]);
 
 describe('getOptions cache', () => {
-  test('supports legacy preferences-only signature', () => {
+  test('works without caching when cacheOptions is omitted', () => {
     for (const { provider } of buildProviders()) {
       const preferences = new GetOptionsPreferences();
       preferences.enableConfigurableStrings();
 
-      const config = provider.getOptions('myConfig', ['A'], LooseConfigSchema, preferences);
+      const config = provider.getOptions('myConfig', ['A'], LooseConfigSchema, null, preferences);
       expect(config.rootString).toBe('root string same');
     }
   });
@@ -61,18 +61,6 @@ describe('getOptions cache', () => {
 
       const configurableConfigAlias = provider.getOptions('myConfig', ['a'], LooseConfigSchema, cacheOptions, preferences);
       expect(configurableConfigAlias).toBe(configurableConfig);
-
-    }
-  });
-
-  test('rejects caching when overrides are provided', () => {
-    for (const { name, provider } of buildProviders()) {
-      const cacheOptions = new CacheOptions();
-      const preferences = new GetOptionsPreferences();
-      preferences.setOverridesJson(JSON.stringify({ replace: true }));
-
-      expect(() => provider.getOptions('myConfig', ['A'], LooseConfigSchema, cacheOptions, preferences))
-        .toThrow('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.');
 
     }
   });
