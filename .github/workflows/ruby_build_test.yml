@@ -103,15 +103,6 @@ jobs:
     - name: "Test"
       run: bundle exec rake test
       working-directory: ./ruby/from_hash
-    - name: "Pre-Publish"
-      shell: bash
-      run: |
-        set -ex
-        # From https://github.com/rubygems/release-gem/blob/v1/action.yml until that action can use a different directory.
-        git config --global user.email "$(git log -1 --pretty=format:'%ae')"
-        git config --global user.name "$(git log -1 --pretty=format:'%an')"
-      working-directory: ./ruby/from_hash
-
     - name: "Build"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
@@ -119,20 +110,14 @@ jobs:
         set -ex
         bundle exec rake build
       working-directory: ./ruby/from_hash
-      env:
-        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
     - name: "Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       # It probably just fails if the gem is already published.
       continue-on-error: true
-      shell: bash
-      run: |
-        set -ex
-        bundle exec rake release
-      working-directory: ./ruby/from_hash
-      env:
-        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
+      uses: rubygems/release-gem@v1
+      with:
+        working-directory: ./ruby/from_hash
 
   # Gem: optify-config
   build_optify:
@@ -222,6 +207,9 @@ jobs:
     needs:
       - build_optify
       - ci-data
+    permissions:
+      # This permission is mandatory for trusted publishing.
+      id-token: write
     strategy:
       fail-fast: true
       matrix:
@@ -287,6 +275,10 @@ jobs:
         # tag: '0.9.117'
         working-directory: ./ruby/optify
 
+    - name: "Configure RubyGems credentials"
+      if: github.ref == 'refs/heads/main'
+      uses: rubygems/configure-rubygems-credentials@v1.0.0
+
     - name: "[Ruby] Publish"
       if: github.ref == 'refs/heads/main'
       shell: bash
@@ -299,8 +291,6 @@ jobs:
         ls -lh "${gem_path}"
         gem push "${gem_path}"
         sha256sum "${gem_path}"
-      env:
-        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
 
   # Publish a gem with the Rust source code so that versions of Ruby and platforms that aren't built by this action can compile the Rust code when they build.
   # This allows future versions of Ruby to be used that aren't explicitly supported by this action.
@@ -310,6 +300,9 @@ jobs:
       - build_optify
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
+    permissions:
+      # This permission is mandatory for trusted publishing.
+      id-token: write
     steps:
     - uses: actions/checkout@v4
 
@@ -337,6 +330,10 @@ jobs:
         gem build optify.gemspec --output pkg/optify-config.gem
       working-directory: ./ruby/optify
 
+    - name: "Configure RubyGems credentials"
+      if: github.ref == 'refs/heads/main'
+      uses: rubygems/configure-rubygems-credentials@v1.0.0
+
     - name: "Publish"
       if: github.ref == 'refs/heads/main'
       shell: bash
@@ -350,5 +347,3 @@ jobs:
         gem push "${gem_path}"
         sha256sum "${gem_path}"
       working-directory: ./ruby/optify
-      env:
-        GEM_HOST_API_KEY: '${{ secrets.RUBYGEMS_API_KEY }}'
