@@ -45,6 +45,20 @@ impl JsGetOptionsPreferences {
   }
 
   #[napi]
+  pub fn has_overrides(&self) -> bool {
+    self.inner.overrides.is_some()
+  }
+
+  #[napi]
+  pub fn get_constraints_json(&self) -> Option<String> {
+    self
+      .inner
+      .constraints
+      .as_ref()
+      .map(|c| serde_json::to_string(&c.constraints).expect("constraints should be serializable"))
+  }
+
+  #[napi]
   pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
     self.inner.skip_feature_name_conversion = skip_feature_name_conversion;
   }

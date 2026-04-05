@@ -85,6 +85,7 @@ function getSchemaId(instance: CacheableInstance, schema: object): number {
 /**
  * Creates a cache key for getOptions caching.
  * Mirrors Ruby's cache_key: [key, feature_names, are_configurable_strings_enabled, config_class]
+ * Note: Constraints are not in the key because features are already filtered.
  */
 function createOptionsCacheKey(
   instance: CacheableInstance,
@@ -123,6 +124,11 @@ function getOptionsWithCaching<T>(
   cacheOptions?: CacheOptions | null
 ): T {
   if (cacheOptions) {
+    // Check for overrides - caching with overrides is not supported
+    if (preferences?.hasOverrides?.()) {
+      throw new Error('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.');
+    }
+
     // Filter features before cache lookup, matching Ruby implementation
     const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
     const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
@@ -147,6 +153,11 @@ function getOptionsWithCaching<T>(
     cacheMissPreferences.setSkipFeatureNameConversion(true);
     if (areConfigurableStringsEnabled) {
       cacheMissPreferences.enableConfigurableStrings();
+    }
+    // Set constraints if present
+    const constraintsJson = preferences?.getConstraintsJson?.();
+    if (constraintsJson) {
+      cacheMissPreferences.setConstraintsJson(constraintsJson);
     }
 
     const result = schema.parse(instance._getOptions(key, filteredFeatures, cacheMissPreferences));
