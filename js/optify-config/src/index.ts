@@ -72,14 +72,13 @@ function getSchemaId(instance: CacheableInstance, schema: object): number {
     instance[SCHEMA_ID_COUNTER_KEY] = 0;
   }
 
-  const schemaIds: WeakMap<object, number> = instance[SCHEMA_IDS_KEY];
-  const existingId = schemaIds.get(schema);
+  const existingId = instance[SCHEMA_IDS_KEY].get(schema);
   if (existingId !== undefined) {
     return existingId;
   }
 
   const newId = ++instance[SCHEMA_ID_COUNTER_KEY]!;
-  schemaIds.set(schema, newId);
+  instance[SCHEMA_IDS_KEY].set(schema, newId);
   return newId;
 }
 
@@ -109,8 +108,6 @@ function createOptionsCacheKey(
 function resetCaches(instance: any): void {
   instance[OPTIONS_CACHE_KEY] = new Map();
   instance[CACHE_KEY] = undefined;
-  instance[SCHEMA_IDS_KEY] = new WeakMap<object, number>();
-  instance[SCHEMA_ID_COUNTER_KEY] = 0;
 }
 
 /**
