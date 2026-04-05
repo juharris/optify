@@ -13,10 +13,6 @@ export {
   WatcherOptions
 } from '../index';
 
-// Re-export the native classes directly
-export type OptionsProvider = nativeBinding.OptionsProvider;
-export type OptionsWatcher = nativeBinding.OptionsWatcher;
-
 /** Any object with a parse method, compatible with Zod schemas. */
 export interface TypeSchema<T> {
   parse(data: unknown): T;
@@ -33,16 +29,16 @@ export class CacheOptions {}
 declare module '../index' {
   interface OptionsProvider {
     /** Returns a map of all the canonical feature names to their metadata. */
-    featuresWithMetadata(): Record<string, OptionsMetadata>;
+    featuresWithMetadata(): Record<string, nativeBinding.OptionsMetadata>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
   }
 
   interface OptionsWatcher {
     /** Returns a map of all the canonical feature names to their metadata. */
-    featuresWithMetadata(): Record<string, OptionsMetadata>;
+    featuresWithMetadata(): Record<string, nativeBinding.OptionsMetadata>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
   }
 }
 
