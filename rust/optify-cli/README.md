@@ -68,6 +68,16 @@ Feature names with spaces must be quoted:
 optify --dir ./configs get-options myConfig -f "feature with spaces" A
 ```
 
+Pass `--preferences` (alias `--prefs`) with a JSON object to tweak the
+resolution. Supported keys map to `GetOptionsPreferences`:
+`are_configurable_strings_enabled`, `skip_feature_name_conversion`,
+`constraints`, and `overrides`.
+
+```shell
+optify --dir ./configs get-options myConfig -f A \
+    --preferences '{"overrides":{"myConfig":{"rootString":"custom"}}}'
+```
+
 ---
 
 ### `get-all-options`
@@ -76,6 +86,12 @@ Get the full merged configuration for the given features.
 
 ```shell
 optify --dir ./configs get-all-options --features A B
+```
+
+Preferences work the same way on this subcommand:
+
+```shell
+optify --dir ./configs get-all-options -f A --prefs '{"are_configurable_strings_enabled":true}'
 ```
 
 ---

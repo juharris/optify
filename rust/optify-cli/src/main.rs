@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use optify::provider::{OptionsProvider, OptionsRegistry};
+use optify::provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry};
 use std::path::PathBuf;
 use std::process;
 
@@ -34,6 +34,12 @@ enum Commands {
         /// Feature names to apply, in order from lowest to highest priority.
         #[arg(short, long, value_name = "FEATURE", num_args = 0..)]
         features: Vec<String>,
+
+        /// JSON object of preferences forwarded to the provider. Supported keys:
+        /// `are_configurable_strings_enabled` (bool), `skip_feature_name_conversion` (bool),
+        /// `constraints` (JSON value), `overrides` (JSON value).
+        #[arg(long = "preferences", visible_alias = "prefs", value_name = "JSON")]
+        preferences: Option<String>,
     },
 
     /// Get options for a specific configuration key with the given features.
@@ -44,7 +50,54 @@ enum Commands {
         /// Feature names to apply, in order from lowest to highest priority.
         #[arg(short, long, value_name = "FEATURE", num_args = 0..)]
         features: Vec<String>,
+
+        /// JSON object of preferences forwarded to the provider. Supported keys:
+        /// `are_configurable_strings_enabled` (bool), `skip_feature_name_conversion` (bool),
+        /// `constraints` (JSON value), `overrides` (JSON value).
+        #[arg(long = "preferences", visible_alias = "prefs", value_name = "JSON")]
+        preferences: Option<String>,
     },
+}
+
+/// Parse a JSON string into a `GetOptionsPreferences`.
+///
+/// Recognised object keys match the fields on `GetOptionsPreferences`. Unknown
+/// keys return an error to catch typos at the CLI layer.
+fn parse_preferences(json: &str) -> Result<GetOptionsPreferences, String> {
+    let value: serde_json::Value = serde_json::from_str(json)
+        .map_err(|e| format!("Invalid --preferences JSON: {e}"))?;
+
+    let object = value
+        .as_object()
+        .ok_or_else(|| "--preferences must be a JSON object".to_string())?;
+
+    let mut preferences = GetOptionsPreferences::new();
+
+    for (key, val) in object {
+        match key.as_str() {
+            "are_configurable_strings_enabled" => {
+                preferences.are_configurable_strings_enabled = val.as_bool().ok_or_else(|| {
+                    "preferences.are_configurable_strings_enabled must be a boolean".to_string()
+                })?;
+            }
+            "skip_feature_name_conversion" => {
+                preferences.skip_feature_name_conversion = val.as_bool().ok_or_else(|| {
+                    "preferences.skip_feature_name_conversion must be a boolean".to_string()
+                })?;
+            }
+            "constraints" => {
+                preferences.set_constraints(Some(val.clone()));
+            }
+            "overrides" => {
+                preferences.overrides = Some(val.clone());
+            }
+            other => {
+                return Err(format!("Unknown preferences key: {other}"));
+            }
+        }
+    }
+
+    Ok(preferences)
 }
 
 fn build_provider(dirs: &[PathBuf], schema: Option<&PathBuf>) -> Result<OptionsProvider, String> {
@@ -72,9 +125,13 @@ fn run() -> Result<(), String> {
             }
         }
 
-        Commands::GetAllOptions { features } => {
-            // No caching or preferences needed for a one-shot CLI invocation.
-            let value = provider.get_all_options(&features, None, None)?;
+        Commands::GetAllOptions {
+            features,
+            preferences,
+        } => {
+            let preferences = preferences.as_deref().map(parse_preferences).transpose()?;
+            // No caching needed for a one-shot CLI invocation.
+            let value = provider.get_all_options(&features, None, preferences.as_ref())?;
             println!(
                 "{}",
                 serde_json::to_string(&value)
@@ -82,8 +139,18 @@ fn run() -> Result<(), String> {
             );
         }
 
-        Commands::GetOptions { key, features } => {
-            let value = provider.get_options(&key, &features)?;
+        Commands::GetOptions {
+            key,
+            features,
+            preferences,
+        } => {
+            let preferences = preferences.as_deref().map(parse_preferences).transpose()?;
+            let value = provider.get_options_with_preferences(
+                &key,
+                &features,
+                None,
+                preferences.as_ref(),
+            )?;
             println!(
                 "{}",
                 serde_json::to_string(&value)

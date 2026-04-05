@@ -63,6 +63,34 @@ else
     (( ++pass ))
 fi
 
+# --preferences applies overrides on top of the merged configuration
+check "get-all-options -f A --preferences overrides" \
+    '{"myConfig":{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"custom","rootString2":"gets overridden"}}' \
+    "$(optify --dir "$CONFIGS" get-all-options -f A --preferences '{"overrides":{"myConfig":{"rootString":"custom"}}}')"
+
+# --prefs alias works the same as --preferences on get-options
+check "get-options myConfig -f A --prefs overrides" \
+    '{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"custom","rootString2":"gets overridden"}' \
+    "$(optify --dir "$CONFIGS" get-options myConfig -f A --prefs '{"overrides":{"myConfig":{"rootString":"custom"}}}')"
+
+# invalid JSON in --preferences exits non-zero
+if optify --dir "$CONFIGS" get-all-options -f A --preferences 'not json' 2>/dev/null; then
+    echo "FAIL: invalid --preferences JSON should exit non-zero"
+    (( ++fail ))
+else
+    echo "PASS: invalid --preferences JSON exits non-zero"
+    (( ++pass ))
+fi
+
+# unknown preferences key exits non-zero (catches typos)
+if optify --dir "$CONFIGS" get-all-options -f A --preferences '{"typo_key":true}' 2>/dev/null; then
+    echo "FAIL: unknown --preferences key should exit non-zero"
+    (( ++fail ))
+else
+    echo "PASS: unknown --preferences key exits non-zero"
+    (( ++pass ))
+fi
+
 echo ""
 if [ "$fail" -ne 0 ]; then
     echo "$fail test(s) failed."
