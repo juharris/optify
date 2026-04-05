@@ -1,5 +1,6 @@
 // Caching utilities for getOptions
 import * as nativeBinding from '../index';
+import { TypeSchema } from './types';
 
 /** Options for enabling caching of deserialized objects returned by getOptions.
  * Pass an instance of this class to getOptions to enable caching.
@@ -8,14 +9,9 @@ import * as nativeBinding from '../index';
  */
 export class CacheOptions {}
 
-/** Any object with a parse method, compatible with Zod schemas. */
-export interface TypeSchema<T> {
-  parse(data: unknown): T;
-}
-
 // Private cache property names (using symbols for true privacy)
-export const CACHE_KEY = Symbol('featuresWithMetadataCache');
-export const CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
+export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
+export const FEATURES_WITH_METADATA_CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 export const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 export const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
 export const SCHEMA_IDS_KEY = Symbol('schemaIds');
@@ -75,7 +71,7 @@ export function createOptionsCacheKey(
  */
 export function resetCaches(instance: any): void {
   instance[OPTIONS_CACHE_KEY] = new Map();
-  instance[CACHE_KEY] = undefined;
+  instance[FEATURES_WITH_METADATA_CACHE_KEY] = undefined;
 }
 
 /**
