@@ -30,18 +30,22 @@ export interface CacheableInstance {
 
 export function getSchemaId(instance: CacheableInstance, schema: object): number {
   // Initialize schema tracking on first use
-  if (!instance[SCHEMA_IDS_KEY]) {
-    instance[SCHEMA_IDS_KEY] = new WeakMap<object, number>();
+  let schemaIds = instance[SCHEMA_IDS_KEY];
+  if (!schemaIds) {
+    schemaIds = new WeakMap<object, number>();
+    instance[SCHEMA_IDS_KEY] = schemaIds;
     instance[SCHEMA_ID_COUNTER_KEY] = 0;
   }
 
-  const existingId = instance[SCHEMA_IDS_KEY].get(schema);
+  const existingId = schemaIds.get(schema);
   if (existingId !== undefined) {
     return existingId;
   }
 
-  const newId = ++instance[SCHEMA_ID_COUNTER_KEY]!;
-  instance[SCHEMA_IDS_KEY].set(schema, newId);
+  const counter = instance[SCHEMA_ID_COUNTER_KEY]!;
+  const newId = counter + 1;
+  instance[SCHEMA_ID_COUNTER_KEY] = newId;
+  schemaIds.set(schema, newId);
   return newId;
 }
 
