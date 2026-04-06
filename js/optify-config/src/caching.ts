@@ -30,7 +30,7 @@ const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 export const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
 const SCHEMA_IDS_KEY = Symbol('schemaIds');
 const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
-const CACHE_MAX_SIZE_KEY = Symbol('cacheMaxSize');
+export const CACHE_MAX_SIZE_KEY = Symbol('cacheMaxSize');
 
 type OptionsCache = Map<string, NonNullable<unknown>> | LRUCache<string, NonNullable<unknown>>;
 
@@ -122,7 +122,8 @@ export function getOptionsWithCaching<T>(
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
     let cache = instance[OPTIONS_CACHE_KEY];
-    if (!cache || instance[CACHE_MAX_SIZE_KEY] !== cacheOptions.maxSize) {
+    if (!cache) {
+      // Create cache once when first accessed, store the maxSize for resetCaches
       instance[CACHE_MAX_SIZE_KEY] = cacheOptions.maxSize;
       cache = createOptionsCache(cacheOptions.maxSize);
       instance[OPTIONS_CACHE_KEY] = cache;
