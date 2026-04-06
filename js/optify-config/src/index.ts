@@ -5,7 +5,6 @@ import * as nativeBinding from '../index';
 
 import {
   CACHE_CREATION_TIME_KEY,
-  CACHE_MAX_SIZE_KEY,
   CacheOptions,
   FEATURES_WITH_METADATA_CACHE_KEY,
   FEATURES_WITH_METADATA_CACHE_TIME_KEY,
@@ -88,9 +87,7 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
     const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
 
     if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-      // Set maxSize before resetting cache so it can be used by resetCaches
-      this[CACHE_MAX_SIZE_KEY] = cacheOptions.maxSize;
-      resetCaches(this);
+      resetCaches(this, cacheOptions.maxSize);
       this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
     }
   }

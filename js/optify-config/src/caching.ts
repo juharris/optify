@@ -30,7 +30,6 @@ const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 export const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
 const SCHEMA_IDS_KEY = Symbol('schemaIds');
 const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
-export const CACHE_MAX_SIZE_KEY = Symbol('cacheMaxSize');
 
 type OptionsCache = Map<string, NonNullable<unknown>> | LRUCache<string, NonNullable<unknown>>;
 
@@ -41,7 +40,6 @@ export interface CacheableInstance {
   lastModified?(): number;
   [FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
   [OPTIONS_CACHE_KEY]?: OptionsCache;
-  [CACHE_MAX_SIZE_KEY]?: number;
   [SCHEMA_ID_COUNTER_KEY]?: number;
   [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
 }
@@ -93,10 +91,12 @@ function createOptionsCache(maxSize?: number): OptionsCache {
 /**
  * Resets all caches for the instance.
  * Used by OptionsWatcher when files are modified.
+ * @param instance The cacheable instance to reset.
+ * @param maxSize Optional maximum cache size. If provided, creates an LRU cache; otherwise creates an unlimited Map.
  */
-export function resetCaches(instance: CacheableInstance): void {
+export function resetCaches(instance: CacheableInstance, maxSize?: number): void {
   instance[FEATURES_WITH_METADATA_CACHE_KEY] = undefined;
-  instance[OPTIONS_CACHE_KEY] = createOptionsCache(instance[CACHE_MAX_SIZE_KEY]);
+  instance[OPTIONS_CACHE_KEY] = createOptionsCache(maxSize);
 }
 
 /**
@@ -123,8 +123,7 @@ export function getOptionsWithCaching<T>(
 
     let cache = instance[OPTIONS_CACHE_KEY];
     if (!cache) {
-      // Create cache once when first accessed, store the maxSize for resetCaches
-      instance[CACHE_MAX_SIZE_KEY] = cacheOptions.maxSize;
+      // Create cache once when first accessed
       cache = createOptionsCache(cacheOptions.maxSize);
       instance[OPTIONS_CACHE_KEY] = cache;
     }
