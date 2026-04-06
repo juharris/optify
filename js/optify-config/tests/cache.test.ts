@@ -6,21 +6,21 @@ import { CacheOptions, GetOptionsPreferences, OptionsProvider, OptionsWatcher } 
 const DeeperObjectSchema = z.object({
   wtv: z.number(),
   list: z.array(z.number()),
-});
+}).readonly();
 
 const MyObjectSchema = z.object({
   one: z.number(),
   two: z.number(),
   string: z.string(),
   deeper: DeeperObjectSchema,
-});
+}).readonly();
 
 const MyConfigSchema = z.object({
   rootString: z.string(),
   rootString2: z.string(),
   myArray: z.array(z.string()),
   myObject: MyObjectSchema,
-});
+}).readonly();
 
 describe('getOptions caching', () => {
   const configsPath = path.join(__dirname, '../../../tests/test_suites/simple/configs');
@@ -85,6 +85,15 @@ describe('getOptions caching', () => {
       expect('myArray' in config2).toBe(false);
     });
 
+    test(`${name} cache differentiates by similar schema`, () => {
+      const config1 = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+
+      const MyConfigSchema2 = MyConfigSchema.clone();
+      const config2 = provider.getOptions('myConfig', ['A'], MyConfigSchema2, null, cacheOptions);
+
+      expect(config1).not.toBe(config2);
+    });
+
     test(`${name} cache differentiates by configurable strings preference`, () => {
       const config1 = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
 
@@ -94,7 +103,7 @@ describe('getOptions caching', () => {
 
       expect(config1).not.toBe(config2);
 
-      const config2Again = provider.getOptions('myConfig', ['A'], MyConfigSchema, preferences, cacheOptions);
+      const config2Again = provider.getOptions('myConfig', ['a'], MyConfigSchema, preferences, cacheOptions);
       expect(config2).toBe(config2Again);
     });
   }

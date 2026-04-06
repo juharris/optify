@@ -4,12 +4,10 @@
 import * as nativeBinding from '../index';
 
 import {
+  CACHE_CREATION_TIME_KEY,
   CacheOptions,
-  CacheableInstance,
   FEATURES_WITH_METADATA_CACHE_KEY,
   FEATURES_WITH_METADATA_CACHE_TIME_KEY,
-  OPTIONS_CACHE_KEY,
-  CACHE_CREATION_TIME_KEY,
   getOptionsWithCaching,
   resetCaches
 } from './caching';
@@ -17,11 +15,11 @@ import { TypeSchema } from './types';
 
 // Re-export types that don't need modifications.
 export {
-  OptionsMetadata,
   GetOptionsPreferences,
+  OptionsMetadata,
   OptionsProviderBuilder,
-  OptionsWatcherListenerEvent,
   OptionsWatcherBuilder,
+  OptionsWatcherListenerEvent,
   WatcherOptions
 } from '../index';
 
@@ -29,7 +27,6 @@ export {
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
-// Re-export caching types
 export { CacheOptions } from './caching';
 export type { TypeSchema } from './types';
 
@@ -39,14 +36,14 @@ declare module '../index' {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 
   interface OptionsWatcher {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 }
 
@@ -60,7 +57,7 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
 
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
-(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
+(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions): any {
   return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
 
@@ -73,7 +70,6 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
     return this[FEATURES_WITH_METADATA_CACHE_KEY];
   }
 
-  // Cache is stale, reset all caches
   resetCaches(this);
   this[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = lastModifiedTime;
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
@@ -85,7 +81,6 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
     const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
 
     if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-      // Cache is stale, reset all caches
       resetCaches(this);
       this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
     }

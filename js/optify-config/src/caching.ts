@@ -1,35 +1,36 @@
 // Caching utilities for getOptions
+
 import * as nativeBinding from '../index';
 import { TypeSchema } from './types';
 
-/** Options for enabling caching of deserialized objects returned by getOptions.
+/**
+ * Options for enabling caching of deserialized objects returned by getOptions.
  * Pass an instance of this class to getOptions to enable caching.
  * Subsequent calls with the same key, feature names, schema, and preferences
  * will return the same cached object without re-parsing.
  */
-export class CacheOptions {}
+export class CacheOptions { }
 
 // Private cache property names (using symbols for true privacy)
 export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
 export const FEATURES_WITH_METADATA_CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
-export const OPTIONS_CACHE_KEY = Symbol('optionsCache');
+const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 export const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
-export const SCHEMA_IDS_KEY = Symbol('schemaIds');
-export const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
+const SCHEMA_IDS_KEY = Symbol('schemaIds');
+const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
 
 /** Instance with dynamic properties for caching. */
 export interface CacheableInstance {
   _getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
   getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
   lastModified?(): number;
+  [FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
   [OPTIONS_CACHE_KEY]?: Map<string, unknown>;
-  [CACHE_CREATION_TIME_KEY]?: number;
-  [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
   [SCHEMA_ID_COUNTER_KEY]?: number;
+  [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
 }
 
-export function getSchemaId(instance: CacheableInstance, schema: object): number {
-  // Initialize schema tracking on first use
+function getSchemaId(instance: CacheableInstance, schema: object): number {
   let schemaIds = instance[SCHEMA_IDS_KEY];
   if (!schemaIds) {
     schemaIds = new WeakMap<object, number>();
@@ -42,19 +43,16 @@ export function getSchemaId(instance: CacheableInstance, schema: object): number
     return existingId;
   }
 
-  const counter = instance[SCHEMA_ID_COUNTER_KEY]!;
-  const newId = counter + 1;
-  instance[SCHEMA_ID_COUNTER_KEY] = newId;
+  const newId = ++instance[SCHEMA_ID_COUNTER_KEY]!;
   schemaIds.set(schema, newId);
   return newId;
 }
 
 /**
  * Creates a cache key for getOptions caching.
- * Mirrors Ruby's cache_key: [key, feature_names, are_configurable_strings_enabled, config_class]
  * Note: Constraints are not in the key because features are already filtered.
  */
-export function createOptionsCacheKey(
+function createOptionsCacheKey(
   instance: CacheableInstance,
   key: string,
   featureNames: string[],
@@ -73,14 +71,14 @@ export function createOptionsCacheKey(
  * Resets all caches for the instance.
  * Used by OptionsWatcher when files are modified.
  */
-export function resetCaches(instance: any): void {
-  instance[OPTIONS_CACHE_KEY] = new Map();
+export function resetCaches(instance: CacheableInstance): void {
   instance[FEATURES_WITH_METADATA_CACHE_KEY] = undefined;
+  instance[OPTIONS_CACHE_KEY] = new Map();
 }
 
 /**
  * Shared implementation of getOptions with optional caching support.
- * Used by both OptionsProvider and OptionsWatcher.
+ * Used by both `OptionsProvider` and `OptionsWatcher`.
  */
 export function getOptionsWithCaching<T>(
   instance: CacheableInstance,
@@ -91,12 +89,10 @@ export function getOptionsWithCaching<T>(
   cacheOptions?: CacheOptions | null
 ): T {
   if (cacheOptions) {
-    // Check for overrides - caching with overrides is not supported
     if (preferences?.hasOverrides?.()) {
       throw new Error('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.');
     }
 
-    // Filter features before cache lookup, matching Ruby implementation
     const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
     const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
 
@@ -108,14 +104,13 @@ export function getOptionsWithCaching<T>(
       instance[OPTIONS_CACHE_KEY] = cache;
     }
 
-    // Use filtered features in cache key
     const cacheKey = createOptionsCacheKey(instance, key, filteredFeatures, areConfigurableStringsEnabled, schema);
-    const cached = cache.get(cacheKey);
-    if (cached !== undefined) {
-      return cached as T;
+    const cachedResult = cache.get(cacheKey);
+    if (cachedResult !== undefined) {
+      return cachedResult as T;
     }
 
-    // For cache miss, create preferences that skip feature name conversion since features are already filtered
+    // For cache miss, create preferences that skip feature name conversion since features are already filtered.
     const cacheMissPreferences = new nativeBinding.GetOptionsPreferences();
     cacheMissPreferences.setSkipFeatureNameConversion(true);
     if (areConfigurableStringsEnabled) {

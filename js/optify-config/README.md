@@ -19,7 +19,7 @@ const MyConfigSchema = z.object({
       num: z.number(),
     }),
   }),
-})
+}).readonly()
 
 const provider = OptionsProvider.build('<configs folder path>')
 const config = provider.getOptions('myConfig', ['feature_A', 'feature_B'], MyConfigSchema)
