@@ -47,6 +47,9 @@ jobs:
     name: "Build & Test"
     needs: setup
     runs-on: ${{ matrix.os }}
+    permissions:
+      # Required for OIDC token exchange for Rust crate publishing.
+      id-token: write
     strategy:
       fail-fast: true
       matrix:
@@ -83,6 +86,9 @@ jobs:
         mkdir schemas
         cp ../../schemas/feature_file.json schemas/
       working-directory: ./rust/optify
+    - uses: rust-lang/crates-io-auth-action@v1
+      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      id: auth
     - name: "[Rust] Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
@@ -90,9 +96,9 @@ jobs:
       # We want to only be lenient for the `cargo publish`, but we would still want to clearly see that an issue happened during the run.
       continue-on-error: true
       run: |
-        cargo publish --allow-dirty --token ${CARGO_REGISTRY_TOKEN}
+        cargo publish --allow-dirty
       env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       working-directory: ./rust/optify
     - name: "[Rust] Publish (dry run)"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
@@ -120,9 +126,9 @@ jobs:
       shell: bash
       continue-on-error: true
       run: |
-        cargo publish --allow-dirty --token ${CARGO_REGISTRY_TOKEN}
+        cargo publish --allow-dirty
       env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       working-directory: ./rust/optify-cli
     - name: "[Rust CLI] Publish (dry run)"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
@@ -130,7 +136,6 @@ jobs:
       run: |
         cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify-cli
-
 
     # JavaScript
     - name: "[JS][Rust] Lint"
