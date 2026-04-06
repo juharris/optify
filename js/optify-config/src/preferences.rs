@@ -45,6 +45,11 @@ impl JsGetOptionsPreferences {
   }
 
   #[napi]
+  pub fn has_overrides(&self) -> bool {
+    self.inner.overrides.is_some()
+  }
+
+  #[napi]
   pub fn set_skip_feature_name_conversion(&mut self, skip_feature_name_conversion: bool) {
     self.inner.skip_feature_name_conversion = skip_feature_name_conversion;
   }

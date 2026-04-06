@@ -221,6 +221,23 @@ impl JsOptionsWatcher {
       .has_conditions(&canonical_feature_name)
   }
 
+  /// Filters feature names based on constraints and preferences.
+  /// Returns canonical feature names that pass the filters.
+  #[napi(js_name = "getFilteredFeatures")]
+  pub fn get_filtered_features(
+    &self,
+    feature_names: Vec<String>,
+    preferences: Option<&JsGetOptionsPreferences>,
+  ) -> napi::Result<Vec<String>> {
+    let preferences = preferences.map(|p| &p.inner);
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_filtered_feature_names(&feature_names, preferences)
+      .map_err(|e| napi::Error::from_reason(e.to_string()))
+  }
+
   /// Returns the time when the provider was finished building.
   #[napi]
   pub fn last_modified(&self) -> napi::Result<i64> {

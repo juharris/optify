@@ -3,13 +3,23 @@
 // Import the generated native bindings.
 import * as nativeBinding from '../index';
 
+import {
+  CACHE_CREATION_TIME_KEY,
+  CacheOptions,
+  FEATURES_WITH_METADATA_CACHE_KEY,
+  FEATURES_WITH_METADATA_CACHE_TIME_KEY,
+  getOptionsWithCaching,
+  resetCaches
+} from './caching';
+import { TypeSchema } from './types';
+
 // Re-export types that don't need modifications.
 export {
-  OptionsMetadata,
   GetOptionsPreferences,
+  OptionsMetadata,
   OptionsProviderBuilder,
-  OptionsWatcherListenerEvent,
   OptionsWatcherBuilder,
+  OptionsWatcherListenerEvent,
   WatcherOptions
 } from '../index';
 
@@ -17,58 +27,70 @@ export {
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
-/** Any object with a parse method, compatible with Zod schemas. */
-export interface TypeSchema<T> {
-  parse(data: unknown): T;
-}
+export { CacheOptions } from './caching';
+export type { TypeSchema } from './types';
 
 // Augment the native class interfaces to include our new method
 declare module '../index' {
   interface OptionsProvider {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
-    /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null): T;
+    /**
+     * Gets options for the specified key and feature names, validated against a schema.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
+     */
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 
   interface OptionsWatcher {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
-    /** Gets options for the specified key and feature names, validated against a schema. */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null): T;
+    /**
+     * Gets options for the specified key and feature names, validated against a schema.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
+     */
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 }
-
-// Private cache property names (using symbols for true privacy)
-const CACHE_KEY = Symbol('featuresWithMetadataCache');
-const CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 
 // Extend OptionsProvider prototype with extra methods.
 export const OptionsProvider = nativeBinding.OptionsProvider;
 (OptionsProvider.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
-  const cachedResult = this[CACHE_KEY];
+  const cachedResult = this[FEATURES_WITH_METADATA_CACHE_KEY];
   if (cachedResult) {
     return cachedResult;
   }
 
-  return this[CACHE_KEY] = this._featuresWithMetadata();
+  return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
-(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null): any {
-  return schema.parse(this._getOptions(key, featureNames, preferences));
+(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions): any {
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
 
 // Extend OptionsWatcher prototype with extra methods.
 export const OptionsWatcher = nativeBinding.OptionsWatcher;
 (OptionsWatcher.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
-  const cachedTime = this[CACHE_TIME_KEY];
+  const cachedTime = this[FEATURES_WITH_METADATA_CACHE_TIME_KEY];
   const lastModifiedTime = this.lastModified();
   if (cachedTime && lastModifiedTime <= cachedTime) {
-    return this[CACHE_KEY];
+    return this[FEATURES_WITH_METADATA_CACHE_KEY];
   }
 
-  this[CACHE_TIME_KEY] = lastModifiedTime;
-  return this[CACHE_KEY] = this._featuresWithMetadata();
+  resetCaches(this);
+  this[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = lastModifiedTime;
+  return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
-(OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null): any {
-  return schema.parse(this._getOptions(key, featureNames, preferences));
+(OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
+  // Check cache validity for watcher - reset if files have been modified
+  if (cacheOptions) {
+    const lastModifiedTime = this.lastModified();
+    const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
+
+    if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
+      resetCaches(this);
+      this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
+    }
+  }
+
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
