@@ -54,5 +54,8 @@
 		"universal": "napi universalize",
 		"version": "napi version"
 	},
-	"packageManager": "yarn@4.9.1"
+	"packageManager": "yarn@4.9.1",
+	"dependencies": {
+		"lru-cache": "^11.0.0"
+	}
 }

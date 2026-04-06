@@ -1,5 +1,6 @@
 // Caching utilities for getOptions
 
+import { LRUCache } from 'lru-cache';
 import * as nativeBinding from '../index';
 import { TypeSchema } from './types';
 
@@ -9,7 +10,18 @@ import { TypeSchema } from './types';
  * Subsequent calls with the same key, feature names, schema, and preferences
  * will return the same cached object without re-parsing.
  */
-export class CacheOptions { }
+export class CacheOptions {
+  /**
+   * The maximum number of entries to keep in the cache.
+   * When the cache is full, the least recently used entry will be evicted.
+   * If not set, the cache size is unlimited.
+   */
+  readonly maxSize?: number;
+
+  constructor({ maxSize }: { maxSize?: number } = {}) {
+    this.maxSize = maxSize;
+  }
+}
 
 // Private cache property names (using symbols for true privacy)
 export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
@@ -18,6 +30,9 @@ const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 export const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
 const SCHEMA_IDS_KEY = Symbol('schemaIds');
 const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
+const CACHE_MAX_SIZE_KEY = Symbol('cacheMaxSize');
+
+type OptionsCache = Map<string, NonNullable<unknown>> | LRUCache<string, NonNullable<unknown>>;
 
 /** Instance with dynamic properties for caching. */
 export interface CacheableInstance {
@@ -25,7 +40,8 @@ export interface CacheableInstance {
   getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
   lastModified?(): number;
   [FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
-  [OPTIONS_CACHE_KEY]?: Map<string, unknown>;
+  [OPTIONS_CACHE_KEY]?: OptionsCache;
+  [CACHE_MAX_SIZE_KEY]?: number;
   [SCHEMA_ID_COUNTER_KEY]?: number;
   [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
 }
@@ -67,13 +83,20 @@ function createOptionsCacheKey(
   ]);
 }
 
+function createOptionsCache(maxSize?: number): OptionsCache {
+  if (maxSize !== undefined) {
+    return new LRUCache<string, NonNullable<unknown>>({ max: maxSize });
+  }
+  return new Map<string, NonNullable<unknown>>();
+}
+
 /**
  * Resets all caches for the instance.
  * Used by OptionsWatcher when files are modified.
  */
 export function resetCaches(instance: CacheableInstance): void {
   instance[FEATURES_WITH_METADATA_CACHE_KEY] = undefined;
-  instance[OPTIONS_CACHE_KEY] = new Map();
+  instance[OPTIONS_CACHE_KEY] = createOptionsCache(instance[CACHE_MAX_SIZE_KEY]);
 }
 
 /**
@@ -99,8 +122,9 @@ export function getOptionsWithCaching<T>(
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
     let cache = instance[OPTIONS_CACHE_KEY];
-    if (!cache) {
-      cache = new Map();
+    if (!cache || instance[CACHE_MAX_SIZE_KEY] !== cacheOptions.maxSize) {
+      instance[CACHE_MAX_SIZE_KEY] = cacheOptions.maxSize;
+      cache = createOptionsCache(cacheOptions.maxSize);
       instance[OPTIONS_CACHE_KEY] = cache;
     }
 
@@ -118,7 +142,7 @@ export function getOptionsWithCaching<T>(
     }
 
     const result = schema.parse(instance._getOptions(key, filteredFeatures, cacheMissPreferences));
-    cache.set(cacheKey, result);
+    cache.set(cacheKey, result as NonNullable<unknown>);
     return result;
   }
 

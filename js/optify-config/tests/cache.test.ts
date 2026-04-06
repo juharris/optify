@@ -108,3 +108,53 @@ describe('getOptions caching', () => {
     });
   }
 });
+
+describe('getOptions caching with maxSize', () => {
+  const configsPath = path.join(__dirname, '../../../tests/test_suites/simple/configs');
+
+  for (const name of ["OptionsProvider", "OptionsWatcher"]) {
+    // Each test gets a fresh provider to avoid sharing cache state with other tests
+    const makeProvider = () => name === "OptionsProvider"
+      ? OptionsProvider.build(configsPath)
+      : OptionsWatcher.build(configsPath);
+
+    test(`${name} accepts maxSize option`, () => {
+      const cacheOptions = new CacheOptions({ maxSize: 10 });
+      expect(cacheOptions.maxSize).toBe(10);
+
+      const provider = makeProvider();
+      const config = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+      const configAgain = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+      expect(config).toBe(configAgain);
+    });
+
+    test(`${name} unlimited cache when maxSize is not set`, () => {
+      const cacheOptions = new CacheOptions();
+      expect(cacheOptions.maxSize).toBeUndefined();
+
+      const provider = makeProvider();
+      const config = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+      const configAgain = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+      expect(config).toBe(configAgain);
+    });
+
+    test(`${name} evicts least recently used entry when maxSize is reached`, () => {
+      // maxSize=1 means only 1 entry fits; the second access evicts the first
+      const cacheOptions = new CacheOptions({ maxSize: 1 });
+      const provider = makeProvider();
+
+      // Populate cache with ['A'] entry
+      const configA1 = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+
+      // Access a different entry (different schema) to fill the cache and evict the first entry
+      const PartialSchema = z.object({ rootString: z.string() });
+      provider.getOptions('myConfig', ['A'], PartialSchema, null, cacheOptions);
+
+      // MyConfigSchema entry was evicted; re-fetching produces a new object
+      const configA2 = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+      expect(configA1).not.toBe(configA2);
+      // The content should still be equal
+      expect(configA1).toEqual(configA2);
+    });
+  }
+});
