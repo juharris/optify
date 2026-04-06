@@ -5,11 +5,10 @@ import * as nativeBinding from '../index';
 
 import {
   CACHE_CREATION_TIME_KEY,
+  CacheInitOptions,
   CacheOptions,
-  createCacheOptions,
   FEATURES_WITH_METADATA_CACHE_KEY,
   FEATURES_WITH_METADATA_CACHE_TIME_KEY,
-  getCacheOptionsMaxSize,
   getOptionsWithCaching,
   resetCaches
 } from './caching';
@@ -29,7 +28,7 @@ export {
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
-export { CacheOptions, createCacheOptions } from './caching';
+export { CacheInitOptions, CacheOptions } from './caching';
 export type { TypeSchema } from './types';
 
 // Augment the native class interfaces to include our new method
@@ -39,9 +38,9 @@ declare module '../index' {
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /**
      * Gets options for the specified key and feature names, validated against a schema.
-     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
+     * @param cacheInitOptions Optional cache initialization options to enable and configure caching of the deserialized result.
      */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions): T;
   }
 
   interface OptionsWatcher {
@@ -49,9 +48,9 @@ declare module '../index' {
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /**
      * Gets options for the specified key and feature names, validated against a schema.
-     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
+     * @param cacheInitOptions Optional cache initialization options to enable and configure caching of the deserialized result.
      */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions): T;
   }
 }
 
@@ -65,8 +64,8 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
 
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
-(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions): any {
-  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
+(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions): any {
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheInitOptions);
 };
 
 // Extend OptionsWatcher prototype with extra methods.
@@ -82,17 +81,17 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   this[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = lastModifiedTime;
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
-(OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
+(OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions | null): any {
   // Check cache validity for watcher - reset if files have been modified
-  if (cacheOptions) {
+  if (cacheInitOptions) {
     const lastModifiedTime = this.lastModified();
     const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
 
     if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-      resetCaches(this, getCacheOptionsMaxSize(cacheOptions));
+      resetCaches(this, cacheInitOptions.maxSize);
       this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
     }
   }
 
-  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheInitOptions);
 };

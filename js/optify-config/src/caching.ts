@@ -12,27 +12,26 @@ import { TypeSchema } from './types';
  */
 export class CacheOptions { }
 
-const CACHE_OPTIONS_MAX_SIZE_KEY = Symbol('cacheOptionsMaxSize');
-
 /**
- * Creates cache options with an optional maximum size.
- * @param maxSize The maximum number of entries to keep in the cache.
- *                When the cache is full, the least recently used entry will be evicted.
- *                If not set, the cache size is unlimited.
+ * Configuration options for cache initialization.
+ * Used when building providers/watchers to configure cache behavior.
  */
-export function createCacheOptions(maxSize?: number): CacheOptions {
-  const options = new CacheOptions();
-  if (maxSize !== undefined) {
-    (options as any)[CACHE_OPTIONS_MAX_SIZE_KEY] = maxSize;
+export class CacheInitOptions {
+  /**
+   * The maximum number of entries to keep in the cache.
+   * When the cache is full, the least recently used entry will be evicted.
+   * If not set, the cache size is unlimited.
+   */
+  readonly maxSize?: number;
+
+  constructor(maxSize?: number) {
+    this.maxSize = maxSize;
   }
-  return options;
 }
 
-function getCacheOptionsMaxSize(cacheOptions: CacheOptions | null | undefined): number | undefined {
-  return cacheOptions ? (cacheOptions as any)[CACHE_OPTIONS_MAX_SIZE_KEY] : undefined;
+function getCacheInitOptionsMaxSize(cacheInitOptions: CacheInitOptions | null | undefined): number | undefined {
+  return cacheInitOptions?.maxSize;
 }
-
-export { getCacheOptionsMaxSize };
 
 // Private cache property names (using symbols for true privacy)
 export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
@@ -120,9 +119,9 @@ export function getOptionsWithCaching<T>(
   featureNames: string[],
   schema: TypeSchema<T>,
   preferences?: nativeBinding.GetOptionsPreferences | null,
-  cacheOptions?: CacheOptions | null
+  cacheInitOptions?: CacheInitOptions | null
 ): T {
-  if (cacheOptions) {
+  if (cacheInitOptions) {
     if (preferences?.hasOverrides?.()) {
       throw new Error('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.');
     }
@@ -135,7 +134,7 @@ export function getOptionsWithCaching<T>(
     let cache = instance[OPTIONS_CACHE_KEY];
     if (!cache) {
       // Create cache once when first accessed
-      cache = createOptionsCache(getCacheOptionsMaxSize(cacheOptions));
+      cache = createOptionsCache(getCacheInitOptionsMaxSize(cacheInitOptions));
       instance[OPTIONS_CACHE_KEY] = cache;
     }
 
