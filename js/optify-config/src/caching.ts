@@ -10,18 +10,29 @@ import { TypeSchema } from './types';
  * Subsequent calls with the same key, feature names, schema, and preferences
  * will return the same cached object without re-parsing.
  */
-export class CacheOptions {
-  /**
-   * The maximum number of entries to keep in the cache.
-   * When the cache is full, the least recently used entry will be evicted.
-   * If not set, the cache size is unlimited.
-   */
-  readonly maxSize?: number;
+export class CacheOptions { }
 
-  constructor({ maxSize }: { maxSize?: number } = {}) {
-    this.maxSize = maxSize;
+const CACHE_OPTIONS_MAX_SIZE_KEY = Symbol('cacheOptionsMaxSize');
+
+/**
+ * Creates cache options with an optional maximum size.
+ * @param maxSize The maximum number of entries to keep in the cache.
+ *                When the cache is full, the least recently used entry will be evicted.
+ *                If not set, the cache size is unlimited.
+ */
+export function createCacheOptions(maxSize?: number): CacheOptions {
+  const options = new CacheOptions();
+  if (maxSize !== undefined) {
+    (options as any)[CACHE_OPTIONS_MAX_SIZE_KEY] = maxSize;
   }
+  return options;
 }
+
+function getCacheOptionsMaxSize(cacheOptions: CacheOptions | null | undefined): number | undefined {
+  return cacheOptions ? (cacheOptions as any)[CACHE_OPTIONS_MAX_SIZE_KEY] : undefined;
+}
+
+export { getCacheOptionsMaxSize };
 
 // Private cache property names (using symbols for true privacy)
 export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
@@ -124,7 +135,7 @@ export function getOptionsWithCaching<T>(
     let cache = instance[OPTIONS_CACHE_KEY];
     if (!cache) {
       // Create cache once when first accessed
-      cache = createOptionsCache(cacheOptions.maxSize);
+      cache = createOptionsCache(getCacheOptionsMaxSize(cacheOptions));
       instance[OPTIONS_CACHE_KEY] = cache;
     }
 

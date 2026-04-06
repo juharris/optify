@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import path from 'path';
 import { z } from 'zod';
-import { CacheOptions, GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../dist/index";
+import { CacheOptions, createCacheOptions, GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../dist/index";
 
 const DeeperObjectSchema = z.object({
   wtv: z.number(),
@@ -119,8 +119,7 @@ describe('getOptions caching with maxSize', () => {
       : OptionsWatcher.build(configsPath);
 
     test(`${name} accepts maxSize option`, () => {
-      const cacheOptions = new CacheOptions({ maxSize: 10 });
-      expect(cacheOptions.maxSize).toBe(10);
+      const cacheOptions = createCacheOptions(10);
 
       const provider = makeProvider();
       const config = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
@@ -130,7 +129,6 @@ describe('getOptions caching with maxSize', () => {
 
     test(`${name} unlimited cache when maxSize is not set`, () => {
       const cacheOptions = new CacheOptions();
-      expect(cacheOptions.maxSize).toBeUndefined();
 
       const provider = makeProvider();
       const config = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
@@ -140,7 +138,7 @@ describe('getOptions caching with maxSize', () => {
 
     test(`${name} evicts least recently used entry when maxSize is reached`, () => {
       // maxSize=1 means only 1 entry fits; the second access evicts the first
-      const cacheOptions = new CacheOptions({ maxSize: 1 });
+      const cacheOptions = createCacheOptions(1);
       const provider = makeProvider();
 
       // Populate cache with ['A'] entry

@@ -6,8 +6,10 @@ import * as nativeBinding from '../index';
 import {
   CACHE_CREATION_TIME_KEY,
   CacheOptions,
+  createCacheOptions,
   FEATURES_WITH_METADATA_CACHE_KEY,
   FEATURES_WITH_METADATA_CACHE_TIME_KEY,
+  getCacheOptionsMaxSize,
   getOptionsWithCaching,
   resetCaches
 } from './caching';
@@ -27,7 +29,7 @@ export {
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
-export { CacheOptions } from './caching';
+export { CacheOptions, createCacheOptions } from './caching';
 export type { TypeSchema } from './types';
 
 // Augment the native class interfaces to include our new method
@@ -87,7 +89,7 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
     const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
 
     if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-      resetCaches(this, cacheOptions.maxSize);
+      resetCaches(this, getCacheOptionsMaxSize(cacheOptions));
       this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
     }
   }
