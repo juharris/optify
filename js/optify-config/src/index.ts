@@ -35,14 +35,20 @@ declare module '../index' {
   interface OptionsProvider {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
-    /** Gets options for the specified key and feature names, validated against a schema. */
+    /**
+     * Gets options for the specified key and feature names, validated against a schema.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
+     */
     getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 
   interface OptionsWatcher {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
-    /** Gets options for the specified key and feature names, validated against a schema. */
+    /**
+     * Gets options for the specified key and feature names, validated against a schema.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
+     */
     getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 }
