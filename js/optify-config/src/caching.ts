@@ -84,19 +84,21 @@ export function resetCaches(instance: CacheableInstance): void {
 
 /**
  * Eagerly initializes the cache for the instance.
- * Should be called before `getOptions` to configure caching.
+ * Optional — if not called, the cache is lazily initialized on first `getOptions` call with `cacheOptions`.
+ * Call this to configure cache behavior (e.g., max size) before `getOptions`.
  * @param instance The cacheable instance to initialize.
  * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
  */
-export function initCache(instance: CacheableInstance, cacheInitOptions?: CacheInitOptions | null): void {
+export function initCache(instance: CacheableInstance, cacheInitOptions?: CacheInitOptions | null): OptionsCache {
   instance[CACHE_INIT_OPTIONS_KEY] = cacheInitOptions;
-  instance[OPTIONS_CACHE_KEY] = createOptionsCache(cacheInitOptions);
+  return instance[OPTIONS_CACHE_KEY] = createOptionsCache(cacheInitOptions);
 }
 
 /**
  * Shared implementation of getOptions with optional caching support.
  * Used by both `OptionsProvider` and `OptionsWatcher`.
- * Caching is enabled when the instance has been initialized via `init`.
+ * Caching is enabled when `cacheOptions` is provided. The cache is lazily
+ * initialized on first use if `init` was not called.
  */
 export function getOptionsWithCaching<T>(
   instance: CacheableInstance,
@@ -106,8 +108,9 @@ export function getOptionsWithCaching<T>(
   preferences?: nativeBinding.GetOptionsPreferences | null,
   cacheOptions?: CacheOptions | null
 ): T {
-  const cache = instance[OPTIONS_CACHE_KEY];
-  if (cacheOptions && cache) {
+  if (cacheOptions) {
+    // Lazily initialize the cache if init() was not called.
+    const cache = instance[OPTIONS_CACHE_KEY] ?? initCache(instance);
     if (preferences?.hasOverrides?.()) {
       throw new Error('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.');
     }

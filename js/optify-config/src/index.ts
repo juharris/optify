@@ -39,14 +39,16 @@ declare module '../index' {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /**
-     * Eagerly initializes the cache. Call this before `getOptions` to enable caching.
+     * Eagerly initializes the cache. Optional — the cache is lazily initialized on first
+     * `getOptions` call with `cacheOptions` if not called. Use this to configure cache behavior
+     * (e.g., max size) before `getOptions`.
      * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
      * @returns `this` for chaining.
      */
     init(cacheInitOptions?: CacheInitOptions | null): OptionsProvider;
     /**
      * Gets options for the specified key and feature names, validated against a schema.
-     * @param cacheOptions Optional cache options to enable caching of the deserialized result. The cache must be initialized via `init` first.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
      */
     getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
@@ -55,14 +57,16 @@ declare module '../index' {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /**
-     * Eagerly initializes the cache. Call this before `getOptions` to enable caching.
+     * Eagerly initializes the cache. Optional — the cache is lazily initialized on first
+     * `getOptions` call with `cacheOptions` if not called. Use this to configure cache behavior
+     * (e.g., max size) before `getOptions`.
      * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
      * @returns `this` for chaining.
      */
     init(cacheInitOptions?: CacheInitOptions | null): OptionsWatcher;
     /**
      * Gets options for the specified key and feature names, validated against a schema.
-     * @param cacheOptions Optional cache options to enable caching of the deserialized result. The cache must be initialized via `init` first.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result.
      */
     getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
