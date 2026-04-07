@@ -427,6 +427,43 @@ impl OptionsRegistry for OptionsProvider {
         self.features.clone()
     }
 
+    fn filter_features(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Vec<Option<String>>, String> {
+        let mut skip_feature_name_conversion = false;
+        let mut constraints = None;
+        if let Some(preferences) = preferences {
+            skip_feature_name_conversion = preferences.skip_feature_name_conversion;
+            constraints = preferences.constraints.as_ref();
+        }
+
+        let mut result = Vec::new();
+        for feature_name in feature_names {
+            // Check for an alias.
+            let canonical_feature_name: String = if skip_feature_name_conversion {
+                feature_name.as_ref().to_owned()
+            } else {
+                self.get_canonical_feature_name(feature_name.as_ref())?
+            };
+
+            if let Some(constraints) = constraints {
+                let conditions = self.conditions.get(&canonical_feature_name);
+                if !conditions
+                    .map(|conditions| conditions.evaluate(constraints))
+                    .unwrap_or(true)
+                {
+                    result.push(None);
+                    continue;
+                }
+            }
+            result.push(Some(canonical_feature_name));
+        }
+
+        Ok(result)
+    }
+
     fn get_filtered_feature_names(
         &self,
         feature_names: &[impl AsRef<str>],
