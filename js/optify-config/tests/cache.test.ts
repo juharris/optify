@@ -109,25 +109,46 @@ describe('getOptions caching', () => {
   }
 });
 
+describe('getOptions caching without init', () => {
+  const configsPath = path.join(__dirname, '../../../tests/test_suites/simple/configs');
+  const cacheOptions = new CacheOptions();
+
+  for (const { name, provider } of [{
+    name: "OptionsProvider",
+    provider: OptionsProvider.build(configsPath),
+  }, {
+    name: "OptionsWatcher",
+    provider: OptionsWatcher.build(configsPath),
+  }]) {
+    test(`${name} caches without calling init`, () => {
+      const config1 = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+      const config2 = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+
+      expect(config1).toBe(config2);
+
+      // Verify cached result equals non-cached result
+      const configNonCached = provider.getOptions('myConfig', ['A'], MyConfigSchema);
+      expect(config1).toEqual(configNonCached);
+      expect(config1).not.toBe(configNonCached);
+    });
+  }
+});
+
 describe('getOptions caching with maxSize', () => {
   const configsPath = path.join(__dirname, '../../../tests/test_suites/simple/configs');
   const cacheOptions = new CacheOptions();
 
-  for (const name of ["OptionsProvider", "OptionsWatcher"]) {
-    // Each test gets a fresh provider to avoid sharing cache state with other tests
-    const makeProvider = (cacheInitOptions?: CacheInitOptions) => {
-      const provider = name === "OptionsProvider"
-        ? OptionsProvider.build(configsPath)
-        : OptionsWatcher.build(configsPath);
-      return provider.init(cacheInitOptions);
-    };
+  const builders = [{
+    name: "OptionsProvider",
+    build: () => OptionsProvider.build(configsPath),
+  }, {
+    name: "OptionsWatcher",
+    build: () => OptionsWatcher.build(configsPath),
+  }];
 
-    test(`${name} accepts maxSize option`, () => {
-      const provider = makeProvider(new CacheInitOptions(10));
-      const config = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
-      const configAgain = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
-      expect(config).toBe(configAgain);
-    });
+  for (const { name, build } of builders) {
+    // Each test gets a fresh provider to avoid sharing cache state with other tests
+    const makeProvider = (cacheInitOptions?: CacheInitOptions) => build().init(cacheInitOptions);
 
     test(`${name} unlimited cache when maxSize is not set`, () => {
       const provider = makeProvider();

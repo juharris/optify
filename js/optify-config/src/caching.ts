@@ -109,8 +109,6 @@ export function getOptionsWithCaching<T>(
   cacheOptions?: CacheOptions | null
 ): T {
   if (cacheOptions) {
-    // Lazily initialize the cache if init() was not called.
-    const cache = instance[OPTIONS_CACHE_KEY] ?? initCache(instance);
     if (preferences?.hasOverrides?.()) {
       throw new Error('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.');
     }
@@ -119,6 +117,9 @@ export function getOptionsWithCaching<T>(
     const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
 
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
+
+    const cache = instance[OPTIONS_CACHE_KEY]
+      ?? initCache(instance);
 
     const cacheKey = createOptionsCacheKey(instance, key, filteredFeatures, areConfigurableStringsEnabled, schema);
     const cachedResult = cache.get(cacheKey);
