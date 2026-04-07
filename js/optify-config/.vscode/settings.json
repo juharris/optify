@@ -10,6 +10,9 @@
 	"[jsonc]": {
 		"editor.formatOnSave": true
 	},
+	"[markdown]": {
+		"editor.formatOnSave": true
+	},
 	"[rust]": {
 		"editor.formatOnSave": true
 	},

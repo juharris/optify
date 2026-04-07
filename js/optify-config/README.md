@@ -98,10 +98,24 @@ yarn build:ts
 yarn test
 ```
 
-## Linting
+## Formatting
 
 JavaScript and TypeScript files use tabs as configured in [`.editorconfig`](../../.editorconfig).
-Run oxlint before committing:
+Run oxfmt before committing:
+
+```Shell
+yarn fmt
+```
+
+To check for formatting issues, run:
+
+```Shell
+yarn fmt:check
+```
+
+## Linting
+
+Run linting before committing:
 
 ```Shell
 yarn lint:fix
@@ -113,6 +127,14 @@ To check for issues, run:
 yarn lint
 ```
 
+## Rust Formatting
+
+To automatically format the Rust code, run:
+
+```shell
+cargo fmt
+```
+
 ## Benchmarking
 
 Run:
@@ -122,14 +144,6 @@ rm -rf target config.*.node
 yarn build
 yarn build:ts
 node benchmarks/get_all_options.mjs
-```
-
-## Formatting
-
-To automatically change the Rust code, run:
-
-```shell
-cargo fmt
 ```
 
 ## Publishing
