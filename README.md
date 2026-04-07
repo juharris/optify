@@ -570,7 +570,6 @@ Configurations are merged using typical .NET standards from `ConfigurationBuilde
 
 See the [js/optify-config](./js/optify-config/) folder.
 Built using the Rust implementation.
-Lint the TypeScript sources with `yarn lint` (oxlint) and auto-fix with `yarn lint:fix`; JavaScript and TypeScript files use tabs as configured in `.editorconfig`.
 
 ## Python
 [![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad&logo=Python)
