@@ -29,15 +29,11 @@ check() {
     fi
 }
 
-# list-features returns canonical names sorted
+# list-features returns a JSON array of metadata
+# delete the "path" field since it's not deterministic and sort by name for consistent ordering
 check "list-features" \
-    "$(printf 'A_with_comments\nfeature_A\nfeature_B/initial')" \
-    "$(optify --dir "$CONFIGS" list-features)"
-
-# --include-aliases also emits aliases, still sorted
-check "list-features --include-aliases" \
-    "$(printf 'A_with_comments\na\nb\nfeature_A\nfeature_B/initial')" \
-    "$(optify --dir "$CONFIGS" list-features --include-aliases)"
+    '[{"aliases":null,"dependents":null,"details":null,"name":"A_with_comments","owners":"a-team@company.com"},{"aliases":["a"],"dependents":null,"details":"The file is for testing.","name":"feature_A","owners":"a-team@company.com"},{"aliases":["b"],"dependents":null,"details":{"description":"This is a description of the feature."},"name":"feature_B/initial","owners":"team-b@company.com"}]' \
+    "$(optify --dir "$CONFIGS" list-features | jq -c '[.[] | del(.path)] | sort_by(.name)')"
 
 # get-options outputs compact (single-line) JSON
 check "get-options -k myConfig -f A" \

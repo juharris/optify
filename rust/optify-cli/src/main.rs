@@ -22,12 +22,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// List all available feature names.
-    ListFeatures {
-        /// Also list aliases alongside canonical feature names.
-        #[arg(long)]
-        include_aliases: bool,
-    },
+    /// List all features with their metadata as a JSON object.
+    ListFeatures,
 
     /// Get all options (full merged configuration) for the given features.
     GetAllOptions {
@@ -61,16 +57,14 @@ fn run() -> Result<(), String> {
     let provider = build_provider(&cli.dirs, cli.schema.as_ref())?;
 
     match cli.command {
-        Commands::ListFeatures { include_aliases } => {
-            let mut names = if include_aliases {
-                provider.get_features_and_aliases()
-            } else {
-                provider.get_features()
-            };
-            names.sort();
-            for name in names {
-                println!("{name}");
-            }
+        Commands::ListFeatures => {
+            let features = provider.get_features_with_metadata();
+            let list: Vec<_> = features.into_values().collect();
+            println!(
+                "{}",
+                serde_json::to_string(&list)
+                    .map_err(|e| format!("Failed to serialize features: {e}"))?
+            );
         }
 
         Commands::GetAllOptions { features } => {
