@@ -81,7 +81,6 @@ Use Node >= 22.
 ```Shell
 corepack enable
 yarn install
-yarn lint
 yarn build:debug
 yarn build:ts
 yarn test
@@ -98,10 +97,15 @@ yarn test
 
 ## Linting
 
-JavaScript and TypeScript files use tabs as configured in `.editorconfig`. Run oxlint before committing:
-```shell
-yarn lint
+JavaScript and TypeScript files use tabs as configured in [`.editorconfig`](../../.editorconfig).
+Run oxlint before committing:
+```Shell
 yarn lint:fix
+```
+
+To check for issues, run:
+```Shell
+yarn lint
 ```
 
 ## Benchmarking

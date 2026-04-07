@@ -9,10 +9,5 @@
 		"correctness": "error",
 		"suspicious": "error"
 	},
-	"ignorePatterns": [
-		"dist/**",
-		"npm/**",
-		"node_modules/**",
-		"target/**"
-	]
+	"ignorePatterns": ["dist/**", "npm/**", "node_modules/**", "target/**"]
 }

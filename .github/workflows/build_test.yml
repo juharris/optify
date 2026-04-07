@@ -187,4 +187,3 @@ jobs:
       shell: bash
       run: pytest
       working-directory: ./python/optify
-
