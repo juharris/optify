@@ -281,6 +281,41 @@ class OptifyTest < Test::Unit::TestCase
     end
   end
 
+  def test_map_feature_names
+    PROVIDERS.each do |klass|
+      provider = klass.build('../../tests/test_suites/conditions/configs')
+
+      # No preferences: all features kept with canonical names.
+      preferences = Optify::GetOptionsPreferences.new
+      result = provider.map_feature_names(%w[a b], preferences)
+      assert_equal(['A', 'B'], result)
+
+      # skip_feature_name_conversion: names kept as-is.
+      preferences.skip_feature_name_conversion = true
+      result = provider.map_feature_names(%w[A B], preferences)
+      assert_equal(['A', 'B'], result)
+
+      # Constraints that match both features.
+      preferences.constraints = { info: 3, status: 'new' }
+      result = provider.map_feature_names(%w[A B], preferences)
+      assert_equal(['A', 'B'], result)
+
+      # Constraints that filter out A but keep B. Order must match input.
+      preferences.skip_feature_name_conversion = false
+      preferences.constraints = { info: 2, status: 'new' }
+      result = provider.map_feature_names(%w[a b], preferences)
+      assert_equal([nil, 'B'], result)
+
+      # Reversed input order: B first, then A filtered out.
+      result = provider.map_feature_names(%w[b a], preferences)
+      assert_equal(['B', nil], result)
+
+      # Empty input.
+      result = provider.map_feature_names([], preferences)
+      assert_equal([], result)
+    end
+  end
+
   def test_has_conditions
     PROVIDERS.each do |klass|
       provider = klass.build('../../tests/test_suites/conditions/configs')
