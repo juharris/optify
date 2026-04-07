@@ -54,6 +54,28 @@ impl PyOptionsProvider {
             .expect("feature names should be valid")
     }
 
+    fn filter_features(
+        &self,
+        feature_names: Vec<String>,
+        preferences: Option<&PyGetOptionsPreferences>,
+    ) -> PyResult<Vec<Option<String>>> {
+        let preferences = preferences.map(|p| &p.0);
+        self.0
+            .filter_features(&feature_names, preferences)
+            .map_err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>)
+    }
+
+    fn get_filtered_features(
+        &self,
+        feature_names: Vec<String>,
+        preferences: Option<&PyGetOptionsPreferences>,
+    ) -> PyResult<Vec<String>> {
+        let preferences = preferences.map(|p| &p.0);
+        self.0
+            .get_filtered_feature_names(&feature_names, preferences)
+            .map_err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>)
+    }
+
     fn get_options_json(&self, key: &str, feature_names: Vec<String>) -> PyResult<String> {
         self.get_options_json_with_preferences(key, feature_names, None)
     }

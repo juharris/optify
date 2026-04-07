@@ -216,6 +216,23 @@ impl WrappedOptionsProvider {
         }
     }
 
+    fn filter_features(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<Vec<Option<String>>, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self
+            .0
+            .borrow()
+            .filter_features(&feature_names, Some(preferences))
+        {
+            Ok(features) => Ok(features),
+            Err(e) => Err(map_feature_error(ruby, e)),
+        }
+    }
+
     // Return a string because it wasn't clear how to return a type defined in Rust despite looking at docs and trying a few examples.
     fn get_options_json(
         ruby: &Ruby,
@@ -461,6 +478,23 @@ impl WrappedOptionsWatcher {
         }
     }
 
+    fn filter_features(
+        ruby: &Ruby,
+        rb_self: &Self,
+        feature_names: Vec<String>,
+        preferences: &MutGetOptionsPreferences,
+    ) -> Result<Vec<Option<String>>, magnus::Error> {
+        let preferences = &convert_preferences(preferences);
+        match rb_self
+            .0
+            .borrow()
+            .filter_features(&feature_names, Some(preferences))
+        {
+            Ok(features) => Ok(features),
+            Err(e) => Err(map_feature_error(ruby, e)),
+        }
+    }
+
     fn get_options_json(
         ruby: &Ruby,
         rb_self: &Self,
@@ -624,6 +658,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         method!(WrappedOptionsProvider::get_filtered_features, 2),
     )?;
     provider_class.define_method(
+        "filter_features",
+        method!(WrappedOptionsProvider::filter_features, 2),
+    )?;
+    provider_class.define_method(
         "get_options_json",
         method!(WrappedOptionsProvider::get_options_json, 2),
     )?;
@@ -757,6 +795,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_method(
         "get_filtered_features",
         method!(WrappedOptionsWatcher::get_filtered_features, 2),
+    )?;
+    watcher_class.define_method(
+        "filter_features",
+        method!(WrappedOptionsWatcher::filter_features, 2),
     )?;
     watcher_class.define_method(
         "get_options_json",

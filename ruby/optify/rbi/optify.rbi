@@ -229,6 +229,18 @@ module Optify
     end
     def get_filtered_features(feature_names, preferences); end
 
+    # Filters `feature_names` based on the preferences,
+    # such as the `preferences`'s constraints.
+    # Returns an array matching the input order where each element is the canonical name if the feature was kept, or nil if it was filtered out.
+    sig do
+      params(
+        feature_names: T::Array[String],
+        preferences: GetOptionsPreferences,
+      )
+        .returns(T::Array[T.nilable(String)])
+    end
+    def filter_features(feature_names, preferences); end
+
     # Fetches options based on the provided key and feature names.
     #
     # @param key The key to fetch options for.
