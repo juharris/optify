@@ -2,32 +2,9 @@
 
 import { LRUCache } from 'lru-cache';
 import * as nativeBinding from '../index';
+import { CacheInitOptions } from './cache-init-options';
+import { CacheOptions } from './cache-options';
 import { TypeSchema } from './types';
-
-/**
- * Options for enabling caching of deserialized objects returned by getOptions.
- * Pass an instance of this class to getOptions to enable caching.
- * Subsequent calls with the same key, feature names, schema, and preferences
- * will return the same cached object without re-parsing.
- */
-export class CacheOptions { }
-
-/**
- * Configuration options for cache initialization.
- * Used when building providers/watchers to configure cache behavior.
- */
-export class CacheInitOptions {
-  /**
-   * The maximum number of entries to keep in the cache.
-   * When the cache is full, the least recently used entry will be evicted.
-   * If not set, the cache size is unlimited.
-   */
-  readonly maxSize?: number;
-
-  constructor(maxSize?: number) {
-    this.maxSize = maxSize;
-  }
-}
 
 // Private cache property names (using symbols for true privacy)
 export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
@@ -97,7 +74,7 @@ function createOptionsCache(cacheInitOptions?: CacheInitOptions | null): Options
 }
 
 /**
- * Resets all caches for the instance, preserving the configured max size.
+ * Resets all caches for the instance.
  * Used by OptionsWatcher when files are modified.
  */
 export function resetCaches(instance: CacheableInstance): void {
@@ -107,7 +84,7 @@ export function resetCaches(instance: CacheableInstance): void {
 
 /**
  * Eagerly initializes the cache for the instance.
- * Like Ruby's `init` method, this should be called before `getOptions` to configure caching.
+ * Should be called before `getOptions` to configure caching.
  * @param instance The cacheable instance to initialize.
  * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
  */

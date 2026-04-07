@@ -3,10 +3,10 @@
 // Import the generated native bindings.
 import * as nativeBinding from '../index';
 
+import { CacheInitOptions } from './cache-init-options';
+import { CacheOptions } from './cache-options';
 import {
   CACHE_CREATION_TIME_KEY,
-  CacheInitOptions,
-  CacheOptions,
   FEATURES_WITH_METADATA_CACHE_KEY,
   FEATURES_WITH_METADATA_CACHE_TIME_KEY,
   getOptionsWithCaching,
@@ -29,7 +29,8 @@ export {
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
-export { CacheInitOptions, CacheOptions } from './caching';
+export { CacheInitOptions };
+export { CacheOptions };
 export type { TypeSchema } from './types';
 
 // Augment the native class interfaces to include our new method
