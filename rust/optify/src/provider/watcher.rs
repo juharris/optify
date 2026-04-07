@@ -361,4 +361,15 @@ impl OptionsRegistry for OptionsWatcher {
             .unwrap()
             .has_conditions(canonical_feature_name)
     }
+
+    fn map_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> std::result::Result<Vec<Option<String>>, String> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .map_feature_names(feature_names, preferences)
+    }
 }

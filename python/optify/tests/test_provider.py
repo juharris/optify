@@ -1,10 +1,12 @@
+import json
 from pathlib import Path
 
-from optify import OptionsProvider, OptionsProviderBuilder, OptionsWatcher
+from optify import GetOptionsPreferences, OptionsProvider, OptionsProviderBuilder, OptionsWatcher
 
 
 test_suites_dir = (Path(__file__) / '../../../../tests/test_suites').resolve()
 simple_configs_dir = str(test_suites_dir / 'simple/configs')
+conditions_configs_dir = str(test_suites_dir / 'conditions/configs')
 builder = OptionsProviderBuilder()
 builder.add_directory(simple_configs_dir)
 PROVIDER = builder.build()
@@ -12,6 +14,11 @@ PROVIDER = builder.build()
 PROVIDERS = [
     PROVIDER,
     OptionsWatcher.build(simple_configs_dir),
+]
+
+CONDITIONS_PROVIDERS = [
+    OptionsProvider.build(conditions_configs_dir),
+    OptionsWatcher.build(conditions_configs_dir),
 ]
 
 def test_features():
@@ -50,3 +57,30 @@ def test_build_from_directories():
     assert features == ['A_with_comments', 'feature_A', 'feature_B/initial']
 
     assert provider.get_options_json('myConfig', ['feature_A', 'feature_B/initial'])
+
+
+def test_map_feature_names():
+    for provider in CONDITIONS_PROVIDERS:
+        # No preferences: all features kept with canonical names.
+        result = provider.map_feature_names(['a', 'b'], None)
+        assert result == ['A', 'B']
+
+        # Constraints that match both features.
+        preferences = GetOptionsPreferences()
+        preferences.set_constraints_json(json.dumps({'info': 3, 'status': 'new'}))
+        result = provider.map_feature_names(['a', 'b'], preferences)
+        assert result == ['A', 'B']
+
+        # Constraints that filter out A but keep B.
+        preferences = GetOptionsPreferences()
+        preferences.set_constraints_json(json.dumps({'info': 2, 'status': 'new'}))
+        result = provider.map_feature_names(['a', 'b'], preferences)
+        assert result == [None, 'B']
+
+        # Reversed input order: B first, then A filtered out.
+        result = provider.map_feature_names(['b', 'a'], preferences)
+        assert result == ['B', None]
+
+        # Empty input.
+        result = provider.map_feature_names([], preferences)
+        assert result == []

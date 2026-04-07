@@ -176,6 +176,23 @@ impl JsOptionsProvider {
       .get_filtered_feature_names(&feature_names, preferences)
       .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
+
+  /// Filters feature names based on constraints and preferences.
+  /// Returns an array matching the input order where each element is the canonical name if the feature was kept, or null if it was filtered out.
+  #[napi(js_name = "mapFeatureNames")]
+  pub fn map_feature_names(
+    &self,
+    feature_names: Vec<String>,
+    preferences: Option<&JsGetOptionsPreferences>,
+  ) -> napi::Result<Vec<Option<String>>> {
+    let preferences = preferences.map(|p| &p.inner);
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .map_feature_names(&feature_names, preferences)
+      .map_err(|e| napi::Error::from_reason(e.to_string()))
+  }
 }
 
 #[napi(js_name = "OptionsProviderBuilder")]

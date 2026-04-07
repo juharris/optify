@@ -43,7 +43,7 @@ module Optify
 
     # Initializes the cache options.
     # Defaults to a non-thread-safe unlimited size cache for backwards compatibility
-    # with how this library was originally configured with an unbounded hash as the case.
+    # with how this library was originally configured with an unbounded hash as the base.
     # @param mode A value from `CacheMode`.
     sig do
       params(
@@ -196,6 +196,15 @@ module Optify
   # Some of the methods shown within this module are implemented in Rust
   # and are declared in this common module to avoid duplicate declarations in different classes.
   module ProviderModule
+    # @param canonical_feature_name [String] A canonical feature name
+    # @return Whether the feature has conditions.
+    sig { params(canonical_feature_name: String).returns(T::Boolean) }
+    def conditions?(canonical_feature_name); end
+
+    # @return All of the keys and values for the the features.
+    sig { returns(String) }
+    def features_with_metadata_json; end
+
     # Map an alias or canonical feature name (perhaps derived from a file name) to a canonical feature name.
     # Canonical feature names map to themselves.
     #
@@ -292,11 +301,6 @@ module Optify
     end
     def get_options_json_with_preferences(key, feature_names, preferences); end
 
-    # @param canonical_feature_name [String] A canonical feature name
-    # @return Whether the feature has conditions.
-    sig { params(canonical_feature_name: String).returns(T::Boolean) }
-    def conditions?(canonical_feature_name); end
-
     # (Optional) Eagerly initializes the cache.
     # @return `self`.
     sig do
@@ -304,6 +308,18 @@ module Optify
         .returns(T.self_type)
     end
     def init(cache_init_options = nil); end
+
+    # Filters `feature_names` based on the preferences,
+    # such as the `preferences`'s constraints.
+    # Returns an array matching the input order where each element is the canonical name if the feature was kept, or nil if it was filtered out.
+    sig do
+      params(
+        feature_names: T::Array[String],
+        preferences: GetOptionsPreferences,
+      )
+        .returns(T::Array[T.nilable(String)])
+    end
+    def map_feature_names(feature_names, preferences); end
 
     private
 
@@ -319,10 +335,6 @@ module Optify
     # @return The metadata for the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
     def get_feature_metadata_json(canonical_feature_name); end
-
-    # @return All of the keys and values for the the features.
-    sig { returns(String) }
-    def features_with_metadata_json; end
   end
 
   # Provides configurations based on keys and enabled feature names.

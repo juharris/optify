@@ -72,6 +72,43 @@ fn test_filtered_feature_names() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn test_map_feature_names() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider_with_conditions();
+
+    // No preferences: all features kept with canonical names.
+    let result = provider.map_feature_names(&["a", "b"], None)?;
+    assert_eq!(result, vec![Some("A".to_owned()), Some("B".to_owned())]);
+
+    // skip_feature_name_conversion: names kept as-is.
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.skip_feature_name_conversion = true;
+    let result = provider.map_feature_names(&["A", "B"], Some(&preferences))?;
+    assert_eq!(result, vec![Some("A".to_owned()), Some("B".to_owned())]);
+
+    // Constraints that match both features.
+    preferences.set_constraints(Some(serde_json::json!({"info": 3, "status": "new"})));
+    let result = provider.map_feature_names(&["A", "B"], Some(&preferences))?;
+    assert_eq!(result, vec![Some("A".to_owned()), Some("B".to_owned())]);
+
+    // Constraints that filter out A but keep B. Order must match input.
+    preferences.set_constraints(Some(serde_json::json!({"info": 2, "status": "new"})));
+    preferences.skip_feature_name_conversion = false;
+    let result = provider.map_feature_names(&["a", "b"], Some(&preferences))?;
+    assert_eq!(result, vec![None, Some("B".to_owned())]);
+
+    // Reversed input order: B first, then A filtered out.
+    let result = provider.map_feature_names(&["b", "a"], Some(&preferences))?;
+    assert_eq!(result, vec![Some("B".to_owned()), None]);
+
+    // Empty input.
+    let empty: Vec<&str> = vec![];
+    let result = provider.map_feature_names(&empty, Some(&preferences))?;
+    assert_eq!(result, Vec::<Option<String>>::new());
+
+    Ok(())
+}
+
+#[test]
 fn test_provider_get_aliases() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let mut aliases = provider.get_aliases();

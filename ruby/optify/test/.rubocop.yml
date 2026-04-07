@@ -7,7 +7,7 @@ Metrics/BlockLength:
   Max: 27
 
 Metrics/ClassLength:
-  Max: 256
+  Max: 270
 
 Metrics/MethodLength:
   Max: 40

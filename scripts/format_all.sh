@@ -6,6 +6,8 @@ cd "$(dirname "$0")/.."
 
 pushd js/optify-config
 cargo fmt
+yarn lint:fix
+yarn fmt
 popd
 
 pushd rust/optify

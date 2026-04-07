@@ -1,9 +1,10 @@
 import { describe, expect, test } from "@jest/globals";
 import fs from "fs";
 import path from "path";
-import { OptionsProvider, OptionsWatcher } from "../dist/index";
+import { GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../dist/index";
 
 const configsPath = path.join(__dirname, "../../../tests/test_suites/simple/configs");
+const conditionsConfigsPath = path.join(__dirname, "../../../tests/test_suites/conditions/configs");
 const expectationsPath = path.join(configsPath, "../expectations");
 
 describe("Provider", () => {
@@ -100,4 +101,55 @@ describe("Provider", () => {
 		const lastModified = WATCHER.lastModified();
 		expect(lastModified).toBeGreaterThan(start);
 	});
+});
+
+describe("mapFeatureNames", () => {
+	const conditionsProvider = OptionsProvider.buildFromDirectories([conditionsConfigsPath]);
+	const conditionsWatcher = OptionsWatcher.buildFromDirectories([conditionsConfigsPath]);
+	const conditionsProviders = [
+		{ name: "OptionsProvider", provider: conditionsProvider },
+		{ name: "OptionsWatcher", provider: conditionsWatcher },
+	];
+
+	for (const { name, provider } of conditionsProviders) {
+		test(`${name} no preferences`, () => {
+			const result = provider.mapFeatureNames(["a", "b"]);
+			expect(result).toEqual(["A", "B"]);
+		});
+
+		test(`${name} skip feature name conversion`, () => {
+			const preferences = new GetOptionsPreferences();
+			preferences.setSkipFeatureNameConversion(true);
+			const result = provider.mapFeatureNames(["A", "B"], preferences);
+			expect(result).toEqual(["A", "B"]);
+		});
+
+		test(`${name} constraints matching all features`, () => {
+			const preferences = new GetOptionsPreferences();
+			preferences.setConstraintsJson(JSON.stringify({ info: 3, status: "new" }));
+			const result = provider.mapFeatureNames(["a", "b"], preferences);
+			expect(result).toEqual(["A", "B"]);
+		});
+
+		test(`${name} constraints filtering out a feature`, () => {
+			const preferences = new GetOptionsPreferences();
+			preferences.setConstraintsJson(JSON.stringify({ info: 2, status: "new" }));
+			const result = provider.mapFeatureNames(["a", "b"], preferences);
+			expect(result).toEqual([null, "B"]);
+		});
+
+		test(`${name} reversed input order with filtering`, () => {
+			const preferences = new GetOptionsPreferences();
+			preferences.setConstraintsJson(JSON.stringify({ info: 2, status: "new" }));
+			const result = provider.mapFeatureNames(["b", "a"], preferences);
+			expect(result).toEqual(["B", null]);
+		});
+
+		test(`${name} empty input`, () => {
+			const preferences = new GetOptionsPreferences();
+			preferences.setConstraintsJson(JSON.stringify({ info: 2, status: "new" }));
+			const result = provider.mapFeatureNames([], preferences);
+			expect(result).toEqual([]);
+		});
+	}
 });

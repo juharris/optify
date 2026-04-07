@@ -91,4 +91,16 @@ pub trait OptionsRegistry {
 
     /// Indicates if the feature has conditions.
     fn has_conditions(&self, canonical_feature_name: &str) -> bool;
+
+    /// Filters `feature_names` based on the preferences,
+    /// such as the `preferences.constraints`.
+    /// Returns a Vec of optional strings matching the input order.
+    /// `None` means the feature was filtered out.
+    /// `Some(canonical_name)` means the feature was kept.
+    /// Also converts the feature names to canonical feature names if `preferences.skip_feature_name_conversion` is `false`.
+    fn map_feature_names(
+        &self,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<Vec<Option<String>>, String>;
 }
