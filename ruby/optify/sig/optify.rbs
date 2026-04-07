@@ -139,6 +139,10 @@ end
 # Some of the methods shown within this module are implemented in Rust
 # and are declared in this common module to avoid duplicate declarations in different classes.
 module Optify::ProviderModule
+  # @param canonical_feature_name [String] A canonical feature name
+  # @return Whether the feature has conditions.
+  def conditions?: (String canonical_feature_name) -> bool
+
   # @return All of the keys and values for the the features.
   def features_with_metadata_json: () -> String
 
@@ -182,11 +186,9 @@ module Optify::ProviderModule
 
   def get_options_json_with_preferences: (String key, ::Array[String] feature_names, GetOptionsPreferences preferences) -> String
 
-  # @param canonical_feature_name [String] A canonical feature name
-  # @return Whether the feature has conditions.
-  def conditions?: (String canonical_feature_name) -> bool
-
   def init: (?CacheInitOptions? cache_init_options) -> self
+
+  def map_feature_names: (::Array[String] feature_names, GetOptionsPreferences preferences) -> ::Array[String?]
 
   # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
   # Canonical feature names map to themselves.
@@ -198,8 +200,6 @@ module Optify::ProviderModule
 
   # @return The metadata for the feature.
   def get_feature_metadata_json: (String canonical_feature_name) -> String?
-
-  def map_feature_names: (::Array[String] feature_names, GetOptionsPreferences preferences) -> ::Array[String?]
 end
 
 # Provides configurations based on keys and enabled feature names.

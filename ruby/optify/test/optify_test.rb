@@ -288,17 +288,17 @@ class OptifyTest < Test::Unit::TestCase
       # No preferences: all features kept with canonical names.
       preferences = Optify::GetOptionsPreferences.new
       result = provider.map_feature_names(%w[a b], preferences)
-      assert_equal(['A', 'B'], result)
+      assert_equal(%w[A B], result)
 
       # skip_feature_name_conversion: names kept as-is.
       preferences.skip_feature_name_conversion = true
       result = provider.map_feature_names(%w[A B], preferences)
-      assert_equal(['A', 'B'], result)
+      assert_equal(%w[A B], result)
 
       # Constraints that match both features.
       preferences.constraints = { info: 3, status: 'new' }
       result = provider.map_feature_names(%w[A B], preferences)
-      assert_equal(['A', 'B'], result)
+      assert_equal(%w[A B], result)
 
       # Constraints that filter out A but keep B. Order must match input.
       preferences.skip_feature_name_conversion = false
