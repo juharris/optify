@@ -29,15 +29,12 @@ export class CacheInitOptions {
   }
 }
 
-function getCacheInitOptionsMaxSize(cacheInitOptions: CacheInitOptions | null | undefined): number | undefined {
-  return cacheInitOptions?.maxSize;
-}
-
 // Private cache property names (using symbols for true privacy)
 export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
 export const FEATURES_WITH_METADATA_CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 export const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
+const CACHE_INIT_OPTIONS_KEY = Symbol('cacheInitOptions');
 const SCHEMA_IDS_KEY = Symbol('schemaIds');
 const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
 
@@ -50,6 +47,7 @@ export interface CacheableInstance {
   lastModified?(): number;
   [FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
   [OPTIONS_CACHE_KEY]?: OptionsCache;
+  [CACHE_INIT_OPTIONS_KEY]?: CacheInitOptions | null;
   [SCHEMA_ID_COUNTER_KEY]?: number;
   [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
 }
@@ -91,27 +89,37 @@ function createOptionsCacheKey(
   ]);
 }
 
-function createOptionsCache(maxSize?: number): OptionsCache {
-  if (maxSize !== undefined) {
-    return new LRUCache<string, NonNullable<unknown>>({ max: maxSize });
+function createOptionsCache(cacheInitOptions?: CacheInitOptions | null): OptionsCache {
+  if (cacheInitOptions?.maxSize !== undefined) {
+    return new LRUCache<string, NonNullable<unknown>>({ max: cacheInitOptions.maxSize });
   }
   return new Map<string, NonNullable<unknown>>();
 }
 
 /**
- * Resets all caches for the instance.
+ * Resets all caches for the instance, preserving the configured max size.
  * Used by OptionsWatcher when files are modified.
- * @param instance The cacheable instance to reset.
- * @param maxSize Optional maximum cache size. If provided, creates an LRU cache; otherwise creates an unlimited Map.
  */
-export function resetCaches(instance: CacheableInstance, maxSize?: number): void {
+export function resetCaches(instance: CacheableInstance): void {
   instance[FEATURES_WITH_METADATA_CACHE_KEY] = undefined;
-  instance[OPTIONS_CACHE_KEY] = createOptionsCache(maxSize);
+  instance[OPTIONS_CACHE_KEY] = createOptionsCache(instance[CACHE_INIT_OPTIONS_KEY]);
+}
+
+/**
+ * Eagerly initializes the cache for the instance.
+ * Like Ruby's `init` method, this should be called before `getOptions` to configure caching.
+ * @param instance The cacheable instance to initialize.
+ * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
+ */
+export function initCache(instance: CacheableInstance, cacheInitOptions?: CacheInitOptions | null): void {
+  instance[CACHE_INIT_OPTIONS_KEY] = cacheInitOptions;
+  instance[OPTIONS_CACHE_KEY] = createOptionsCache(cacheInitOptions);
 }
 
 /**
  * Shared implementation of getOptions with optional caching support.
  * Used by both `OptionsProvider` and `OptionsWatcher`.
+ * Caching is enabled when the instance has been initialized via `init`.
  */
 export function getOptionsWithCaching<T>(
   instance: CacheableInstance,
@@ -119,9 +127,10 @@ export function getOptionsWithCaching<T>(
   featureNames: string[],
   schema: TypeSchema<T>,
   preferences?: nativeBinding.GetOptionsPreferences | null,
-  cacheInitOptions?: CacheInitOptions | null
+  cacheOptions?: CacheOptions | null
 ): T {
-  if (cacheInitOptions) {
+  const cache = instance[OPTIONS_CACHE_KEY];
+  if (cacheOptions && cache) {
     if (preferences?.hasOverrides?.()) {
       throw new Error('Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.');
     }
@@ -130,13 +139,6 @@ export function getOptionsWithCaching<T>(
     const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
 
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
-
-    let cache = instance[OPTIONS_CACHE_KEY];
-    if (!cache) {
-      // Create cache once when first accessed
-      cache = createOptionsCache(getCacheInitOptionsMaxSize(cacheInitOptions));
-      instance[OPTIONS_CACHE_KEY] = cache;
-    }
 
     const cacheKey = createOptionsCacheKey(instance, key, filteredFeatures, areConfigurableStringsEnabled, schema);
     const cachedResult = cache.get(cacheKey);

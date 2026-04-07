@@ -10,6 +10,7 @@ import {
   FEATURES_WITH_METADATA_CACHE_KEY,
   FEATURES_WITH_METADATA_CACHE_TIME_KEY,
   getOptionsWithCaching,
+  initCache,
   resetCaches
 } from './caching';
 import { TypeSchema } from './types';
@@ -37,20 +38,32 @@ declare module '../index' {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /**
-     * Gets options for the specified key and feature names, validated against a schema.
-     * @param cacheInitOptions Optional cache initialization options to enable and configure caching of the deserialized result.
+     * Eagerly initializes the cache. Call this before `getOptions` to enable caching.
+     * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
+     * @returns `this` for chaining.
      */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions): T;
+    init(cacheInitOptions?: CacheInitOptions | null): OptionsProvider;
+    /**
+     * Gets options for the specified key and feature names, validated against a schema.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result. The cache must be initialized via `init` first.
+     */
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 
   interface OptionsWatcher {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
     /**
-     * Gets options for the specified key and feature names, validated against a schema.
-     * @param cacheInitOptions Optional cache initialization options to enable and configure caching of the deserialized result.
+     * Eagerly initializes the cache. Call this before `getOptions` to enable caching.
+     * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
+     * @returns `this` for chaining.
      */
-    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions): T;
+    init(cacheInitOptions?: CacheInitOptions | null): OptionsWatcher;
+    /**
+     * Gets options for the specified key and feature names, validated against a schema.
+     * @param cacheOptions Optional cache options to enable caching of the deserialized result. The cache must be initialized via `init` first.
+     */
+    getOptions<T>(key: string, featureNames: Array<string>, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
   }
 }
 
@@ -64,8 +77,12 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
 
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
-(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions): any {
-  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheInitOptions);
+(OptionsProvider.prototype as any).init = function (this: any, cacheInitOptions?: CacheInitOptions | null): any {
+  initCache(this, cacheInitOptions);
+  return this;
+};
+(OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions): any {
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
 
 // Extend OptionsWatcher prototype with extra methods.
@@ -81,17 +98,22 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   this[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = lastModifiedTime;
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
-(OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheInitOptions?: CacheInitOptions | null): any {
+(OptionsWatcher.prototype as any).init = function (this: any, cacheInitOptions?: CacheInitOptions | null): any {
+  initCache(this, cacheInitOptions);
+  this[CACHE_CREATION_TIME_KEY] = this.lastModified();
+  return this;
+};
+(OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
   // Check cache validity for watcher - reset if files have been modified
-  if (cacheInitOptions) {
+  if (cacheOptions) {
     const lastModifiedTime = this.lastModified();
     const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
 
     if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-      resetCaches(this, cacheInitOptions.maxSize);
+      resetCaches(this);
       this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
     }
   }
 
-  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheInitOptions);
+  return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
