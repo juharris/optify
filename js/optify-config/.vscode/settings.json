@@ -1,7 +1,16 @@
 {
+	"editor.codeActionsOnSave": {
+		"source.fixAll.oxc": "always"
+	},
 	// Avoid issues with napi macros.
 	"rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
 	"[json]": {
+		"editor.formatOnSave": true
+	},
+	"[jsonc]": {
+		"editor.formatOnSave": true
+	},
+	"[markdown]": {
 		"editor.formatOnSave": true
 	},
 	"[rust]": {
@@ -10,7 +19,5 @@
 	"[typescript]": {
 		"editor.formatOnSave": true
 	},
-	"cSpell.words": [
-		"napi"
-	]
+	"cSpell.words": ["napi"]
 }

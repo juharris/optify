@@ -1,28 +1,28 @@
 {
-  "name": "@optify/config-freebsd-x64",
-  "version": "0.0.1",
-  "os": [
-    "freebsd"
-  ],
-  "cpu": [
-    "x64"
-  ],
-  "main": "config.freebsd-x64.node",
-  "files": [
-    "config.freebsd-x64.node"
-  ],
-  "description": "Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.",
-  "keywords": [
-    "configuration"
-  ],
-  "author": "Justin D. Harris <juharris@users.noreply.github.com>",
-  "homepage": "https://github.com/juharris/optify",
-  "license": "MIT",
-  "engines": {
-    "node": ">= 10"
-  },
-  "repository": "https://github.com/juharris/optify",
-  "bugs": {
-    "url": "https://github.com/juharris/optify/issues"
-  }
+	"name": "@optify/config-freebsd-x64",
+	"version": "0.0.1",
+	"description": "Simplifies **configuration driven development**: getting the right configuration options for a process or request using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for feature flags, experiments, or flights.",
+	"keywords": [
+		"configuration"
+	],
+	"homepage": "https://github.com/juharris/optify",
+	"bugs": {
+		"url": "https://github.com/juharris/optify/issues"
+	},
+	"license": "MIT",
+	"author": "Justin D. Harris <juharris@users.noreply.github.com>",
+	"repository": "https://github.com/juharris/optify",
+	"files": [
+		"config.freebsd-x64.node"
+	],
+	"os": [
+		"freebsd"
+	],
+	"cpu": [
+		"x64"
+	],
+	"main": "config.freebsd-x64.node",
+	"engines": {
+		"node": ">= 10"
+	}
 }
