@@ -41,7 +41,6 @@ describe('getOptions caching', () => {
       expect(config1).toBe(config2);
       expect(config1.rootString).toBe('root string same');
 
-      // Verify cached result equals non-cached result
       const configNonCached = provider.getOptions('myConfig', ['A'], MyConfigSchema);
       expect(config1).toEqual(configNonCached);
     });
@@ -126,7 +125,6 @@ describe('getOptions caching without init', () => {
 
       expect(config1).toBe(config2);
 
-      // Verify cached result equals non-cached result
       const configNonCached = provider.getOptions('myConfig', ['A'], MyConfigSchema);
       expect(config1).toEqual(configNonCached);
       expect(config1).not.toBe(configNonCached);
@@ -173,6 +171,10 @@ describe('getOptions caching with maxSize', () => {
       expect(configA1).not.toBe(configA2);
       // The content should still be equal
       expect(configA1).toEqual(configA2);
+
+      // Get the same thing and it should be the same cached object
+      const configA2Again = provider.getOptions('myConfig', ['A'], MyConfigSchema, null, cacheOptions);
+      expect(configA2).toBe(configA2Again);
     });
   }
 });
