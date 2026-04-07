@@ -22,19 +22,19 @@ describe('Provider', () => {
 		// Ensure that we can use the overridden type in generics.
 		const providerCache = new Map<string, OptionsProvider>();
 		providerCache.set('a', providers[0].provider);
-		const provider = providerCache.get('a');
-		expect(provider).toBe(providers[0].provider);
-		const features = provider!.features();
+		const cachedProvider = providerCache.get('a');
+		expect(cachedProvider).toBe(providers[0].provider);
+		const features = cachedProvider!.features();
 		expect(features).toHaveLength(3);
 	})
 
-	for (const { name, provider } of providers) {
+	for (const { name, provider: currentProvider } of providers) {
 		test(`${name} get_all_options_json feature_A`, () => {
-			const options = JSON.parse(provider.getAllOptionsJson(['feature_A']))
+			const options = JSON.parse(currentProvider.getAllOptionsJson(['feature_A']))
 			const expectedOptions = JSON.parse(fs.readFileSync(path.join(configsPath, 'feature_A.json'), 'utf8'))['options']
 			expect(options).toEqual(expectedOptions)
 
-			const optionsObj = provider.getAllOptions(['feature_A'])
+			const optionsObj = currentProvider.getAllOptions(['feature_A'])
 			// NOTE: `instanceof Object` is not reliable under Jest because test files run in a VM
 			// context with their own `Object` constructor; values coming from native bindings may
 			// be created in a different realm. Prefer structural/type checks instead.
@@ -43,7 +43,7 @@ describe('Provider', () => {
 		})
 
 		test(`${name} get_all_options_json A and B`, () => {
-			const options = JSON.parse(provider.getAllOptionsJson(['A', 'B']))
+			const options = JSON.parse(currentProvider.getAllOptionsJson(['A', 'B']))
 			const expectedOptions = JSON.parse(fs.readFileSync(path.join(expectationsPath, 'aliases.json'), 'utf8'))['options']
 			expect(options).toEqual(expectedOptions)
 		})
@@ -57,13 +57,13 @@ describe('Provider', () => {
 		})
 
 		test(`${name} features`, () => {
-			const features = provider.features()
+			const features = currentProvider.features()
 			features.sort()
 			expect(features).toEqual(['A_with_comments', 'feature_A', 'feature_B/initial'])
 		})
 
 		test(`${name} features with metadata`, () => {
-			const featuresWithMetadata = provider.featuresWithMetadata()
+			const featuresWithMetadata = currentProvider.featuresWithMetadata()
 			const keys = Object.keys(featuresWithMetadata)
 			keys.sort()
 			expect(keys).toEqual(['A_with_comments', 'feature_A', 'feature_B/initial'])
@@ -75,20 +75,20 @@ describe('Provider', () => {
 			const expectedPath = path.resolve(path.join(configsPath, 'feature_A.json'))
 			expect(metadataA.path()).toEqual(expectedPath)
 
-			const secondCall = provider.featuresWithMetadata()
+			const secondCall = currentProvider.featuresWithMetadata()
 			expect(secondCall).toBe(featuresWithMetadata)
 		})
 
 		test(`${name} get_canonical_feature_name`, () => {
-			expect(provider.getCanonicalFeatureName('a')).toEqual('feature_A')
-			expect(provider.getCanonicalFeatureName('A')).toEqual('feature_A')
-			expect(provider.getCanonicalFeatureName('feature_A')).toEqual('feature_A')
-			expect(provider.getCanonicalFeatureName('feAture_B/InItiAl')).toEqual('feature_B/initial')
-			expect(provider.getCanonicalFeatureName('B')).toEqual('feature_B/initial')
+			expect(currentProvider.getCanonicalFeatureName('a')).toEqual('feature_A')
+			expect(currentProvider.getCanonicalFeatureName('A')).toEqual('feature_A')
+			expect(currentProvider.getCanonicalFeatureName('feature_A')).toEqual('feature_A')
+			expect(currentProvider.getCanonicalFeatureName('feAture_B/InItiAl')).toEqual('feature_B/initial')
+			expect(currentProvider.getCanonicalFeatureName('B')).toEqual('feature_B/initial')
 		})
 
 		test(`${name} get_canonical_feature_names does not exist`, () => {
-			expect(provider.getCanonicalFeatureName('does_not_exist')).toBeNull()
+			expect(currentProvider.getCanonicalFeatureName('does_not_exist')).toBeNull()
 		})
 	}
 

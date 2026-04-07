@@ -4,4 +4,7 @@
  * Subsequent calls with the same key, feature names, schema, and preferences
  * will return the same cached object without re-parsing.
  */
-export class CacheOptions { }
+export class CacheOptions {
+	// Marker field to prevent stripping the class; instances enable caching.
+	readonly enabled = true;
+}
