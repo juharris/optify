@@ -39,6 +39,7 @@ enum Commands {
     /// Get options for a specific configuration key with the given features.
     GetOptions {
         /// The configuration key to retrieve (e.g. "myConfig").
+        #[arg(short, long)]
         key: String,
 
         /// Feature names to apply, in order from lowest to highest priority.

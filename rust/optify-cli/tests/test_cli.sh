@@ -40,14 +40,14 @@ check "list-features --include-aliases" \
     "$(optify --dir "$CONFIGS" list-features --include-aliases)"
 
 # get-options outputs compact (single-line) JSON
-check "get-options myConfig -f A" \
+check "get-options -k myConfig -f A" \
     '{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"root string same","rootString2":"gets overridden"}' \
-    "$(optify --dir "$CONFIGS" get-options myConfig -f A)"
+    "$(optify --dir "$CONFIGS" get-options -k myConfig -f A)"
 
 # get-options with multiple features — later feature overrides earlier
-check "get-options myConfig -f A B" \
+check "get-options -k myConfig -f A B" \
     '{"myArray":["different item 1","item 2"],"myObject":{"deeper":{"list":[55],"new":"new value","wtv":3333},"one":1,"string":"string","three":3,"two":22},"rootString":"root string same","rootString2":"override"}' \
-    "$(optify --dir "$CONFIGS" get-options myConfig -f A B)"
+    "$(optify --dir "$CONFIGS" get-options -k myConfig -f A B)"
 
 # get-all-options returns the full merged configuration
 check "get-all-options -f A" \
@@ -55,7 +55,7 @@ check "get-all-options -f A" \
     "$(optify --dir "$CONFIGS" get-all-options -f A)"
 
 # error on unknown feature exits non-zero and prints to stderr
-if optify --dir "$CONFIGS" get-options myConfig -f unknown_feature 2>/dev/null; then
+if optify --dir "$CONFIGS" get-options -k myConfig -f unknown_feature 2>/dev/null; then
     echo "FAIL: unknown feature should exit non-zero"
     (( ++fail ))
 else
