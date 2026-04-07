@@ -27,7 +27,6 @@ class OptionsProviderBase(ABC):
 
     def features(self) -> List[str]: ...
 
-    def filter_features(self, feature_names: List[str], preferences: Optional[GetOptionsPreferences] = None) -> List[Optional[str]]: ...
 
     def get_filtered_features(self, feature_names: List[str], preferences: Optional[GetOptionsPreferences] = None) -> List[str]: ...
 
@@ -35,6 +34,8 @@ class OptionsProviderBase(ABC):
 
     def get_options_json_with_preferences(
         self, key: str, feature_names: List[str], preferences: Optional[GetOptionsPreferences]) -> str: ...
+
+    def map_feature_names(self, feature_names: List[str], preferences: Optional[GetOptionsPreferences] = None) -> List[Optional[str]]: ...
 
 
 class OptionsProvider(OptionsProviderBase):

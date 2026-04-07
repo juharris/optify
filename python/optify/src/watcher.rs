@@ -54,17 +54,6 @@ impl PyOptionsWatcher {
             .expect("feature names should be valid")
     }
 
-    fn filter_features(
-        &self,
-        feature_names: Vec<String>,
-        preferences: Option<&PyGetOptionsPreferences>,
-    ) -> PyResult<Vec<Option<String>>> {
-        let preferences = preferences.map(|p| &p.0);
-        self.0
-            .filter_features(&feature_names, preferences)
-            .map_err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>)
-    }
-
     fn get_filtered_features(
         &self,
         feature_names: Vec<String>,
@@ -92,6 +81,17 @@ impl PyOptionsWatcher {
             .get_options_with_preferences(key, &feature_names, None, preferences)
             .map_err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>)?;
         Ok(result.to_string())
+    }
+
+    fn map_feature_names(
+        &self,
+        feature_names: Vec<String>,
+        preferences: Option<&PyGetOptionsPreferences>,
+    ) -> PyResult<Vec<Option<String>>> {
+        let preferences = preferences.map(|p| &p.0);
+        self.0
+            .map_feature_names(&feature_names, preferences)
+            .map_err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>)
     }
 }
 
