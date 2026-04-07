@@ -1697,6 +1697,7 @@ __metadata:
     "@types/mocha": "npm:^10.0.10"
     corepack: "npm:^0.32.0"
     jest: "npm:^29.7.0"
+    lru-cache: "npm:^11.0.0"
     tinybench: "npm:^5.1.0"
     ts-jest: "npm:^29.3.4"
     typescript: "npm:^5.8.3"
@@ -3567,6 +3568,13 @@ __metadata:
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
   checksum: 10c0/ebd04fbca961e6c1d6c0af3799adcc966a1babe798f685bb84e6599266599cd95d94630b10262f5424539bc4640107e8a33aa28585374abf561d30d16f4b39fb
+  languageName: node
+  linkType: hard
+
+"lru-cache@npm:^11.0.0":
+  version: 11.3.1
+  resolution: "lru-cache@npm:11.3.1"
+  checksum: 10c0/4fb5cf792cf6fb40bee3f4a0a0903f74b7869bfeaf500a6194dffcd556d16819342f02a7d0bac13b55557ddf231970c58740ff2098ecffbf23c8a99569084acb
   languageName: node
   linkType: hard
 

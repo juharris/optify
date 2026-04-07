@@ -3,12 +3,14 @@
 // Import the generated native bindings.
 import * as nativeBinding from '../index';
 
+import { CacheInitOptions } from './cache-init-options';
+import { CacheOptions } from './cache-options';
 import {
   CACHE_CREATION_TIME_KEY,
-  CacheOptions,
   FEATURES_WITH_METADATA_CACHE_KEY,
   FEATURES_WITH_METADATA_CACHE_TIME_KEY,
   getOptionsWithCaching,
+  initCache,
   resetCaches
 } from './caching';
 import { TypeSchema } from './types';
@@ -27,7 +29,8 @@ export {
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
-export { CacheOptions } from './caching';
+export { CacheInitOptions };
+export { CacheOptions };
 export type { TypeSchema } from './types';
 
 // Augment the native class interfaces to include our new method
@@ -35,6 +38,14 @@ declare module '../index' {
   interface OptionsProvider {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
+    /**
+     * Eagerly initializes the cache. Optional — the cache is lazily initialized on first
+     * `getOptions` call with `cacheOptions` if not called. Use this to configure cache behavior
+     * (e.g., max size) before `getOptions`.
+     * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
+     * @returns `this` for chaining.
+     */
+    init(cacheInitOptions?: CacheInitOptions | null): OptionsProvider;
     /**
      * Gets options for the specified key and feature names, validated against a schema.
      * @param cacheOptions Optional cache options to enable caching of the deserialized result.
@@ -45,6 +56,14 @@ declare module '../index' {
   interface OptionsWatcher {
     /** Returns a map of all the canonical feature names to their metadata. */
     featuresWithMetadata(): Record<string, OptionsMetadata>;
+    /**
+     * Eagerly initializes the cache. Optional — the cache is lazily initialized on first
+     * `getOptions` call with `cacheOptions` if not called. Use this to configure cache behavior
+     * (e.g., max size) before `getOptions`.
+     * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
+     * @returns `this` for chaining.
+     */
+    init(cacheInitOptions?: CacheInitOptions | null): OptionsWatcher;
     /**
      * Gets options for the specified key and feature names, validated against a schema.
      * @param cacheOptions Optional cache options to enable caching of the deserialized result.
@@ -63,6 +82,10 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
 
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
 };
+(OptionsProvider.prototype as any).init = function (this: any, cacheInitOptions?: CacheInitOptions | null): any {
+  initCache(this, cacheInitOptions);
+  return this;
+};
 (OptionsProvider.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions): any {
   return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
@@ -79,6 +102,11 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
   resetCaches(this);
   this[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = lastModifiedTime;
   return this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata();
+};
+(OptionsWatcher.prototype as any).init = function (this: any, cacheInitOptions?: CacheInitOptions | null): any {
+  initCache(this, cacheInitOptions);
+  this[CACHE_CREATION_TIME_KEY] = this.lastModified();
+  return this;
 };
 (OptionsWatcher.prototype as any).getOptions = function (this: any, key: string, featureNames: string[], schema: any, preferences?: nativeBinding.GetOptionsPreferences | null, cacheOptions?: CacheOptions | null): any {
   // Check cache validity for watcher - reset if files have been modified

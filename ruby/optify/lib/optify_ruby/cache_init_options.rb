@@ -23,7 +23,7 @@ module Optify
 
     # Initializes the cache options.
     # Defaults to a non-thread-safe unlimited size cache for backwards compatibility
-    # with how this library was originally configured with an unbounded hash as the case.
+    # with how this library was originally configured with an unbounded hash as the base.
     # @param mode A value from `CacheMode`.
     #
     #: (

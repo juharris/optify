@@ -1,23 +1,21 @@
 // Caching utilities for getOptions
 
+import { LRUCache } from 'lru-cache';
 import * as nativeBinding from '../index';
+import { CacheInitOptions } from './cache-init-options';
+import { CacheOptions } from './cache-options';
 import { TypeSchema } from './types';
-
-/**
- * Options for enabling caching of deserialized objects returned by getOptions.
- * Pass an instance of this class to getOptions to enable caching.
- * Subsequent calls with the same key, feature names, schema, and preferences
- * will return the same cached object without re-parsing.
- */
-export class CacheOptions { }
 
 // Private cache property names (using symbols for true privacy)
 export const FEATURES_WITH_METADATA_CACHE_KEY = Symbol('featuresWithMetadataCache');
 export const FEATURES_WITH_METADATA_CACHE_TIME_KEY = Symbol('featuresWithMetadataCacheTime');
 const OPTIONS_CACHE_KEY = Symbol('optionsCache');
 export const CACHE_CREATION_TIME_KEY = Symbol('cacheCreationTime');
+const CACHE_INIT_OPTIONS_KEY = Symbol('cacheInitOptions');
 const SCHEMA_IDS_KEY = Symbol('schemaIds');
 const SCHEMA_ID_COUNTER_KEY = Symbol('schemaIdCounter');
+
+type OptionsCache = Map<string, NonNullable<unknown>> | LRUCache<string, NonNullable<unknown>>;
 
 /** Instance with dynamic properties for caching. */
 export interface CacheableInstance {
@@ -25,7 +23,8 @@ export interface CacheableInstance {
   getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
   lastModified?(): number;
   [FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
-  [OPTIONS_CACHE_KEY]?: Map<string, unknown>;
+  [OPTIONS_CACHE_KEY]?: OptionsCache;
+  [CACHE_INIT_OPTIONS_KEY]?: CacheInitOptions | null;
   [SCHEMA_ID_COUNTER_KEY]?: number;
   [SCHEMA_IDS_KEY]?: WeakMap<object, number>;
 }
@@ -67,18 +66,39 @@ function createOptionsCacheKey(
   ]);
 }
 
+function createOptionsCache(cacheInitOptions?: CacheInitOptions | null): OptionsCache {
+  if (cacheInitOptions?.maxSize !== undefined) {
+    return new LRUCache<string, NonNullable<unknown>>({ max: cacheInitOptions.maxSize });
+  }
+  return new Map<string, NonNullable<unknown>>();
+}
+
 /**
  * Resets all caches for the instance.
  * Used by OptionsWatcher when files are modified.
  */
 export function resetCaches(instance: CacheableInstance): void {
   instance[FEATURES_WITH_METADATA_CACHE_KEY] = undefined;
-  instance[OPTIONS_CACHE_KEY] = new Map();
+  instance[OPTIONS_CACHE_KEY] = createOptionsCache(instance[CACHE_INIT_OPTIONS_KEY]);
+}
+
+/**
+ * Eagerly initializes the cache for the instance.
+ * Optional — if not called, the cache is lazily initialized on first `getOptions` call with `cacheOptions`.
+ * Call this to configure cache behavior (e.g., max size) before `getOptions`.
+ * @param instance The cacheable instance to initialize.
+ * @param cacheInitOptions Optional cache initialization options to configure cache behavior.
+ */
+export function initCache(instance: CacheableInstance, cacheInitOptions?: CacheInitOptions | null): OptionsCache {
+  instance[CACHE_INIT_OPTIONS_KEY] = cacheInitOptions;
+  return instance[OPTIONS_CACHE_KEY] = createOptionsCache(cacheInitOptions);
 }
 
 /**
  * Shared implementation of getOptions with optional caching support.
  * Used by both `OptionsProvider` and `OptionsWatcher`.
+ * Caching is enabled when `cacheOptions` is provided. The cache is lazily
+ * initialized on first use if `init` was not called.
  */
 export function getOptionsWithCaching<T>(
   instance: CacheableInstance,
@@ -98,11 +118,8 @@ export function getOptionsWithCaching<T>(
 
     const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
 
-    let cache = instance[OPTIONS_CACHE_KEY];
-    if (!cache) {
-      cache = new Map();
-      instance[OPTIONS_CACHE_KEY] = cache;
-    }
+    const cache = instance[OPTIONS_CACHE_KEY]
+      ?? initCache(instance);
 
     const cacheKey = createOptionsCacheKey(instance, key, filteredFeatures, areConfigurableStringsEnabled, schema);
     const cachedResult = cache.get(cacheKey);
@@ -118,7 +135,7 @@ export function getOptionsWithCaching<T>(
     }
 
     const result = schema.parse(instance._getOptions(key, filteredFeatures, cacheMissPreferences));
-    cache.set(cacheKey, result);
+    cache.set(cacheKey, result as NonNullable<unknown>);
     return result;
   }
 
