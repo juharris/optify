@@ -154,6 +154,9 @@ jobs:
     - name: "[JS] Install dependencies"
       run: yarn install
       working-directory: ./js/optify-config
+    - name: "[JS] Format check"
+      run: yarn fmt:check
+      working-directory: ./js/optify-config
     - name: "[JS] Lint"
       run: yarn lint
       working-directory: ./js/optify-config

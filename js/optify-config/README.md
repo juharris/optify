@@ -1,4 +1,5 @@
 # Optify Bindings for Node.js
+
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433)](https://www.npmjs.com/package/@optify/config)
 
 See the [homepage] for details about how feature files are combined to build the options to process at runtime.
@@ -49,6 +50,7 @@ console.log(JSON.stringify(options, null, 2))
 ```
 
 Outputs:
+
 ```JSON
 {
   "myArray": [
@@ -89,6 +91,7 @@ yarn test
 ## Testing
 
 Run:
+
 ```shell
 yarn build:debug
 yarn build:ts
@@ -99,11 +102,13 @@ yarn test
 
 JavaScript and TypeScript files use tabs as configured in [`.editorconfig`](../../.editorconfig).
 Run oxlint before committing:
+
 ```Shell
 yarn lint:fix
 ```
 
 To check for issues, run:
+
 ```Shell
 yarn lint
 ```
@@ -111,6 +116,7 @@ yarn lint
 ## Benchmarking
 
 Run:
+
 ```shell
 rm -rf target config.*.node
 yarn build
@@ -121,6 +127,7 @@ node benchmarks/get_all_options.mjs
 ## Formatting
 
 To automatically change the Rust code, run:
+
 ```shell
 cargo fmt
 ```
