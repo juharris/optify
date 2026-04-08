@@ -14,5 +14,5 @@ name = "optify"
 crate-type = ["cdylib"]
 
 [dependencies]
-optify = { path = "../../rust/optify", version = "0.21.0" }
+optify = { path = "../../rust/optify", version = "1.0.0" }
 pyo3 = "0.28.2"

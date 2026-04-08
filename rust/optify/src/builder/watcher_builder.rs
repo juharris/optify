@@ -7,9 +7,6 @@ use super::OptionsRegistryBuilder;
 /// A builder to use for local development to create an `OptionsWatcher` which changes the underlying `OptionsProvider` when files are changed.
 ///
 /// This builder is kept separate from the `OptionsProviderBuilder` in order to keep `OptionsProviderBuilder` and `OptionsProvider` as simple and efficient as possible for production use.
-///
-/// ⚠️ Development in progress ⚠️\
-/// Not truly considered public yet and mainly available to support bindings for other languages.
 #[derive(Clone)]
 pub struct OptionsWatcherBuilder {
     schema_path: Option<PathBuf>,
