@@ -79,6 +79,24 @@ optify --dir ./configs get-all-options --features A B
 
 ---
 
+### `--preferences` / `--prefs`
+
+Both `get-options` and `get-all-options` accept a `--preferences` (or `--prefs`) flag with a JSON value.
+This maps directly to the `GetOptionsPreferences` struct, so any new fields added to the struct are automatically available.
+
+```shell
+# Enable configurable string resolution
+optify --dir ./configs get-options -k myConfig -f A --prefs '{"are_configurable_strings_enabled": true}'
+
+# Apply overrides on top of the merged configuration
+optify --dir ./configs get-all-options -f A --prefs '{"overrides": {"myConfig": {"key": "value"}}}'
+
+# Filter features by constraints
+optify --dir ./configs get-options -k myConfig -f A B --prefs '{"constraints": {"constraints": {"client": "Android"}}}'
+```
+
+---
+
 ## Examples
 
 ```shell

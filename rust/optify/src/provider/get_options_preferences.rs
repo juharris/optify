@@ -1,6 +1,8 @@
 use crate::provider::{constraints::Constraints, SourceValue};
+use serde::Deserialize;
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Deserialize, Hash, PartialEq, Eq)]
+#[serde(default)]
 pub struct GetOptionsPreferences {
     /// Allows resolving configurable strings.
     /// Defaults to false: no configurable strings will be resolved.

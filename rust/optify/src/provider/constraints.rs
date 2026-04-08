@@ -1,6 +1,7 @@
+use serde::Deserialize;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Constraints {
     pub constraints: serde_json::Value,
 }
