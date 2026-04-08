@@ -57,6 +57,11 @@ next_version=$(get_next_version $current_version $strategy)
 bump_version_in_toml "Cargo.toml" $strategy
 popd
 
+pushd rust/optify-cli
+bump_version_in_toml "Cargo.toml" $strategy
+bump_dependency_in_toml "Cargo.toml" $current_version $next_version
+popd
+
 pushd python/optify
 bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 bump_version_in_toml "pyproject.toml" $strategy
