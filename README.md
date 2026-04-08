@@ -322,7 +322,7 @@ To only enable help in one JSON file:
     "options": {
         ...
     }
-} 
+}
 ```
 
 ### Directly in YAML
@@ -546,11 +546,11 @@ cargo install optify-cli
 ```
 
 ```shell
-# List all feature names
+# List all features with metadata
 optify --dir ./configs list-features
 
 # Get options for a key with features applied (last feature wins)
-optify --dir ./configs get-options myConfig -f A B
+optify --dir ./configs get-options -k myConfig -f A B
 # {"myArray":["different item 1","item 2"],"myObject":{...}}
 
 # Get the full merged configuration for a set of features

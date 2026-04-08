@@ -46,6 +46,8 @@ bump_dependency_in_toml() {
     local current_version=$2
     local next_version=$3
     sed -i "" -E 's/^(optify = \{ path = ".+", version = ")'${current_version}'(" \}$)/\1'${next_version}'\2/' "$file"
+    # Handle `optify = "x.y.z"` case as well
+    sed -i "" -E 's/^(optify = ")'${current_version}'("$)/\1'${next_version}'\2/' "$file"
 }
 
 # Go to the root directory of the project.
@@ -55,6 +57,11 @@ pushd rust/optify
 current_version=$(grep -m 1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
 next_version=$(get_next_version $current_version $strategy)
 bump_version_in_toml "Cargo.toml" $strategy
+popd
+
+pushd rust/optify-cli
+bump_version_in_toml "Cargo.toml" $strategy
+bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 popd
 
 pushd python/optify
