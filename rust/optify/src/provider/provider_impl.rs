@@ -26,8 +26,6 @@ pub(crate) type OptionsCache = HashMap<(String, Vec<String>, bool), serde_json::
 
 pub struct CacheOptions {}
 
-/// ⚠️ Development in progress ⚠️\
-/// Not truly considered public and mainly available to support bindings for other languages.
 pub struct OptionsProvider {
     all_configurable_value_pointers: Vec<String>,
     aliases: Aliases,

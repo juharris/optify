@@ -10,10 +10,6 @@ See [tests](../../tests/) for examples and tests for different implementations o
 
 See the root [README.md](../../README.md) for more information and examples.
 
-⚠️ Development in progress ⚠️\
-APIs are not final and may change, for example, names may change.
-This is just meant to be minimal to get started and help build Python and Ruby libraries.
-
 ## How It Works
 
 The [`config`][config] crate (library) is used to help load configuration files.
@@ -48,7 +44,7 @@ cargo bench
 cargo bench --bench get_options_benchmark
 
 # Open one of the reports
-open target/criterion/*/report/index.html 
+open target/criterion/*/report/index.html
 ```
 
 ## Publishing
