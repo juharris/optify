@@ -4,7 +4,7 @@ set -e
 # Go to the root directory of the project.
 cd "$(dirname "$0")/.."
 
-pushd rust/optify
+pushd rust
 cargo test
 popd
 

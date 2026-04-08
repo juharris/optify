@@ -46,6 +46,8 @@ bump_dependency_in_toml() {
     local current_version=$2
     local next_version=$3
     sed -i "" -E 's/^(optify = \{ path = ".+", version = ")'${current_version}'(" \}$)/\1'${next_version}'\2/' "$file"
+    # Handle `optify = "x.y.z"` case as well
+    sed -i "" -E 's/^(optify = ")'${current_version}'("$)/\1'${next_version}'\2/' "$file"
 }
 
 # Go to the root directory of the project.
