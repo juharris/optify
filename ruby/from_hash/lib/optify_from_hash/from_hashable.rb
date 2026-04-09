@@ -46,16 +46,13 @@ module Optify
         return value
       end
 
-      return value.to_sym if type.is_a?(T::Types::Simple) && type.raw_type == Symbol
+      unwrapped_type = _unwrap_nilable(type)
+      return value&.to_sym if unwrapped_type.is_a?(T::Types::Simple) && unwrapped_type.raw_type == Symbol
 
       case value
       when Array
-        # Handle `T.nilable(T::Array[...])`
-        if type.respond_to?(:unwrap_nilable)
-          type = type #: as untyped
-                 .unwrap_nilable
-        end
-        inner_type = type.type
+        inner_type = unwrapped_type #: as untyped
+                     .type
         return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
         # Handle `T.nilable(T::Hash[...])` and `T.any(...)`.
@@ -104,7 +101,18 @@ module Optify
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
     end
 
-    private_class_method :_convert_hash, :_convert_value
+    # Unwrap `T.nilable(...)` to get the inner type, or return the type as-is.
+    #: (T::Types::Base) -> T::Types::Base
+    def self._unwrap_nilable(type)
+      if type.respond_to?(:unwrap_nilable)
+        type #: as untyped
+          .unwrap_nilable
+      else
+        type
+      end
+    end
+
+    private_class_method :_convert_hash, :_convert_value, :_unwrap_nilable
 
     # Compare this object with another object for equality.
     # @param other The object to compare.

@@ -14,6 +14,9 @@ Layout/LineLength:
 Metrics/AbcSize:
   Max: 22
 
+Metrics/ClassLength:
+  Max: 106
+
 Metrics/CyclomaticComplexity:
   Max: 12
 
