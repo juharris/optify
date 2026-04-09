@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    optify-from_hash (0.2.1)
+    optify-from_hash (0.2.2)
       sorbet-runtime (>= 0.5, < 1)
 
 GEM

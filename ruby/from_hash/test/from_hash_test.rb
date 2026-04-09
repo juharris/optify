@@ -50,6 +50,12 @@ module FromHashTest
     sig { returns(T::Array[T::Hash[Symbol, TestObject]]) }
     attr_reader :hashes
 
+    sig { returns(Symbol) }
+    attr_reader :symbol
+
+    sig { returns(T.nilable(Symbol)) }
+    attr_reader :nilable_symbol
+
     sig { returns(T::Hash[Symbol, Symbol]) }
     attr_reader :symbol_to_symbol
 
@@ -363,6 +369,27 @@ module FromHashTest
       end
       assert_match(/Could not convert value: 3 to T.nilable\(T.any\(String, TestObject, TestObject2\)\)./,
                    exception.message)
+    end
+
+    def test_symbol
+      hash = { 'symbol' => 'hello' }
+      c = TestConfig.from_hash(hash)
+      assert_instance_of(Symbol, c.symbol)
+      assert_equal(:hello, c.symbol)
+      assert_equal({ symbol: :hello }, c.to_h)
+    end
+
+    def test_nilable_symbol
+      hash = { 'nilable_symbol' => 'world' }
+      c = TestConfig.from_hash(hash)
+      assert_instance_of(Symbol, c.nilable_symbol)
+      assert_equal(:world, c.nilable_symbol)
+      assert_equal({ nilable_symbol: :world }, c.to_h)
+
+      hash = { 'nilable_symbol' => nil }
+      c = TestConfig.from_hash(hash)
+      assert_nil(c.nilable_symbol)
+      assert_equal({ nilable_symbol: nil }, c.to_h)
     end
 
     def test_symbol_to_symbol
