@@ -23,7 +23,7 @@ const runSuite = (suitePath: string) => {
 		const preferences = new GetOptionsPreferences();
 		preferences.enableConfigurableStrings();
 		if (constraints) {
-			preferences.setConstraintsJson(JSON.stringify(constraints));
+			preferences.setConstraints(constraints);
 		}
 		for (const { name, provider } of providers) {
 			test(`${name} ${testCase}`, () => {
