@@ -126,21 +126,21 @@ describe("mapFeatureNames", () => {
 
 		test(`${name} constraints matching all features`, () => {
 			const preferences = new GetOptionsPreferences();
-			preferences.setConstraintsJson(JSON.stringify({ info: 3, status: "new" }));
+			preferences.setConstraints({ info: 3, status: "new" });
 			const result = provider.mapFeatureNames(["a", "b"], preferences);
 			expect(result).toEqual(["A", "B"]);
 		});
 
 		test(`${name} constraints filtering out a feature`, () => {
 			const preferences = new GetOptionsPreferences();
-			preferences.setConstraintsJson(JSON.stringify({ info: 2, status: "new" }));
+			preferences.setConstraints({ info: 2, status: "new" });
 			const result = provider.mapFeatureNames(["a", "b"], preferences);
 			expect(result).toEqual([null, "B"]);
 		});
 
 		test(`${name} reversed input order with filtering`, () => {
 			const preferences = new GetOptionsPreferences();
-			preferences.setConstraintsJson(JSON.stringify({ info: 2, status: "new" }));
+			preferences.setConstraints({ info: 2, status: "new" });
 			const result = provider.mapFeatureNames(["b", "a"], preferences);
 			expect(result).toEqual(["B", null]);
 		});
@@ -152,4 +152,46 @@ describe("mapFeatureNames", () => {
 			expect(result).toEqual([]);
 		});
 	}
+});
+
+describe("overrides", () => {
+	const provider = OptionsProvider.buildFromDirectories([configsPath]);
+
+	test("hasOverrides is false by default", () => {
+		const preferences = new GetOptionsPreferences();
+		expect(preferences.hasOverrides()).toBe(false);
+	});
+
+	test("setOverrides sets overrides and hasOverrides returns true", () => {
+		const preferences = new GetOptionsPreferences();
+		preferences.setOverrides({ myConfig: { rootString2: "overridden value" } });
+		expect(preferences.hasOverrides()).toBe(true);
+
+		const options = provider.getAllOptions(["feature_A"], preferences);
+		expect(options.myConfig.rootString2).toBe("overridden value");
+
+		preferences.setOverrides(null);
+		expect(preferences.hasOverrides()).toBe(false);
+	});
+
+	test("setOverridesJson sets overrides from a JSON string", () => {
+		const preferences = new GetOptionsPreferences();
+		preferences.setOverridesJson(JSON.stringify({ myConfig: { rootString2: "json override" } }));
+		expect(preferences.hasOverrides()).toBe(true);
+
+		const options = provider.getAllOptions(["feature_A"], preferences);
+		expect(options.myConfig.rootString2).toBe("json override");
+
+		preferences.setOverridesJson(null);
+		expect(preferences.hasOverrides()).toBe(false);
+	});
+
+	test("overrides do not affect keys that are not overridden", () => {
+		const preferences = new GetOptionsPreferences();
+		preferences.setOverrides({ myConfig: { rootString2: "overridden" } });
+
+		const options = provider.getAllOptions(["feature_A"], preferences);
+		expect(options.myConfig.rootString).toBe("root string same");
+		expect(options.myConfig.rootString2).toBe("overridden");
+	});
 });

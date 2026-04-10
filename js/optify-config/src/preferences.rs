@@ -34,8 +34,18 @@ impl JsGetOptionsPreferences {
   }
 
   #[napi]
+  pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {
+    self.inner.set_constraints(constraints);
+  }
+
+  #[napi]
   pub fn set_constraints_json(&mut self, constraints_json: Option<String>) {
     self.inner.set_constraints_json(constraints_json.as_deref());
+  }
+
+  #[napi]
+  pub fn set_overrides(&mut self, overrides: Option<serde_json::Value>) {
+    self.inner.overrides = overrides;
   }
 
   #[napi]
