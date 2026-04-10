@@ -19,5 +19,5 @@
 	"[typescript]": {
 		"editor.formatOnSave": true
 	},
-	"cSpell.words": ["napi"]
+	"cSpell.words": ["napi", "threadsafe"]
 }

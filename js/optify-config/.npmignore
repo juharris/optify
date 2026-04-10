@@ -14,7 +14,9 @@ rustfmt.toml
 .nvmrc
 .yarnrc.yml
 .eslintrc
+.oxlintrc.json
 .prettierignore
+benchmarks/
 renovate.json
 
 # Package management
