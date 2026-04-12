@@ -1,5 +1,6 @@
 import { CacheInitOptions, OptionsWatcher, WatcherOptions } from '@optify/config';
 
+// Assume people won't open too many files.
 const CACHE_MAX_SIZE = 10;
 
 const providerCache = new Map<string, OptionsWatcher>();
