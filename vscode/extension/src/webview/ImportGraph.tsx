@@ -75,7 +75,7 @@ function buildHierarchicalLayout(
 	}
 
 	const numLevels = maxLevel + 1;
-	const pos: Record<string, { x: number; y: number }> = {};
+	const pos: Record<string, { x: number; y: number }> = Object.create(null) as Record<string, { x: number; y: number }>;
 	for (let l = 0; l <= maxLevel; l++) {
 		const nodesAtLevel = byLevel.get(l) ?? [];
 		const y = GRAPH_HEIGHT * 0.1 + (l / Math.max(numLevels - 1, 1)) * (GRAPH_HEIGHT * 0.8);
@@ -93,12 +93,12 @@ function buildHierarchicalLayout(
 export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOpenFile }) => {
 	const { nodes, edges } = graphData;
 	const [layout, setLayout] = useState<LayoutType>('force');
-	const [positions, setPositions] = useState<Record<string, NodePos>>({});
+	const [positions, setPositions] = useState<Record<string, NodePos>>(Object.create(null) as Record<string, NodePos>);
 	const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 	const [dragging, setDragging] = useState<string | null>(null);
 	const [filter, setFilter] = useState('');
 	const animFrameRef = useRef<number | null>(null);
-	const posRef = useRef<Record<string, NodePos>>({});
+	const posRef = useRef<Record<string, NodePos>>(Object.create(null) as Record<string, NodePos>);
 	const svgRef = useRef<SVGSVGElement>(null);
 
 	const isDark = theme === 'dark';
@@ -118,7 +118,7 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 	const nodeIds = useMemo(() => nodes.map(n => n.id), [nodes]);
 
 	const initPositions = useCallback((lt: LayoutType) => {
-		const pos: Record<string, NodePos> = {};
+		const pos: Record<string, NodePos> = Object.create(null) as Record<string, NodePos>;
 		const n = nodeIds.length;
 
 		if (lt === 'circular') {
@@ -150,7 +150,7 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 			});
 		}
 		posRef.current = pos;
-		setPositions({ ...pos });
+		setPositions(Object.assign(Object.create(null) as Record<string, NodePos>, pos));
 		return pos;
 	}, [nodeIds, edges]);
 
@@ -236,10 +236,10 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 				pi.y = Math.max(padding, Math.min(GRAPH_HEIGHT - padding, pi.y + pi.vy));
 			}
 
-			posRef.current = { ...p };
+			posRef.current = Object.assign(Object.create(null) as Record<string, NodePos>, p);
 			// Only update React state every 3 frames to reduce re-renders
 			if (frameCount % 3 === 0) {
-				setPositions({ ...p });
+				setPositions(Object.assign(Object.create(null) as Record<string, NodePos>, p));
 			}
 
 			animFrameRef.current = requestAnimationFrame(simulate);
@@ -279,11 +279,12 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 		const x = (e.clientX - rect.left) * scaleX;
 		const y = (e.clientY - rect.top) * scaleY;
 		const prev = posRef.current[dragging];
-		posRef.current = {
-			...posRef.current,
-			[dragging]: { ...prev, x, y, vx: 0, vy: 0 },
-		};
-		setPositions({ ...posRef.current });
+		posRef.current = Object.assign(
+			Object.create(null) as Record<string, NodePos>,
+			posRef.current,
+			{ [dragging]: { ...prev, x, y, vx: 0, vy: 0 } },
+		);
+		setPositions(Object.assign(Object.create(null) as Record<string, NodePos>, posRef.current));
 	}, [dragging]);
 
 	const handleMouseUp = useCallback(() => {
