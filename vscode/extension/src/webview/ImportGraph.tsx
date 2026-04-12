@@ -19,25 +19,30 @@ interface ImportGraphProps {
 const GRAPH_WIDTH = 900;
 const GRAPH_HEIGHT = 600;
 const NODE_RADIUS = 10;
+const MAX_HOVER_LABEL_LENGTH = 35;
+const HOVER_LABEL_TRUNCATE_LENGTH = 33;
+const MAX_LABEL_LENGTH = 20;
+const LABEL_TRUNCATE_LENGTH = 18;
 
 function buildHierarchicalLayout(
 	nodeIds: string[],
 	edges: Array<{ source: string; target: string }>
 ): Record<string, { x: number; y: number }> {
-	const inDegree: Record<string, number> = {};
-	const outEdges: Record<string, string[]> = {};
+	const inDegree = new Map<string, number>();
+	const outEdges = new Map<string, string[]>();
 
 	for (const n of nodeIds) {
-		inDegree[n] = 0;
-		outEdges[n] = [];
+		inDegree.set(n, 0);
+		outEdges.set(n, []);
 	}
 	for (const e of edges) {
-		inDegree[e.target] = (inDegree[e.target] ?? 0) + 1;
-		outEdges[e.source] = [...(outEdges[e.source] ?? []), e.target];
+		inDegree.set(e.target, (inDegree.get(e.target) ?? 0) + 1);
+		const existing = outEdges.get(e.source) ?? [];
+		outEdges.set(e.source, [...existing, e.target]);
 	}
 
-	const levels: Record<string, number> = {};
-	const queue: string[] = nodeIds.filter(n => (inDegree[n] ?? 0) === 0);
+	const levels = new Map<string, number>();
+	const queue: string[] = nodeIds.filter(n => (inDegree.get(n) ?? 0) === 0);
 	let maxLevel = 0;
 
 	// BFS to assign levels
@@ -46,13 +51,13 @@ function buildHierarchicalLayout(
 		const cur = queue.shift()!;
 		if (visited.has(cur)) continue;
 		visited.add(cur);
-		const level = levels[cur] ?? 0;
+		const level = levels.get(cur) ?? 0;
 		if (level > maxLevel) maxLevel = level;
-		for (const next of (outEdges[cur] ?? [])) {
-			const nextLevel = Math.max(levels[next] ?? 0, level + 1);
-			levels[next] = nextLevel;
-			inDegree[next]--;
-			if ((inDegree[next] ?? 1) <= 0) {
+		for (const next of (outEdges.get(cur) ?? [])) {
+			const nextLevel = Math.max(levels.get(next) ?? 0, level + 1);
+			levels.set(next, nextLevel);
+			inDegree.set(next, (inDegree.get(next) ?? 1) - 1);
+			if ((inDegree.get(next) ?? 1) <= 0) {
 				queue.push(next);
 			}
 		}
@@ -60,19 +65,19 @@ function buildHierarchicalLayout(
 
 	// Handle cycles: assign remaining nodes to level 0
 	for (const n of nodeIds) {
-		if (levels[n] === undefined) levels[n] = 0;
+		if (!levels.has(n)) levels.set(n, 0);
 	}
 
-	const byLevel: Record<number, string[]> = {};
+	const byLevel = new Map<number, string[]>();
 	for (const n of nodeIds) {
-		const l = levels[n];
-		byLevel[l] = [...(byLevel[l] ?? []), n];
+		const l = levels.get(n) ?? 0;
+		byLevel.set(l, [...(byLevel.get(l) ?? []), n]);
 	}
 
 	const numLevels = maxLevel + 1;
 	const pos: Record<string, { x: number; y: number }> = {};
 	for (let l = 0; l <= maxLevel; l++) {
-		const nodesAtLevel = byLevel[l] ?? [];
+		const nodesAtLevel = byLevel.get(l) ?? [];
 		const y = GRAPH_HEIGHT * 0.1 + (l / Math.max(numLevels - 1, 1)) * (GRAPH_HEIGHT * 0.8);
 		nodesAtLevel.forEach((n, i) => {
 			const x = nodesAtLevel.length === 1
@@ -428,7 +433,7 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 									fill={colors.text}
 									style={{ pointerEvents: 'none' }}
 								>
-									{id.length > 35 ? id.slice(0, 33) + '…' : id}
+									{id.length > MAX_HOVER_LABEL_LENGTH ? id.slice(0, HOVER_LABEL_TRUNCATE_LENGTH) + '…' : id}
 								</text>
 							)}
 							{showLabel && !isHovered && (
@@ -439,7 +444,7 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 									fill={colors.textSmall}
 									style={{ pointerEvents: 'none' }}
 								>
-									{id.length > 20 ? id.slice(0, 18) + '…' : id}
+									{id.length > MAX_LABEL_LENGTH ? id.slice(0, LABEL_TRUNCATE_LENGTH) + '…' : id}
 								</text>
 							)}
 						</g>

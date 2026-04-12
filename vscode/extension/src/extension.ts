@@ -51,9 +51,7 @@ export function buildOptifyPreviewData(
 	try {
 		// If some of the next lines fail in Rust from an unwrap or expect, then the exception is not caught.
 		const provider = getOptionsProvider(optifyRoot);
-		const data = previewBuilder.buildPreviewData(canonicalFeatures, provider, editingOptions, areConfigurableStringsEnabled);
-		// Set the default from the actual config file
-		data.areConfigurableStringsEnabledDefault = configurableStringsDefault;
+		const data = previewBuilder.buildPreviewData(canonicalFeatures, provider, editingOptions, areConfigurableStringsEnabled, configurableStringsDefault);
 		return data;
 	} catch (error) {
 		const message = `Failed to build preview${editingOptions ? " while editing" : ""}: ${error}`;

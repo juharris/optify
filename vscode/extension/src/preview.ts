@@ -76,6 +76,7 @@ export class PreviewBuilder {
 		provider: OptionsWatcher,
 		editingOptions?: PreviewWhileEditingOptions,
 		areConfigurableStringsEnabled?: boolean,
+		configurableStringsDefault?: boolean,
 	): PreviewData {
 		const preferences = new GetOptionsPreferences();
 		preferences.setSkipFeatureNameConversion(true);
@@ -147,7 +148,7 @@ export class PreviewBuilder {
 			dependents,
 			isUnsaved: !!editingOptions,
 			areConfigurableStringsEnabled: !!areConfigurableStringsEnabled,
-			areConfigurableStringsEnabledDefault: !!areConfigurableStringsEnabled,
+			areConfigurableStringsEnabledDefault: !!configurableStringsDefault,
 			allFeatureNames,
 			featureAliases,
 			featurePaths,

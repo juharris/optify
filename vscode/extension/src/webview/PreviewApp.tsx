@@ -21,6 +21,7 @@ export const PreviewApp: React.FC = () => {
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		const updateTheme = () => {
@@ -29,6 +30,12 @@ export const PreviewApp: React.FC = () => {
 			setTheme(isDark ? 'dark' : 'light');
 		};
 		updateTheme();
+		// Clear blur timeout on unmount
+		return () => {
+			if (blurTimeoutRef.current !== null) {
+				clearTimeout(blurTimeoutRef.current);
+			}
+		};
 	}, []);
 
 	useEffect(() => {
@@ -250,7 +257,9 @@ export const PreviewApp: React.FC = () => {
 								value={featuresInput}
 								onChange={handleFeaturesInputChange}
 								onKeyDown={handleFeaturesKeyDown}
-								onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+								onBlur={() => {
+									blurTimeoutRef.current = setTimeout(() => setShowSuggestions(false), 150);
+								}}
 								placeholder="Enter feature names, comma-separated..."
 								style={{
 									width: '100%', padding: '6px 8px', fontSize: '0.9rem', borderRadius: '3px',
