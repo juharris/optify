@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Select, { MultiValue, StylesConfig, components as SelectComponents } from 'react-select';
 import { JsonViewer } from '@textea/json-viewer';
 import { ImportGraph } from './ImportGraph';
 import { PreviewData, MessageFromExtension, MessageToExtension } from './types';
@@ -16,26 +17,13 @@ export const PreviewApp: React.FC = () => {
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 	const [showGraph, setShowGraph] = useState(false);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
-	const [featuresInput, setFeaturesInput] = useState<string>('');
+	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
 	const [featuresInputDirty, setFeaturesInputDirty] = useState(false);
-	const [suggestions, setSuggestions] = useState<string[]>([]);
-	const [showSuggestions, setShowSuggestions] = useState(false);
-	const inputRef = useRef<HTMLInputElement>(null);
-	const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
-		const updateTheme = () => {
-			const body = document.body;
-			const isDark = body.classList.contains('vscode-dark') || body.classList.contains('vscode-high-contrast');
-			setTheme(isDark ? 'dark' : 'light');
-		};
-		updateTheme();
-		// Clear blur timeout on unmount
-		return () => {
-			if (blurTimeoutRef.current !== null) {
-				clearTimeout(blurTimeoutRef.current);
-			}
-		};
+		const body = document.body;
+		const isDark = body.classList.contains('vscode-dark') || body.classList.contains('vscode-high-contrast');
+		setTheme(isDark ? 'dark' : 'light');
 	}, []);
 
 	useEffect(() => {
@@ -44,7 +32,7 @@ export const PreviewApp: React.FC = () => {
 			if (message.type === 'updateConfig') {
 				setPreviewData(message.data);
 				if (!featuresInputDirty) {
-					setFeaturesInput(message.data.features.join(', '));
+					setSelectedFeatures(message.data.features.map(f => ({ value: f, label: f })));
 				}
 			} else if (message.type === 'openGraph') {
 				setShowGraph(true);
@@ -67,65 +55,93 @@ export const PreviewApp: React.FC = () => {
 		vscode.postMessage({ command: 'setConfigurableStrings', enabled: newValue });
 	}, [previewData]);
 
-	const allSuggestionOptions = useMemo(() => {
+	const selectOptions = useMemo(() => {
 		if (!previewData) return [];
-		const options: Array<{ display: string; canonical: string; isAlias: boolean }> = [];
+		const opts: Array<{ value: string; label: string; path?: string }> = [];
 		for (const name of previewData.allFeatureNames) {
-			options.push({ display: name, canonical: name, isAlias: false });
+			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
 			const aliases = previewData.featureAliases[name] ?? [];
 			for (const alias of aliases) {
-				options.push({ display: `${alias} [${name}]`, canonical: name, isAlias: true });
+				opts.push({ value: alias, label: `${alias} [${name}]`, path: previewData.featurePaths[name] });
 			}
 		}
-		return options;
+		return opts;
 	}, [previewData]);
 
-	const parseFeatures = useCallback((input: string): string[] => {
-		return input.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+	const handleFeaturesChange = useCallback((newValue: MultiValue<{ value: string; label: string; path?: string }>) => {
+		setSelectedFeatures(Array.from(newValue));
+		setFeaturesInputDirty(true);
 	}, []);
 
-	const handleFeaturesInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setFeaturesInput(value);
-		setFeaturesInputDirty(true);
-
-		const parts = value.split(/[,]/);
-		const lastPart = parts[parts.length - 1].trim().toLowerCase();
-		if (lastPart.length > 0) {
-			const filtered = allSuggestionOptions
-				.filter(o => o.display.toLowerCase().includes(lastPart))
-				.slice(0, 15);
-			setSuggestions(filtered.map(o => o.display));
-			setShowSuggestions(filtered.length > 0);
-		} else {
-			setShowSuggestions(false);
-		}
-	}, [allSuggestionOptions]);
-
-	const handleSuggestionClick = useCallback((suggestion: string) => {
-		const parts = featuresInput.split(/[,]/);
-		parts[parts.length - 1] = ' ' + suggestion;
-		setFeaturesInput(parts.join(','));
-		setFeaturesInputDirty(true);
-		setShowSuggestions(false);
-		inputRef.current?.focus();
-	}, [featuresInput]);
-
 	const handleFeaturesSubmit = useCallback(() => {
-		const features = parseFeatures(featuresInput);
-		vscode.postMessage({ command: 'setFeatures', features });
+		vscode.postMessage({ command: 'setFeatures', features: selectedFeatures.map(f => f.value) });
 		setFeaturesInputDirty(false);
-		setShowSuggestions(false);
-	}, [featuresInput, parseFeatures]);
+	}, [selectedFeatures]);
 
-	const handleFeaturesKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === 'Enter') {
-			e.preventDefault();
-			handleFeaturesSubmit();
-		} else if (e.key === 'Escape') {
-			setShowSuggestions(false);
-		}
-	}, [handleFeaturesSubmit]);
+	const selectStyles = useMemo((): StylesConfig<{ value: string; label: string; path?: string }, true> => ({
+		control: (base) => ({
+			...base,
+			backgroundColor: 'var(--vscode-input-background)',
+			borderColor: 'var(--vscode-input-border)',
+			color: 'var(--vscode-input-foreground)',
+			boxShadow: 'none',
+			'&:hover': { borderColor: 'var(--vscode-focusBorder)' },
+		}),
+		input: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
+		menu: (base) => ({
+			...base,
+			backgroundColor: 'var(--vscode-dropdown-background)',
+			border: '1px solid var(--vscode-dropdown-border)',
+			zIndex: 100,
+		}),
+		option: (base, state) => ({
+			...base,
+			backgroundColor: state.isFocused
+				? 'var(--vscode-list-hoverBackground)'
+				: state.isSelected
+					? 'var(--vscode-list-activeSelectionBackground)'
+					: 'transparent',
+			color: state.isSelected
+				? 'var(--vscode-list-activeSelectionForeground)'
+				: 'var(--vscode-dropdown-foreground)',
+			cursor: 'pointer',
+		}),
+		multiValue: (base) => ({
+			...base,
+			backgroundColor: 'var(--vscode-badge-background)',
+		}),
+		multiValueLabel: (base, { data }) => ({
+			...base,
+			color: 'var(--vscode-badge-foreground)',
+			cursor: data.path ? 'pointer' : 'default',
+		}),
+		multiValueRemove: (base) => ({
+			...base,
+			color: 'var(--vscode-badge-foreground)',
+			'&:hover': {
+				backgroundColor: 'var(--vscode-inputValidation-errorBackground)',
+				color: 'var(--vscode-errorForeground)',
+			},
+		}),
+		placeholder: (base) => ({ ...base, color: 'var(--vscode-input-placeholderForeground)' }),
+		indicatorSeparator: (base) => ({ ...base, backgroundColor: 'var(--vscode-input-border)' }),
+		dropdownIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
+		clearIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
+	}), []);
+
+	const selectComponents = useMemo(() => ({
+		MultiValueLabel: (props: React.ComponentProps<typeof SelectComponents.MultiValueLabel>) => {
+			const path = (props.data as { path?: string }).path;
+			return (
+				<div
+					onClick={() => path && handleOpenFile(path)}
+					style={{ cursor: path ? 'pointer' : 'default', display: 'flex' }}
+				>
+					<SelectComponents.MultiValueLabel {...props} />
+				</div>
+			);
+		},
+	}), [handleOpenFile]);
 
 	const valueTypes = useMemo(() => [
 		{
@@ -164,26 +180,6 @@ export const PreviewApp: React.FC = () => {
 		},
 	], []);
 
-	const displayFeatures = useMemo(() => {
-		if (!previewData) return [];
-		const inputFeatures = parseFeatures(featuresInput);
-		return inputFeatures.map(f => {
-			const isCanonical = previewData.allFeatureNames.includes(f);
-			const path = isCanonical ? (previewData.featurePaths[f] ?? null) : null;
-			let aliasOf: string | null = null;
-			if (!isCanonical) {
-				for (const [name, aliases] of Object.entries(previewData.featureAliases)) {
-					if (aliases.includes(f)) {
-						aliasOf = name;
-						break;
-					}
-				}
-			}
-			const resolvedPath = path ?? (aliasOf ? (previewData.featurePaths[aliasOf] ?? null) : null);
-			return { feature: f, path: resolvedPath, aliasOf };
-		});
-	}, [previewData, featuresInput, parseFeatures]);
-
 	const configurableStringsLabel = previewData?.areConfigurableStringsEnabled
 		? '✓ Configurable Strings Enabled'
 		: '✗ Configurable Strings Disabled';
@@ -217,19 +213,6 @@ export const PreviewApp: React.FC = () => {
 						{configurableStringsLabel}
 					</button>
 
-					{/* Expand/Collapse all */}
-					<button
-						onClick={() => setExpandAll(prev => prev === true ? false : true)}
-						style={{
-							padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
-							backgroundColor: 'var(--vscode-button-secondaryBackground)',
-							color: 'var(--vscode-button-secondaryForeground)',
-							border: '1px solid var(--vscode-button-border, transparent)',
-						}}
-					>
-						{expandAll === true ? '⊟ Collapse All' : '⊞ Expand All'}
-					</button>
-
 					{/* Graph toggle */}
 					<button
 						onClick={() => setShowGraph(prev => !prev)}
@@ -245,51 +228,23 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{/* Features input box */}
+			{/* Features input */}
 			{previewData && (
-				<div style={{ marginBottom: '1rem', position: 'relative' }}>
+				<div style={{ marginBottom: '1rem' }}>
 					<strong>Features:</strong>
 					<div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'flex-start' }}>
-						<div style={{ position: 'relative', flex: 1 }}>
-							<input
-								ref={inputRef}
-								type="text"
-								value={featuresInput}
-								onChange={handleFeaturesInputChange}
-								onKeyDown={handleFeaturesKeyDown}
-								onBlur={() => {
-									blurTimeoutRef.current = setTimeout(() => setShowSuggestions(false), 150);
-								}}
-								placeholder="Enter feature names, comma-separated..."
-								style={{
-									width: '100%', padding: '6px 8px', fontSize: '0.9rem', borderRadius: '3px',
-									backgroundColor: 'var(--vscode-input-background)',
-									color: 'var(--vscode-input-foreground)',
-									border: '1px solid var(--vscode-input-border)',
-									boxSizing: 'border-box' as const,
-								}}
+						<div style={{ flex: 1 }}>
+							<Select
+								isMulti
+								options={selectOptions}
+								value={selectedFeatures}
+								onChange={handleFeaturesChange}
+								placeholder="Search and select features..."
+								styles={selectStyles}
+								components={selectComponents}
+								menuPortalTarget={document.body}
+								menuPosition="fixed"
 							/>
-							{showSuggestions && (
-								<div style={{
-									position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-									backgroundColor: 'var(--vscode-dropdown-background)',
-									border: '1px solid var(--vscode-dropdown-border)',
-									borderRadius: '3px', maxHeight: '200px', overflowY: 'auto' as const,
-								}}
-								>
-									{suggestions.map((s, i) => (
-										<div
-											key={i}
-											onMouseDown={() => handleSuggestionClick(s)}
-											style={{ padding: '4px 8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--vscode-dropdown-foreground)' }}
-											onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--vscode-list-hoverBackground)')}
-											onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
-										>
-											{s}
-										</div>
-									))}
-								</div>
-							)}
 						</div>
 						<button
 							onClick={handleFeaturesSubmit}
@@ -303,34 +258,6 @@ export const PreviewApp: React.FC = () => {
 							Preview
 						</button>
 					</div>
-
-					{/* Clickable feature pills showing exact input */}
-					{displayFeatures.length > 0 && (
-						<div style={{
-							marginTop: '0.5rem', padding: '0.4rem 0.5rem', borderRadius: '4px',
-							backgroundColor: 'var(--vscode-textCodeBlock-background)',
-							border: '1px solid var(--vscode-widget-border)',
-							display: 'flex', flexWrap: 'wrap' as const, gap: '0.3rem',
-						}}
-						>
-							{displayFeatures.map((f, i) => (
-								<span
-									key={i}
-									onClick={() => f.path && handleOpenFile(f.path)}
-									title={f.aliasOf ? `Alias for: ${f.aliasOf}` : (f.path ?? '')}
-									style={{
-										padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem',
-										backgroundColor: f.aliasOf ? 'var(--vscode-badge-background)' : 'var(--vscode-button-secondaryBackground)',
-										color: f.aliasOf ? 'var(--vscode-badge-foreground)' : 'var(--vscode-button-secondaryForeground)',
-										cursor: f.path ? 'pointer' : 'default',
-										border: '1px solid var(--vscode-widget-border)',
-									}}
-								>
-									{f.feature}{f.aliasOf ? ` [${f.aliasOf}]` : ''}
-								</span>
-							))}
-						</div>
-					)}
 				</div>
 			)}
 
@@ -387,7 +314,22 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{previewData && !previewData.error && <h3 style={{ color: 'var(--vscode-foreground)' }}>Configuration:</h3>}
+			{previewData && !previewData.error && (
+				<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+					<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Configuration:</h3>
+					<button
+						onClick={() => setExpandAll(prev => prev === true ? false : true)}
+						style={{
+							padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+							backgroundColor: 'var(--vscode-button-secondaryBackground)',
+							color: 'var(--vscode-button-secondaryForeground)',
+							border: '1px solid var(--vscode-button-border, transparent)',
+						}}
+					>
+						{expandAll === true ? '⊟ Collapse All' : '⊞ Expand All'}
+					</button>
+				</div>
+			)}
 
 			{previewData?.isUnsaved && (
 				<div
@@ -411,6 +353,7 @@ export const PreviewApp: React.FC = () => {
 					}}
 				>
 					<JsonViewer
+						key={`json-${String(expandAll)}`}
 						value={previewData.config}
 						theme={theme}
 						collapseStringsAfterLength={120}

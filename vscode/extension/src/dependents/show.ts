@@ -54,7 +54,11 @@ export class OptifyDependentsProvider implements vscode.InlayHintsProvider {
                 const part = new vscode.InlayHintLabelPart(`"${dep}"`);
                 const targetPath = featuresWithMetadata[dep]?.path();
                 if (targetPath) {
-                    part.location = new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
+                    part.command = {
+                        title: dep,
+                        command: 'vscode.open',
+                        arguments: [vscode.Uri.file(targetPath)],
+                    };
                 }
                 labelParts.push(part);
 
