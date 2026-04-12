@@ -25,9 +25,10 @@ const [filter, setFilter] = useState('');
 
 const isDark = theme === 'dark';
 
-const enabledColor = isDark ? '#4ec9b0' : '#0098a6';
-const noImportsColor = isDark ? '#569cd6' : '#0070c1';
-const defaultColor = isDark ? '#9cdcfe' : '#001080';
+// Material Design colors — distinct enough to tell apart at a glance.
+const enabledColor = isDark ? '#66bb6a' : '#388e3c';    // Material Green 400 / 700
+const hasImportsColor = isDark ? '#42a5f5' : '#1565c0'; // Material Blue 400 / 800
+const leafColor = isDark ? '#ffa726' : '#e65100';       // Material Orange 400 / 900
 
 const graphNodes: ReagraphNode[] = useMemo(() => {
 const f = filter.toLowerCase();
@@ -36,10 +37,10 @@ return nodes
 .map(n => ({
 id: n.id,
 label: n.id,
-fill: n.isEnabled ? enabledColor : n.hasImports ? defaultColor : noImportsColor,
+fill: n.isEnabled ? enabledColor : n.hasImports ? hasImportsColor : leafColor,
 data: { path: n.path },
 }));
-}, [nodes, filter, enabledColor, defaultColor, noImportsColor]);
+}, [nodes, filter, enabledColor, hasImportsColor, leafColor]);
 
 const visibleNodeIds = useMemo(() => new Set(graphNodes.map(n => n.id)), [graphNodes]);
 
@@ -106,8 +107,8 @@ borderRadius: '3px', width: '140px',
 </div>
 <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: mutedColor, marginBottom: '0.5rem' }}>
 <span><span style={{ color: enabledColor }}>&#9679;</span> Enabled</span>
-<span><span style={{ color: noImportsColor }}>&#9679;</span> No imports</span>
-<span><span style={{ color: defaultColor }}>&#9679;</span> Has imports</span>
+<span><span style={{ color: hasImportsColor }}>&#9679;</span> Has imports</span>
+<span><span style={{ color: leafColor }}>&#9679;</span> No imports</span>
 </div>
 <div style={{ height: '600px', border: '1px solid var(--vscode-widget-border)', borderRadius: '4px', overflow: 'hidden' }}>
 {graphNodes.length > 0

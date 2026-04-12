@@ -1,38 +1,7 @@
-export interface DependentInfo {
-	name: string;
-	path: string;
-}
-
-export interface FeatureGraphNode {
-	id: string;
-	path: string;
-	isEnabled: boolean;
-	hasImports: boolean;
-}
-
-export interface FeatureGraphEdge {
-	source: string;
-	target: string;
-}
-
-export interface FeatureGraphData {
-	nodes: FeatureGraphNode[];
-	edges: FeatureGraphEdge[];
-}
-
-export interface PreviewData {
-	features: string[];
-	config: any;
-	dependents?: DependentInfo[] | null;
-	isUnsaved: boolean;
-	error?: string;
-	areConfigurableStringsEnabled: boolean;
-	areConfigurableStringsEnabledDefault: boolean;
-	allFeatureNames: string[];
-	featureAliases: Record<string, string[]>;
-	featurePaths: Record<string, string>;
-	graphData?: FeatureGraphData;
-}
+// Import shared data types from the extension host side.
+// Using `import type` so nothing from preview.ts is included in the webview bundle.
+import type { DependentInfo, FeatureGraphNode, FeatureGraphEdge, FeatureGraphData, PreviewData } from '../preview';
+export type { DependentInfo, FeatureGraphNode, FeatureGraphEdge, FeatureGraphData, PreviewData };
 
 export interface UpdateConfigMessage {
 	type: 'updateConfig';

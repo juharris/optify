@@ -19,7 +19,9 @@ export interface FeatureGraphNode {
 }
 
 export interface FeatureGraphEdge {
+	/** The feature that imports the target (the importer). */
 	source: string;
+	/** The feature being imported (the dependency). */
 	target: string;
 }
 
@@ -98,10 +100,15 @@ export class PreviewBuilder {
 			path: featuresWithMetadata[name]?.path() || ''
 		})) || null;
 
-		// Build feature metadata maps
+		// We must build plain serializable maps from the native metadata objects because
+		// NAPI handles cannot be sent over the webview message bus.
+		// Build all derived data in one pass.
 		const allFeatureNames = provider.features();
-		const featureAliases: Record<string, string[]> = {};
-		const featurePaths: Record<string, string> = {};
+		const featureAliases: Record<string, string[]> = Object.create(null);
+		const featurePaths: Record<string, string> = Object.create(null);
+		const hasImportsSet = new Set<string>();
+		const graphEdges: FeatureGraphEdge[] = [];
+
 		for (const name of allFeatureNames) {
 			const metadata = featuresWithMetadata[name];
 			if (metadata) {
@@ -109,25 +116,18 @@ export class PreviewBuilder {
 				if (aliases && aliases.length > 0) {
 					featureAliases[name] = aliases;
 				}
-				const path = metadata.path();
-				if (path) {
-					featurePaths[name] = path;
+				const p = metadata.path();
+				if (p) {
+					featurePaths[name] = p;
 				}
-			}
-		}
-
-		// Build graph data
-		// metadata.dependents() returns features that import this feature.
-		// Edge: dep -> name means dep imports name (source = dep, target = name)
-		const hasImportsSet = new Set<string>();
-		const graphEdges: FeatureGraphEdge[] = [];
-		for (const name of allFeatureNames) {
-			const metadata = featuresWithMetadata[name];
-			const dependentsList = metadata?.dependents();
-			if (dependentsList) {
-				for (const dep of dependentsList) {
-					graphEdges.push({ source: dep, target: name });
-					hasImportsSet.add(dep);
+				// dependents() returns features that import this feature.
+				// Edge: dep -> name means dep imports name (source = dep, target = name).
+				const dependentsList = metadata.dependents();
+				if (dependentsList) {
+					for (const dep of dependentsList) {
+						graphEdges.push({ source: dep, target: name });
+						hasImportsSet.add(dep);
+					}
 				}
 			}
 		}
@@ -135,7 +135,7 @@ export class PreviewBuilder {
 		const enabledSet = new Set(canonicalFeatures);
 		const graphNodes: FeatureGraphNode[] = allFeatureNames.map(name => ({
 			id: name,
-			path: featuresWithMetadata[name]?.path() || '',
+			path: featurePaths[name] ?? '',
 			isEnabled: enabledSet.has(name),
 			hasImports: hasImportsSet.has(name),
 		}));

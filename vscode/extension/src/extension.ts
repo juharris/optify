@@ -20,7 +20,6 @@ interface ActivePreview {
 	debounceTimer?: NodeJS.Timeout
 	updatePreview: () => void
 	areConfigurableStringsEnabled: boolean
-	configurableStringsDefault: boolean
 	customFeatures?: string[]
 }
 
@@ -252,7 +251,6 @@ export function activate(context: vscode.ExtensionContext) {
 			documentChangeListener,
 			updatePreview,
 			areConfigurableStringsEnabled: configurableStringsDefault,
-			configurableStringsDefault,
 		});
 
 		// Clean up when panel is closed

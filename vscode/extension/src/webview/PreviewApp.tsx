@@ -21,6 +21,7 @@ export const PreviewApp: React.FC = () => {
 	const [featuresInputDirty, setFeaturesInputDirty] = useState(false);
 
 	useEffect(() => {
+		// Detect VS Code theme (dark / light / high-contrast) once on mount.
 		const body = document.body;
 		const isDark = body.classList.contains('vscode-dark') || body.classList.contains('vscode-high-contrast');
 		setTheme(isDark ? 'dark' : 'light');
@@ -199,19 +200,21 @@ export const PreviewApp: React.FC = () => {
 			{/* Controls toolbar */}
 			{previewData && (
 				<div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem', alignItems: 'center' }}>
-					{/* Configurable strings toggle */}
-					<button
-						onClick={handleToggleConfigurableStrings}
-						title={`Default from config: ${previewData.areConfigurableStringsEnabledDefault ? 'enabled' : 'disabled'}`}
-						style={{
-							padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
-							backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
-							color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
-							border: '1px solid var(--vscode-button-border, transparent)',
-						}}
-					>
-						{configurableStringsLabel}
-					</button>
+					{/* Only show configurable strings toggle when the config default enables it; otherwise they won't work */}
+					{previewData.areConfigurableStringsEnabledDefault && (
+						<button
+							onClick={handleToggleConfigurableStrings}
+							title={`Default from config: ${previewData.areConfigurableStringsEnabledDefault ? 'enabled' : 'disabled'}`}
+							style={{
+								padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+								backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
+								color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
+								border: '1px solid var(--vscode-button-border, transparent)',
+							}}
+						>
+							{configurableStringsLabel}
+						</button>
+					)}
 
 					{/* Graph toggle */}
 					<button
@@ -228,7 +231,7 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{/* Features input */}
+			{/* Features input box */}
 			{previewData && (
 				<div style={{ marginBottom: '1rem' }}>
 					<strong>Features:</strong>
