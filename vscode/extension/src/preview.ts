@@ -11,12 +11,35 @@ export interface DependentInfo {
 	path: string;
 }
 
+export interface FeatureGraphNode {
+	id: string;
+	path: string;
+	isEnabled: boolean;
+	hasImports: boolean;
+}
+
+export interface FeatureGraphEdge {
+	source: string;
+	target: string;
+}
+
+export interface FeatureGraphData {
+	nodes: FeatureGraphNode[];
+	edges: FeatureGraphEdge[];
+}
+
 export interface PreviewData {
 	features: string[];
 	config: any;
 	dependents: DependentInfo[] | null;
 	isUnsaved: boolean;
 	error?: string;
+	areConfigurableStringsEnabled: boolean;
+	areConfigurableStringsEnabledDefault: boolean;
+	allFeatureNames: string[];
+	featureAliases: Record<string, string[]>;
+	featurePaths: Record<string, string>;
+	graphData?: FeatureGraphData;
 }
 
 export class PreviewBuilder {
@@ -51,11 +74,16 @@ export class PreviewBuilder {
 	buildPreviewData(
 		canonicalFeatures: string[],
 		provider: OptionsWatcher,
-		editingOptions?: PreviewWhileEditingOptions
+		editingOptions?: PreviewWhileEditingOptions,
+		areConfigurableStringsEnabled?: boolean,
 	): PreviewData {
 		const preferences = new GetOptionsPreferences();
-		preferences.enableConfigurableStrings();
 		preferences.setSkipFeatureNameConversion(true);
+		if (areConfigurableStringsEnabled) {
+			preferences.enableConfigurableStrings();
+		} else {
+			preferences.disableConfigurableStrings();
+		}
 		if (editingOptions?.overrides) {
 			preferences.setOverridesJson(editingOptions.overrides);
 		}
@@ -69,11 +97,61 @@ export class PreviewBuilder {
 			path: featuresWithMetadata[name]?.path() || ''
 		})) || null;
 
+		// Build feature metadata maps
+		const allFeatureNames = provider.features();
+		const featureAliases: Record<string, string[]> = {};
+		const featurePaths: Record<string, string> = {};
+		for (const name of allFeatureNames) {
+			const metadata = featuresWithMetadata[name];
+			if (metadata) {
+				const aliases = metadata.aliases();
+				if (aliases && aliases.length > 0) {
+					featureAliases[name] = aliases;
+				}
+				const path = metadata.path();
+				if (path) {
+					featurePaths[name] = path;
+				}
+			}
+		}
+
+		// Build graph data
+		// metadata.dependents() returns features that import this feature.
+		// Edge: dep -> name means dep imports name (source = dep, target = name)
+		const hasImportsSet = new Set<string>();
+		const graphEdges: FeatureGraphEdge[] = [];
+		for (const name of allFeatureNames) {
+			const metadata = featuresWithMetadata[name];
+			const dependentsList = metadata?.dependents();
+			if (dependentsList) {
+				for (const dep of dependentsList) {
+					graphEdges.push({ source: dep, target: name });
+					hasImportsSet.add(dep);
+				}
+			}
+		}
+
+		const enabledSet = new Set(canonicalFeatures);
+		const graphNodes: FeatureGraphNode[] = allFeatureNames.map(name => ({
+			id: name,
+			path: featuresWithMetadata[name]?.path() || '',
+			isEnabled: enabledSet.has(name),
+			hasImports: hasImportsSet.has(name),
+		}));
+
+		const graphData: FeatureGraphData = { nodes: graphNodes, edges: graphEdges };
+
 		return {
 			features: canonicalFeatures,
 			config: builtConfig,
 			dependents,
 			isUnsaved: !!editingOptions,
+			areConfigurableStringsEnabled: !!areConfigurableStringsEnabled,
+			areConfigurableStringsEnabledDefault: !!areConfigurableStringsEnabled,
+			allFeatureNames,
+			featureAliases,
+			featurePaths,
+			graphData,
 		};
 	}
 }
