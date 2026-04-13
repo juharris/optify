@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import Select, { MultiValue, StylesConfig, components as SelectComponents } from 'react-select';
+import React, { useState, useEffect, useCallback, useMemo, Component, ErrorInfo, ReactNode } from 'react';
+import Select, { GroupBase, MultiValue, MultiValueGenericProps, StylesConfig, components as SelectComponents } from 'react-select';
 import { JsonViewer } from '@textea/json-viewer';
 import { ImportGraph } from './ImportGraph';
 import { PreviewData, MessageFromExtension, MessageToExtension } from './types';
@@ -12,10 +12,38 @@ declare const acquireVsCodeApi: () => {
 
 const vscode = acquireVsCodeApi();
 
+interface ErrorBoundaryProps {
+	children: ReactNode;
+	fallback: (error: Error) => ReactNode;
+}
+
+interface ErrorBoundaryState {
+	error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+	state: ErrorBoundaryState = { error: null };
+
+	static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+		return { error };
+	}
+
+	componentDidCatch(error: Error, info: ErrorInfo) {
+		console.error('Component error:', error, info);
+	}
+
+	render() {
+		if (this.state.error) {
+			return this.props.fallback(this.state.error);
+		}
+		return this.props.children;
+	}
+}
+
 export const PreviewApp: React.FC = () => {
 	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-	const [showGraph, setShowGraph] = useState(false);
+	const [showGraph, setShowGraph] = useState(true);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
 	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
 	const [featuresInputDirty, setFeaturesInputDirty] = useState(false);
@@ -51,13 +79,13 @@ export const PreviewApp: React.FC = () => {
 	}, []);
 
 	const handleToggleConfigurableStrings = useCallback(() => {
-		if (!previewData) {return;}
+		if (!previewData) { return; }
 		const newValue = !previewData.areConfigurableStringsEnabled;
 		vscode.postMessage({ command: 'setConfigurableStrings', enabled: newValue });
 	}, [previewData]);
 
 	const selectOptions = useMemo(() => {
-		if (!previewData) {return [];}
+		if (!previewData) { return []; }
 		const opts: Array<{ value: string; label: string; path?: string }> = [];
 		for (const name of previewData.allFeatureNames) {
 			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
@@ -131,7 +159,7 @@ export const PreviewApp: React.FC = () => {
 	}), []);
 
 	const selectComponents = useMemo(() => ({
-		MultiValueLabel: (props: React.ComponentProps<typeof SelectComponents.MultiValueLabel>) => {
+		MultiValueLabel: (props: MultiValueGenericProps<{ value: string; label: string; path?: string }, true, GroupBase<{ value: string; label: string; path?: string }>>) => {
 			const path = (props.data as { path?: string }).path;
 			return (
 				<div
@@ -197,40 +225,6 @@ export const PreviewApp: React.FC = () => {
 				Configuration Preview
 			</h2>
 
-			{/* Controls toolbar */}
-			{previewData && (
-				<div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem', alignItems: 'center' }}>
-					{/* Only show configurable strings toggle when the config default enables it; otherwise they won't work */}
-					{previewData.areConfigurableStringsEnabledDefault && (
-						<button
-							onClick={handleToggleConfigurableStrings}
-							title={`Default from config: ${previewData.areConfigurableStringsEnabledDefault ? 'enabled' : 'disabled'}`}
-							style={{
-								padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
-								backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
-								color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
-								border: '1px solid var(--vscode-button-border, transparent)',
-							}}
-						>
-							{configurableStringsLabel}
-						</button>
-					)}
-
-					{/* Graph toggle */}
-					<button
-						onClick={() => setShowGraph(prev => !prev)}
-						style={{
-							padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
-							backgroundColor: showGraph ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
-							color: showGraph ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
-							border: '1px solid var(--vscode-button-border, transparent)',
-						}}
-					>
-						{showGraph ? '⧁ Hide Graph' : '⧁ Show Graph'}
-					</button>
-				</div>
-			)}
-
 			{/* Features input box */}
 			{previewData && (
 				<div style={{ marginBottom: '1rem' }}>
@@ -290,14 +284,40 @@ export const PreviewApp: React.FC = () => {
 			)}
 
 			{/* Import graph */}
-			{showGraph && previewData?.graphData && (
+			{previewData?.graphData && (
 				<div style={{ marginBottom: '1rem' }}>
-					<h3 style={{ color: 'var(--vscode-foreground)' }}>Import Graph</h3>
-					<ImportGraph
-						graphData={previewData.graphData}
-						theme={theme}
-						onOpenFile={handleOpenFile}
-					/>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+						<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Import Graph</h3>
+						<button
+							onClick={() => setShowGraph(prev => !prev)}
+							style={{
+								padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+								backgroundColor: 'var(--vscode-button-secondaryBackground)',
+								color: 'var(--vscode-button-secondaryForeground)',
+								border: '1px solid var(--vscode-button-border, transparent)',
+							}}
+						>
+							{showGraph ? 'Hide Import Graph' : 'Show Import Graph'}
+						</button>
+					</div>
+					{showGraph && (
+						<ErrorBoundary fallback={(error) => (
+							<div style={{
+								padding: '1rem', borderRadius: '4px', whiteSpace: 'pre-wrap' as const,
+								backgroundColor: 'var(--vscode-inputValidation-errorBackground)',
+								border: '1px solid var(--vscode-inputValidation-errorBorder)',
+								color: 'var(--vscode-inputValidation-errorForeground)',
+							}}>
+								Failed to render graph: {error.message}
+							</div>
+						)}>
+							<ImportGraph
+								graphData={previewData.graphData}
+								theme={theme}
+								onOpenFile={handleOpenFile}
+							/>
+						</ErrorBoundary>
+					)}
 				</div>
 			)}
 
@@ -319,7 +339,7 @@ export const PreviewApp: React.FC = () => {
 
 			{previewData && !previewData.error && (
 				<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
-					<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Configuration:</h3>
+					<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Configuration</h3>
 					<button
 						onClick={() => setExpandAll(prev => prev === true ? false : true)}
 						style={{
@@ -331,6 +351,20 @@ export const PreviewApp: React.FC = () => {
 					>
 						{expandAll === true ? '⊟ Collapse All' : '⊞ Expand All'}
 					</button>
+					{/* Only show configurable strings toggle when the config default enables it; otherwise they won't work */}
+					{previewData.areConfigurableStringsEnabledDefault && (
+						<button
+							onClick={handleToggleConfigurableStrings}
+							style={{
+								padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+								backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
+								color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
+								border: '1px solid var(--vscode-button-border, transparent)',
+							}}
+						>
+							{configurableStringsLabel}
+						</button>
+					)}
 				</div>
 			)}
 
@@ -361,7 +395,10 @@ export const PreviewApp: React.FC = () => {
 						theme={theme}
 						collapseStringsAfterLength={120}
 						defaultInspectControl={expandAll !== undefined
-							? () => expandAll
+							? expandAll
+								? () => true
+								// Show top-level keys but collapse their values
+								: (path: (string | number)[]) => path.length < 1
 							: (path, value) => {
 								if (path.length < 2) { return true; }
 								if (value) {
