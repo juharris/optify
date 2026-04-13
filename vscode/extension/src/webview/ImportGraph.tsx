@@ -28,6 +28,9 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 	const containerRef = useRef<HTMLDivElement>(null);
 	const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink> | undefined>(undefined);
 	const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
+	const [hoverNode, setHoverNode] = useState<GraphNode | null>(null);
+	// Track label bounding boxes per frame to skip overlapping labels.
+	const drawnLabelsRef = useRef<Array<{ x1: number; y1: number; x2: number; y2: number }>>([]);
 
 	const isDark = theme === 'dark';
 
@@ -39,6 +42,7 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 	const mutedColor = isDark ? '#9a9a9a' : '#555555';
 	const backgroundColor = isDark ? '#1e1e1e' : '#ffffff';
 	const linkColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)';
+	const dimmedColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
 
 	useEffect(() => {
 		if (!containerRef.current) { return; }
@@ -54,7 +58,19 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 		return () => observer.disconnect();
 	}, []);
 
-	const filteredNodeIds = useMemo(() => {
+	// Build a neighbor map for hover highlighting and filter expansion.
+	const neighborMap = useMemo(() => {
+		const map = new Map<string, Set<string>>();
+		for (const e of edges) {
+			if (!map.has(e.source)) { map.set(e.source, new Set()); }
+			if (!map.has(e.target)) { map.set(e.target, new Set()); }
+			map.get(e.source)!.add(e.target);
+			map.get(e.target)!.add(e.source);
+		}
+		return map;
+	}, [edges]);
+
+	const directMatchIds = useMemo(() => {
 		const f = filter.toLowerCase();
 		return new Set(
 			nodes
@@ -62,6 +78,26 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 				.map(n => n.id)
 		);
 	}, [nodes, filter]);
+
+	// Include 1-degree neighbors of direct filter matches so the graph stays connected.
+	const filteredNodeIds = useMemo(() => {
+		const f = filter.toLowerCase();
+		if (!f) { return directMatchIds; }
+		const expanded = new Set(directMatchIds);
+		for (const id of directMatchIds) {
+			const neighbors = neighborMap.get(id);
+			if (neighbors) {
+				for (const n of neighbors) { expanded.add(n); }
+			}
+		}
+		return expanded;
+	}, [directMatchIds, neighborMap, filter]);
+
+	const isHighlighted = useCallback((nodeId: string) => {
+		if (!hoverNode) { return true; }
+		if (nodeId === hoverNode.id) { return true; }
+		return neighborMap.get(hoverNode.id)?.has(nodeId) ?? false;
+	}, [hoverNode, neighborMap]);
 
 	const graphData2D = useMemo(() => ({
 		nodes: nodes
@@ -84,17 +120,24 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 		}
 	}, [onOpenFile]);
 
+	const handleNodeHover = useCallback((node: GraphNode | null) => {
+		setHoverNode(node);
+	}, []);
+
 	const nodeCanvasObject = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+		const highlighted = isHighlighted(node.id);
+		const isFilterNeighbor = filter && !directMatchIds.has(node.id);
 		const label = node.id;
 		const fontSize = Math.max(12 / globalScale, 2);
 		ctx.font = `${fontSize}px sans-serif`;
+		ctx.globalAlpha = !highlighted ? 0.15 : isFilterNeighbor ? 0.35 : 1;
 
-		const nodeRadius = 4;
+		const nodeRadius = 5;
 		if (node.isEnabled) {
 			// Star shape distinguishes enabled (selected) features from other nodes.
 			const spikes = 5;
-			const outerRadius = nodeRadius + 1.5;
-			const innerRadius = nodeRadius / 2;
+			const outerRadius = nodeRadius * 4;
+			const innerRadius = nodeRadius * 2;
 			ctx.beginPath();
 			for (let i = 0; i < spikes * 2; i++) {
 				const r = i % 2 === 0 ? outerRadius : innerRadius;
@@ -111,12 +154,24 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 
 		// Only draw labels when zoomed in enough.
 		if (globalScale > 0.7) {
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'top';
-			ctx.fillStyle = textColor;
-			ctx.fillText(label, node.x!, node.y! + nodeRadius + 1);
+			const textWidth = ctx.measureText(label).width;
+			const labelX1 = node.x! - textWidth / 2;
+			const labelY1 = node.y! + nodeRadius + 1;
+			const labelX2 = labelX1 + textWidth;
+			const labelY2 = labelY1 + fontSize;
+			const overlaps = drawnLabelsRef.current.some(
+				r => labelX1 < r.x2 && labelX2 > r.x1 && labelY1 < r.y2 && labelY2 > r.y1
+			);
+			if (!overlaps) {
+				drawnLabelsRef.current.push({ x1: labelX1, y1: labelY1, x2: labelX2, y2: labelY2 });
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'top';
+				ctx.fillStyle = textColor;
+				ctx.fillText(label, node.x!, labelY1);
+			}
 		}
-	}, [getNodeColor, textColor]);
+		ctx.globalAlpha = 1;
+	}, [getNodeColor, textColor, isHighlighted, filter, directMatchIds]);
 
 	const btnBase: React.CSSProperties = {
 		padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
@@ -195,6 +250,7 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 						width={dimensions.width}
 						height={dimensions.height}
 						backgroundColor={backgroundColor}
+						onRenderFramePre={() => { drawnLabelsRef.current = []; }}
 						nodeCanvasObject={nodeCanvasObject}
 						nodePointerAreaPaint={(node: GraphNode, color, ctx) => {
 							ctx.beginPath();
@@ -202,10 +258,18 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 							ctx.fillStyle = color;
 							ctx.fill();
 						}}
-						linkColor={() => linkColor}
+						autoPauseRedraw={false}
+						linkColor={(link: any) => {
+							if (!hoverNode) { return linkColor; }
+							const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+							const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+							if (sourceId === hoverNode.id || targetId === hoverNode.id) { return linkColor; }
+							return dimmedColor;
+						}}
 						linkWidth={4}
 						linkDirectionalArrowLength={4}
 						linkDirectionalArrowRelPos={1}
+						onNodeHover={handleNodeHover}
 						onNodeClick={handleNodeClick}
 						cooldownTicks={100}
 						d3VelocityDecay={0.5}

@@ -7,13 +7,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 1.8.0
 
-- Preview: Add import graph visualization with force-directed and DAG layout modes.
 - Preview: Add feature multi-select picker with alias support for previewing multiple features.
-- Preview: Auto-update preview when features are added or removed.
+- Preview: Add import graph visualization with force-directed and DAG layout modes.
 - Preview: Add configurable strings toggle button in the Configuration section.
 - Preview: Add expand/collapse all for the configuration JSON viewer.
 - Dependents: Convert inline dependents display to clickable inlay hints that navigate to files.
 - Hover: Add "Open Preview" links in the dependents hover tooltip.
+- Graph: Highlight hovered node's imports and dependents by dimming unrelated nodes and links.
+- Graph: Filter shows 1-degree connected neighbors with reduced opacity to preserve graph context.
 
 ## 1.7.1
 
