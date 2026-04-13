@@ -1,4 +1,4 @@
-// Caching utilities for getOptions and getAllOptions
+// Caching utilities for `getOptions` and `getAllOptions`.
 
 import { LRUCache } from "lru-cache";
 import * as nativeBinding from "../index";
@@ -19,8 +19,8 @@ type OptionsCache = Map<string, NonNullable<unknown>> | LRUCache<string, NonNull
 
 /** Instance with dynamic properties for caching. */
 export interface CacheableInstance {
-	_getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
 	_getAllOptions(featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
+	_getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
 	getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
 	lastModified?(): number;
 	[FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
@@ -48,6 +48,11 @@ function getSchemaId(instance: CacheableInstance, schema: object): number {
 	return newId;
 }
 
+/** Creates a cache key for getAllOptions caching. */
+function createAllOptionsCacheKey(featureNames: string[], areConfigurableStringsEnabled: boolean): string {
+	return JSON.stringify([featureNames, areConfigurableStringsEnabled]);
+}
+
 /**
  * Creates a cache key for getOptions caching.
  * Note: Constraints are not in the key because features are already filtered.
@@ -60,11 +65,6 @@ function createOptionsCacheKey(
 	schema: object,
 ): string {
 	return JSON.stringify([key, featureNames, areConfigurableStringsEnabled, getSchemaId(instance, schema)]);
-}
-
-/** Creates a cache key for getAllOptions caching. */
-function createAllOptionsCacheKey(featureNames: string[], areConfigurableStringsEnabled: boolean): string {
-	return JSON.stringify([featureNames, areConfigurableStringsEnabled]);
 }
 
 function createOptionsCache(cacheInitOptions?: CacheInitOptions | null): OptionsCache {
@@ -93,6 +93,49 @@ export function resetCaches(instance: CacheableInstance): void {
 export function initCache(instance: CacheableInstance, cacheInitOptions?: CacheInitOptions | null): OptionsCache {
 	instance[CACHE_INIT_OPTIONS_KEY] = cacheInitOptions;
 	return (instance[OPTIONS_CACHE_KEY] = createOptionsCache(cacheInitOptions));
+}
+
+/**
+ * Shared implementation of getAllOptions with optional caching support.
+ * Caching is enabled when `cacheOptions` is provided. The cache is lazily
+ * initialized on first use if `init` was not called.
+ */
+export function getAllOptionsWithCaching(
+	instance: CacheableInstance,
+	featureNames: string[],
+	preferences: nativeBinding.GetOptionsPreferences | null | undefined,
+	cacheOptions: CacheOptions | null | undefined,
+): unknown {
+	if (cacheOptions) {
+		if (preferences?.hasOverrides?.()) {
+			throw new Error("Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.");
+		}
+
+		const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
+		const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
+
+		const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
+
+		const cache = instance[OPTIONS_CACHE_KEY] ?? initCache(instance);
+		const cacheKey = createAllOptionsCacheKey(filteredFeatures, areConfigurableStringsEnabled);
+		const cachedResult = cache.get(cacheKey);
+		if (cachedResult !== undefined) {
+			return cachedResult;
+		}
+
+		// For cache miss, create preferences that skip feature name conversion since features are already filtered.
+		const cacheMissPreferences = new nativeBinding.GetOptionsPreferences();
+		cacheMissPreferences.setSkipFeatureNameConversion(true);
+		if (areConfigurableStringsEnabled) {
+			cacheMissPreferences.enableConfigurableStrings();
+		}
+
+		const result = instance._getAllOptions(filteredFeatures, cacheMissPreferences);
+		cache.set(cacheKey, result as NonNullable<unknown>);
+		return result;
+	}
+
+	return instance._getAllOptions(featureNames, preferences);
 }
 
 /**
@@ -140,47 +183,4 @@ export function getOptionsWithCaching<T>(
 	}
 
 	return schema.parse(instance._getOptions(key, featureNames, preferences));
-}
-
-/**
- * Shared implementation of getAllOptions with optional caching support.
- * Caching is enabled when `cacheOptions` is provided. The cache is lazily
- * initialized on first use if `init` was not called.
- */
-export function getAllOptionsWithCaching(
-	instance: CacheableInstance,
-	featureNames: string[],
-	preferences: nativeBinding.GetOptionsPreferences | null | undefined,
-	cacheOptions: CacheOptions | null | undefined,
-): unknown {
-	if (cacheOptions) {
-		if (preferences?.hasOverrides?.()) {
-			throw new Error("Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.");
-		}
-
-		const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
-		const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
-
-		const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
-
-		const cache = instance[OPTIONS_CACHE_KEY] ?? initCache(instance);
-		const cacheKey = createAllOptionsCacheKey(filteredFeatures, areConfigurableStringsEnabled);
-		const cachedResult = cache.get(cacheKey);
-		if (cachedResult !== undefined) {
-			return cachedResult;
-		}
-
-		// For cache miss, create preferences that skip feature name conversion since features are already filtered.
-		const cacheMissPreferences = new nativeBinding.GetOptionsPreferences();
-		cacheMissPreferences.setSkipFeatureNameConversion(true);
-		if (areConfigurableStringsEnabled) {
-			cacheMissPreferences.enableConfigurableStrings();
-		}
-
-		const result = instance._getAllOptions(filteredFeatures, cacheMissPreferences);
-		cache.set(cacheKey, result as NonNullable<unknown>);
-		return result;
-	}
-
-	return instance._getAllOptions(featureNames, preferences);
 }

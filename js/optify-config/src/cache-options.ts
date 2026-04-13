@@ -1,6 +1,7 @@
 /**
- * Options for enabling caching of results returned by getOptions/getAllOptions.
- * Pass an instance of this class to getOptions/getAllOptions to enable caching.
+ * Options for enabling caching of serialized results returned by `getOptions`
+ * and for results of `getAllOptions`.
+ * Pass an instance of this class to methods to enable caching.
  * Subsequent calls with equivalent inputs will return the cached result.
  */
 export class CacheOptions {

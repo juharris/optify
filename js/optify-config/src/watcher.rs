@@ -125,7 +125,7 @@ impl JsOptionsWatcher {
   /// There normally isn't much of a performance difference between using
   /// `JSON.parse(get_all_options_json(...))` and `get_all_options(...)`.
   /// Large JSON objects with over 50 keys may be slightly slower with `get_all_options(...)`.
-  #[napi]
+  #[napi(js_name = "_getAllOptions")]
   pub fn get_all_options(
     &self,
     feature_names: Vec<String>,

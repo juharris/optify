@@ -97,11 +97,6 @@ declare module "../index" {
 
 // Extend OptionsProvider prototype with extra methods.
 export const OptionsProvider = nativeBinding.OptionsProvider;
-// Keep the native method so getAllOptionsWithCaching can call through without recursion.
-// This module may be evaluated multiple times in test/runtime contexts.
-if (!(OptionsProvider.prototype as any)._getAllOptions) {
-	(OptionsProvider.prototype as any)._getAllOptions = OptionsProvider.prototype.getAllOptions;
-}
 (OptionsProvider.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
 	const cachedResult = this[FEATURES_WITH_METADATA_CACHE_KEY];
 	if (cachedResult) {
@@ -114,6 +109,14 @@ if (!(OptionsProvider.prototype as any)._getAllOptions) {
 	initCache(this, cacheInitOptions);
 	return this;
 };
+(OptionsProvider.prototype as any).getAllOptions = function (
+	this: any,
+	featureNames: string[],
+	preferences?: nativeBinding.GetOptionsPreferences | null,
+	cacheOptions?: CacheOptions | null,
+): any {
+	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
+};
 (OptionsProvider.prototype as any).getOptions = function (
 	this: any,
 	key: string,
@@ -124,22 +127,9 @@ if (!(OptionsProvider.prototype as any)._getAllOptions) {
 ): any {
 	return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
 };
-(OptionsProvider.prototype as any).getAllOptions = function (
-	this: any,
-	featureNames: string[],
-	preferences?: nativeBinding.GetOptionsPreferences | null,
-	cacheOptions?: CacheOptions | null,
-): any {
-	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
-};
 
 // Extend OptionsWatcher prototype with extra methods.
 export const OptionsWatcher = nativeBinding.OptionsWatcher;
-// Keep the native method so getAllOptionsWithCaching can call through without recursion.
-// This module may be evaluated multiple times in test/runtime contexts.
-if (!(OptionsWatcher.prototype as any)._getAllOptions) {
-	(OptionsWatcher.prototype as any)._getAllOptions = OptionsWatcher.prototype.getAllOptions;
-}
 (OptionsWatcher.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
 	const cachedTime = this[FEATURES_WITH_METADATA_CACHE_TIME_KEY];
 	const lastModifiedTime = this.lastModified();
@@ -155,6 +145,25 @@ if (!(OptionsWatcher.prototype as any)._getAllOptions) {
 	initCache(this, cacheInitOptions);
 	this[CACHE_CREATION_TIME_KEY] = this.lastModified();
 	return this;
+};
+(OptionsWatcher.prototype as any).getAllOptions = function (
+	this: any,
+	featureNames: string[],
+	preferences?: nativeBinding.GetOptionsPreferences | null,
+	cacheOptions?: CacheOptions | null,
+): any {
+	// Check cache validity for watcher - reset if files have been modified
+	if (cacheOptions) {
+		const lastModifiedTime = this.lastModified();
+		const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
+
+		if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
+			resetCaches(this);
+			this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
+		}
+	}
+
+	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
 };
 (OptionsWatcher.prototype as any).getOptions = function (
 	this: any,
@@ -176,23 +185,4 @@ if (!(OptionsWatcher.prototype as any)._getAllOptions) {
 	}
 
 	return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
-};
-(OptionsWatcher.prototype as any).getAllOptions = function (
-	this: any,
-	featureNames: string[],
-	preferences?: nativeBinding.GetOptionsPreferences | null,
-	cacheOptions?: CacheOptions | null,
-): any {
-	// Check cache validity for watcher - reset if files have been modified
-	if (cacheOptions) {
-		const lastModifiedTime = this.lastModified();
-		const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
-
-		if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-			resetCaches(this);
-			this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
-		}
-	}
-
-	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
 };
