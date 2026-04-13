@@ -267,8 +267,8 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 							return dimmedColor;
 						}}
 						linkWidth={4}
-						linkDirectionalArrowLength={4}
-						linkDirectionalArrowRelPos={1}
+						linkDirectionalArrowLength={6}
+						linkDirectionalArrowRelPos={0.75}
 						onNodeHover={handleNodeHover}
 						onNodeClick={handleNodeClick}
 						cooldownTicks={100}
