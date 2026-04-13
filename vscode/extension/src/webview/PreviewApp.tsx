@@ -165,6 +165,8 @@ export const PreviewApp: React.FC = () => {
 
 	const valueTypes = useMemo(() => [
 		{
+			// Ensure that multi-line strings are displayed correctly.
+			// Without this, "\n"s are shown as spaces.
 			is: (value: any) => typeof value === 'string' && value.includes('\n'),
 			Component: (props: any) => {
 				const [isExpanded, setIsExpanded] = React.useState(false);
@@ -347,7 +349,9 @@ export const PreviewApp: React.FC = () => {
 			{previewData?.isUnsaved && (
 				<div
 					style={{
-						padding: '0.5rem', marginBottom: '1rem', borderRadius: '4px',
+						padding: '0.5rem',
+						marginBottom: '1rem',
+						borderRadius: '4px',
 						backgroundColor: 'var(--vscode-inputValidation-warningBackground)',
 						border: '1px solid var(--vscode-inputValidation-warningBorder)',
 						color: 'var(--vscode-inputValidation-warningForeground)',
@@ -360,9 +364,11 @@ export const PreviewApp: React.FC = () => {
 			{previewData && !previewData.error && (
 				<div
 					style={{
-						padding: '1rem', borderRadius: '4px', overflow: 'auto',
+						padding: '1rem',
 						backgroundColor: 'var(--vscode-textCodeBlock-background)',
 						border: '1px solid var(--vscode-widget-border)',
+						borderRadius: '4px',
+						overflow: 'auto',
 					}}
 				>
 					<JsonViewer
@@ -376,11 +382,14 @@ export const PreviewApp: React.FC = () => {
 								// Show top-level keys but collapse their values
 								: (path: (string | number)[]) => path.length < 1
 							: (path, value) => {
+								// Keep top-level nodes expanded
 								if (path.length < 2) { return true; }
 								if (value) {
+									// Collapse large objects/arrays by default
 									if (Array.isArray(value)) { return value.length < 8; }
 									if (typeof value === 'object') { return Object.keys(value).length < 8; }
 								}
+								// Show primitives
 								return true;
 							}
 						}

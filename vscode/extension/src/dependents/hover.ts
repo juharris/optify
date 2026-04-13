@@ -47,7 +47,7 @@ export class OptifyDependentsHoverProvider implements vscode.HoverProvider {
                 if (targetPath) {
                     const uri = vscode.Uri.file(targetPath);
                     const previewCommandUri = vscode.Uri.parse(
-                        `command:optify.openPreviewForFile?${encodeURIComponent(JSON.stringify(targetPath))}`
+                        `command:optify.previewFeature?${encodeURIComponent(JSON.stringify(targetPath))}`
                     );
                     return `* [${dep}](${uri.toString()}) — [Open Preview](${previewCommandUri})\n`;
                 }
@@ -56,11 +56,11 @@ export class OptifyDependentsHoverProvider implements vscode.HoverProvider {
 
             const currentFilePath = document.fileName;
             const openPreviewUri = vscode.Uri.parse(
-                `command:optify.openPreviewForFile?${encodeURIComponent(JSON.stringify(currentFilePath))}`
+                `command:optify.previewFeature?${encodeURIComponent(JSON.stringify(currentFilePath))}`
             );
             const markdown = new vscode.MarkdownString(
-                `## Dependents\nFeatures that import this one:\n${links.join('')}\n` +
-                `[Open Preview](${openPreviewUri})`
+                `[Open Preview](${openPreviewUri})\n` +
+                `## Dependents\nFeatures that import this one:\n${links.join('')}`
             );
             // Allow command URIs.
             markdown.isTrusted = true;

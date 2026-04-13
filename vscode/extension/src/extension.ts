@@ -8,7 +8,7 @@ import { OptifyDependentsHoverProvider } from './dependents/hover';
 import { OptifyDependentsProvider } from './dependents/show';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
 import { OptifyDocumentLinkProvider } from './links';
-import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveFilePathArg } from './path-utils';
 import { PreviewBuilder, PreviewWhileEditingOptions, PreviewData } from './preview';
 import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
@@ -253,20 +253,18 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	}
 
-	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async () => {
-		const activeEditor = vscode.window.activeTextEditor;
-		if (!activeEditor) {
+	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async (filePathArg?: string | vscode.Uri) => {
+		const filePath = resolveFilePathArg(filePathArg) ?? vscode.window.activeTextEditor?.document.fileName;
+		if (!filePath) {
 			vscode.window.showErrorMessage('No active editor found');
 			return;
 		}
 
-		const document = activeEditor.document;
-		const filePath = document.fileName;
-
-		outputChannel.appendLine(`Trying to get preview for file: ${filePath}`);
+		outputChannel.appendLine(`Opening preview for file: ${filePath}`);
 
 		try {
-			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			const uri = vscode.Uri.file(filePath);
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
 			if (!workspaceFolder) {
 				vscode.window.showErrorMessage("File must be in a workspace");
 				return;
@@ -278,7 +276,7 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 
-			if (!isOptifyFeatureFile(filePath, optifyRoot, workspaceFolder)) {
+			if (!resolveFilePathArg(filePathArg) && !isOptifyFeatureFile(filePath, optifyRoot, workspaceFolder)) {
 				vscode.window.showErrorMessage("Current file is not an Optify feature file");
 				return;
 			}
@@ -286,42 +284,12 @@ export function activate(context: vscode.ExtensionContext) {
 			const canonicalName = getCanonicalName(filePath, optifyRoot);
 			await openOrRevealPreview(filePath, optifyRoot, canonicalName);
 		} catch (error) {
-			const errorMessage = `Error building Optify preview: ${error}`;
+			const errorMessage = `Error opening Optify preview: ${error}`;
 			console.error(errorMessage);
 			outputChannel.appendLine(errorMessage);
-			outputChannel.show();
 			vscode.window.showErrorMessage(errorMessage);
 		}
 	});
-
-	// Command to open preview for a specific file path (used from hover links)
-	const openPreviewForFileCommand = vscode.commands.registerCommand(
-		'optify.openPreviewForFile',
-		async (filePath: string) => {
-			if (!filePath) { return; }
-			outputChannel.appendLine(`Opening preview for file: ${filePath}`);
-			try {
-				const uri = vscode.Uri.file(filePath);
-				const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-				if (!workspaceFolder) {
-					vscode.window.showErrorMessage("File must be in a workspace");
-					return;
-				}
-				const optifyRoot = findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
-				if (!optifyRoot) {
-					vscode.window.showErrorMessage("Could not find Optify root directory");
-					return;
-				}
-				const canonicalName = getCanonicalName(filePath, optifyRoot);
-				await openOrRevealPreview(filePath, optifyRoot, canonicalName);
-			} catch (error) {
-				const errorMessage = `Error opening Optify preview: ${error}`;
-				console.error(errorMessage);
-				outputChannel.appendLine(errorMessage);
-				vscode.window.showErrorMessage(errorMessage);
-			}
-		}
-	);
 
 	const documentLinkProvider = new OptifyDocumentLinkProvider();
 	const linkProvider = vscode.languages.registerDocumentLinkProvider(
@@ -402,7 +370,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		outputChannel,
 		previewCommand,
-		openPreviewForFileCommand,
 		linkProvider,
 		definitionProvider,
 		completionProvider,

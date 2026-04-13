@@ -27,12 +27,6 @@
 				"title": "Preview",
 				"category": "Optify",
 				"icon": "$(preview)"
-			},
-			{
-				"command": "optify.openPreviewForFile",
-				"title": "Open Preview",
-				"category": "Optify",
-				"icon": "$(preview)"
 			}
 		],
 		"menus": {
