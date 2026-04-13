@@ -97,7 +97,9 @@ declare module "../index" {
 
 // Extend OptionsProvider prototype with extra methods.
 export const OptionsProvider = nativeBinding.OptionsProvider;
-const nativeOptionsProviderGetAllOptions = OptionsProvider.prototype.getAllOptions;
+if (!(OptionsProvider.prototype as any)._getAllOptions) {
+	(OptionsProvider.prototype as any)._getAllOptions = OptionsProvider.prototype.getAllOptions;
+}
 (OptionsProvider.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
 	const cachedResult = this[FEATURES_WITH_METADATA_CACHE_KEY];
 	if (cachedResult) {
@@ -126,14 +128,14 @@ const nativeOptionsProviderGetAllOptions = OptionsProvider.prototype.getAllOptio
 	preferences?: nativeBinding.GetOptionsPreferences | null,
 	cacheOptions?: CacheOptions | null,
 ): any {
-	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions, (names, prefs) =>
-		nativeOptionsProviderGetAllOptions.call(this, names, prefs),
-	);
+	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
 };
 
 // Extend OptionsWatcher prototype with extra methods.
 export const OptionsWatcher = nativeBinding.OptionsWatcher;
-const nativeOptionsWatcherGetAllOptions = OptionsWatcher.prototype.getAllOptions;
+if (!(OptionsWatcher.prototype as any)._getAllOptions) {
+	(OptionsWatcher.prototype as any)._getAllOptions = OptionsWatcher.prototype.getAllOptions;
+}
 (OptionsWatcher.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
 	const cachedTime = this[FEATURES_WITH_METADATA_CACHE_TIME_KEY];
 	const lastModifiedTime = this.lastModified();
@@ -188,7 +190,5 @@ const nativeOptionsWatcherGetAllOptions = OptionsWatcher.prototype.getAllOptions
 		}
 	}
 
-	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions, (names, prefs) =>
-		nativeOptionsWatcherGetAllOptions.call(this, names, prefs),
-	);
+	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
 };

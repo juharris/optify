@@ -20,6 +20,7 @@ type OptionsCache = Map<string, NonNullable<unknown>> | LRUCache<string, NonNull
 /** Instance with dynamic properties for caching. */
 export interface CacheableInstance {
 	_getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
+	_getAllOptions(featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
 	getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
 	lastModified?(): number;
 	[FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
@@ -151,10 +152,6 @@ export function getAllOptionsWithCaching(
 	featureNames: string[],
 	preferences: nativeBinding.GetOptionsPreferences | null | undefined,
 	cacheOptions: CacheOptions | null | undefined,
-	getAllOptions: (
-		featureNames: string[],
-		preferences?: nativeBinding.GetOptionsPreferences | null,
-	) => unknown,
 ): unknown {
 	if (cacheOptions) {
 		if (preferences?.hasOverrides?.()) {
@@ -180,10 +177,10 @@ export function getAllOptionsWithCaching(
 			cacheMissPreferences.enableConfigurableStrings();
 		}
 
-		const result = getAllOptions(filteredFeatures, cacheMissPreferences);
+		const result = instance._getAllOptions(filteredFeatures, cacheMissPreferences);
 		cache.set(cacheKey, result as NonNullable<unknown>);
 		return result;
 	}
 
-	return getAllOptions(featureNames, preferences);
+	return instance._getAllOptions(featureNames, preferences);
 }
