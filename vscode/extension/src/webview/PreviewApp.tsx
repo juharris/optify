@@ -64,6 +64,7 @@ export const PreviewApp: React.FC = () => {
 		};
 
 		window.addEventListener('message', handleMessage);
+
 		vscode.postMessage({ command: 'ready' });
 
 		return () => window.removeEventListener('message', handleMessage);
@@ -304,10 +305,12 @@ export const PreviewApp: React.FC = () => {
 					<h3 style={{ color: 'var(--vscode-errorForeground)' }}>Error</h3>
 					<div
 						style={{
-							padding: '1rem', borderRadius: '4px', whiteSpace: 'pre-wrap' as const,
+							padding: '1rem',
 							backgroundColor: 'var(--vscode-inputValidation-errorBackground)',
 							border: '1px solid var(--vscode-inputValidation-errorBorder)',
+							borderRadius: '4px',
 							color: 'var(--vscode-inputValidation-errorForeground)',
+							whiteSpace: 'pre-wrap' as const,
 						}}
 					>
 						{previewData.error}
@@ -382,12 +385,18 @@ export const PreviewApp: React.FC = () => {
 								// Show top-level keys but collapse their values
 								: (path: (string | number)[]) => path.length < 1
 							: (path, value) => {
-								// Keep top-level nodes expanded
-								if (path.length < 2) { return true; }
+								if (path.length < 2) {
+									// Keep top-level nodes expanded
+									return true;
+								}
 								if (value) {
-									// Collapse large objects/arrays by default
-									if (Array.isArray(value)) { return value.length < 8; }
-									if (typeof value === 'object') { return Object.keys(value).length < 8; }
+									// Collapse large objects/arrays by default.
+									if (Array.isArray(value)) {
+										return value.length < 8;
+									}
+									if (typeof value === 'object') {
+										return Object.keys(value).length < 8;
+									}
 								}
 								// Show primitives
 								return true;

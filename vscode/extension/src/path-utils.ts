@@ -48,6 +48,13 @@ export function isOptifyFeatureFile(filePath: string,
 	return optifyRoot !== undefined;
 }
 
+export function getCanonicalName(filePath: string, optifyRoot: string): string {
+	const relativePath = path.relative(optifyRoot, filePath);
+	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
+
+	return result;
+}
+
 /**
  * Resolves a command argument to a file path string.
  * VS Code passes a Uri object from editor/title menus but a string from command URIs.
@@ -57,11 +64,4 @@ export function resolveFilePathArg(arg: unknown): string | undefined {
 	if (typeof arg === 'string') { return arg; }
 	if (typeof arg === 'object' && 'fsPath' in arg) { return (arg as vscode.Uri).fsPath; }
 	return undefined;
-}
-
-export function getCanonicalName(filePath: string, optifyRoot: string): string {
-	const relativePath = path.relative(optifyRoot, filePath);
-	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
-
-	return result;
 }
