@@ -51,13 +51,13 @@ export const PreviewApp: React.FC = () => {
 	}, []);
 
 	const handleToggleConfigurableStrings = useCallback(() => {
-		if (!previewData) return;
+		if (!previewData) {return;}
 		const newValue = !previewData.areConfigurableStringsEnabled;
 		vscode.postMessage({ command: 'setConfigurableStrings', enabled: newValue });
 	}, [previewData]);
 
 	const selectOptions = useMemo(() => {
-		if (!previewData) return [];
+		if (!previewData) {return [];}
 		const opts: Array<{ value: string; label: string; path?: string }> = [];
 		for (const name of previewData.allFeatureNames) {
 			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
