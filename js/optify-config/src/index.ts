@@ -97,6 +97,8 @@ declare module "../index" {
 
 // Extend OptionsProvider prototype with extra methods.
 export const OptionsProvider = nativeBinding.OptionsProvider;
+// Keep the native method so getAllOptionsWithCaching can call through without recursion.
+// This module may be evaluated multiple times in test/runtime contexts.
 if (!(OptionsProvider.prototype as any)._getAllOptions) {
 	(OptionsProvider.prototype as any)._getAllOptions = OptionsProvider.prototype.getAllOptions;
 }
@@ -133,6 +135,8 @@ if (!(OptionsProvider.prototype as any)._getAllOptions) {
 
 // Extend OptionsWatcher prototype with extra methods.
 export const OptionsWatcher = nativeBinding.OptionsWatcher;
+// Keep the native method so getAllOptionsWithCaching can call through without recursion.
+// This module may be evaluated multiple times in test/runtime contexts.
 if (!(OptionsWatcher.prototype as any)._getAllOptions) {
 	(OptionsWatcher.prototype as any)._getAllOptions = OptionsWatcher.prototype.getAllOptions;
 }
