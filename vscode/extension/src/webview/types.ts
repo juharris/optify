@@ -1,15 +1,11 @@
 // Import shared data types from the extension host side.
 // Using `import type` so nothing from preview.ts is included in the webview bundle.
-import type { DependentInfo, FeatureGraphNode, FeatureGraphEdge, FeatureGraphData, PreviewData } from '../preview';
-export type { DependentInfo, FeatureGraphNode, FeatureGraphEdge, FeatureGraphData, PreviewData };
+import type { FeatureGraphData, PreviewData } from '../preview';
+export type { FeatureGraphData, PreviewData };
 
 export interface UpdateConfigMessage {
 	type: 'updateConfig';
 	data: PreviewData;
-}
-
-export interface OpenGraphMessage {
-	type: 'openGraph';
 }
 
 export interface OpenFileMessage {
@@ -31,5 +27,5 @@ export interface SetFeaturesMessage {
 	features: string[];
 }
 
-export type MessageFromExtension = UpdateConfigMessage | OpenGraphMessage;
+export type MessageFromExtension = UpdateConfigMessage;
 export type MessageToExtension = OpenFileMessage | ReadyMessage | SetConfigurableStringsMessage | SetFeaturesMessage;

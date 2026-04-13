@@ -60,8 +60,6 @@ export const PreviewApp: React.FC = () => {
 			if (message.type === 'updateConfig') {
 				setPreviewData(message.data);
 				setSelectedFeatures(message.data.features.map(f => ({ value: f, label: f })));
-			} else if (message.type === 'openGraph') {
-				setShowGraph(true);
 			}
 		};
 

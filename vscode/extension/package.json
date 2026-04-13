@@ -33,12 +33,6 @@
 				"title": "Open Preview",
 				"category": "Optify",
 				"icon": "$(preview)"
-			},
-			{
-				"command": "optify.openPreviewWithGraph",
-				"title": "Open Preview with Graph",
-				"category": "Optify",
-				"icon": "$(type-hierarchy)"
 			}
 		],
 		"menus": {

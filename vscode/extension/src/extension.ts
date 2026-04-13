@@ -122,13 +122,10 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	async function openOrRevealPreview(filePath: string, optifyRoot: string, canonicalName: string, openGraph?: boolean): Promise<void> {
+	async function openOrRevealPreview(filePath: string, optifyRoot: string, canonicalName: string): Promise<void> {
 		const existingPreview = activePreviews.get(filePath);
 		if (existingPreview) {
 			existingPreview.panel.reveal();
-			if (openGraph) {
-				existingPreview.panel.webview.postMessage({ type: 'openGraph' });
-			}
 			return;
 		}
 
@@ -173,9 +170,6 @@ export function activate(context: vscode.ExtensionContext) {
 						configurableStringsDefault,
 					);
 					sendPreviewUpdate(panel, initialData);
-					if (openGraph) {
-						panel.webview.postMessage({ type: 'openGraph' });
-					}
 				} else if (message.command === 'openFile') {
 					if (message.path) {
 						const uri = vscode.Uri.file(message.path);
@@ -329,35 +323,6 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
-	// Command to open preview with graph shown (used from hover links)
-	const openPreviewWithGraphCommand = vscode.commands.registerCommand(
-		'optify.openPreviewWithGraph',
-		async (filePath: string) => {
-			if (!filePath) { return; }
-			outputChannel.appendLine(`Opening preview with graph for file: ${filePath}`);
-			try {
-				const uri = vscode.Uri.file(filePath);
-				const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-				if (!workspaceFolder) {
-					vscode.window.showErrorMessage("File must be in a workspace");
-					return;
-				}
-				const optifyRoot = findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
-				if (!optifyRoot) {
-					vscode.window.showErrorMessage("Could not find Optify root directory");
-					return;
-				}
-				const canonicalName = getCanonicalName(filePath, optifyRoot);
-				await openOrRevealPreview(filePath, optifyRoot, canonicalName, true);
-			} catch (error) {
-				const errorMessage = `Error opening Optify preview: ${error}`;
-				console.error(errorMessage);
-				outputChannel.appendLine(errorMessage);
-				vscode.window.showErrorMessage(errorMessage);
-			}
-		}
-	);
-
 	const documentLinkProvider = new OptifyDocumentLinkProvider();
 	const linkProvider = vscode.languages.registerDocumentLinkProvider(
 		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
@@ -438,7 +403,6 @@ export function activate(context: vscode.ExtensionContext) {
 		outputChannel,
 		previewCommand,
 		openPreviewForFileCommand,
-		openPreviewWithGraphCommand,
 		linkProvider,
 		definitionProvider,
 		completionProvider,

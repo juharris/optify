@@ -5,13 +5,12 @@ import { getCanonicalName } from '../path-utils';
 suite('Utils Test Suite', () => {
 	if (process.platform === 'win32') {
 		test('getCanonicalName should handle Windows-style paths', () => {
-			// Note: This test depends on the platform where it's run
+			// Note: This test depends on the platform where it runs.
 			// On Windows, path.join will use backslashes
 			const optifyRoot = 'C:\\Users\\project\\configs';
 			const filePath = 'C:\\Users\\project\\configs\\windows\\feature.json';
 			const result = getCanonicalName(filePath, optifyRoot);
-			// The result will use the platform's path separator
-			assert.strictEqual(result + process.platform, path.join('windows', 'feature'));
+			assert.strictEqual(result, path.join('windows', 'feature'));
 		});
 	}
 	else {
