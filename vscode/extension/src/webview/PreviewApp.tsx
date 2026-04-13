@@ -85,9 +85,11 @@ export const PreviewApp: React.FC = () => {
 		const opts: Array<{ value: string; label: string; path?: string }> = [];
 		for (const name of previewData.allFeatureNames) {
 			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
-			const aliases = previewData.featureAliases[name] ?? [];
-			for (const alias of aliases) {
-				opts.push({ value: name, label: `${name} (alias ${alias})`, path: previewData.featurePaths[name] });
+			const aliases = previewData.featureAliases[name];
+			if (aliases) {
+				for (const alias of aliases) {
+					opts.push({ value: name, label: `${name} (alias ${alias})`, path: previewData.featurePaths[name] });
+				}
 			}
 		}
 		return opts;
@@ -354,9 +356,9 @@ export const PreviewApp: React.FC = () => {
 					style={{
 						padding: '0.5rem',
 						marginBottom: '1rem',
-						borderRadius: '4px',
 						backgroundColor: 'var(--vscode-inputValidation-warningBackground)',
 						border: '1px solid var(--vscode-inputValidation-warningBorder)',
+						borderRadius: '4px',
 						color: 'var(--vscode-inputValidation-warningForeground)',
 					}}
 				>

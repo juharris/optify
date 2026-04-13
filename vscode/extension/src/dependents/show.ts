@@ -8,83 +8,84 @@ import { getDecorationLineNumber } from './shared-utils';
  * Each dependent name can be Cmd-clicked to navigate to that feature file.
  */
 export class OptifyDependentsProvider implements vscode.InlayHintsProvider {
-    private outputChannel: vscode.OutputChannel;
-    private _onDidChangeInlayHints = new vscode.EventEmitter<void>();
-    readonly onDidChangeInlayHints = this._onDidChangeInlayHints.event;
+	private outputChannel: vscode.OutputChannel;
+	private _onDidChangeInlayHints = new vscode.EventEmitter<void>();
+	readonly onDidChangeInlayHints = this._onDidChangeInlayHints.event;
 
-    constructor(outputChannel: vscode.OutputChannel) {
-        this.outputChannel = outputChannel;
-    }
+	constructor(outputChannel: vscode.OutputChannel) {
+		this.outputChannel = outputChannel;
+	}
 
-    provideInlayHints(document: vscode.TextDocument, _range: vscode.Range): vscode.InlayHint[] | undefined {
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-        if (!workspaceFolder) {
-            return undefined;
-        }
+	/** Trigger a refresh of the inlay hints (e.g. when options change). */
+	public updateDependentsDecoration(_editor: vscode.TextEditor) {
+		this._onDidChangeInlayHints.fire();
+	}
 
-        const optifyRoot = findOptifyRoot(document.fileName, workspaceFolder.uri.fsPath);
-        if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot, workspaceFolder)) {
-            return undefined;
-        }
+	provideInlayHints(document: vscode.TextDocument, _range: vscode.Range): vscode.InlayHint[] | undefined {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return undefined;
+		}
 
-        const canonicalName = getCanonicalName(document.fileName, optifyRoot);
+		const optifyRoot = findOptifyRoot(document.fileName, workspaceFolder.uri.fsPath);
+		if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot, workspaceFolder)) {
+			return undefined;
+		}
 
-        try {
-            const provider = getOptionsProvider(optifyRoot);
-            const featuresWithMetadata = provider.featuresWithMetadata();
-            const metadata = featuresWithMetadata[canonicalName];
-            const dependents = metadata?.dependents();
+		const canonicalName = getCanonicalName(document.fileName, optifyRoot);
 
-            if (!dependents || dependents.length === 0) {
-                return undefined;
-            }
+		try {
+			const provider = getOptionsProvider(optifyRoot);
+			const featuresWithMetadata = provider.featuresWithMetadata();
+			const metadata = featuresWithMetadata[canonicalName];
+			const dependents = metadata?.dependents();
 
-            const lineNum = getDecorationLineNumber(document);
-            const lineRange = document.lineAt(lineNum).range;
-            // Place the hint at the end of the line
-            const position = lineRange.end;
+			if (!dependents || dependents.length === 0) {
+				return undefined;
+			}
 
-            // Build label parts: prefix + dependent links separated by commas
-            const labelParts: vscode.InlayHintLabelPart[] = [];
+			// We can't put the dependents on multiple lines as a decoration, so we'll just put them all on one line for now.
+			const lineNum = getDecorationLineNumber(document);
+			const lineRange = document.lineAt(lineNum).range;
+			// Place the hint at the end of the line
+			const position = lineRange.end;
 
-            const prefixPart = new vscode.InlayHintLabelPart(' dependents: [');
-            labelParts.push(prefixPart);
+			// Build label parts: prefix + dependent links separated by commas
+			const labelParts: vscode.InlayHintLabelPart[] = [];
 
-            dependents.forEach((dep, index) => {
-                const part = new vscode.InlayHintLabelPart(`"${dep}"`);
-                const targetPath = featuresWithMetadata[dep]?.path();
-                if (targetPath) {
-                    part.command = {
-                        title: dep,
-                        command: 'vscode.open',
-                        arguments: [vscode.Uri.file(targetPath)],
-                    };
-                }
-                labelParts.push(part);
+			const prefixPart = new vscode.InlayHintLabelPart(' dependents: [');
+			labelParts.push(prefixPart);
 
-                if (index < dependents.length - 1) {
-                    labelParts.push(new vscode.InlayHintLabelPart(', '));
-                }
-            });
+			dependents.forEach((dep, index) => {
+				const part = new vscode.InlayHintLabelPart(`"${dep}"`);
+				const targetPath = featuresWithMetadata[dep]?.path();
+				if (targetPath) {
+					part.command = {
+						title: dep,
+						command: 'vscode.open',
+						arguments: [vscode.Uri.file(targetPath)],
+					};
+				}
+				labelParts.push(part);
 
-            labelParts.push(new vscode.InlayHintLabelPart(' ],'));
+				if (index < dependents.length - 1) {
+					labelParts.push(new vscode.InlayHintLabelPart(', '));
+				}
+			});
 
-            const hint = new vscode.InlayHint(position, labelParts);
-            hint.paddingLeft = true;
+			labelParts.push(new vscode.InlayHintLabelPart(' ],'));
 
-            return [hint];
-        } catch (error) {
-            this.outputChannel.appendLine(`Error getting dependents: ${error}`);
-            return undefined;
-        }
-    }
+			const hint = new vscode.InlayHint(position, labelParts);
+			hint.paddingLeft = true;
 
-    /** Trigger a refresh of the inlay hints (e.g. when options change). */
-    public updateDependentsDecoration(_editor: vscode.TextEditor) {
-        this._onDidChangeInlayHints.fire();
-    }
+			return [hint];
+		} catch (error) {
+			this.outputChannel.appendLine(`Error getting dependents: ${error}`);
+			return undefined;
+		}
+	}
 
-    public dispose() {
-        this._onDidChangeInlayHints.dispose();
-    }
+	public dispose() {
+		this._onDidChangeInlayHints.dispose();
+	}
 }

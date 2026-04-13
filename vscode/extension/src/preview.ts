@@ -84,8 +84,6 @@ export class PreviewBuilder {
 		preferences.setSkipFeatureNameConversion(true);
 		if (areConfigurableStringsEnabled) {
 			preferences.enableConfigurableStrings();
-		} else {
-			preferences.disableConfigurableStrings();
 		}
 		if (editingOptions?.overrides) {
 			preferences.setOverridesJson(editingOptions.overrides);
@@ -113,7 +111,7 @@ export class PreviewBuilder {
 			const metadata = featuresWithMetadata[name];
 			if (metadata) {
 				const aliases = metadata.aliases();
-				if (aliases && aliases.length > 0) {
+				if (aliases) {
 					featureAliases[name] = aliases;
 				}
 				const p = metadata.path();
