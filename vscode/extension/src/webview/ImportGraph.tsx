@@ -203,7 +203,7 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 							ctx.fill();
 						}}
 						linkColor={() => linkColor}
-						linkWidth={3}
+						linkWidth={4}
 						linkDirectionalArrowLength={4}
 						linkDirectionalArrowRelPos={1}
 						onNodeClick={handleNodeClick}

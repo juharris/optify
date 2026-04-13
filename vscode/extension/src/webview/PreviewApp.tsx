@@ -44,9 +44,8 @@ export const PreviewApp: React.FC = () => {
 	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 	const [showGraph, setShowGraph] = useState(true);
-	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
+	const [expandAll, setExpandAll] = useState<boolean | undefined>(true);
 	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
-	const [featuresInputDirty, setFeaturesInputDirty] = useState(false);
 
 	useEffect(() => {
 		// Detect VS Code theme (dark / light / high-contrast) once on mount.
@@ -60,9 +59,7 @@ export const PreviewApp: React.FC = () => {
 			const message = event.data;
 			if (message.type === 'updateConfig') {
 				setPreviewData(message.data);
-				if (!featuresInputDirty) {
-					setSelectedFeatures(message.data.features.map(f => ({ value: f, label: f })));
-				}
+				setSelectedFeatures(message.data.features.map(f => ({ value: f, label: f })));
 			} else if (message.type === 'openGraph') {
 				setShowGraph(true);
 			}
@@ -72,7 +69,7 @@ export const PreviewApp: React.FC = () => {
 		vscode.postMessage({ command: 'ready' });
 
 		return () => window.removeEventListener('message', handleMessage);
-	}, [featuresInputDirty]);
+	}, []);
 
 	const handleOpenFile = useCallback((path: string) => {
 		vscode.postMessage({ command: 'openFile', path });
@@ -91,21 +88,17 @@ export const PreviewApp: React.FC = () => {
 			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
 			const aliases = previewData.featureAliases[name] ?? [];
 			for (const alias of aliases) {
-				opts.push({ value: alias, label: `${alias} [${name}]`, path: previewData.featurePaths[name] });
+				opts.push({ value: name, label: `${name} (alias ${alias})`, path: previewData.featurePaths[name] });
 			}
 		}
 		return opts;
 	}, [previewData]);
 
 	const handleFeaturesChange = useCallback((newValue: MultiValue<{ value: string; label: string; path?: string }>) => {
-		setSelectedFeatures(Array.from(newValue));
-		setFeaturesInputDirty(true);
+		const features = Array.from(newValue);
+		setSelectedFeatures(features);
+		vscode.postMessage({ command: 'setFeatures', features: features.map(f => f.value) });
 	}, []);
-
-	const handleFeaturesSubmit = useCallback(() => {
-		vscode.postMessage({ command: 'setFeatures', features: selectedFeatures.map(f => f.value) });
-		setFeaturesInputDirty(false);
-	}, [selectedFeatures]);
 
 	const selectStyles = useMemo((): StylesConfig<{ value: string; label: string; path?: string }, true> => ({
 		control: (base) => ({
@@ -229,32 +222,17 @@ export const PreviewApp: React.FC = () => {
 			{previewData && (
 				<div style={{ marginBottom: '1rem' }}>
 					<strong>Features:</strong>
-					<div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'flex-start' }}>
-						<div style={{ flex: 1 }}>
-							<Select
-								isMulti
-								options={selectOptions}
-								value={selectedFeatures}
-								onChange={handleFeaturesChange}
-								placeholder="Search and select features..."
-								styles={selectStyles}
-								components={selectComponents}
-								menuPortalTarget={document.body}
-								menuPosition="fixed"
-							/>
-						</div>
-						<button
-							onClick={handleFeaturesSubmit}
-							style={{
-								padding: '6px 12px', fontSize: '0.9rem', cursor: 'pointer', borderRadius: '3px',
-								backgroundColor: 'var(--vscode-button-background)',
-								color: 'var(--vscode-button-foreground)',
-								border: 'none', whiteSpace: 'nowrap' as const,
-							}}
-						>
-							Preview
-						</button>
-					</div>
+					<Select
+						isMulti
+						options={selectOptions}
+						value={selectedFeatures}
+						onChange={handleFeaturesChange}
+						placeholder="Search and select features..."
+						styles={selectStyles}
+						components={selectComponents}
+						menuPortalTarget={document.body}
+						menuPosition="fixed"
+					/>
 				</div>
 			)}
 
@@ -338,7 +316,7 @@ export const PreviewApp: React.FC = () => {
 			)}
 
 			{previewData && !previewData.error && (
-				<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+				<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', marginBottom: '0.75rem' }}>
 					<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Configuration</h3>
 					<button
 						onClick={() => setExpandAll(prev => prev === true ? false : true)}

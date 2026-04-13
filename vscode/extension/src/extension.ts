@@ -27,7 +27,7 @@ const activePreviews = new Map<string, ActivePreview>();
 
 function readConfigurableStringsDefault(optifyRoot: string): boolean {
 	try {
-		const configPath = path.join(optifyRoot, 'config.json');
+		const configPath = path.join(optifyRoot, '.optify', 'config.json');
 		if (fs.existsSync(configPath)) {
 			const configText = fs.readFileSync(configPath, 'utf8');
 			const config = JSON.parse(configText);
