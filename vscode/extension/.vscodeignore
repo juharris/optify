@@ -26,8 +26,11 @@ out/tests/
 # Assets not needed in package
 assets/demo.gif
 
-# Exclude all node_modules except @optify/config (native addon dependency)
+# Exclude all node_modules except @optify/config (native addon) and its dependencies
 node_modules/**
 !node_modules/@optify/
 !node_modules/@optify/config/
 !node_modules/@optify/config/**
+# @optify/config dependencies — update if @optify/config adds new runtime deps
+!node_modules/lru-cache/
+!node_modules/lru-cache/**
