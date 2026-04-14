@@ -23,6 +23,7 @@ export interface CacheableInstance {
 	_getOptions(key: string, featureNames: string[], preferences?: nativeBinding.GetOptionsPreferences | null): unknown;
 	getFilteredFeatures(featureNames: string[], preferences: nativeBinding.GetOptionsPreferences): string[];
 	lastModified?(): number;
+	[CACHE_CREATION_TIME_KEY]?: number;
 	[FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
 	[OPTIONS_CACHE_KEY]?: OptionsCache;
 	[CACHE_INIT_OPTIONS_KEY]?: CacheInitOptions | null;
@@ -72,6 +73,20 @@ function createOptionsCache(cacheInitOptions?: CacheInitOptions | null): Options
 		return new LRUCache<string, NonNullable<unknown>>({ max: cacheInitOptions.maxSize });
 	}
 	return new Map<string, NonNullable<unknown>>();
+}
+
+/**
+ * Resets watcher caches if the underlying files have been modified since the cache was created.
+ * No-op if files haven't changed.
+ */
+export function resetWatcherCachesIfModified(instance: CacheableInstance): void {
+	const lastModifiedTime = instance.lastModified!();
+	const cacheCreationTime = instance[CACHE_CREATION_TIME_KEY];
+
+	if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
+		resetCaches(instance);
+		instance[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
+	}
 }
 
 /**

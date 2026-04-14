@@ -13,6 +13,7 @@ import {
 	getOptionsWithCaching,
 	initCache,
 	resetCaches,
+	resetWatcherCachesIfModified,
 } from "./caching";
 import { TypeSchema } from "./types";
 
@@ -152,15 +153,8 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
 	preferences?: nativeBinding.GetOptionsPreferences | null,
 	cacheOptions?: CacheOptions | null,
 ): any {
-	// Check cache validity for watcher - reset if files have been modified
 	if (cacheOptions) {
-		const lastModifiedTime = this.lastModified();
-		const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
-
-		if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-			resetCaches(this);
-			this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
-		}
+		resetWatcherCachesIfModified(this);
 	}
 
 	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
@@ -173,15 +167,8 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
 	preferences?: nativeBinding.GetOptionsPreferences | null,
 	cacheOptions?: CacheOptions | null,
 ): any {
-	// Check cache validity for watcher - reset if files have been modified
 	if (cacheOptions) {
-		const lastModifiedTime = this.lastModified();
-		const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
-
-		if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-			resetCaches(this);
-			this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
-		}
+		resetWatcherCachesIfModified(this);
 	}
 
 	return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
