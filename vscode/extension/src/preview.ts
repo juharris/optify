@@ -1,4 +1,4 @@
-import { OptionsWatcher, GetOptionsPreferences } from "@optify/config";
+import { CacheOptions, GetOptionsPreferences, OptionsWatcher } from "@optify/config";
 import * as vscode from 'vscode';
 
 export interface PreviewWhileEditingOptions {
@@ -44,6 +44,8 @@ export interface PreviewData {
 	graphData?: FeatureGraphData;
 }
 
+const DEFAULT_CACHE_OPTIONS = new CacheOptions();
+
 export class PreviewBuilder {
 	getPreviewHtmlShell(webview: vscode.Webview, extensionUri: vscode.Uri): string {
 		const scriptUri = webview.asWebviewUri(
@@ -88,8 +90,7 @@ export class PreviewBuilder {
 		if (editingOptions?.overrides) {
 			preferences.setOverridesJson(editingOptions.overrides);
 		}
-		const builtConfigJson = provider.getAllOptionsJson(editingOptions?.features ?? canonicalFeatures, preferences);
-		const builtConfig = JSON.parse(builtConfigJson);
+		const builtConfig = provider.getAllOptions(editingOptions?.features ?? canonicalFeatures, preferences, DEFAULT_CACHE_OPTIONS);
 		const feature = canonicalFeatures.length === 1 ? canonicalFeatures[0] : undefined;
 		const featuresWithMetadata = provider.featuresWithMetadata();
 		const dependentNames = feature ? featuresWithMetadata[feature]?.dependents() : null;
