@@ -182,9 +182,19 @@ export const ImportGraph: React.FC<ImportGraphProps> = ({ graphData, theme, onOp
 		graphRef.current?.zoomToFit(400, 40);
 	}, []);
 
-	// Auto-fit after initial render.
+	// Auto-fit after initial render, centered on the first enabled feature.
 	useEffect(() => {
-		const timer = setTimeout(() => graphRef.current?.zoomToFit(400, 40), 500);
+		const timer = setTimeout(() => {
+			const graph = graphRef.current;
+			if (!graph) { return; }
+			const enabledNode = graphData2D.nodes.find(n => n.isEnabled);
+			if (enabledNode?.x !== undefined && enabledNode?.y !== undefined) {
+				graph.centerAt(enabledNode.x, enabledNode.y, 400);
+				graph.zoom(3, 300);
+			} else {
+				graph.zoomToFit(400, 40);
+			}
+		}, 500);
 		return () => clearTimeout(timer);
 	}, [graphData2D]);
 
