@@ -144,6 +144,51 @@ describe("getOptions caching without init", () => {
 	}
 });
 
+describe("getAllOptions caching", () => {
+	const configsPath = path.join(__dirname, "../../../tests/test_suites/simple/configs");
+	const cacheOptions = new CacheOptions();
+	const providers = [
+		{
+			name: "OptionsProvider",
+			provider: OptionsProvider.build(configsPath).init(),
+		},
+		{
+			name: "OptionsWatcher",
+			provider: OptionsWatcher.build(configsPath).init(),
+		},
+	];
+
+	for (const { name, provider } of providers) {
+		test(`${name} caches deserialized objects`, () => {
+			const options1 = provider.getAllOptions(["A"], null, cacheOptions);
+			const options2 = provider.getAllOptions(["A"], null, cacheOptions);
+
+			expect(options1).toBe(options2);
+
+			const optionsNonCached = provider.getAllOptions(["A"]);
+			expect(options1).toEqual(optionsNonCached);
+			expect(options1).not.toBe(optionsNonCached);
+		});
+
+		test(`${name} does not cache without cacheOptions`, () => {
+			const options1 = provider.getAllOptions(["A"]);
+			const options2 = provider.getAllOptions(["A"]);
+
+			expect(options1).not.toBe(options2);
+			expect(options1).toEqual(options2);
+		});
+
+		test(`${name} throws when caching with overrides`, () => {
+			const preferences = new GetOptionsPreferences();
+			preferences.setOverrides({ myConfig: { rootString2: "overridden value" } });
+
+			expect(() => provider.getAllOptions(["A"], preferences, cacheOptions)).toThrow(
+				"Caching when overrides are given is not supported. Do not pass cache options when using overrides in preferences.",
+			);
+		});
+	}
+});
+
 describe("getOptions caching with maxSize", () => {
 	const configsPath = path.join(__dirname, "../../../tests/test_suites/simple/configs");
 	const cacheOptions = new CacheOptions();

@@ -9,9 +9,11 @@ import {
 	CACHE_CREATION_TIME_KEY,
 	FEATURES_WITH_METADATA_CACHE_KEY,
 	FEATURES_WITH_METADATA_CACHE_TIME_KEY,
+	getAllOptionsWithCaching,
 	getOptionsWithCaching,
 	initCache,
 	resetCaches,
+	resetWatcherCachesIfModified,
 } from "./caching";
 import { TypeSchema } from "./types";
 
@@ -57,6 +59,11 @@ declare module "../index" {
 			preferences?: GetOptionsPreferences | null,
 			cacheOptions?: CacheOptions,
 		): T;
+		/**
+		 * Gets all options for the specified feature names.
+		 * @param cacheOptions Optional cache options to enable caching of the result.
+		 */
+		getAllOptions(featureNames: Array<string>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): any;
 	}
 
 	interface OptionsWatcher {
@@ -81,6 +88,11 @@ declare module "../index" {
 			preferences?: GetOptionsPreferences | null,
 			cacheOptions?: CacheOptions,
 		): T;
+		/**
+		 * Gets all options for the specified feature names.
+		 * @param cacheOptions Optional cache options to enable caching of the result.
+		 */
+		getAllOptions(featureNames: Array<string>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): any;
 	}
 }
 
@@ -97,6 +109,14 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
 (OptionsProvider.prototype as any).init = function (this: any, cacheInitOptions?: CacheInitOptions | null): any {
 	initCache(this, cacheInitOptions);
 	return this;
+};
+(OptionsProvider.prototype as any).getAllOptions = function (
+	this: any,
+	featureNames: string[],
+	preferences?: nativeBinding.GetOptionsPreferences | null,
+	cacheOptions?: CacheOptions | null,
+): any {
+	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
 };
 (OptionsProvider.prototype as any).getOptions = function (
 	this: any,
@@ -127,6 +147,18 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
 	this[CACHE_CREATION_TIME_KEY] = this.lastModified();
 	return this;
 };
+(OptionsWatcher.prototype as any).getAllOptions = function (
+	this: any,
+	featureNames: string[],
+	preferences?: nativeBinding.GetOptionsPreferences | null,
+	cacheOptions?: CacheOptions | null,
+): any {
+	if (cacheOptions) {
+		resetWatcherCachesIfModified(this);
+	}
+
+	return getAllOptionsWithCaching(this, featureNames, preferences, cacheOptions);
+};
 (OptionsWatcher.prototype as any).getOptions = function (
 	this: any,
 	key: string,
@@ -135,15 +167,8 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
 	preferences?: nativeBinding.GetOptionsPreferences | null,
 	cacheOptions?: CacheOptions | null,
 ): any {
-	// Check cache validity for watcher - reset if files have been modified
 	if (cacheOptions) {
-		const lastModifiedTime = this.lastModified();
-		const cacheCreationTime = this[CACHE_CREATION_TIME_KEY];
-
-		if (!cacheCreationTime || lastModifiedTime > cacheCreationTime) {
-			resetCaches(this);
-			this[CACHE_CREATION_TIME_KEY] = lastModifiedTime;
-		}
+		resetWatcherCachesIfModified(this);
 	}
 
 	return getOptionsWithCaching(this, key, featureNames, schema, preferences, cacheOptions);
