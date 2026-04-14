@@ -1,5 +1,13 @@
 # Setup
 
+(Optional) If `nvm` is used then activate the correct node version:
+
+```shell
+nvm use || nvm use `cat .nvmrc`
+```
+
+Install:
+
 ```shell
 npm install
 ```

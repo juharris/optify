@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Component, ErrorInfo, ReactNode } from 'react';
+import Select, { GroupBase, MultiValue, MultiValueGenericProps, StylesConfig, components as SelectComponents } from 'react-select';
 import { JsonViewer } from '@textea/json-viewer';
+import { ImportGraph } from './ImportGraph';
 import { PreviewData, MessageFromExtension, MessageToExtension } from './types';
 
 declare const acquireVsCodeApi: () => {
@@ -10,18 +12,46 @@ declare const acquireVsCodeApi: () => {
 
 const vscode = acquireVsCodeApi();
 
+interface ErrorBoundaryProps {
+	children: ReactNode;
+	fallback: (error: Error) => ReactNode;
+}
+
+interface ErrorBoundaryState {
+	error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+	state: ErrorBoundaryState = { error: null };
+
+	static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+		return { error };
+	}
+
+	componentDidCatch(error: Error, info: ErrorInfo) {
+		console.error('Component error:', error, info);
+	}
+
+	render() {
+		if (this.state.error) {
+			return this.props.fallback(this.state.error);
+		}
+		return this.props.children;
+	}
+}
+
 export const PreviewApp: React.FC = () => {
 	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+	const [showGraph, setShowGraph] = useState(true);
+	const [expandAll, setExpandAll] = useState<boolean | undefined>(true);
+	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
 
 	useEffect(() => {
-		const updateTheme = () => {
-			const body = document.body;
-			const isDark = body.classList.contains('vscode-dark') || body.classList.contains('vscode-high-contrast');
-			setTheme(isDark ? 'dark' : 'light');
-		};
-
-		updateTheme();
+		// Detect VS Code theme (dark / light / high-contrast) once on mount.
+		const body = document.body;
+		const isDark = body.classList.contains('vscode-dark') || body.classList.contains('vscode-high-contrast');
+		setTheme(isDark ? 'dark' : 'light');
 	}, []);
 
 	useEffect(() => {
@@ -29,6 +59,7 @@ export const PreviewApp: React.FC = () => {
 			const message = event.data;
 			if (message.type === 'updateConfig') {
 				setPreviewData(message.data);
+				setSelectedFeatures(message.data.features.map(f => ({ value: f, label: f })));
 			}
 		};
 
@@ -40,16 +71,105 @@ export const PreviewApp: React.FC = () => {
 	}, []);
 
 	const handleOpenFile = useCallback((path: string) => {
-		vscode.postMessage({
-			command: 'openFile',
-			path,
-		});
+		vscode.postMessage({ command: 'openFile', path });
 	}, []);
 
-	// Ensure that multi-line strings are displayed correctly.
-	// Without this, "\n"s are shown as spaces.
+	const handleToggleConfigurableStrings = useCallback(() => {
+		if (!previewData) { return; }
+		const newValue = !previewData.areConfigurableStringsEnabled;
+		vscode.postMessage({ command: 'setConfigurableStrings', enabled: newValue });
+	}, [previewData]);
+
+	const selectOptions = useMemo(() => {
+		if (!previewData) { return []; }
+		const opts: Array<{ value: string; label: string; path?: string }> = [];
+		for (const name of previewData.allFeatureNames) {
+			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
+			const aliases = previewData.featureAliases[name];
+			if (aliases) {
+				for (const alias of aliases) {
+					opts.push({ value: name, label: `${name} (alias ${alias})`, path: previewData.featurePaths[name] });
+				}
+			}
+		}
+		return opts;
+	}, [previewData]);
+
+	const handleFeaturesChange = useCallback((newValue: MultiValue<{ value: string; label: string; path?: string }>) => {
+		const features = Array.from(newValue);
+		setSelectedFeatures(features);
+		vscode.postMessage({ command: 'setFeatures', features: features.map(f => f.value) });
+	}, []);
+
+	const selectStyles = useMemo((): StylesConfig<{ value: string; label: string; path?: string }, true> => ({
+		control: (base) => ({
+			...base,
+			backgroundColor: 'var(--vscode-input-background)',
+			borderColor: 'var(--vscode-input-border)',
+			color: 'var(--vscode-input-foreground)',
+			boxShadow: 'none',
+			'&:hover': { borderColor: 'var(--vscode-focusBorder)' },
+		}),
+		input: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
+		menu: (base) => ({
+			...base,
+			backgroundColor: 'var(--vscode-dropdown-background)',
+			border: '1px solid var(--vscode-dropdown-border)',
+			zIndex: 100,
+		}),
+		option: (base, state) => ({
+			...base,
+			backgroundColor: state.isFocused
+				? 'var(--vscode-list-hoverBackground)'
+				: state.isSelected
+					? 'var(--vscode-list-activeSelectionBackground)'
+					: 'transparent',
+			color: state.isSelected
+				? 'var(--vscode-list-activeSelectionForeground)'
+				: 'var(--vscode-dropdown-foreground)',
+			cursor: 'pointer',
+		}),
+		multiValue: (base) => ({
+			...base,
+			backgroundColor: 'var(--vscode-badge-background)',
+		}),
+		multiValueLabel: (base, { data }) => ({
+			...base,
+			color: 'var(--vscode-badge-foreground)',
+			cursor: data.path ? 'pointer' : 'default',
+		}),
+		multiValueRemove: (base) => ({
+			...base,
+			color: 'var(--vscode-badge-foreground)',
+			'&:hover': {
+				backgroundColor: 'var(--vscode-inputValidation-errorBackground)',
+				color: 'var(--vscode-errorForeground)',
+			},
+		}),
+		placeholder: (base) => ({ ...base, color: 'var(--vscode-input-placeholderForeground)' }),
+		indicatorSeparator: (base) => ({ ...base, backgroundColor: 'var(--vscode-input-border)' }),
+		dropdownIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
+		clearIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
+	}), []);
+
+	const selectComponents = useMemo(() => ({
+		MultiValueLabel: (props: MultiValueGenericProps<{ value: string; label: string; path?: string }, true, GroupBase<{ value: string; label: string; path?: string }>>) => {
+			const path = (props.data as { path?: string }).path;
+			return (
+				<div
+					onClick={() => path && handleOpenFile(path)}
+					style={{ cursor: path ? 'pointer' : 'default', display: 'flex' }}
+				>
+					<SelectComponents.MultiValueLabel {...props} />
+				</div>
+			);
+		},
+	}), [handleOpenFile]);
+
 	const valueTypes = useMemo(() => [
 		{
+			// Ensure that multi-line strings are displayed correctly.
+			// Without this, "\n"s are shown as spaces.
 			is: (value: any) => typeof value === 'string' && value.includes('\n'),
 			Component: (props: any) => {
 				const [isExpanded, setIsExpanded] = React.useState(false);
@@ -85,6 +205,10 @@ export const PreviewApp: React.FC = () => {
 		},
 	], []);
 
+	const configurableStringsLabel = previewData?.areConfigurableStringsEnabled
+		? '✓ Configurable Strings Enabled'
+		: '✗ Configurable Strings Disabled';
+
 	return (
 		<div style={{ padding: '1rem', fontFamily: 'var(--vscode-font-family)' }}>
 			<h2
@@ -97,30 +221,27 @@ export const PreviewApp: React.FC = () => {
 				Configuration Preview
 			</h2>
 
-			{previewData ?
+			{/* Features input box */}
+			{previewData && (
 				<div style={{ marginBottom: '1rem' }}>
 					<strong>Features:</strong>
-					<div
-						style={{
-							marginTop: '0.5rem',
-							padding: '0.5rem',
-							backgroundColor: 'var(--vscode-textCodeBlock-background)',
-							border: '1px solid var(--vscode-widget-border)',
-							borderRadius: '4px',
-						}}
-					>
-						<JsonViewer
-							value={previewData.features}
-							theme={theme}
-							rootName={false}
-							displayDataTypes={false}
-							displaySize={false}
-						/>
-					</div>
+					<Select
+						isMulti
+						options={selectOptions}
+						value={selectedFeatures}
+						onChange={handleFeaturesChange}
+						placeholder="Search and select features..."
+						styles={selectStyles}
+						components={selectComponents}
+						menuPortalTarget={document.body}
+						menuPosition="fixed"
+					/>
 				</div>
-				: <>Loading...</>
-			}
+			)}
 
+			{!previewData && <>Loading...</>}
+
+			{/* Dependents */}
 			{previewData?.dependents && previewData.dependents.length > 0 && (
 				<div style={{ marginBottom: '1rem' }}>
 					<h3 style={{ color: 'var(--vscode-foreground)' }}>Dependents</h3>
@@ -130,27 +251,54 @@ export const PreviewApp: React.FC = () => {
 							<li key={dep.name}>
 								<a
 									href="#"
-									onClick={(e) => {
-										e.preventDefault();
-										handleOpenFile(dep.path);
-									}}
-									style={{
-										color: 'var(--vscode-textLink-foreground)',
-										textDecoration: 'none',
-										cursor: 'pointer',
-									}}
-									onMouseEnter={(e) => {
-										e.currentTarget.style.textDecoration = 'underline';
-									}}
-									onMouseLeave={(e) => {
-										e.currentTarget.style.textDecoration = 'none';
-									}}
+									onClick={(e) => { e.preventDefault(); handleOpenFile(dep.path); }}
+									style={{ color: 'var(--vscode-textLink-foreground)', textDecoration: 'none', cursor: 'pointer' }}
+									onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+									onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
 								>
 									{dep.name}
 								</a>
 							</li>
 						))}
 					</ul>
+				</div>
+			)}
+
+			{/* Import graph */}
+			{previewData?.graphData && (
+				<div style={{ marginBottom: '1rem' }}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+						<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Import Graph</h3>
+						<button
+							onClick={() => setShowGraph(prev => !prev)}
+							style={{
+								padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+								backgroundColor: 'var(--vscode-button-secondaryBackground)',
+								color: 'var(--vscode-button-secondaryForeground)',
+								border: '1px solid var(--vscode-button-border, transparent)',
+							}}
+						>
+							{showGraph ? 'Hide Import Graph' : 'Show Import Graph'}
+						</button>
+					</div>
+					{showGraph && (
+						<ErrorBoundary fallback={(error) => (
+							<div style={{
+								padding: '1rem', borderRadius: '4px', whiteSpace: 'pre-wrap' as const,
+								backgroundColor: 'var(--vscode-inputValidation-errorBackground)',
+								border: '1px solid var(--vscode-inputValidation-errorBorder)',
+								color: 'var(--vscode-inputValidation-errorForeground)',
+							}}>
+								Failed to render graph: {error.message}
+							</div>
+						)}>
+							<ImportGraph
+								graphData={previewData.graphData}
+								theme={theme}
+								onOpenFile={handleOpenFile}
+							/>
+						</ErrorBoundary>
+					)}
 				</div>
 			)}
 
@@ -164,7 +312,7 @@ export const PreviewApp: React.FC = () => {
 							border: '1px solid var(--vscode-inputValidation-errorBorder)',
 							borderRadius: '4px',
 							color: 'var(--vscode-inputValidation-errorForeground)',
-							whiteSpace: 'pre-wrap',
+							whiteSpace: 'pre-wrap' as const,
 						}}
 					>
 						{previewData.error}
@@ -172,7 +320,36 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{previewData && !previewData.error && <h3 style={{ color: 'var(--vscode-foreground)' }}>Configuration:</h3>}
+			{previewData && !previewData.error && (
+				<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', marginBottom: '0.75rem' }}>
+					<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Configuration</h3>
+					<button
+						onClick={() => setExpandAll(prev => prev === true ? false : true)}
+						style={{
+							padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+							backgroundColor: 'var(--vscode-button-secondaryBackground)',
+							color: 'var(--vscode-button-secondaryForeground)',
+							border: '1px solid var(--vscode-button-border, transparent)',
+						}}
+					>
+						{expandAll === true ? '⊟ Collapse All' : '⊞ Expand All'}
+					</button>
+					{/* Only show configurable strings toggle when the config default enables it; otherwise they won't work */}
+					{previewData.areConfigurableStringsEnabledDefault && (
+						<button
+							onClick={handleToggleConfigurableStrings}
+							style={{
+								padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+								backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
+								color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
+								border: '1px solid var(--vscode-button-border, transparent)',
+							}}
+						>
+							{configurableStringsLabel}
+						</button>
+					)}
+				</div>
+			)}
 
 			{previewData?.isUnsaved && (
 				<div
@@ -200,27 +377,33 @@ export const PreviewApp: React.FC = () => {
 					}}
 				>
 					<JsonViewer
+						key={`json-${String(expandAll)}`}
 						value={previewData.config}
 						theme={theme}
 						collapseStringsAfterLength={120}
-						defaultInspectControl={(path, value) => {
-							if (path.length < 2) {
-								// Keep top-level nodes expanded.
-								return true
-							}
-							if (value) {
-								// Collapse large objects/arrays by default.
-								if (Array.isArray(value)) {
-									return value.length < 8
+						defaultInspectControl={expandAll !== undefined
+							? expandAll
+								? () => true
+								// Show top-level keys but collapse their values
+								: (path: (string | number)[]) => path.length < 1
+							: (path, value) => {
+								if (path.length < 2) {
+									// Keep top-level nodes expanded
+									return true;
 								}
-								if (typeof value === 'object') {
-									return Object.keys(value).length < 8
+								if (value) {
+									// Collapse large objects/arrays by default.
+									if (Array.isArray(value)) {
+										return value.length < 8;
+									}
+									if (typeof value === 'object') {
+										return Object.keys(value).length < 8;
+									}
 								}
+								// Show primitives
+								return true;
 							}
-
-							// Show primitives.
-							return true
-						}}
+						}
 						defaultInspectDepth={7}
 						displayDataTypes={false}
 						displaySize={false}

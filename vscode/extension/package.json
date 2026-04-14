@@ -2,7 +2,7 @@
 	"name": "optify",
 	"displayName": "Optify",
 	"description": "Helps manage Optify feature files.",
-	"version": "1.7.2",
+	"version": "1.8.0",
 	"publisher": "optify-config",
 	"license": "MIT",
 	"repository": "https://github.com/juharris/optify",
@@ -76,10 +76,12 @@
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@optify/config": "^1.1.5",
+		"@optify/config": "^1.5.0",
 		"@textea/json-viewer": "^4.0.1",
 		"js-yaml": "^4.1.0",
 		"react": "^18.3.1",
-		"react-dom": "^18.3.1"
+		"react-dom": "^18.3.1",
+		"react-force-graph-2d": "^1.29.1",
+		"react-select": "^5.10.2"
 	}
 }

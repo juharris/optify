@@ -1,4 +1,7 @@
-import { OptionsWatcher, WatcherOptions } from '@optify/config';
+import { CacheInitOptions, OptionsWatcher, WatcherOptions } from '@optify/config';
+
+// Assume people won't open too many files.
+const CACHE_MAX_SIZE = 10;
 
 const providerCache = new Map<string, OptionsWatcher>();
 const updateCallbacks: (() => void)[] = [];
@@ -9,6 +12,7 @@ export function getOptionsProvider(optifyRoot: string): OptionsWatcher {
 		const watcherOptions = new WatcherOptions();
 		watcherOptions.setDebounceDurationMs(10);
 		result = OptionsWatcher.build(optifyRoot);
+		result.init(new CacheInitOptions(CACHE_MAX_SIZE));
 		result.addListener(() => {
 			// Notify all registered callbacks when options change
 			updateCallbacks.forEach(callback => callback());
