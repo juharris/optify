@@ -62,6 +62,14 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
           working-directory: python/optify
+      # maturin-action enables sccache inside the manylinux container, but the
+      # rust-cache post step runs on the host and will fail `cargo metadata` if
+      # RUSTC_WRAPPER still points to the container-only sccache binary.
+      - name: "[Rust] Clear sccache wrapper"
+        shell: bash
+        run: |
+          echo "RUSTC_WRAPPER=" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_ENABLED=" >> "$GITHUB_ENV"
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
