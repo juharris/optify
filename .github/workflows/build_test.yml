@@ -55,7 +55,7 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     # Rust
     - name: "[Rust] Setup cache"
@@ -149,7 +149,7 @@ jobs:
     - name: "[JS] Install corepack"
       run: npm install -g corepack
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         cache: yarn
         cache-dependency-path: ./js/optify-config/yarn.lock
@@ -173,7 +173,7 @@ jobs:
       working-directory: ./js/optify-config
 
     # Python
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       name: "[Python] Setup"
       with:
         cache: pip

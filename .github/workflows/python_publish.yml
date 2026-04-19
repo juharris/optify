@@ -39,16 +39,19 @@ jobs:
           - runner: ubuntu-22.04
             target: aarch64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.x
+      # manylinux builds run in a container and can leave root-owned files in
+      # python/optify/target, which breaks rust-cache save with tar permission errors.
       - name: "[Rust] Setup cache"
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
             python/optify
             rust/optify
+          cache-targets: false
           cache-on-failure: true
           shared-key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-rust
       - name: Build wheels
@@ -59,8 +62,16 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
           working-directory: python/optify
+      # maturin-action enables sccache inside the manylinux container, but the
+      # rust-cache post step runs on the host and will fail `cargo metadata` if
+      # RUSTC_WRAPPER still points to the container-only sccache binary.
+      - name: "[Rust] Clear sccache wrapper"
+        shell: bash
+        run: |
+          echo "RUSTC_WRAPPER=" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_ENABLED=" >> "$GITHUB_ENV"
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: python/optify/dist
@@ -74,8 +85,8 @@ jobs:
           - runner: windows-latest
             target: x64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
@@ -95,7 +106,7 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           working-directory: python/optify
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: python/optify/dist
@@ -109,8 +120,8 @@ jobs:
           - runner: macos-latest
             target: aarch64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.x
       - name: "[Rust] Setup cache"
@@ -129,7 +140,7 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           working-directory: python/optify
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: python/optify/dist
@@ -137,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: "[Rust] Setup cache"
         uses: Swatinem/rust-cache@v2
         with:
@@ -153,7 +164,7 @@ jobs:
           args: --out dist
           working-directory: python/optify
       - name: Upload sdist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-sdist
           path: python/optify/dist
@@ -170,11 +181,13 @@ jobs:
       contents: write
       # Used to generate artifact attestation
       attestations: write
+      # Required by actions/attest when creating artifact metadata records.
+      artifact-metadata: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest@v4
         with:
           subject-path: 'wheels-*/*'
       - name: "Publish to PyPI"

@@ -73,7 +73,7 @@ jobs:
       contents: write
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     # Ruby
     # Gem: optify-from_hash
@@ -139,7 +139,7 @@ jobs:
       contents: write
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
@@ -221,7 +221,7 @@ jobs:
         - arm64-darwin
         - x86_64-linux
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: "[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
@@ -306,7 +306,7 @@ jobs:
       id-token: write
       contents: read
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: "[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
