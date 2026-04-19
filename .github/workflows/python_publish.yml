@@ -43,12 +43,15 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
+      # manylinux builds run in a container and can leave root-owned files in
+      # python/optify/target, which breaks rust-cache save with tar permission errors.
       - name: "[Rust] Setup cache"
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
             python/optify
             rust/optify
+          cache-targets: false
           cache-on-failure: true
           shared-key: ${{ matrix.platform.runner }}-${{ matrix.platform.target }}-rust
       - name: Build wheels
