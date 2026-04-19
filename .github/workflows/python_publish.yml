@@ -170,11 +170,13 @@ jobs:
       contents: write
       # Used to generate artifact attestation
       attestations: write
+      # Required by actions/attest when creating artifact metadata records.
+      artifact-metadata: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest@v4
         with:
           subject-path: 'wheels-*/*'
       - name: "Publish to PyPI"

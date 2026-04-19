@@ -194,7 +194,7 @@ jobs:
           shared-key: freebsd-rust
       - name: "Build & Test"
         id: build
-        uses: cross-platform-actions/action@v0.29.0
+        uses: cross-platform-actions/action@v1.0.0
         env:
           DEBUG: napi:*
           RUSTUP_IO_THREADS: 1
@@ -378,7 +378,7 @@ jobs:
           yarn build:ts
         working-directory: ./js/optify-config
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
       - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
@@ -428,7 +428,7 @@ jobs:
           yarn build:ts
         working-directory: ./js/optify-config
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
       - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
