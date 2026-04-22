@@ -135,10 +135,17 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
 	const cachedTime = this[FEATURES_WITH_METADATA_CACHE_TIME_KEY];
 	const lastModifiedTime = this.lastModified();
 	if (cachedTime && lastModifiedTime <= cachedTime) {
-		return this[FEATURES_WITH_METADATA_CACHE_KEY];
+		const cachedResult = this[FEATURES_WITH_METADATA_CACHE_KEY];
+		if (cachedResult) {
+			return cachedResult;
+		}
 	}
 
-	resetCaches(this);
+	// Only reset the options cache if we previously had cached metadata and files have changed.
+	// On the first call (cachedTime is undefined) there is nothing stale to evict.
+	if (cachedTime) {
+		resetCaches(this);
+	}
 	this[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = lastModifiedTime;
 	return (this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata());
 };
