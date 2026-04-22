@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, Component, ErrorInfo,
 import Select, { GroupBase, MultiValue, MultiValueGenericProps, StylesConfig, components as SelectComponents } from 'react-select';
 import { JsonViewer } from '@textea/json-viewer';
 import { ImportGraph } from './ImportGraph';
-import { PreviewData, MessageFromExtension, MessageToExtension } from './types';
+import { PreviewData, FeatureGraphData, MessageFromExtension, MessageToExtension } from './types';
 
 declare const acquireVsCodeApi: () => {
 	postMessage(message: MessageToExtension): void;
@@ -40,8 +40,24 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 	}
 }
 
+const LoadingIndicator: React.FC<{ label: string }> = ({ label }) => (
+	<div style={{
+		display: 'flex',
+		alignItems: 'center',
+		gap: '0.5rem',
+		padding: '0.75rem 0',
+		color: 'var(--vscode-descriptionForeground)',
+	}}>
+		<div className="optify-spinner" />
+		{label}
+	</div>
+);
+
 export const PreviewApp: React.FC = () => {
 	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
+	const [graphData, setGraphData] = useState<FeatureGraphData | undefined>(undefined);
+	const [isConfigLoading, setIsConfigLoading] = useState(true);
+	const [isGraphLoading, setIsGraphLoading] = useState(true);
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 	const [showGraph, setShowGraph] = useState(true);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(true);
@@ -60,6 +76,10 @@ export const PreviewApp: React.FC = () => {
 			if (message.type === 'updateConfig') {
 				setPreviewData(message.data);
 				setSelectedFeatures(message.data.features.map(f => ({ value: f, label: f })));
+				setIsConfigLoading(false);
+			} else if (message.type === 'updateGraph') {
+				setGraphData(message.data.graphData);
+				setIsGraphLoading(false);
 			}
 		};
 
@@ -239,7 +259,7 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{!previewData && <>Loading...</>}
+			{!previewData && <LoadingIndicator label="Loading configuration..." />}
 
 			{/* Dependents */}
 			{previewData?.dependents && previewData.dependents.length > 0 && (
@@ -265,23 +285,26 @@ export const PreviewApp: React.FC = () => {
 			)}
 
 			{/* Import graph */}
-			{previewData?.graphData && (
+			{previewData && (
 				<div style={{ marginBottom: '1rem' }}>
 					<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
 						<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Import Graph</h3>
-						<button
-							onClick={() => setShowGraph(prev => !prev)}
-							style={{
-								padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
-								backgroundColor: 'var(--vscode-button-secondaryBackground)',
-								color: 'var(--vscode-button-secondaryForeground)',
-								border: '1px solid var(--vscode-button-border, transparent)',
-							}}
-						>
-							{showGraph ? 'Hide Import Graph' : 'Show Import Graph'}
-						</button>
+						{graphData && (
+							<button
+								onClick={() => setShowGraph(prev => !prev)}
+								style={{
+									padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+									backgroundColor: 'var(--vscode-button-secondaryBackground)',
+									color: 'var(--vscode-button-secondaryForeground)',
+									border: '1px solid var(--vscode-button-border, transparent)',
+								}}
+							>
+								{showGraph ? 'Hide Import Graph' : 'Show Import Graph'}
+							</button>
+						)}
 					</div>
-					{showGraph && (
+					{isGraphLoading && <LoadingIndicator label="Loading import graph..." />}
+					{!isGraphLoading && graphData && showGraph && (
 						<ErrorBoundary fallback={(error) => (
 							<div style={{
 								padding: '1rem', borderRadius: '4px', whiteSpace: 'pre-wrap' as const,
@@ -293,7 +316,7 @@ export const PreviewApp: React.FC = () => {
 							</div>
 						)}>
 							<ImportGraph
-								graphData={previewData.graphData}
+								graphData={graphData}
 								theme={theme}
 								onOpenFile={handleOpenFile}
 							/>

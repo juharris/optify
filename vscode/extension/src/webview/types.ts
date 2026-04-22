@@ -8,6 +8,13 @@ export interface UpdateConfigMessage {
 	data: PreviewData;
 }
 
+export interface UpdateGraphMessage {
+	type: 'updateGraph';
+	data: {
+		graphData: FeatureGraphData;
+	};
+}
+
 export interface OpenFileMessage {
 	command: 'openFile';
 	path: string;
@@ -27,5 +34,5 @@ export interface SetFeaturesMessage {
 	features: string[];
 }
 
-export type MessageFromExtension = UpdateConfigMessage;
+export type MessageFromExtension = UpdateConfigMessage | UpdateGraphMessage;
 export type MessageToExtension = OpenFileMessage | ReadyMessage | SetConfigurableStringsMessage | SetFeaturesMessage;

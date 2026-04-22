@@ -41,7 +41,6 @@ export interface PreviewData {
 	allFeatureNames: string[];
 	featureAliases: Record<string, string[]>;
 	featurePaths: Record<string, string>;
-	graphData?: FeatureGraphData;
 }
 
 const DEFAULT_CACHE_OPTIONS = new CacheOptions();
@@ -66,6 +65,18 @@ export class PreviewBuilder {
 			background-color: var(--vscode-editor-background);
 			color: var(--vscode-editor-foreground);
 		}
+		@keyframes optify-spin {
+			to { transform: rotate(360deg); }
+		}
+		.optify-spinner {
+			display: inline-block;
+			width: 16px;
+			height: 16px;
+			border: 2px solid var(--vscode-progressBar-background, #0078d4);
+			border-top-color: transparent;
+			border-radius: 50%;
+			animation: optify-spin 1s linear infinite;
+		}
 	</style>
 </head>
 <body>
@@ -87,10 +98,13 @@ export class PreviewBuilder {
 		if (areConfigurableStringsEnabled) {
 			preferences.enableConfigurableStrings();
 		}
+		let cacheOptions: CacheOptions | undefined = DEFAULT_CACHE_OPTIONS;
 		if (editingOptions?.overrides) {
+			// Caching is not supported when overrides are given.
+			cacheOptions = undefined;
 			preferences.setOverridesJson(editingOptions.overrides);
 		}
-		const builtConfig = provider.getAllOptions(editingOptions?.features ?? canonicalFeatures, preferences, DEFAULT_CACHE_OPTIONS);
+		const builtConfig = provider.getAllOptions(editingOptions?.features ?? canonicalFeatures, preferences, cacheOptions);
 		const feature = canonicalFeatures.length === 1 ? canonicalFeatures[0] : undefined;
 		const featuresWithMetadata = provider.featuresWithMetadata();
 		const dependentNames = feature ? featuresWithMetadata[feature]?.dependents() : null;
@@ -101,32 +115,56 @@ export class PreviewBuilder {
 
 		// We must build plain serializable maps from the native metadata objects because
 		// NAPI handles cannot be sent over the webview message bus.
-		// Build all derived data in one pass.
 		const allFeatureNames = provider.features();
 		const featureAliases: Record<string, string[]> = Object.create(null);
 		const featurePaths: Record<string, string> = Object.create(null);
+
+		for (const [name, metadata] of Object.entries(featuresWithMetadata)) {
+			const aliases = metadata.aliases();
+			if (aliases) {
+				featureAliases[name] = aliases;
+			}
+			const p = metadata.path();
+			if (p) {
+				featurePaths[name] = p;
+			}
+		}
+
+		return {
+			features: canonicalFeatures,
+			config: builtConfig,
+			dependents,
+			isUnsaved: !!editingOptions,
+			areConfigurableStringsEnabled: !!areConfigurableStringsEnabled,
+			areConfigurableStringsEnabledDefault: !!configurableStringsDefault,
+			allFeatureNames,
+			featureAliases,
+			featurePaths,
+		};
+	}
+
+	buildGraphData(
+		canonicalFeatures: string[],
+		provider: OptionsWatcher,
+	): FeatureGraphData {
+		const allFeatureNames = provider.features();
+		const featuresWithMetadata = provider.featuresWithMetadata();
 		const hasImportsSet = new Set<string>();
 		const graphEdges: FeatureGraphEdge[] = [];
+		const featurePaths: Record<string, string> = Object.create(null);
 
-		for (const name of allFeatureNames) {
-			const metadata = featuresWithMetadata[name];
-			if (metadata) {
-				const aliases = metadata.aliases();
-				if (aliases) {
-					featureAliases[name] = aliases;
-				}
-				const p = metadata.path();
-				if (p) {
-					featurePaths[name] = p;
-				}
-				// dependents() returns features that import this feature.
-				// Edge: dep -> name means dep imports name (source = dep, target = name).
-				const dependentsList = metadata.dependents();
-				if (dependentsList) {
-					for (const dep of dependentsList) {
-						graphEdges.push({ source: dep, target: name });
-						hasImportsSet.add(dep);
-					}
+		for (const [name, metadata] of Object.entries(featuresWithMetadata)) {
+			const p = metadata.path();
+			if (p) {
+				featurePaths[name] = p;
+			}
+			// dependents() returns features that import this feature.
+			// Edge: dep -> name means dep imports name (source = dep, target = name).
+			const dependentsList = metadata.dependents();
+			if (dependentsList) {
+				for (const dep of dependentsList) {
+					graphEdges.push({ source: dep, target: name });
+					hasImportsSet.add(dep);
 				}
 			}
 		}
@@ -139,19 +177,6 @@ export class PreviewBuilder {
 			hasImports: hasImportsSet.has(name),
 		}));
 
-		const graphData: FeatureGraphData = { nodes: graphNodes, edges: graphEdges };
-
-		return {
-			features: canonicalFeatures,
-			config: builtConfig,
-			dependents,
-			isUnsaved: !!editingOptions,
-			areConfigurableStringsEnabled: !!areConfigurableStringsEnabled,
-			areConfigurableStringsEnabledDefault: !!configurableStringsDefault,
-			allFeatureNames,
-			featureAliases,
-			featurePaths,
-			graphData,
-		};
+		return { nodes: graphNodes, edges: graphEdges };
 	}
 }

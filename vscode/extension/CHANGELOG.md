@@ -5,6 +5,11 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.8.2
+
+- Optimize loading the preview page by loading graph and configuration data separately.
+- Bug fix: Show configuration preview while editing the feature file.
+
 ## 1.8.0
 
 - Preview: Add feature multi-select picker with alias support for previewing multiple features.

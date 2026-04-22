@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import path from 'path';
 
-import { buildOptifyPreviewData } from '../extension';
+import { buildOptifyPreviewData, buildOptifyGraphData } from '../extension';
 import { findOptifyRoot } from '../path-utils';
 
 const expectedRoot = path.join(__dirname, '../../src/test/configs');
@@ -28,15 +28,6 @@ suite('Preview Builder Test Suite', () => {
 		assert.equal(result.config.wtv, 3);
 		assert.ok(Object.keys(result.config).length > 0);
 
-		// Graph data
-		assert.ok(result.graphData);
-		assert.ok(Array.isArray(result.graphData.nodes));
-		assert.ok(Array.isArray(result.graphData.edges));
-		assert.ok(result.graphData.nodes.length > 0);
-		const featureNode = result.graphData.nodes.find(n => n.id === 'feature');
-		assert.ok(featureNode);
-		assert.equal(featureNode.isEnabled, true);
-
 		// Feature metadata
 		assert.ok(Array.isArray(result.allFeatureNames));
 		assert.ok(result.allFeatureNames.includes('feature'));
@@ -46,6 +37,22 @@ suite('Preview Builder Test Suite', () => {
 		// Configurable strings default to disabled
 		assert.equal(result.areConfigurableStringsEnabled, false);
 		assert.equal(result.areConfigurableStringsEnabledDefault, false);
+	});
+
+	test('graph data', () => {
+		const graphData = buildOptifyGraphData(['feature'], expectedRoot);
+		assert.ok(graphData, 'Graph data should be present');
+		assert.ok(Array.isArray(graphData.nodes));
+		assert.ok(Array.isArray(graphData.edges));
+		assert.ok(graphData.nodes.length > 0);
+		const featureNode = graphData.nodes.find(n => n.id === 'feature');
+		assert.ok(featureNode);
+		assert.equal(featureNode.isEnabled, true);
+	});
+
+	test('graph data returns null for invalid path', () => {
+		const graphData = buildOptifyGraphData(['nonexistent-feature'], '/nonexistent/path');
+		assert.equal(graphData, null);
 	});
 
 	test('preview data respects configurable strings parameters', () => {
