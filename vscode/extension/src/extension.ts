@@ -9,7 +9,7 @@ import { OptifyDependentsProvider } from './dependents/show';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
 import { OptifyDocumentLinkProvider } from './links';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveFilePathArg } from './path-utils';
-import { PreviewBuilder, PreviewWhileEditingOptions, PreviewData } from './preview';
+import { PreviewBuilder, PreviewWhileEditingOptions, PreviewData, FeatureGraphData } from './preview';
 import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
 const outputChannel = vscode.window.createOutputChannel('Optify');
@@ -82,6 +82,29 @@ function sendPreviewUpdate(panel: vscode.WebviewPanel, data: PreviewData | { err
 	});
 }
 
+export function buildOptifyGraphData(
+	canonicalFeatures: string[],
+	optifyRoot: string,
+): FeatureGraphData | null {
+	const previewBuilder = new PreviewBuilder();
+	try {
+		const provider = getOptionsProvider(optifyRoot);
+		return previewBuilder.buildGraphData(canonicalFeatures, provider);
+	} catch (error) {
+		console.error(`Failed to build graph data: ${error}`);
+		return null;
+	}
+}
+
+function sendGraphUpdate(panel: vscode.WebviewPanel, graphData: FeatureGraphData | null) {
+	if (graphData) {
+		panel.webview.postMessage({
+			type: 'updateGraph',
+			data: { graphData },
+		});
+	}
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	outputChannel.appendLine('Optify extension is now active!');
 
@@ -148,14 +171,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const updatePreview = () => {
 			const preview = activePreviews.get(filePath);
+			const features = preview?.customFeatures ?? [canonicalName];
 			const data = buildOptifyPreviewData(
-				preview?.customFeatures ?? [canonicalName],
+				features,
 				optifyRoot,
 				undefined,
 				preview?.areConfigurableStringsEnabled ?? configurableStringsDefault,
 				configurableStringsDefault,
 			);
 			sendPreviewUpdate(panel, data);
+			const graphData = buildOptifyGraphData(features, optifyRoot);
+			sendGraphUpdate(panel, graphData);
 		};
 
 		// Handle messages from the webview
@@ -163,14 +189,17 @@ export function activate(context: vscode.ExtensionContext) {
 			async (message) => {
 				if (message.command === 'ready') {
 					const preview = activePreviews.get(filePath);
+					const features = preview?.customFeatures ?? [canonicalName];
 					const initialData = buildOptifyPreviewData(
-						preview?.customFeatures ?? [canonicalName],
+						features,
 						optifyRoot,
 						undefined,
 						preview?.areConfigurableStringsEnabled ?? configurableStringsDefault,
 						configurableStringsDefault,
 					);
 					sendPreviewUpdate(panel, initialData);
+					const graphData = buildOptifyGraphData(features, optifyRoot);
+					sendGraphUpdate(panel, graphData);
 				} else if (message.command === 'openFile') {
 					if (message.path) {
 						const uri = vscode.Uri.file(message.path);
@@ -203,6 +232,8 @@ export function activate(context: vscode.ExtensionContext) {
 							configurableStringsDefault,
 						);
 						sendPreviewUpdate(panel, data);
+						const graphData = buildOptifyGraphData(targetFeatures, optifyRoot);
+						sendGraphUpdate(panel, graphData);
 					}
 				}
 			},
@@ -224,11 +255,12 @@ export function activate(context: vscode.ExtensionContext) {
 				preview.debounceTimer = setTimeout(() => {
 					const documentText = event.document.getText();
 					const config = ConfigParser.parse(documentText, event.document.languageId);
+					const editingFeatures = config.imports ?? [];
 					const data = buildOptifyPreviewData(
 						preview.customFeatures ?? [canonicalName],
 						optifyRoot,
 						{
-							features: config.imports ?? [],
+							features: editingFeatures,
 							overrides: config.options ? JSON.stringify(config.options) : undefined
 						},
 						preview.areConfigurableStringsEnabled,

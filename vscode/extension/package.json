@@ -2,7 +2,7 @@
 	"name": "optify",
 	"displayName": "Optify",
 	"description": "Helps manage Optify feature files.",
-	"version": "1.8.1",
+	"version": "1.8.2",
 	"publisher": "optify-config",
 	"license": "MIT",
 	"repository": "https://github.com/juharris/optify",
@@ -49,10 +49,11 @@
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "node esbuild.js",
+		"compile:tests": "tsc -p tsconfig.json --noEmit false --declaration false",
 		"clean": "rm -rf out optify-*.vsix .vscode-test",
 		"watch": "node esbuild.js --watch",
 		"package": "vsce package",
-		"pretest": "npm run compile && npm run lint",
+		"pretest": "npm run compile && npm run compile:tests && npm run lint",
 		"publish": "vsce publish",
 		"lint": "eslint src",
 		"lint:fix": "eslint src --fix",
@@ -76,7 +77,7 @@
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@optify/config": "^1.5.0",
+		"@optify/config": "^1.5.1",
 		"@textea/json-viewer": "^4.0.1",
 		"js-yaml": "^4.1.0",
 		"react": "^18.3.1",
