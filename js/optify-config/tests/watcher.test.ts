@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, afterEach } from "@jest/globals";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { OptionsWatcher, WatcherOptions } from "../dist/index";
+import { CacheOptions, OptionsWatcher, WatcherOptions } from "../dist/index";
 
 const MODIFICATION_DEBOUNCE_MS = 10;
 const RETRY_DELAY = MODIFICATION_DEBOUNCE_MS * 2 + 100;
@@ -18,6 +18,66 @@ describe("OptionsWatcher", () => {
 	afterEach(() => {
 		fs.rmSync(tempDir, { recursive: true, force: true });
 	});
+
+	test(
+		"featuresWithMetadata is not undefined after getAllOptions invalidates the cache",
+		(done) => {
+			const configPath = path.join(tempDir, "config.yaml");
+			fs.writeFileSync(configPath, "");
+
+			const options = new WatcherOptions();
+			options.setDebounceDurationMs(MODIFICATION_DEBOUNCE_MS);
+			let watcher: OptionsWatcher | null = OptionsWatcher.buildWithOptions(tempDir, options);
+
+			let listenerCalled = false;
+
+			watcher.addListener(() => {
+				if (listenerCalled) return;
+				listenerCalled = true;
+
+				// Populate the featuresWithMetadata cache after the modification is detected.
+				// This sets FEATURES_WITH_METADATA_CACHE_TIME_KEY to the new lastModified() time,
+				// but leaves CACHE_CREATION_TIME_KEY as undefined since init() was not called.
+				const afterChange = watcher!.featuresWithMetadata();
+				expect(afterChange).toBeDefined();
+
+				// getAllOptions with cacheOptions triggers resetWatcherCachesIfModified which, because
+				// CACHE_CREATION_TIME_KEY is undefined, calls resetCaches and clears
+				// FEATURES_WITH_METADATA_CACHE_KEY without clearing FEATURES_WITH_METADATA_CACHE_TIME_KEY.
+				watcher!.getAllOptions([], null, new CacheOptions());
+
+				// Before the fix: featuresWithMetadata returns undefined because the time key still
+				// matches lastModified() but the cache was cleared without resetting the time key.
+				const afterInvalidation = watcher!.featuresWithMetadata();
+				expect(afterInvalidation).toBeDefined();
+
+				watcher = null;
+				done();
+			});
+
+			setTimeout(() => {
+				let attempts = 0;
+				const tryModification = () => {
+					if (listenerCalled) {
+						return;
+					}
+					if (attempts >= MAX_RETRY_ATTEMPTS) {
+						done(new Error("Listener was not called after maximum retry attempts"));
+						return;
+					}
+
+					++attempts;
+					const newContent = `options:\n  key: value-${Date.now()}`;
+					fs.writeFileSync(configPath, newContent);
+
+					setTimeout(tryModification, RETRY_DELAY + attempts * 500);
+				};
+
+				tryModification();
+			}, MODIFICATION_DEBOUNCE_MS + 100);
+		},
+		MODIFICATION_DEBOUNCE_MS + 100 + RETRY_DELAY * MAX_RETRY_ATTEMPTS + MAX_RETRY_ATTEMPTS ** 2 * 500,
+	);
 
 	test(
 		"listener is called when a file is modified and cache is invalidated",
@@ -153,4 +213,21 @@ describe("OptionsWatcher", () => {
 		},
 		MODIFICATION_DEBOUNCE_MS + 100 + RETRY_DELAY * MAX_RETRY_ATTEMPTS + MAX_RETRY_ATTEMPTS ** 2 * 200,
 	);
+
+	test("featuresWithMetadata on first call does not evict the options cache", () => {
+		const configPath = path.join(tempDir, "config.yaml");
+		fs.writeFileSync(configPath, "options:\n  key: value");
+
+		const watcher = OptionsWatcher.build(tempDir);
+
+		// Prime the options cache before ever calling featuresWithMetadata.
+		const firstResult = watcher.getAllOptions([], null, new CacheOptions());
+
+		// First call to featuresWithMetadata should not reset the options cache.
+		watcher.featuresWithMetadata();
+
+		// The options cache should still be intact — same reference returned.
+		const secondResult = watcher.getAllOptions([], null, new CacheOptions());
+		expect(secondResult).toBe(firstResult);
+	});
 });

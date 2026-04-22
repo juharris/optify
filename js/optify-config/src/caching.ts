@@ -25,6 +25,7 @@ export interface CacheableInstance {
 	lastModified?(): number;
 	[CACHE_CREATION_TIME_KEY]?: number;
 	[FEATURES_WITH_METADATA_CACHE_KEY]?: Record<string, nativeBinding.OptionsMetadata>;
+	[FEATURES_WITH_METADATA_CACHE_TIME_KEY]?: number;
 	[OPTIONS_CACHE_KEY]?: OptionsCache;
 	[CACHE_INIT_OPTIONS_KEY]?: CacheInitOptions | null;
 	[SCHEMA_ID_COUNTER_KEY]?: number;
@@ -95,6 +96,7 @@ export function resetWatcherCachesIfModified(instance: CacheableInstance): void 
  */
 export function resetCaches(instance: CacheableInstance): void {
 	instance[FEATURES_WITH_METADATA_CACHE_KEY] = undefined;
+	instance[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = undefined;
 	instance[OPTIONS_CACHE_KEY] = createOptionsCache(instance[CACHE_INIT_OPTIONS_KEY]);
 }
 
