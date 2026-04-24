@@ -79,11 +79,51 @@ A typical example of this in programming is how SQL tells the database the desir
 This also makes many changes easier to make and review because we don't have to scrutinize specific code as much.
 For example, many changes will be less intimidating to make and review because they're just adding or modifying a YAML file instead of changing Ruby files or adding custom conditional logic.
 
+## Configurations in Files
+
 This project encourages using **features backed by configurations in files with your source code** because that's the most clear way for developers to see what values are supported for different configurable options.
-The .NET version of this library happens to support configurations in the cloud because it uses standard .NET interfaces for configuration providers,
-but this is not the main focus of these projects because configurations in the cloud are hard to maintain and easy to break in a backwards incompatible way.
-Configurations in the cloud are fine for temporary experiments, but make the daily development experience less stable and unclear because it's not obvious what values are possible for different options which make refactoring difficult.
+Configurations in the cloud are hard to maintain and easy to break in a backwards incompatible way.
+Configurations in the cloud are convenient for temporary experiments,
+but make the daily development experience less stable and unclear because it's not obvious what values are possible for different options which make reviewing and modifying code difficult.
 The main point is to keep the configurations private and internal to your codebase while feature flags names are part of your external API.
+
+### Problems with Cloud Configurations
+
+The usual pitch for cloud configuration is speed: change a value, have it live in production in seconds, without a pull request or a deploy.
+That pitch falls apart the first time a cloud config change causes an incident.
+
+The moment a value affects how the product behaves, the team needs:
+- **History** — who changed the value, **when**, and **why**.
+- **Review** — a second pair of eyes, with owners, before the change goes out.
+- **Rollback** — one command that restores a known-good state and records that it happened.
+- **Gradual rollout** — a bad change should hit a small cohort before it hits everyone, and it should be possible to halt partway.
+- **A coherent view of the system** — for a given production request, the configuration that was in effect and the code that was running should be recoverable together.
+
+None of these are optional.
+They come up during the first post-incident review, and every one after that.
+Version control, like Git, already gives you history, diffs, and rollback.
+GitHub pull requests already give you review and code owners.
+Your deployment pipeline should already give you staged rollouts.
+Versioning the application and its configuration together is what makes the resulting behavior reproducible.
+
+Once the team finishes wiring audit logs, approval flows, staged rollouts, drift detection, and a `git revert` equivalent onto the cloud config system, the result is Git, GitHub, and the deployment pipeline rebuilt on top of a weaker substrate — with fewer people who know how to operate it correctly.
+
+A newer argument: cloud configuration is opaque to AI coding agents.
+Tools like Claude Code and GitHub Copilot can read, search, diff, and modify configuration files the same way they work with code, and bundle the resulting changes into a pull request next to the code that depends on them.
+They cannot easily do the same thing through a cloud configuration UI or understand what configuration values are in scope or in effect.
+As AI-assisted development takes on more of the work of writing and reviewing changes, keeping configurations in files keeps them in reach of that tooling.
+
+### "But We Need to Swap a Value Mid-Incident"
+
+The honest version of the ask is usually "our deploys are too slow to handle a provider outage".
+That is a real problem.
+It is not a configuration-storage problem.
+
+The fix is, in this order:
+1. Make configuration deploys fast, so shipping a configuration change is faster than shipping a code change.
+2. Back genuinely operational levers — swap provider, change region endpoint, drain traffic, disable a feature — with the feature flag or experiment platform you already use. Those platforms are built for runtime overrides with targeted cohorts, kill switches, gradual rollout, and an audit trail. Use toggles provided by your experimentation platform to enable or disable Optify features, and use Optify to manage the configuration for those features in your codebase. Optify feature files are in the internal view for what a feature controls; your experimentation platform is the external view and can control which features are enabled for a request. This way, you can have the best of both worlds: the s**afety and clarity of configuration files** in your codebase and the speed and targeting of your experimentation platform.
+
+Everything else, such as specific string values, belong in files next to the code that reads it, so a reviewer sees both at once and a revert restores a coherent state.
 
 # Merging Configuration Files
 Objects are merged with the last feature taking precedence.
