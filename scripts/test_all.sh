@@ -8,6 +8,11 @@ pushd rust
 cargo test
 popd
 
+pushd elixir/optify
+mix deps.get
+mix test
+popd
+
 pushd js/optify-config
 yarn build:debug
 yarn test

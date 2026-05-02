@@ -83,4 +83,13 @@ yarn version $strategy
 yarn install
 popd
 
+pushd elixir/optify
+bump_dependency_in_toml "native/optify_nif/Cargo.toml" $current_version $next_version
+bump_version_in_toml "native/optify_nif/Cargo.toml" $strategy
+# Bump version in mix.exs
+mix_current=$(grep -m 1 'version: "' mix.exs | sed -E 's/.*version: "(.+)".*/\1/')
+mix_next=$(get_next_version $mix_current $strategy)
+sed -i "" "s/version: \"${mix_current}\"/version: \"${mix_next}\"/" mix.exs
+popd
+
 # Don't do the extension because it needs @optify/config to be published first.

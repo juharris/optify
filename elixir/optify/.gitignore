@@ -1,0 +1,15 @@
+# Build artifacts
+/_build/
+/deps/
+
+# NIF compiled artifacts
+/priv/native/
+
+# Rust build artifacts
+/native/optify_nif/target/
+
+# Generated on crash or by tests
+/erl_crash.dump
+
+# Mix archives
+/tmp/
