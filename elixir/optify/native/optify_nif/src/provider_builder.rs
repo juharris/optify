@@ -16,7 +16,7 @@ pub fn provider_builder_new() -> ResourceArc<ProviderBuilderResource> {
     )))
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn provider_builder_add_directory(
     builder: ResourceArc<ProviderBuilderResource>,
     directory: String,

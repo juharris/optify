@@ -8,7 +8,7 @@ defmodule Optify.OptionsProvider do
 
   defstruct [:ref]
 
-  def build(directory) do
+  def build(directory) when is_binary(directory) do
     case Optify.Native.provider_build(directory) do
       {:ok, ref} -> {:ok, %__MODULE__{ref: ref}}
       {:error, _} = err -> err
@@ -23,7 +23,8 @@ defmodule Optify.OptionsProvider do
     end
   end
 
-  def build_with_schema(directory, schema_path) do
+  def build_with_schema(directory, schema_path)
+      when is_binary(directory) and is_binary(schema_path) do
     case Optify.Native.provider_build_with_schema(directory, schema_path) do
       {:ok, ref} -> {:ok, %__MODULE__{ref: ref}}
       {:error, _} = err -> err
@@ -38,7 +39,7 @@ defmodule Optify.OptionsProvider do
     end
   end
 
-  def build_from_directories(directories) do
+  def build_from_directories(directories) when is_list(directories) do
     case Optify.Native.provider_build_from_directories(directories) do
       {:ok, ref} -> {:ok, %__MODULE__{ref: ref}}
       {:error, _} = err -> err
@@ -53,7 +54,8 @@ defmodule Optify.OptionsProvider do
     end
   end
 
-  def build_from_directories_with_schema(directories, schema_path) do
+  def build_from_directories_with_schema(directories, schema_path)
+      when is_list(directories) and is_binary(schema_path) do
     case Optify.Native.provider_build_from_directories_with_schema(directories, schema_path) do
       {:ok, ref} -> {:ok, %__MODULE__{ref: ref}}
       {:error, _} = err -> err
@@ -80,11 +82,13 @@ defmodule Optify.OptionsProvider do
     Optify.Native.provider_get_features_and_aliases(ref)
   end
 
-  def get_canonical_feature_name(%__MODULE__{ref: ref}, feature_name) do
+  def get_canonical_feature_name(%__MODULE__{ref: ref}, feature_name)
+      when is_binary(feature_name) do
     Optify.Native.provider_get_canonical_feature_name(ref, feature_name)
   end
 
-  def get_canonical_feature_name!(%__MODULE__{ref: ref}, feature_name) do
+  def get_canonical_feature_name!(%__MODULE__{ref: ref}, feature_name)
+      when is_binary(feature_name) do
     case Optify.Native.provider_get_canonical_feature_name(ref, feature_name) do
       {:ok, name} -> name
       {:error, reason} -> raise ArgumentError, reason
@@ -92,13 +96,15 @@ defmodule Optify.OptionsProvider do
     end
   end
 
-  def get_canonical_feature_names(%__MODULE__{ref: ref}, feature_names) do
+  def get_canonical_feature_names(%__MODULE__{ref: ref}, feature_names)
+      when is_list(feature_names) do
     Optify.Native.provider_get_canonical_feature_names(ref, feature_names)
   end
 
   def get_all_options(%__MODULE__{ref: ref}, feature_names, %Optify.GetOptionsPreferences{
         ref: prefs_ref
-      }) do
+      })
+      when is_list(feature_names) do
     Optify.Native.provider_get_all_options(ref, feature_names, prefs_ref)
   end
 
@@ -109,7 +115,8 @@ defmodule Optify.OptionsProvider do
 
   def get_options(%__MODULE__{ref: ref}, key, feature_names, %Optify.GetOptionsPreferences{
         ref: prefs_ref
-      }) do
+      })
+      when is_binary(key) and is_list(feature_names) do
     Optify.Native.provider_get_options(ref, key, feature_names, prefs_ref)
   end
 
@@ -122,7 +129,8 @@ defmodule Optify.OptionsProvider do
         %__MODULE__{ref: ref},
         feature_names,
         %Optify.GetOptionsPreferences{ref: prefs_ref}
-      ) do
+      )
+      when is_list(feature_names) do
     Optify.Native.provider_get_filtered_feature_names(ref, feature_names, prefs_ref)
   end
 
@@ -133,7 +141,8 @@ defmodule Optify.OptionsProvider do
 
   def map_feature_names(%__MODULE__{ref: ref}, feature_names, %Optify.GetOptionsPreferences{
         ref: prefs_ref
-      }) do
+      })
+      when is_list(feature_names) do
     Optify.Native.provider_map_feature_names(ref, feature_names, prefs_ref)
   end
 
@@ -142,7 +151,8 @@ defmodule Optify.OptionsProvider do
     map_feature_names(provider, feature_names, prefs)
   end
 
-  def has_conditions?(%__MODULE__{ref: ref}, canonical_feature_name) do
+  def has_conditions?(%__MODULE__{ref: ref}, canonical_feature_name)
+      when is_binary(canonical_feature_name) do
     Optify.Native.provider_has_conditions(ref, canonical_feature_name)
   end
 end
