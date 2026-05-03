@@ -72,10 +72,10 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          elixir/optify/deps
           elixir/optify/_build
+          elixir/optify/deps
           elixir/optify/priv/native
-        key: ${{ matrix.os }}-mix-${{ hashFiles('elixir/optify/mix.lock') }}
+        key: ${{ matrix.os }}-mix-${{ hashFiles('elixir/optify/mix.lock', 'elixir/optify/native/optify_nif/Cargo.lock', 'elixir/optify/native/optify_nif/src/**', 'rust/optify/src/**', 'rust/optify/Cargo.toml') }}
         restore-keys: |
           ${{ matrix.os }}-mix-
 
