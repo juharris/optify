@@ -26,12 +26,13 @@ defmodule Optify.GetOptionsPreferences do
     prefs
   end
 
-  def set_constraints(%__MODULE__{ref: ref} = prefs, constraints) do
+  def set_constraints(%__MODULE__{ref: ref} = prefs, constraints) when is_map(constraints) do
     Optify.Native.preferences_set_constraints(ref, constraints)
     prefs
   end
 
-  def set_constraints_json(%__MODULE__{ref: ref} = prefs, constraints_json) do
+  def set_constraints_json(%__MODULE__{ref: ref} = prefs, constraints_json)
+      when is_binary(constraints_json) do
     Optify.Native.preferences_set_constraints_json(ref, constraints_json)
     prefs
   end
@@ -44,12 +45,12 @@ defmodule Optify.GetOptionsPreferences do
     Optify.Native.preferences_get_constraints_json(ref)
   end
 
-  def set_overrides_json(%__MODULE__{ref: ref} = prefs, json) do
+  def set_overrides_json(%__MODULE__{ref: ref} = prefs, json) when is_binary(json) do
     Optify.Native.preferences_set_overrides_json(ref, json)
     prefs
   end
 
-  def set_overrides(%__MODULE__{ref: ref} = prefs, overrides) do
+  def set_overrides(%__MODULE__{ref: ref} = prefs, overrides) when is_map(overrides) do
     Optify.Native.preferences_set_overrides(ref, overrides)
     prefs
   end
@@ -58,7 +59,8 @@ defmodule Optify.GetOptionsPreferences do
     Optify.Native.preferences_get_overrides_json(ref)
   end
 
-  def set_skip_feature_name_conversion(%__MODULE__{ref: ref} = prefs, value) do
+  def set_skip_feature_name_conversion(%__MODULE__{ref: ref} = prefs, value)
+      when is_boolean(value) do
     Optify.Native.preferences_set_skip_feature_name_conversion(ref, value)
     prefs
   end

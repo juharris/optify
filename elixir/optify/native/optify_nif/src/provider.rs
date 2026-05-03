@@ -11,7 +11,7 @@ impl rustler::Resource for ProviderResource {}
 
 // ===== Factory =====
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn provider_build(directory: String) -> NifResult<ResourceArc<ProviderResource>> {
     match OptionsProvider::build(&directory) {
         Ok(provider) => Ok(ResourceArc::new(ProviderResource(provider))),
@@ -19,7 +19,7 @@ pub fn provider_build(directory: String) -> NifResult<ResourceArc<ProviderResour
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn provider_build_with_schema(
     directory: String,
     schema_path: String,
@@ -30,7 +30,7 @@ pub fn provider_build_with_schema(
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn provider_build_from_directories(
     directories: Vec<String>,
 ) -> NifResult<ResourceArc<ProviderResource>> {
@@ -40,7 +40,7 @@ pub fn provider_build_from_directories(
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn provider_build_from_directories_with_schema(
     directories: Vec<String>,
     schema_path: String,

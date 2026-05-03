@@ -32,7 +32,7 @@ pub fn watcher_builder_add_directory(
     Ok(builder)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn watcher_builder_build(
     builder: ResourceArc<WatcherBuilderResource>,
 ) -> NifResult<ResourceArc<WatcherResource>> {

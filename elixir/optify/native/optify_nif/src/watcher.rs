@@ -12,7 +12,7 @@ impl rustler::Resource for WatcherResource {}
 
 // ===== Factory =====
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn watcher_build(directory: String) -> NifResult<ResourceArc<WatcherResource>> {
     match OptionsWatcher::build(&directory) {
         Ok(watcher) => Ok(ResourceArc::new(WatcherResource(Mutex::new(watcher)))),
@@ -20,7 +20,7 @@ pub fn watcher_build(directory: String) -> NifResult<ResourceArc<WatcherResource
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn watcher_build_with_schema(
     directory: String,
     schema_path: String,
@@ -31,7 +31,7 @@ pub fn watcher_build_with_schema(
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn watcher_build_from_directories(
     directories: Vec<String>,
 ) -> NifResult<ResourceArc<WatcherResource>> {
@@ -41,7 +41,7 @@ pub fn watcher_build_from_directories(
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn watcher_build_from_directories_with_schema(
     directories: Vec<String>,
     schema_path: String,

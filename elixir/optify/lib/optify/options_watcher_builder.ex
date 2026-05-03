@@ -9,7 +9,7 @@ defmodule Optify.OptionsWatcherBuilder do
     %__MODULE__{ref: Optify.Native.watcher_builder_new()}
   end
 
-  def add_directory(%__MODULE__{ref: ref} = builder, directory) do
+  def add_directory(%__MODULE__{ref: ref} = builder, directory) when is_binary(directory) do
     case Optify.Native.watcher_builder_add_directory(ref, directory) do
       {:ok, _} -> {:ok, builder}
       {:error, _} = err -> err
