@@ -1,0 +1,104 @@
+name: "[Elixir] Build & Test"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/elixir_build_test.yml"
+      - "elixir/**"
+      - "rust/optify/**"
+      - "tests/**"
+  pull_request:
+    branches: [ "main" ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
+    paths:
+      - ".github/workflows/elixir_build_test.yml"
+      - "elixir/**"
+      - "rust/optify/**"
+      - "tests/**"
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  MIX_ENV: test
+
+jobs:
+  setup:
+    # Drafts: Only run on Ubuntu.
+    # Non-drafts: Run on both Ubuntu and macOS.
+    name: "Setup Build Matrix"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setup.outputs.matrix }}
+    steps:
+      - id: setup
+        run: |
+          if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            matrix='["ubuntu-latest"]'
+          else
+            matrix='["ubuntu-latest", "macos-latest"]'
+          fi
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  test:
+    name: "Build & Test"
+    needs: setup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: "[Elixir] Setup Erlang & Elixir"
+      uses: erlef/setup-beam@v1
+      with:
+        otp-version: "28"
+        elixir-version: "1.18"
+
+    - name: "[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          elixir/optify/native/optify_nif
+          rust/optify
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-rust
+
+    - name: "[Elixir] Restore deps cache"
+      uses: actions/cache@v4
+      with:
+        path: |
+          elixir/optify/_build
+          elixir/optify/deps
+          elixir/optify/priv/native
+        key: ${{ matrix.os }}-mix-${{ hashFiles('elixir/optify/mix.lock', 'elixir/optify/native/optify_nif/Cargo.lock', 'elixir/optify/native/optify_nif/src/**', 'rust/optify/src/**', 'rust/optify/Cargo.toml') }}
+        restore-keys: |
+          ${{ matrix.os }}-mix-
+
+    - name: "[Elixir] Get dependencies"
+      run: mix deps.get
+      working-directory: ./elixir/optify
+
+    - name: "[Elixir] Compile"
+      run: mix compile --warnings-as-errors
+      working-directory: ./elixir/optify
+
+    - name: "[Elixir] Check formatting"
+      run: mix format --check-formatted
+      working-directory: ./elixir/optify
+
+    - name: "[Rust] Check formatting"
+      run: cargo fmt -- --check
+      working-directory: ./elixir/optify/native/optify_nif
+
+    - name: "[Rust] Clippy"
+      run: cargo clippy --no-deps -- -D warnings
+      working-directory: ./elixir/optify/native/optify_nif
+
+    - name: "[Elixir] Run tests"
+      run: mix test
+      working-directory: ./elixir/optify

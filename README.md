@@ -605,6 +605,11 @@ See [rust/optify-cli](./rust/optify-cli/) for full documentation.
 See [github.com/juharris/dotnet-OptionsProvider][dotnet-OptionsProvider] for a similar library with dependency injection support.
 Configurations are merged using typical .NET standards from `ConfigurationBuilder` when using `IConfiguration`, so lists are merged, unlike the behavior in this repository where lists are overwritten, which is easier to understand.
 
+## Elixir
+
+See the [elixir/optify](./elixir/optify/) folder.
+Built using the Rust implementation via [Rustler](https://github.com/rusterlium/rustler) NIFs.
+
 ## Node.js
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
 

@@ -64,6 +64,15 @@ bump_version_in_toml "Cargo.toml" $strategy
 bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 popd
 
+pushd elixir/optify
+bump_dependency_in_toml "native/optify_nif/Cargo.toml" $current_version $next_version
+bump_version_in_toml "native/optify_nif/Cargo.toml" $strategy
+# Bump version in mix.exs
+mix_current=$(grep -m 1 'version: "' mix.exs | sed -E 's/.*version: "(.+)".*/\1/')
+mix_next=$(get_next_version $mix_current $strategy)
+sed -i "" "s/version: \"${mix_current}\"/version: \"${mix_next}\"/" mix.exs
+popd
+
 pushd python/optify
 bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 bump_version_in_toml "pyproject.toml" $strategy
