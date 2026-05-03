@@ -1,5 +1,6 @@
+use crate::term_to_json_value;
 use optify::provider::GetOptionsPreferences;
-use rustler::{NifResult, ResourceArc, Term};
+use rustler::{Env, NifResult, ResourceArc, Term};
 use std::sync::Mutex;
 
 pub struct PreferencesResource(pub Mutex<GetOptionsPreferences>);
@@ -52,6 +53,24 @@ pub fn preferences_disable_configurable_strings(
 }
 
 #[rustler::nif]
+pub fn preferences_set_constraints<'a>(
+    preferences: ResourceArc<PreferencesResource>,
+    constraints: Option<Term<'a>>,
+) -> NifResult<ResourceArc<PreferencesResource>> {
+    let mut guard = preferences
+        .0
+        .lock()
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Lock poisoned: {}", e))))?;
+    guard.set_constraints(
+        constraints
+            .map(|term| term_to_json_value(term))
+            .transpose()?,
+    );
+    drop(guard);
+    Ok(preferences)
+}
+
+#[rustler::nif]
 pub fn preferences_set_constraints_json(
     preferences: ResourceArc<PreferencesResource>,
     constraints_json: Option<String>,
@@ -63,6 +82,21 @@ pub fn preferences_set_constraints_json(
     guard.set_constraints_json(constraints_json.as_deref());
     drop(guard);
     Ok(preferences)
+}
+
+#[rustler::nif]
+pub fn preferences_get_constraints<'a>(
+    env: Env<'a>,
+    preferences: ResourceArc<PreferencesResource>,
+) -> NifResult<Option<Term<'a>>> {
+    let guard = preferences
+        .0
+        .lock()
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Lock poisoned: {}", e))))?;
+    Ok(guard
+        .constraints
+        .as_ref()
+        .map(|c| crate::json_value_to_term(env, &c.constraints)))
 }
 
 #[rustler::nif]
@@ -104,7 +138,7 @@ pub fn preferences_set_overrides<'a>(
         .lock()
         .map_err(|e| rustler::Error::Term(Box::new(format!("Lock poisoned: {}", e))))?;
     guard.overrides = match overrides {
-        Some(term) => Some(crate::term_to_json_value(term)?),
+        Some(term) => Some(term_to_json_value(term)?),
         None => None,
     };
     drop(guard);

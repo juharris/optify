@@ -9,7 +9,6 @@ cargo test
 popd
 
 pushd elixir/optify
-mix deps.get
 mix test
 popd
 
