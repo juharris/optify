@@ -74,6 +74,7 @@ jobs:
         path: |
           elixir/optify/deps
           elixir/optify/_build
+          elixir/optify/priv/native
         key: ${{ matrix.os }}-mix-${{ hashFiles('elixir/optify/mix.lock') }}
         restore-keys: |
           ${{ matrix.os }}-mix-
