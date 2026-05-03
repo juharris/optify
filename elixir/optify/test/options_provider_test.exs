@@ -72,6 +72,34 @@ defmodule Optify.OptionsProviderTest do
     end
   end
 
+  test "build wraps native references and get_options passes through native errors" do
+    native_provider_ref = Optify.Native.provider_build(simple_configs())
+
+    assert is_reference(native_provider_ref)
+
+    assert {:ok, %OptionsProvider{ref: wrapper_provider_ref}} =
+             OptionsProvider.build(simple_configs())
+
+    assert is_reference(wrapper_provider_ref)
+
+    assert {:error,
+            ~s(Error getting options with features ["feature_A"]: configuration property "unknown_key" not found)} =
+             Optify.Native.provider_get_options(
+               wrapper_provider_ref,
+               "unknown_key",
+               ["feature_A"],
+               GetOptionsPreferences.new().ref
+             )
+
+    assert {:error,
+            ~s(Error getting options with features ["feature_A"]: configuration property "unknown_key" not found)} =
+             OptionsProvider.get_options(
+               %OptionsProvider{ref: wrapper_provider_ref},
+               "unknown_key",
+               ["feature_A"]
+             )
+  end
+
   test "query helpers expose aliases, features, and canonical feature names" do
     provider = OptionsProvider.build!(simple_configs())
 

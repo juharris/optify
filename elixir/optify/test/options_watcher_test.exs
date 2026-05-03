@@ -68,6 +68,34 @@ defmodule Optify.OptionsWatcherTest do
     end
   end
 
+  test "build wraps native references and get_options passes through native errors" do
+    native_watcher_ref = Optify.Native.watcher_build(simple_configs())
+
+    assert is_reference(native_watcher_ref)
+
+    assert {:ok, %OptionsWatcher{ref: wrapper_watcher_ref}} =
+             OptionsWatcher.build(simple_configs())
+
+    assert is_reference(wrapper_watcher_ref)
+
+    assert {:error,
+            ~s(Error getting options with features ["feature_A"]: configuration property "unknown_key" not found)} =
+             Optify.Native.watcher_get_options(
+               wrapper_watcher_ref,
+               "unknown_key",
+               ["feature_A"],
+               GetOptionsPreferences.new().ref
+             )
+
+    assert {:error,
+            ~s(Error getting options with features ["feature_A"]: configuration property "unknown_key" not found)} =
+             OptionsWatcher.get_options(
+               %OptionsWatcher{ref: wrapper_watcher_ref},
+               "unknown_key",
+               ["feature_A"]
+             )
+  end
+
   test "query helpers expose aliases, features, and canonical feature names" do
     watcher = OptionsWatcher.build!(simple_configs())
 
