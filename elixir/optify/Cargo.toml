@@ -1,0 +1,9 @@
+# Required when cross-compiling to help CI find the correct Cargo.toml.
+[workspace]
+members = ["native/optify_nif"]
+resolver = "2"
+
+# Use the local optify crate for development and CI.
+# When building from the source hex package (no workspace), Cargo fetches from crates.io instead.
+[patch.crates-io]
+optify = { path = "../../rust/optify" }
