@@ -1,8 +1,11 @@
 defmodule Optify.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/juharris/optify"
+  @hex_url "https://hex.pm/packages/optify"
+  @docs_url "https://hexdocs.pm/optify"
+  @issues_url "#{@source_url}/issues"
 
   def project do
     [
@@ -42,7 +45,12 @@ defmodule Optify.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url},
+      links: %{
+        "GitHub" => @source_url,
+        "Hex" => @hex_url,
+        "HexDocs" => @docs_url,
+        "Issues" => @issues_url
+      },
       files: ~w(
         lib
         native/optify_nif/src
