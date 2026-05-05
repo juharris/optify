@@ -12,7 +12,7 @@ Configurations for different experiments or feature flags are mergeable to suppo
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
 [![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
 [![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad&logo=Python)](https://pypi.org/project/optify)
-[![VS Code Extension](https://img.shields.io/vscode-marketplace/v/optify-config.optify?color=blue&label=VS%20Code)][vsc-extension]
+[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-blue)][vsc-extension]
 
 > The configuration should declare **what** to do, but **not how** to do it.
 
