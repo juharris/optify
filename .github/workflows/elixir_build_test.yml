@@ -20,6 +20,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
   MIX_ENV: test
@@ -63,7 +66,7 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: |
-          elixir/optify/native/optify_nif
+          elixir/optify
           rust/optify
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
@@ -75,7 +78,7 @@ jobs:
           elixir/optify/_build
           elixir/optify/deps
           elixir/optify/priv/native
-        key: ${{ matrix.os }}-mix-${{ hashFiles('elixir/optify/mix.lock', 'elixir/optify/native/optify_nif/Cargo.lock', 'elixir/optify/native/optify_nif/src/**', 'rust/optify/src/**', 'rust/optify/Cargo.toml') }}
+        key: ${{ matrix.os }}-mix-${{ hashFiles('elixir/optify/mix.lock', 'elixir/optify/Cargo.toml', 'elixir/optify/Cargo.lock', 'elixir/optify/native/optify_nif/Cargo.toml', 'elixir/optify/native/optify_nif/src/**', 'rust/optify/src/**', 'rust/optify/Cargo.toml') }}
         restore-keys: |
           ${{ matrix.os }}-mix-
 
@@ -101,4 +104,32 @@ jobs:
 
     - name: "[Elixir] Run tests"
       run: mix test
+      working-directory: ./elixir/optify
+
+    - name: "[Elixir] Build docs"
+      if: matrix.os == 'ubuntu-latest'
+      env:
+        MIX_ENV: dev
+      run: mix docs
+      working-directory: ./elixir/optify
+
+    - name: "[Elixir] Publish"
+      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      shell: bash
+      continue-on-error: true
+      env:
+        HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        MIX_ENV: dev
+      run: |
+        mix hex.publish --yes
+      working-directory: ./elixir/optify
+
+    - name: "[Elixir] Publish Checks"
+      if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      shell: bash
+      env:
+        HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        MIX_ENV: dev
+      run: |
+        mix hex.publish --dry-run --yes
       working-directory: ./elixir/optify

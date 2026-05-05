@@ -1,8 +1,10 @@
 # Optify for Elixir
 
-An Elixir library for [Optify](../../README.md) powered by Rust NIFs via [Rustler](https://github.com/rusterlium/rustler).
+[![Hex.pm](https://img.shields.io/hexpm/v/optify?color=%234B275F&label=Hex.pm&logo=elixir)][Hex Package]
 
-See the [homepage] for details about how feature files are combined to build the options to process at runtime.
+An Elixir library for [Optify](https://github.com/juharris/optify) powered by Rust NIFs via [Rustler](https://github.com/rusterlium/rustler).
+
+See the [homepage], [Hex package], and [HexDocs] for details about how feature files are combined to build the options to process at runtime.
 
 ## Requirements
 
@@ -12,7 +14,19 @@ See the [homepage] for details about how feature files are combined to build the
 
 ## Installation
 
-*Coming soon*
+Add `:optify` to your list of dependencies in `mix.exs`:
+
+```Elixir
+{:optify, "~> 0.2.0"}
+```
+
+Then fetch dependencies and compile the Rust NIF:
+
+```shell
+mix deps.get
+```
+
+If Rust is not installed yet, install it first, for example with [rustup](https://rustup.rs/).
 
 ## Usage
 
@@ -105,3 +119,5 @@ cargo clippy --no-deps -- -D warnings
 ```
 
 [homepage]: https://github.com/juharris/optify
+[Hex package]: https://hex.pm/packages/optify
+[HexDocs]: https://hexdocs.pm/optify

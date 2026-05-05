@@ -8,12 +8,15 @@ Configurations for different experiments or feature flags are mergeable to suppo
 [![Crates.io](https://img.shields.io/crates/v/optify?logo=Rust)](https://crates.io/crates/optify)
 [![Crates.io CLI](https://img.shields.io/crates/v/optify-cli?logo=Rust&label=optify-cli)](https://crates.io/crates/optify-cli)
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+[![Hex.pm](https://img.shields.io/hexpm/v/optify?color=%234B275F&label=Hex.pm&logo=elixir)][hex]
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
 [![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
 [![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad&logo=Python)](https://pypi.org/project/optify)
-[![VS Code Extension](https://img.shields.io/vscode-marketplace/v/optify-config.optify?color=blue&label=VS%20Code)][vsc-extension]
+[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-blue)][vsc-extension]
 
 > The configuration should declare **what** to do, but **not how** to do it.
+
+See [Language Support](#language-support) for details about support in different languages.
 
 This project helps improve the scalability and maintainability of code.
 Determine the right configuration for a request or process when it starts by passing the enabled features to an `OptionsProvider`.
@@ -607,6 +610,8 @@ Configurations are merged using typical .NET standards from `ConfigurationBuilde
 
 ## Elixir
 
+[![Hex.pm](https://img.shields.io/hexpm/v/optify?color=%234B275F&label=Hex.pm&logo=elixir)][hex]
+
 See the [elixir/optify](./elixir/optify/) folder.
 Built using the Rust implementation via [Rustler](https://github.com/rusterlium/rustler) NIFs.
 
@@ -638,4 +643,5 @@ The API may change slightly until version 1.0 is released.
 
 [cond-article]: https://medium.com/@justindharris/conditioning-code-craft-clear-and-concise-conditional-code-f4f328c43c2b
 [dotnet-OptionsProvider]: https://github.com/juharris/dotnet-OptionsProvider
+[hex]: https://hex.pm/packages/optify
 [vsc-extension]: https://marketplace.visualstudio.com/items?itemName=optify-config.optify

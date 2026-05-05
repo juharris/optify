@@ -1,12 +1,15 @@
 # Build artifacts
 /_build/
 /deps/
+/doc/
+optify-*.tar
 
 # NIF compiled artifacts
 /priv/native/
 
 # Rust build artifacts
 /native/optify_nif/target/
+/target/
 
 # Generated on crash or by tests
 /erl_crash.dump
