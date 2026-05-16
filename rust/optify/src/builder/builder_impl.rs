@@ -1,6 +1,6 @@
 use config;
 use config::FileStoredFormat;
-use jsonschema::{Draft, Validator};
+use jsonschema::{Draft, Registry, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -478,12 +478,18 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             include_bytes!(concat!(env!("OUT_DIR"), "/schemas/feature_file.json"));
         let optify_schema_json: serde_json::Value = serde_json::from_slice(EMBEDDED_SCHEMA)
             .map_err(|e| format!("Failed to parse embedded schema: {e}"))?;
-        let optify_schema = jsonschema::Resource::from_contents(optify_schema_json)
-            .map_err(|e| format!("Failed to load schema resource: {e}"))?;
+        let registry = Registry::new()
+            .add(
+                "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json",
+                optify_schema_json,
+            )
+            .map_err(|e| format!("Failed to add schema resource to registry: {e}"))?
+            .prepare()
+            .map_err(|e| format!("Failed to prepare schema registry: {e}"))?;
 
         let validator = Validator::options()
             .with_draft(Draft::Draft7)
-            .with_resource("https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json", optify_schema)
+            .with_registry(&registry)
             .build(&schema_json)
             .map_err(|e| format!("Invalid schema: {e}"))?;
 
