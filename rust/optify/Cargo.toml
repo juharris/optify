@@ -20,7 +20,10 @@ exclude = [
 [dependencies]
 config = "0.15.23"
 dunce = "1.0.5"
-jsonschema = { version = "0.46.5", default-features = false, features = ["resolve-http", "resolve-file", "tls-ring"] }
+# HTTP/file schema resolution (`resolve-http`, `resolve-file`) requires a TLS backend.
+# `tls-ring` fails to cross-compile for aarch64; the default `tls-aws-lc-rs` needs cmake/lld unavailable in CI Docker containers.
+# All current schema `$ref` are internal (`#/definitions/...`), so resolution features are disabled for now.
+jsonschema = { version = "0.46.5", default-features = false }
 liquid = "0.26.11"
 notify = "8.2.0"
 # For fetching JSON schema files from the web, but it requires OpenSSL, which is tricky to install in CI environments in Docker containers.
