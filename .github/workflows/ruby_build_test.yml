@@ -162,6 +162,7 @@ jobs:
         workspaces: |
           ruby/optify
           rust/optify
+        cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
     - name: "[Rust] Build"
@@ -229,6 +230,7 @@ jobs:
         workspaces: |
           ruby/optify
           rust/optify
+        cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
 
