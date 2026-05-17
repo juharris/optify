@@ -428,7 +428,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                 };
 
                 if is_config_file {
-                    Some(path.to_path_buf())
+                    Some(Ok(path.to_path_buf()))
                 } else {
                     // Load the file content
                     match std::fs::read_to_string(path) {
@@ -439,7 +439,14 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                                 .to_str()
                                 .expect("path should be valid Unicode")
                                 .replace(std::path::MAIN_SEPARATOR, "/");
-                            self.loaded_files.insert(relative_path, contents);
+                            match self.loaded_files.entry(relative_path) {
+                                std::collections::hash_map::Entry::Occupied(entry) => {
+                                    return Some(Err(format!("File '{}' is already loaded from another directory.", entry.key())));
+                                }
+                                std::collections::hash_map::Entry::Vacant(entry) => {
+                                    entry.insert(contents);
+                                }
+                            }
                         }
                         Err(e) => {
                             // TODO Yield errors.
@@ -451,7 +458,10 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             })
             .collect::<Vec<_>>()
             .into_par_iter()
-            .map(|path| Self::process_entry(&path, directory, &builder_options))
+            .map(|path_result| match path_result {
+                Ok(path) => Self::process_entry(&path, directory, &builder_options),
+                Err(e) => Err(e),
+            })
             .collect();
         for loading_result in loading_results {
             self.process_loading_result(&loading_result)?;
