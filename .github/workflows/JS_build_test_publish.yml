@@ -245,8 +245,8 @@ jobs:
             yarn build
             yarn build:ts
             yarn test
+            # Keep target so the VM sync can return updated build artifacts for rust-cache to persist.
             rm -rf node_modules
-            rm -rf target
             rm -rf .yarn/cache
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -438,14 +438,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - name: "[Rust] Setup cache"
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            js/optify-config
-            rust/optify
-          cache-on-failure: true
-          shared-key: universal-macOS-rust
       - name: Install corepack
         run: npm install -g corepack
       - name: Setup node
@@ -498,14 +490,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: "[Rust] Setup cache"
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            js/optify-config
-            rust/optify
-          cache-on-failure: true
-          shared-key: publish-rust
       - name: Install corepack
         run: npm install -g corepack
       - name: Setup node
