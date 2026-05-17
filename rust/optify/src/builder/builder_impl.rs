@@ -1,5 +1,4 @@
 use config;
-use config::FileStoredFormat;
 use jsonschema::{Draft, Registry, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -8,6 +7,7 @@ use std::sync::Arc;
 
 use crate::builder::builder_options::BuilderOptions;
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
+use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
@@ -173,20 +173,6 @@ impl OptionsProviderBuilder {
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
         ))
-    }
-
-    fn get_supported_extensions() -> HashSet<&'static str> {
-        [
-            config::FileFormat::Ini.file_extensions(),
-            config::FileFormat::Json.file_extensions(),
-            config::FileFormat::Json5.file_extensions(),
-            config::FileFormat::Ron.file_extensions(),
-            config::FileFormat::Toml.file_extensions(),
-            config::FileFormat::Yaml.file_extensions(),
-        ]
-        .iter()
-        .flat_map(|exts| exts.iter().copied())
-        .collect()
     }
 
     fn validate_with_schema(&self, info: &LoadingResult) -> Result<(), String> {
@@ -398,7 +384,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             BuilderOptions::default()
         };
 
-        let supported_extensions = Self::get_supported_extensions();
+        let supported_extensions = get_supported_extensions();
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .filter_map(|entry| {
@@ -441,7 +427,10 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                                 .replace(std::path::MAIN_SEPARATOR, "/");
                             match self.loaded_files.entry(relative_path) {
                                 std::collections::hash_map::Entry::Occupied(entry) => {
-                                    return Some(Err(format!("File '{}' is already loaded from another directory.", entry.key())));
+                                    return Some(Err(format!(
+                                        "File '{}' is already loaded from another directory.",
+                                        entry.key()
+                                    )));
                                 }
                                 std::collections::hash_map::Entry::Vacant(entry) => {
                                     entry.insert(contents);
