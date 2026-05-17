@@ -26,7 +26,7 @@
 		"fmt:check": "oxfmt --check",
 		"lint": "oxlint --tsconfig ./tsconfig.json --deny-warnings",
 		"lint:fix": "oxlint --fix --tsconfig ./tsconfig.json --deny-warnings",
-		"prepublishOnly": "napi prepublish -t npm",
+		"prepublishOnly": "napi prepublish -t npm --no-gh-release",
 		"test": "jest",
 		"universal": "napi universalize",
 		"version": "napi version"

@@ -24,6 +24,10 @@ env:
   CARGO_TERM_COLOR: always
   RB_SYS_CARGO_PROFILE: release
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   setup:
     # Drafts: Only run on Ubuntu.
@@ -144,7 +148,7 @@ jobs:
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
     - uses: ruby/setup-ruby@v1
-      name: "Setup"
+      name: "[Ruby] Setup"
       with:
         bundler-cache: true
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -158,6 +162,7 @@ jobs:
         workspaces: |
           ruby/optify
           rust/optify
+        cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
     - name: "[Rust] Build"
@@ -171,11 +176,7 @@ jobs:
         # The Ruby versions must be the same for both gems.
         diff -u .ruby-version ../from_hash/.ruby-version
       working-directory: ${{ env.WORKING_DIRECTORY }}
-    
-    - name: "Install dependencies"
-      shell: bash
-      run: bundle install
-      working-directory: ./ruby/optify
+
     - name: "Lint"
       shell: bash
       run: |
@@ -229,6 +230,7 @@ jobs:
         workspaces: |
           ruby/optify
           rust/optify
+        cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
 

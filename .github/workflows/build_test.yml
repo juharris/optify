@@ -25,6 +25,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   setup:
     # Drafts: Only run on Ubuntu.
@@ -66,6 +70,7 @@ jobs:
           python/optify
           rust/optify
           rust/optify-cli
+        cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
     - name: "[Rust] Build"
@@ -155,7 +160,7 @@ jobs:
         cache-dependency-path: ./js/optify-config/yarn.lock
         node-version: 20
     - name: "[JS] Install dependencies"
-      run: yarn install
+      run: yarn install --immutable
       working-directory: ./js/optify-config
     - name: "[JS] Format check"
       run: yarn fmt:check
