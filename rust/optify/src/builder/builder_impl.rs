@@ -7,6 +7,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::builder::builder_options::BuilderOptions;
+use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
@@ -52,15 +53,6 @@ fn add_alias(
         ));
     }
     Ok(())
-}
-
-fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
-    path.strip_prefix(directory)
-        .unwrap()
-        .with_extension("")
-        .to_str()
-        .expect("path should be valid Unicode")
-        .replace(std::path::MAIN_SEPARATOR, "/")
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -514,20 +506,5 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.loaded_files.clone(),
             self.sources.clone(),
         ))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_canonical_feature_name() {
-        let directory = std::path::Path::new("wtv");
-        let path = directory.join("dir1").join("dir2").join("feature_B.json");
-        assert_eq!(
-            "dir1/dir2/feature_B",
-            get_canonical_feature_name(&path, directory)
-        );
     }
 }
