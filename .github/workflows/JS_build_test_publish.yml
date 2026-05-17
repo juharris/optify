@@ -197,7 +197,7 @@ jobs:
   build-freebsd:
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    name: "[FreeBSD] Build"
+    name: "[FreeBSD] Build & Test"
     steps:
       - uses: actions/checkout@v6
       - name: "[Rust] Setup cache"
@@ -236,7 +236,6 @@ jobs:
             node -v
             yarn --version
             pwd
-            ls -lah
             whoami
 
             freebsd-version
