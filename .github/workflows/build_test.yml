@@ -70,6 +70,7 @@ jobs:
           python/optify
           rust/optify
           rust/optify-cli
+        cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
     - name: "[Rust] Build"
