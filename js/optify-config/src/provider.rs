@@ -124,6 +124,18 @@ impl JsOptionsProvider {
       .ok()
   }
 
+  /// Gets canonical feature names that reference a relative file path.
+  ///
+  /// Returns `null` when file reference tracking is disabled.
+  #[napi]
+  pub fn get_features_referencing_file(&self, relative_path: String) -> Option<Vec<String>> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_features_referencing_file(&relative_path)
+  }
+
   #[napi(js_name = "_getOptions")]
   pub fn get_options(
     &self,

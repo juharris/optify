@@ -19,6 +19,7 @@ import { TypeSchema } from "./types";
 
 // Re-export types that don't need modifications.
 export {
+	BuilderOptions,
 	GetOptionsPreferences,
 	OptionsMetadata,
 	OptionsProviderBuilder,
