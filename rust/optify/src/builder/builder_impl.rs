@@ -427,8 +427,8 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             ));
         }
 
-        // Look for .optify/config.json and merge with the builder-level options.
-        // Directory config values take precedence; unset values fall back to builder options.
+        // Look for .optify/config.json which provides directory-level defaults.
+        // Builder-level options override when explicitly set (non-default values).
         let config_path = directory.join(".optify").join("config.json");
         let builder_options = if config_path.is_file() {
             read_json_from_file_as::<BuilderOptionsConfig>(&config_path)
