@@ -3,6 +3,7 @@
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
 use optify::provider::{OptionsProvider, OptionsRegistry};
 
+use crate::builder_options::JsBuilderOptions;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::preferences::JsGetOptionsPreferences;
 
@@ -19,9 +20,15 @@ impl JsOptionsProvider {
   }
 
   #[napi]
-  pub fn build(directory: String) -> napi::Result<JsOptionsProvider> {
+  pub fn build(
+    directory: String,
+    options: Option<&JsBuilderOptions>,
+  ) -> napi::Result<JsOptionsProvider> {
     let path = std::path::Path::new(&directory);
-    match OptionsProvider::build(path) {
+    match match options {
+      Some(opts) => OptionsProvider::build_with_options(path, opts.inner.clone()),
+      None => OptionsProvider::build(path),
+    } {
       Ok(provider) => Ok(JsOptionsProvider {
         inner: Some(provider),
       }),

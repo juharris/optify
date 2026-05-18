@@ -5,6 +5,9 @@ use crate::provider::OptionsRegistry;
 
 /// Trait defining the core functionality for building an options provider.
 pub trait OptionsRegistryBuilder<T: OptionsRegistry> {
+    // Adds multiple directories containing feature configurations.
+    fn add_directories(&mut self, directories: &[impl AsRef<Path>]) -> Result<&Self, String>;
+
     /// Adds a directory containing feature configurations.
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String>;
 

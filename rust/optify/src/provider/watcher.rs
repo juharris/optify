@@ -55,9 +55,7 @@ impl OptionsWatcher {
         watcher_options: WatcherOptions,
     ) -> Result<Self, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.with_watcher_options(watcher_options);
         builder.build()
     }
@@ -70,9 +68,7 @@ impl OptionsWatcher {
         let mut builder = OptionsWatcherBuilder::new();
         builder.with_watcher_options(watcher_options);
         builder.with_schema(schema_path.as_ref())?;
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.build()
     }
 
@@ -205,9 +201,7 @@ impl OptionsRegistry for OptionsWatcher {
 
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsWatcher, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.build()
     }
 
@@ -217,9 +211,7 @@ impl OptionsRegistry for OptionsWatcher {
     ) -> Result<Self, String> {
         let mut builder = OptionsWatcherBuilder::new();
         builder.with_options(options)?;
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.build()
     }
 

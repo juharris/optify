@@ -37,6 +37,14 @@ impl OptionsWatcherBuilder {
 }
 
 impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
+    fn add_directories(&mut self, directories: &[impl AsRef<Path>]) -> Result<&Self, String> {
+        for directory in directories {
+            self.watched_directories
+                .push(directory.as_ref().to_path_buf());
+        }
+        Ok(self)
+    }
+
     /// Add a directory to watch for changes.
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String> {
         self.watched_directories

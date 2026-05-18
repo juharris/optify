@@ -419,6 +419,13 @@ impl OptionsProviderBuilder {
 }
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
+    fn add_directories(&mut self, directories: &[impl AsRef<Path>]) -> Result<&Self, String> {
+        for directory in directories {
+            self.add_directory(directory)?;
+        }
+        Ok(self)
+    }
+
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String> {
         let directory = directory.as_ref();
         if !directory.is_dir() {

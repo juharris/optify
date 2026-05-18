@@ -348,9 +348,7 @@ impl OptionsRegistry for OptionsProvider {
 
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.build_and_clear()
     }
 
@@ -360,9 +358,7 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<Self, String> {
         let mut builder = OptionsProviderBuilder::new();
         builder.with_options(options)?;
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.build_and_clear()
     }
 
