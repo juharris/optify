@@ -163,26 +163,10 @@ impl OptionsWatcher {
         std::thread::spawn(move || {
             for paths in rx {
                 let result = std::panic::catch_unwind(|| {
-                    let mut skip_rebuild = false;
-                    let mut builder = OptionsProviderBuilder::new();
-                    let _ = builder.with_options(builder_options.clone());
-                    for dir in &watched_directories {
-                        if dir.exists() {
-                            if let Err(e) = builder.add_directory(dir) {
-                                eprintln!("\x1b[31m[optify] Error rebuilding provider: {e}\x1b[0m");
-                                skip_rebuild = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if skip_rebuild {
-                        // Ignore errors because the developer might still be changing the files.
-                        // TODO If there are still errors after a few minutes, then consider panicking.
-                        return;
-                    }
-
-                    match builder.build_and_clear() {
+                    match OptionsProvider::build_from_directories_with_options(
+                        &watched_directories,
+                        builder_options.clone(),
+                    ) {
                         Ok(new_provider) => match current_provider.write() {
                             Ok(mut provider) => {
                                 *provider = new_provider;
