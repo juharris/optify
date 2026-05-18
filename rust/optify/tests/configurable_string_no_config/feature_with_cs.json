@@ -1,0 +1,10 @@
+{
+    "options": {
+        "my_message": {
+            "$type": "Optify.ConfigurableString",
+            "base": {
+                "file": "simple.txt"
+            }
+        }
+    }
+}

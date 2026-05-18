@@ -10,10 +10,9 @@ use super::OptionsRegistryBuilder;
 /// This builder is kept separate from the `OptionsProviderBuilder` in order to keep `OptionsProviderBuilder` and `OptionsProvider` as simple and efficient as possible for production use.
 #[derive(Clone)]
 pub struct OptionsWatcherBuilder {
-    schema_path: Option<PathBuf>,
+    builder_options: BuilderOptions,
     watched_directories: Vec<PathBuf>,
     watcher_options: WatcherOptions,
-    builder_options: Option<BuilderOptions>,
 }
 
 impl Default for OptionsWatcherBuilder {
@@ -25,10 +24,9 @@ impl Default for OptionsWatcherBuilder {
 impl OptionsWatcherBuilder {
     pub fn new() -> Self {
         OptionsWatcherBuilder {
-            schema_path: None,
+            builder_options: BuilderOptions::default(),
             watched_directories: Vec::new(),
             watcher_options: WatcherOptions::default(),
-            builder_options: None,
         }
     }
 
@@ -47,26 +45,20 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
     }
 
     fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String> {
-        if let Some(schema_path) = &options.schema_path {
-            let schema_path = schema_path.clone();
-            self.with_schema(schema_path)?;
-        }
-        self.builder_options = Some(options);
+        self.builder_options = options;
         Ok(self)
     }
 
     fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
-        self.schema_path = Some(schema_path.as_ref().to_path_buf());
+        self.builder_options.schema_path = Some(schema_path.as_ref().to_path_buf());
         Ok(self)
     }
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
-        let builder_opts = self.builder_options.clone().unwrap_or_default();
         OptionsWatcher::new(
             &self.watched_directories,
-            self.schema_path.as_ref(),
             self.watcher_options.clone(),
-            builder_opts,
+            self.builder_options.clone(),
         )
     }
 }

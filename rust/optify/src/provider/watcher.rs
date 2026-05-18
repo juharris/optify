@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
 use crate::builder::builder_options::BuilderOptions;
-use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
+use crate::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::provider::{
     CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry, WatcherOptions,
 };
@@ -78,9 +78,8 @@ impl OptionsWatcher {
 
     pub(crate) fn new(
         watched_directories: &[impl AsRef<Path>],
-        schema_path: Option<impl AsRef<Path>>,
         watcher_options: WatcherOptions,
-        builder_options: crate::builder::builder_options::BuilderOptions,
+        builder_options: BuilderOptions,
     ) -> Result<Self, String> {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
@@ -125,23 +124,12 @@ impl OptionsWatcher {
                 .watch(dir, notify::RecursiveMode::Recursive)
                 .map_err(|e| format!("Failed to watch directory {:?}: {e}", dir.as_ref()))?;
         }
-        let mut builder = OptionsProviderBuilder::new();
-        builder
-            .with_options(builder_options.clone())
-            .map_err(|e| e.to_string())?;
-        if let Some(schema) = schema_path {
-            builder
-                .with_schema(&schema)
-                .map_err(|e| format!("Invalid schema: {e}"))?;
-        }
-        for dir in watched_directories {
-            builder
-                .add_directory(dir)
-                .map_err(|e| format!("Failed to add directory {:?}: {e}", dir.as_ref()))?;
-        }
-        let provider = builder
-            .build_and_clear()
-            .map_err(|e| format!("Failed to build provider: {e}"))?;
+
+        let provider = OptionsProvider::build_from_directories_with_options(
+            watched_directories,
+            builder_options.clone(),
+        )
+        .map_err(|e| format!("Failed to build provider: {e}"))?;
         let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
 
         let self_ = Self {

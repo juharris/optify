@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::builder::builder_options::{BuilderOptions, TrackReferenceMode};
+use crate::builder::builder_options::{BuilderOptions, BuilderOptionsConfig, TrackReferenceMode};
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::LoadingResult;
@@ -29,7 +29,7 @@ type Imports = HashMap<String, Vec<String>>;
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
     all_configurable_value_pointers: HashSet<String>,
-    builder_options: Option<BuilderOptions>,
+    builder_options: BuilderOptions,
     conditions: Conditions,
     dependents: Dependents,
     features: Features,
@@ -178,7 +178,7 @@ impl OptionsProviderBuilder {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
             all_configurable_value_pointers: HashSet::new(),
-            builder_options: None,
+            builder_options: BuilderOptions::default(),
             conditions: Conditions::new(),
             dependents: Dependents::new(),
             features: Features::new(),
@@ -336,6 +336,7 @@ impl OptionsProviderBuilder {
             ),
         };
 
+        // FIXME Merge and have 1 if check.
         let configurable_value_pointers = if builder_options.are_configurable_strings_enabled {
             find_configurable_values(raw_config.get("options"))
         } else {
@@ -426,20 +427,20 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             ));
         }
 
-        // Look for .optify/config.json and load as settings for the files in the directory.
+        // Look for .optify/config.json and merge with the builder-level options.
+        // Directory config values take precedence; unset values fall back to builder options.
         let config_path = directory.join(".optify").join("config.json");
         let builder_options = if config_path.is_file() {
-            match read_json_from_file_as::<BuilderOptions>(&config_path) {
-                Ok(v) => v,
-                Err(e) => {
-                    return Err(format!(
+            read_json_from_file_as::<BuilderOptionsConfig>(&config_path)
+                .map_err(|e| {
+                    format!(
                         "Error loading builder options from {}: {e}",
                         config_path.as_path().display()
-                    ));
-                }
-            }
+                    )
+                })?
+                .merge_with(&self.builder_options)
         } else {
-            BuilderOptions::default()
+            self.builder_options.clone()
         };
 
         let supported_extensions = get_supported_extensions();
@@ -518,11 +519,10 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     }
 
     fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String> {
-        if let Some(schema_path) = &options.schema_path {
-            let schema_path = schema_path.clone();
+        if let Some(ref schema_path) = options.schema_path {
             self.with_schema(schema_path)?;
         }
-        self.builder_options = Some(options);
+        self.builder_options = options;
         Ok(self)
     }
 

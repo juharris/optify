@@ -168,3 +168,57 @@ fn test_build_from_directories_with_schema() -> Result<(), Box<dyn std::error::E
 
     Ok(())
 }
+
+#[test]
+fn test_with_options_applies_to_add_directory() -> Result<(), Box<dyn std::error::Error>> {
+    // When `with_options` is called before `add_directory`, the options should be used
+    // for processing entries in that directory (even without a `.optify/config.json`).
+    let path = std::path::Path::new("tests/configurable_string_no_config");
+    let options = BuilderOptions {
+        are_configurable_strings_enabled: true,
+        track_file_references: optify::builder::TrackReferenceMode::ConfigurableStrings,
+        ..BuilderOptions::default()
+    };
+    let provider = OptionsProvider::build_with_options(path, options)?;
+
+    let referenced_features = provider
+        .get_features_referencing_file("simple.txt")
+        .expect("with_options should enable file reference tracking for add_directory");
+    assert_eq!(referenced_features, vec!["feature_with_cs"]);
+    Ok(())
+}
+
+#[test]
+fn test_directory_config_enables_configurable_strings_without_builder_options(
+) -> Result<(), Box<dyn std::error::Error>> {
+    // The directory `.optify/config.json` enables configurable strings even when
+    // the builder-level options leave them disabled.
+    let path = std::path::Path::new("tests/configurable_string_resources_tracked");
+    let provider = OptionsProvider::build(path)?;
+
+    let referenced_features = provider
+        .get_features_referencing_file("simple.txt")
+        .expect("directory config should enable file reference tracking");
+    assert_eq!(referenced_features, vec!["feature_with_cs"]);
+    Ok(())
+}
+
+#[test]
+fn test_directory_config_merges_with_builder_options() -> Result<(), Box<dyn std::error::Error>> {
+    // The directory `.optify/config.json` sets `areConfigurableStringsEnabled: true`
+    // but does NOT set `trackFileReferences`.
+    // The builder-level options set `trackFileReferences: ConfigurableStrings`.
+    // After merging, both should be active.
+    let path = std::path::Path::new("tests/configurable_string_cs_only");
+    let options = BuilderOptions {
+        track_file_references: optify::builder::TrackReferenceMode::ConfigurableStrings,
+        ..BuilderOptions::default()
+    };
+    let provider = OptionsProvider::build_with_options(path, options)?;
+
+    let referenced_features = provider
+        .get_features_referencing_file("simple.txt")
+        .expect("merged options should enable file reference tracking");
+    assert_eq!(referenced_features, vec!["feature_with_cs"]);
+    Ok(())
+}
