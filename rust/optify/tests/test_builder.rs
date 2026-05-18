@@ -152,11 +152,8 @@ fn test_builder_used_canonical_alias() {
 fn test_build_from_directories_with_schema() -> Result<(), Box<dyn std::error::Error>> {
     let configs_dir = std::path::Path::new("../../tests/test_suites/inheritance/configs");
     let schema_path = configs_dir.join(".optify/schema.json");
-    let options = BuilderOptions {
-        schema_path: Some(schema_path),
-        ..BuilderOptions::default()
-    };
-    let provider = OptionsProvider::build_from_directories_with_options(&[configs_dir], options)?;
+    let provider =
+        OptionsProvider::build_from_directories_with_schema(&[configs_dir], &schema_path)?;
 
     let features = provider.get_features();
     assert!(!features.is_empty());

@@ -248,5 +248,4 @@ describe("OptionsWatcher", () => {
 		const secondResult = watcher.getAllOptions([], null, new CacheOptions());
 		expect(secondResult).toBe(firstResult);
 	});
-
 });
