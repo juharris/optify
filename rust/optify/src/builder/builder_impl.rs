@@ -336,22 +336,21 @@ impl OptionsProviderBuilder {
             ),
         };
 
-        // FIXME Merge and have 1 if check.
-        let configurable_value_pointers = if builder_options.are_configurable_strings_enabled {
-            find_configurable_values(raw_config.get("options"))
-        } else {
-            Vec::new()
-        };
-
-        let configurable_string_files = if builder_options.are_configurable_strings_enabled
-            && matches!(
-                builder_options.track_file_references,
-                TrackReferenceMode::ConfigurableStrings
-            ) {
-            extract_configurable_string_files_from_config(&raw_config, &configurable_value_pointers)
-        } else {
-            Vec::new()
-        };
+        let (configurable_value_pointers, configurable_string_files) =
+            if builder_options.are_configurable_strings_enabled {
+                let pointers = find_configurable_values(raw_config.get("options"));
+                let files = if matches!(
+                    builder_options.track_file_references,
+                    TrackReferenceMode::ConfigurableStrings
+                ) {
+                    extract_configurable_string_files_from_config(&raw_config, &pointers)
+                } else {
+                    Vec::new()
+                };
+                (pointers, files)
+            } else {
+                (Vec::new(), Vec::new())
+            };
 
         Ok(LoadingResult {
             canonical_feature_name,
