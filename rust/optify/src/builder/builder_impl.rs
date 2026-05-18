@@ -5,16 +5,19 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::builder::builder_options::BuilderOptions;
+use crate::builder::builder_options::{BuilderOptions, TrackReferenceMode};
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
+use crate::configurable_string::ConfigurableString;
 use crate::configurable_string::LoadedFiles;
 use crate::json::merge::merge_json_with_defaults;
 use crate::json::reader::read_json_from_file_as;
-use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
+use crate::provider::{
+    Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
+};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
@@ -26,11 +29,16 @@ type Imports = HashMap<String, Vec<String>>;
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
     all_configurable_value_pointers: HashSet<String>,
-    dependents: Dependents,
+    builder_options: Option<BuilderOptions>,
     conditions: Conditions,
+    dependents: Dependents,
     features: Features,
     imports: Imports,
     loaded_files: LoadedFiles,
+    /// A map of files to the features that reference them.
+    /// The keys are relative file paths and the values are lists of canonical feature names.
+    /// This is only populated if the `BuilderOptions` enable file reference tracking.
+    referenced_file_to_feature_names: ReferencedFileToFeatureNames,
     schema: Option<Arc<Validator>>,
     sources: Sources,
 }
@@ -53,6 +61,29 @@ fn add_alias(
         ));
     }
     Ok(())
+}
+
+fn extract_configurable_string_files_from_config(
+    raw_config: &serde_json::Value,
+    configurable_value_pointers: &[String],
+) -> Vec<String> {
+    let mut configurable_string_files = Vec::new();
+    let options_obj = match raw_config.get("options") {
+        Some(v) => v,
+        None => return configurable_string_files,
+    };
+
+    for pointer in configurable_value_pointers {
+        let json_pointer = format!("/{}", pointer);
+        if let Some(configurable_value) = options_obj.pointer(&json_pointer) {
+            if let Ok(cs) = serde_json::from_value::<ConfigurableString>(configurable_value.clone())
+            {
+                configurable_string_files.extend(cs.get_referenced_files());
+            }
+        }
+    }
+
+    configurable_string_files
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -147,11 +178,13 @@ impl OptionsProviderBuilder {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
             all_configurable_value_pointers: HashSet::new(),
+            builder_options: None,
             conditions: Conditions::new(),
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
             loaded_files: LoadedFiles::new(),
+            referenced_file_to_feature_names: HashMap::new(),
             schema: None,
             sources: Sources::new(),
         }
@@ -165,11 +198,19 @@ impl OptionsProviderBuilder {
             .iter()
             .cloned()
             .collect();
+
+        let referenced_file_to_feature_names = if self.referenced_file_to_feature_names.is_empty() {
+            None
+        } else {
+            Some(std::mem::take(&mut self.referenced_file_to_feature_names))
+        };
+
         Ok(OptionsProvider::new(
             std::mem::take(&mut self.aliases),
             all_configurable_value_pointers,
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
+            referenced_file_to_feature_names,
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
         ))
@@ -301,9 +342,20 @@ impl OptionsProviderBuilder {
             Vec::new()
         };
 
+        let configurable_string_files = if builder_options.are_configurable_strings_enabled
+            && matches!(
+                builder_options.track_file_references,
+                TrackReferenceMode::ConfigurableStrings
+            ) {
+            extract_configurable_string_files_from_config(&raw_config, &configurable_value_pointers)
+        } else {
+            Vec::new()
+        };
+
         Ok(LoadingResult {
             canonical_feature_name,
             conditions: feature_config.conditions,
+            configurable_string_files,
             configurable_value_pointers,
             imports: feature_config.imports,
             metadata,
@@ -342,6 +394,12 @@ impl OptionsProviderBuilder {
         if !info.configurable_value_pointers.is_empty() {
             self.all_configurable_value_pointers
                 .extend(info.configurable_value_pointers.iter().cloned());
+        }
+        for file_key in &info.configurable_string_files {
+            self.referenced_file_to_feature_names
+                .entry(file_key.clone())
+                .or_default()
+                .push(canonical_feature_name.clone());
         }
         add_alias(
             &mut self.aliases,
@@ -459,6 +517,15 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         Ok(self)
     }
 
+    fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String> {
+        if let Some(schema_path) = &options.schema_path {
+            let schema_path = schema_path.clone();
+            self.with_schema(schema_path)?;
+        }
+        self.builder_options = Some(options);
+        Ok(self)
+    }
+
     fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
         let schema_path = schema_path.as_ref();
         let schema_json = crate::json::reader::read_json_from_file(schema_path)
@@ -497,11 +564,19 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .iter()
             .cloned()
             .collect();
+
+        let referenced_file_to_feature_names = if self.referenced_file_to_feature_names.is_empty() {
+            None
+        } else {
+            Some(self.referenced_file_to_feature_names.clone())
+        };
+
         Ok(OptionsProvider::new(
             self.aliases.clone(),
             all_configurable_value_pointers,
             self.conditions.clone(),
             self.features.clone(),
+            referenced_file_to_feature_names,
             self.loaded_files.clone(),
             self.sources.clone(),
         ))

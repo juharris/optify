@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use optify::builder::BuilderOptions;
 use optify::provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry};
 use std::path::PathBuf;
 use std::process;
@@ -58,10 +59,11 @@ fn parse_preferences(json: Option<&str>) -> Result<Option<GetOptionsPreferences>
 }
 
 fn build_provider(dirs: &[PathBuf], schema: Option<&PathBuf>) -> Result<OptionsProvider, String> {
-    match schema {
-        Some(schema_path) => OptionsProvider::build_from_directories_with_schema(dirs, schema_path),
-        None => OptionsProvider::build_from_directories(dirs),
-    }
+    let options = BuilderOptions {
+        schema_path: schema.cloned(),
+        ..BuilderOptions::default()
+    };
+    OptionsProvider::build_from_directories_with_options(dirs, options)
 }
 
 fn run() -> Result<(), String> {

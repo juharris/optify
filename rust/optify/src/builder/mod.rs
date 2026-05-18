@@ -7,5 +7,6 @@ pub(crate) mod loading_result;
 pub(crate) mod watcher_builder;
 
 pub use builder_impl::*;
+pub use builder_options::*;
 pub use builder_trait::*;
 pub use watcher_builder::*;

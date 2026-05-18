@@ -1,5 +1,5 @@
 use optify::{
-    builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
+    builder::{BuilderOptions, OptionsProviderBuilder, OptionsRegistryBuilder},
     provider::{OptionsProvider, OptionsRegistry},
 };
 
@@ -120,6 +120,18 @@ fn test_builder_name_with_no_metadata() -> Result<(), Box<dyn std::error::Error>
 }
 
 #[test]
+fn test_builder_tracking() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/configurable_string_resources_tracked");
+    let provider = OptionsProvider::build(path)?;
+
+    let referenced_features = provider
+        .get_features_referencing_file("simple.txt")
+        .expect("Should have tracking data for simple.txt");
+    assert_eq!(referenced_features, vec!["feature_with_cs"]);
+    Ok(())
+}
+
+#[test]
 fn test_builder_used_canonical_alias() {
     let path = std::path::Path::new("tests/used_canonical_name");
     let mut builder = OptionsProviderBuilder::new();
@@ -138,8 +150,11 @@ fn test_builder_used_canonical_alias() {
 fn test_build_from_directories_with_schema() -> Result<(), Box<dyn std::error::Error>> {
     let configs_dir = std::path::Path::new("../../tests/test_suites/inheritance/configs");
     let schema_path = configs_dir.join(".optify/schema.json");
-    let provider =
-        OptionsProvider::build_from_directories_with_schema(&[configs_dir], &schema_path)?;
+    let options = BuilderOptions {
+        schema_path: Some(schema_path),
+        ..BuilderOptions::default()
+    };
+    let provider = OptionsProvider::build_from_directories_with_options(&[configs_dir], options)?;
 
     let features = provider.get_features();
     assert!(!features.is_empty());

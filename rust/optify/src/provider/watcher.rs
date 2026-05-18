@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
+use crate::builder::builder_options::BuilderOptions;
 use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::provider::{
     CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry, WatcherOptions,
@@ -79,6 +80,7 @@ impl OptionsWatcher {
         watched_directories: &[impl AsRef<Path>],
         schema_path: Option<impl AsRef<Path>>,
         watcher_options: WatcherOptions,
+        builder_options: crate::builder::builder_options::BuilderOptions,
     ) -> Result<Self, String> {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
@@ -124,6 +126,9 @@ impl OptionsWatcher {
                 .map_err(|e| format!("Failed to watch directory {:?}: {e}", dir.as_ref()))?;
         }
         let mut builder = OptionsProviderBuilder::new();
+        builder
+            .with_options(builder_options.clone())
+            .map_err(|e| e.to_string())?;
         if let Some(schema) = schema_path {
             builder
                 .with_schema(&schema)
@@ -160,6 +165,7 @@ impl OptionsWatcher {
                 let result = std::panic::catch_unwind(|| {
                     let mut skip_rebuild = false;
                     let mut builder = OptionsProviderBuilder::new();
+                    let _ = builder.with_options(builder_options.clone());
                     for dir in &watched_directories {
                         if dir.exists() {
                             if let Err(e) = builder.add_directory(dir) {
@@ -225,16 +231,6 @@ impl OptionsRegistry for OptionsWatcher {
         builder.build()
     }
 
-    fn build_with_schema(
-        directory: impl AsRef<Path>,
-        schema_path: impl AsRef<Path>,
-    ) -> Result<OptionsWatcher, String> {
-        let mut builder = OptionsWatcherBuilder::new();
-        builder.with_schema(schema_path.as_ref())?;
-        builder.add_directory(directory.as_ref())?;
-        builder.build()
-    }
-
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsWatcher, String> {
         let mut builder = OptionsWatcherBuilder::new();
         for directory in directories {
@@ -243,15 +239,25 @@ impl OptionsRegistry for OptionsWatcher {
         builder.build()
     }
 
-    fn build_from_directories_with_schema(
+    fn build_from_directories_with_options(
         directories: &[impl AsRef<Path>],
-        schema_path: impl AsRef<Path>,
-    ) -> Result<OptionsWatcher, String> {
+        options: BuilderOptions,
+    ) -> Result<Self, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        builder.with_schema(schema_path.as_ref())?;
+        builder.with_options(options)?;
         for directory in directories {
             builder.add_directory(directory.as_ref())?;
         }
+        builder.build()
+    }
+
+    fn build_with_options(
+        directory: impl AsRef<Path>,
+        options: BuilderOptions,
+    ) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.with_options(options)?;
+        builder.add_directory(directory.as_ref())?;
         builder.build()
     }
 
@@ -308,6 +314,13 @@ impl OptionsRegistry for OptionsWatcher {
 
     fn get_features(&self) -> Vec<String> {
         self.current_provider.read().unwrap().get_features()
+    }
+
+    fn get_features_referencing_file(&self, relative_path: &str) -> Option<Vec<String>> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_features_referencing_file(relative_path)
     }
 
     fn get_features_with_metadata(&self) -> Features {

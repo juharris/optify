@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use crate::builder::builder_options::BuilderOptions;
 use crate::provider::{OptionsWatcher, WatcherOptions};
 
 use super::OptionsRegistryBuilder;
@@ -12,6 +13,7 @@ pub struct OptionsWatcherBuilder {
     schema_path: Option<PathBuf>,
     watched_directories: Vec<PathBuf>,
     watcher_options: WatcherOptions,
+    builder_options: Option<BuilderOptions>,
 }
 
 impl Default for OptionsWatcherBuilder {
@@ -26,6 +28,7 @@ impl OptionsWatcherBuilder {
             schema_path: None,
             watched_directories: Vec::new(),
             watcher_options: WatcherOptions::default(),
+            builder_options: None,
         }
     }
 
@@ -43,16 +46,27 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
         Ok(self)
     }
 
+    fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String> {
+        if let Some(schema_path) = &options.schema_path {
+            let schema_path = schema_path.clone();
+            self.with_schema(schema_path)?;
+        }
+        self.builder_options = Some(options);
+        Ok(self)
+    }
+
     fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
         self.schema_path = Some(schema_path.as_ref().to_path_buf());
         Ok(self)
     }
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
+        let builder_opts = self.builder_options.clone().unwrap_or_default();
         OptionsWatcher::new(
             &self.watched_directories,
             self.schema_path.as_ref(),
             self.watcher_options.clone(),
+            builder_opts,
         )
     }
 }

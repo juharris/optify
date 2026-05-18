@@ -1,5 +1,6 @@
 use std::{collections::HashMap, path::Path, sync::RwLock};
 
+use crate::builder::builder_options::BuilderOptions;
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
@@ -19,6 +20,7 @@ pub(crate) type SourceValue = serde_json::Value;
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
+pub(crate) type ReferencedFileToFeatureNames = HashMap<String, Vec<String>>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
 pub(crate) type EntireConfigCache = HashMap<Vec<String>, serde_json::Value>;
@@ -31,6 +33,11 @@ pub struct OptionsProvider {
     aliases: Aliases,
     conditions: Conditions,
     features: Features,
+    /// A map of files to their referencing features.
+    /// The keys are relative file paths and the values are lists of canonical feature names.
+    /// This allows fast lookup of features when a specific file is modified.
+    /// This is only populated if the `BuilderOptions` enable file reference tracking.
+    referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
     loaded_files: LoadedFiles,
     sources: Sources,
 
@@ -45,6 +52,7 @@ impl OptionsProvider {
         all_configurable_value_pointers: Vec<String>,
         conditions: Conditions,
         features: Features,
+        referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
         loaded_files: LoadedFiles,
         sources: Sources,
     ) -> Self {
@@ -53,6 +61,7 @@ impl OptionsProvider {
             aliases,
             conditions,
             features,
+            referenced_file_to_feature_names,
             loaded_files,
             sources,
             entire_config_cache: RwLock::new(EntireConfigCache::new()),
@@ -337,16 +346,6 @@ impl OptionsRegistry for OptionsProvider {
         builder.build_and_clear()
     }
 
-    fn build_with_schema(
-        directory: impl AsRef<Path>,
-        schema_path: impl AsRef<Path>,
-    ) -> Result<OptionsProvider, String> {
-        let mut builder = OptionsProviderBuilder::new();
-        builder.with_schema(schema_path.as_ref())?;
-        builder.add_directory(directory.as_ref())?;
-        builder.build_and_clear()
-    }
-
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
         for directory in directories {
@@ -355,15 +354,25 @@ impl OptionsRegistry for OptionsProvider {
         builder.build_and_clear()
     }
 
-    fn build_from_directories_with_schema(
+    fn build_from_directories_with_options(
         directories: &[impl AsRef<Path>],
-        schema_path: impl AsRef<Path>,
-    ) -> Result<OptionsProvider, String> {
+        options: BuilderOptions,
+    ) -> Result<Self, String> {
         let mut builder = OptionsProviderBuilder::new();
-        builder.with_schema(schema_path.as_ref())?;
+        builder.with_options(options)?;
         for directory in directories {
             builder.add_directory(directory.as_ref())?;
         }
+        builder.build_and_clear()
+    }
+
+    fn build_with_options(
+        directory: impl AsRef<Path>,
+        options: BuilderOptions,
+    ) -> Result<Self, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        builder.with_options(options)?;
+        builder.add_directory(directory.as_ref())?;
         builder.build_and_clear()
     }
 
@@ -419,6 +428,12 @@ impl OptionsRegistry for OptionsProvider {
 
     fn get_features(&self) -> Vec<String> {
         self.sources.keys().cloned().collect()
+    }
+
+    fn get_features_referencing_file(&self, relative_path: &str) -> Option<Vec<String>> {
+        self.referenced_file_to_feature_names
+            .as_ref()
+            .and_then(|map| map.get(relative_path).cloned())
     }
 
     fn get_features_with_metadata(&self) -> Features {
