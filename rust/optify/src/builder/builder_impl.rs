@@ -343,6 +343,8 @@ impl OptionsProviderBuilder {
                     builder_options.track_file_references,
                     TrackReferenceMode::ConfigurableStrings
                 ) {
+                    // This is usually not enabled in production systems and is mainly for local development,
+                    // so we won't complicate `find_configurable_values` and make it also track referenced files.
                     extract_configurable_string_files_from_config(&raw_config, &pointers)
                 } else {
                     Vec::new()
