@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::path::PathBuf;
 
-/// How file references from configurable strings should be tracked
+/// Determines how file references should be tracked.
 #[derive(Debug, Deserialize, Clone, Copy, Default, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum TrackReferenceMode {
