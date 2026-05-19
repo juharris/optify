@@ -2,6 +2,8 @@ use std::path::Path;
 
 use serde_json::Value;
 
+use crate::builder::builder_options::BuilderOptions;
+
 use crate::{
     provider::{CacheOptions, Features, GetOptionsPreferences},
     schema::metadata::OptionsMetadata,
@@ -13,23 +15,51 @@ pub trait OptionsRegistry {
     where
         Self: Sized;
 
-    fn build_with_schema(
-        directory: impl AsRef<Path>,
-        schema_path: impl AsRef<Path>,
-    ) -> Result<Self, String>
+    fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<Self, String>
     where
         Self: Sized;
 
-    fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<Self, String>
+    fn build_from_directories_with_options(
+        directories: &[impl AsRef<Path>],
+        options: BuilderOptions,
+    ) -> Result<Self, String>
     where
         Self: Sized;
 
     fn build_from_directories_with_schema(
         directories: &[impl AsRef<Path>],
-        schema: impl AsRef<Path>,
+        schema_path: impl AsRef<Path>,
+    ) -> Result<Self, String>
+    where
+        Self: Sized,
+    {
+        let options = BuilderOptions {
+            schema_path: Some(schema_path.as_ref().to_path_buf()),
+            ..BuilderOptions::default()
+        };
+        Self::build_from_directories_with_options(directories, options)
+    }
+
+    fn build_with_options(
+        directory: impl AsRef<Path>,
+        options: BuilderOptions,
     ) -> Result<Self, String>
     where
         Self: Sized;
+
+    fn build_with_schema(
+        directory: impl AsRef<Path>,
+        schema_path: impl AsRef<Path>,
+    ) -> Result<Self, String>
+    where
+        Self: Sized,
+    {
+        let options = BuilderOptions {
+            schema_path: Some(schema_path.as_ref().to_path_buf()),
+            ..BuilderOptions::default()
+        };
+        Self::build_with_options(directory, options)
+    }
 
     /// Gets all alias names.
     fn get_aliases(&self) -> Vec<String>;
@@ -64,6 +94,9 @@ pub trait OptionsRegistry {
 
     /// Returns all of the canonical feature names.
     fn get_features(&self) -> Vec<String>;
+
+    /// Returns a list of canonical feature names that reference the given relative file path via ConfigurableString.
+    fn get_features_referencing_file(&self, relative_path: &str) -> Option<Vec<String>>;
 
     /// Returns a map of all the canonical feature names to their metadata.
     fn get_features_with_metadata(&self) -> Features;

@@ -4,6 +4,7 @@ use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::{OptionsRegistry, OptionsWatcher};
 use std::sync::Arc;
 
+use crate::builder_options::JsBuilderOptions;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::preferences::JsGetOptionsPreferences;
 use crate::watcher_options::JsWatcherOptions;
@@ -54,9 +55,25 @@ impl JsOptionsWatcher {
   }
 
   #[napi]
-  pub fn build(directory: String) -> napi::Result<JsOptionsWatcher> {
-    let path = std::path::Path::new(&directory);
-    match OptionsWatcher::build(path) {
+  pub fn build(
+    directory: String,
+    builder_options: Option<&JsBuilderOptions>,
+    watcher_options: Option<&JsWatcherOptions>,
+  ) -> napi::Result<JsOptionsWatcher> {
+    let mut builder = OptionsWatcherBuilder::new();
+    if let Some(opts) = builder_options {
+      builder
+        .with_options(opts.inner.clone())
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    }
+    if let Some(opts) = watcher_options {
+      builder.with_watcher_options(opts.inner.clone());
+    }
+    builder
+      .add_directory(&directory)
+      .map_err(|e: String| napi::Error::from_reason(e.to_string()))?;
+
+    match builder.build() {
       Ok(provider) => Ok(JsOptionsWatcher {
         inner: Some(provider),
       }),
@@ -79,8 +96,25 @@ impl JsOptionsWatcher {
   }
 
   #[napi]
-  pub fn build_from_directories(directories: Vec<String>) -> napi::Result<JsOptionsWatcher> {
-    match OptionsWatcher::build_from_directories(&directories) {
+  pub fn build_from_directories(
+    directories: Vec<String>,
+    builder_options: Option<&JsBuilderOptions>,
+    watcher_options: Option<&JsWatcherOptions>,
+  ) -> napi::Result<JsOptionsWatcher> {
+    let mut builder = OptionsWatcherBuilder::new();
+    if let Some(opts) = builder_options {
+      builder
+        .with_options(opts.inner.clone())
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    }
+    if let Some(opts) = watcher_options {
+      builder.with_watcher_options(opts.inner.clone());
+    }
+    builder
+      .add_directories(&directories)
+      .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+
+    match builder.build() {
       Ok(provider) => Ok(JsOptionsWatcher {
         inner: Some(provider),
       }),
@@ -176,6 +210,18 @@ impl JsOptionsWatcher {
       .unwrap()
       .get_canonical_feature_name(&feature_name)
       .ok()
+  }
+
+  /// Gets canonical feature names that reference a relative file path.
+  ///
+  /// Returns `null` when file reference tracking is disabled.
+  #[napi]
+  pub fn get_features_referencing_file(&self, relative_path: String) -> Option<Vec<String>> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_features_referencing_file(&relative_path)
   }
 
   #[napi(js_name = "_getOptions")]

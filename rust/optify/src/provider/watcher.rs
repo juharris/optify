@@ -3,7 +3,8 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
-use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
+use crate::builder::builder_options::BuilderOptions;
+use crate::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::provider::{
     CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry, WatcherOptions,
 };
@@ -54,9 +55,7 @@ impl OptionsWatcher {
         watcher_options: WatcherOptions,
     ) -> Result<Self, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.with_watcher_options(watcher_options);
         builder.build()
     }
@@ -69,16 +68,14 @@ impl OptionsWatcher {
         let mut builder = OptionsWatcherBuilder::new();
         builder.with_watcher_options(watcher_options);
         builder.with_schema(schema_path.as_ref())?;
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.build()
     }
 
     pub(crate) fn new(
         watched_directories: &[impl AsRef<Path>],
-        schema_path: Option<impl AsRef<Path>>,
         watcher_options: WatcherOptions,
+        builder_options: BuilderOptions,
     ) -> Result<Self, String> {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
@@ -123,20 +120,12 @@ impl OptionsWatcher {
                 .watch(dir, notify::RecursiveMode::Recursive)
                 .map_err(|e| format!("Failed to watch directory {:?}: {e}", dir.as_ref()))?;
         }
-        let mut builder = OptionsProviderBuilder::new();
-        if let Some(schema) = schema_path {
-            builder
-                .with_schema(&schema)
-                .map_err(|e| format!("Invalid schema: {e}"))?;
-        }
-        for dir in watched_directories {
-            builder
-                .add_directory(dir)
-                .map_err(|e| format!("Failed to add directory {:?}: {e}", dir.as_ref()))?;
-        }
-        let provider = builder
-            .build_and_clear()
-            .map_err(|e| format!("Failed to build provider: {e}"))?;
+
+        let provider = OptionsProvider::build_from_directories_with_options(
+            watched_directories,
+            builder_options.clone(),
+        )
+        .map_err(|e| format!("Failed to build provider: {e}"))?;
         let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
 
         let self_ = Self {
@@ -158,25 +147,10 @@ impl OptionsWatcher {
         std::thread::spawn(move || {
             for paths in rx {
                 let result = std::panic::catch_unwind(|| {
-                    let mut skip_rebuild = false;
-                    let mut builder = OptionsProviderBuilder::new();
-                    for dir in &watched_directories {
-                        if dir.exists() {
-                            if let Err(e) = builder.add_directory(dir) {
-                                eprintln!("\x1b[31m[optify] Error rebuilding provider: {e}\x1b[0m");
-                                skip_rebuild = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if skip_rebuild {
-                        // Ignore errors because the developer might still be changing the files.
-                        // TODO If there are still errors after a few minutes, then consider panicking.
-                        return;
-                    }
-
-                    match builder.build_and_clear() {
+                    match OptionsProvider::build_from_directories_with_options(
+                        &watched_directories,
+                        builder_options.clone(),
+                    ) {
                         Ok(new_provider) => match current_provider.write() {
                             Ok(mut provider) => {
                                 *provider = new_provider;
@@ -225,33 +199,29 @@ impl OptionsRegistry for OptionsWatcher {
         builder.build()
     }
 
-    fn build_with_schema(
-        directory: impl AsRef<Path>,
-        schema_path: impl AsRef<Path>,
-    ) -> Result<OptionsWatcher, String> {
-        let mut builder = OptionsWatcherBuilder::new();
-        builder.with_schema(schema_path.as_ref())?;
-        builder.add_directory(directory.as_ref())?;
-        builder.build()
-    }
-
     fn build_from_directories(directories: &[impl AsRef<Path>]) -> Result<OptionsWatcher, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.add_directories(directories)?;
         builder.build()
     }
 
-    fn build_from_directories_with_schema(
+    fn build_from_directories_with_options(
         directories: &[impl AsRef<Path>],
-        schema_path: impl AsRef<Path>,
-    ) -> Result<OptionsWatcher, String> {
+        options: BuilderOptions,
+    ) -> Result<Self, String> {
         let mut builder = OptionsWatcherBuilder::new();
-        builder.with_schema(schema_path.as_ref())?;
-        for directory in directories {
-            builder.add_directory(directory.as_ref())?;
-        }
+        builder.with_options(options)?;
+        builder.add_directories(directories)?;
+        builder.build()
+    }
+
+    fn build_with_options(
+        directory: impl AsRef<Path>,
+        options: BuilderOptions,
+    ) -> Result<Self, String> {
+        let mut builder = OptionsWatcherBuilder::new();
+        builder.with_options(options)?;
+        builder.add_directory(directory.as_ref())?;
         builder.build()
     }
 
@@ -308,6 +278,13 @@ impl OptionsRegistry for OptionsWatcher {
 
     fn get_features(&self) -> Vec<String> {
         self.current_provider.read().unwrap().get_features()
+    }
+
+    fn get_features_referencing_file(&self, relative_path: &str) -> Option<Vec<String>> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_features_referencing_file(relative_path)
     }
 
     fn get_features_with_metadata(&self) -> Features {

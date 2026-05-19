@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, afterEach } from "@jest/globals";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { CacheOptions, OptionsWatcher, WatcherOptions } from "../dist/index";
+import { BuilderOptions, CacheOptions, OptionsWatcher, WatcherOptions } from "../dist/index";
 
 const MODIFICATION_DEBOUNCE_MS = 10;
 const RETRY_DELAY = MODIFICATION_DEBOUNCE_MS * 2 + 100;
@@ -78,6 +78,24 @@ describe("OptionsWatcher", () => {
 		},
 		MODIFICATION_DEBOUNCE_MS + 100 + RETRY_DELAY * MAX_RETRY_ATTEMPTS + MAX_RETRY_ATTEMPTS ** 2 * 500,
 	);
+
+	test("getFeaturesReferencingFile", () => {
+		const configsPath = path.join(__dirname, "../../../rust/optify/tests/configurable_string_cs_only");
+
+		const watcherWithoutBuilderOptions = OptionsWatcher.build(configsPath);
+		expect(watcherWithoutBuilderOptions.getFeaturesReferencingFile("simple.txt")).toBeNull();
+
+		const builderOptionsNone = new BuilderOptions();
+		builderOptionsNone.setTrackFileReferencesMode("NONE");
+		const watcherWithNoneTracking = OptionsWatcher.build(configsPath, builderOptionsNone);
+		expect(watcherWithNoneTracking.getFeaturesReferencingFile("simple.txt")).toBeNull();
+
+		const builderOptionsTracked = new BuilderOptions();
+		builderOptionsTracked.setTrackFileReferencesMode("CONFIGURABLE_STRINGS");
+
+		const watcherWithTracking = OptionsWatcher.build(configsPath, builderOptionsTracked);
+		expect(watcherWithTracking.getFeaturesReferencingFile("simple.txt")).toEqual(["feature_with_cs"]);
+	});
 
 	test(
 		"listener is called when a file is modified and cache is invalidated",

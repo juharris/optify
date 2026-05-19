@@ -230,6 +230,16 @@ impl<'a> std::fmt::Debug for DynamicArguments<'a> {
 }
 
 impl ConfigurableString {
+    fn collect_file_references(&self, value: &ReplacementValue, files: &mut Vec<String>) {
+        match value {
+            ReplacementValue::String(_) => {}
+            ReplacementValue::Object(ReplacementObject::File { file }) => {
+                files.push(file.clone());
+            }
+            ReplacementValue::Object(ReplacementObject::Liquid { .. }) => {}
+        }
+    }
+
     /// Process a ReplacementValue and return the resulting string.
     fn process_replacement_value(
         &self,
@@ -309,5 +319,19 @@ impl ConfigurableString {
 
     pub fn build(&self, files: &LoadedFiles) -> Result<String, String> {
         self.process_replacement_value(&self.base, files)
+    }
+
+    /// Finds all directly referenced files.
+    pub fn get_referenced_files(&self) -> Vec<String> {
+        let mut result = Vec::new();
+        self.collect_file_references(&self.base, &mut result);
+
+        if let Some(args) = &self.arguments {
+            for value in args.values() {
+                self.collect_file_references(value, &mut result);
+            }
+        }
+
+        result
     }
 }

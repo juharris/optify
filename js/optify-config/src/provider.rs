@@ -3,6 +3,7 @@
 use optify::builder::{OptionsProviderBuilder, OptionsRegistryBuilder};
 use optify::provider::{OptionsProvider, OptionsRegistry};
 
+use crate::builder_options::JsBuilderOptions;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::preferences::JsGetOptionsPreferences;
 
@@ -19,9 +20,15 @@ impl JsOptionsProvider {
   }
 
   #[napi]
-  pub fn build(directory: String) -> napi::Result<JsOptionsProvider> {
+  pub fn build(
+    directory: String,
+    options: Option<&JsBuilderOptions>,
+  ) -> napi::Result<JsOptionsProvider> {
     let path = std::path::Path::new(&directory);
-    match OptionsProvider::build(path) {
+    match match options {
+      Some(opts) => OptionsProvider::build_with_options(path, opts.inner.clone()),
+      None => OptionsProvider::build(path),
+    } {
       Ok(provider) => Ok(JsOptionsProvider {
         inner: Some(provider),
       }),
@@ -115,6 +122,18 @@ impl JsOptionsProvider {
       .unwrap()
       .get_canonical_feature_name(&feature_name)
       .ok()
+  }
+
+  /// Gets canonical feature names that reference a relative file path.
+  ///
+  /// Returns `null` when file reference tracking is disabled.
+  #[napi]
+  pub fn get_features_referencing_file(&self, relative_path: String) -> Option<Vec<String>> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_features_referencing_file(&relative_path)
   }
 
   #[napi(js_name = "_getOptions")]

@@ -1,19 +1,23 @@
 use config;
-use config::FileStoredFormat;
 use jsonschema::{Draft, Registry, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::builder::builder_options::BuilderOptions;
+use crate::builder::builder_options::{BuilderOptions, BuilderOptionsConfig, TrackReferenceMode};
+use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
+use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
+use crate::configurable_string::ConfigurableString;
 use crate::configurable_string::LoadedFiles;
 use crate::json::merge::merge_json_with_defaults;
 use crate::json::reader::read_json_from_file_as;
-use crate::provider::{Aliases, Conditions, Features, OptionsProvider, Sources};
+use crate::provider::{
+    Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
+};
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
@@ -25,11 +29,16 @@ type Imports = HashMap<String, Vec<String>>;
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
     all_configurable_value_pointers: HashSet<String>,
-    dependents: Dependents,
+    builder_options: BuilderOptions,
     conditions: Conditions,
+    dependents: Dependents,
     features: Features,
     imports: Imports,
     loaded_files: LoadedFiles,
+    /// A map of files to the features that reference them.
+    /// The keys are relative file paths and the values are lists of canonical feature names.
+    /// This is only populated if the `BuilderOptions` enable file reference tracking.
+    referenced_file_to_feature_names: ReferencedFileToFeatureNames,
     schema: Option<Arc<Validator>>,
     sources: Sources,
 }
@@ -54,13 +63,27 @@ fn add_alias(
     Ok(())
 }
 
-fn get_canonical_feature_name(path: &Path, directory: &Path) -> String {
-    path.strip_prefix(directory)
-        .unwrap()
-        .with_extension("")
-        .to_str()
-        .expect("path should be valid Unicode")
-        .replace(std::path::MAIN_SEPARATOR, "/")
+fn extract_configurable_string_files_from_config(
+    raw_config: &serde_json::Value,
+    configurable_value_pointers: &[String],
+) -> Vec<String> {
+    let mut configurable_string_files = Vec::new();
+    let options_obj = match raw_config.get("options") {
+        Some(v) => v,
+        None => return configurable_string_files,
+    };
+
+    for pointer in configurable_value_pointers {
+        let json_pointer = format!("/{}", pointer);
+        if let Some(configurable_value) = options_obj.pointer(&json_pointer) {
+            if let Ok(cs) = serde_json::from_value::<ConfigurableString>(configurable_value.clone())
+            {
+                configurable_string_files.extend(cs.get_referenced_files());
+            }
+        }
+    }
+
+    configurable_string_files
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -155,11 +178,13 @@ impl OptionsProviderBuilder {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
             all_configurable_value_pointers: HashSet::new(),
+            builder_options: BuilderOptions::default(),
             conditions: Conditions::new(),
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
             loaded_files: LoadedFiles::new(),
+            referenced_file_to_feature_names: HashMap::new(),
             schema: None,
             sources: Sources::new(),
         }
@@ -173,28 +198,22 @@ impl OptionsProviderBuilder {
             .iter()
             .cloned()
             .collect();
+
+        let referenced_file_to_feature_names = if self.referenced_file_to_feature_names.is_empty() {
+            None
+        } else {
+            Some(std::mem::take(&mut self.referenced_file_to_feature_names))
+        };
+
         Ok(OptionsProvider::new(
             std::mem::take(&mut self.aliases),
             all_configurable_value_pointers,
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
+            referenced_file_to_feature_names,
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
         ))
-    }
-
-    fn get_supported_extensions() -> HashSet<&'static str> {
-        [
-            config::FileFormat::Ini.file_extensions(),
-            config::FileFormat::Json.file_extensions(),
-            config::FileFormat::Json5.file_extensions(),
-            config::FileFormat::Ron.file_extensions(),
-            config::FileFormat::Toml.file_extensions(),
-            config::FileFormat::Yaml.file_extensions(),
-        ]
-        .iter()
-        .flat_map(|exts| exts.iter().copied())
-        .collect()
     }
 
     fn validate_with_schema(&self, info: &LoadingResult) -> Result<(), String> {
@@ -317,15 +336,28 @@ impl OptionsProviderBuilder {
             ),
         };
 
-        let configurable_value_pointers = if builder_options.are_configurable_strings_enabled {
-            find_configurable_values(raw_config.get("options"))
-        } else {
-            Vec::new()
-        };
+        let (configurable_value_pointers, configurable_string_files) =
+            if builder_options.are_configurable_strings_enabled {
+                let pointers = find_configurable_values(raw_config.get("options"));
+                let files = if matches!(
+                    builder_options.track_file_references,
+                    TrackReferenceMode::ConfigurableStrings
+                ) {
+                    // This is usually not enabled in production systems and is mainly for local development,
+                    // so we won't complicate `find_configurable_values` and make it also track referenced files.
+                    extract_configurable_string_files_from_config(&raw_config, &pointers)
+                } else {
+                    Vec::new()
+                };
+                (pointers, files)
+            } else {
+                (Vec::new(), Vec::new())
+            };
 
         Ok(LoadingResult {
             canonical_feature_name,
             conditions: feature_config.conditions,
+            configurable_string_files,
             configurable_value_pointers,
             imports: feature_config.imports,
             metadata,
@@ -365,6 +397,12 @@ impl OptionsProviderBuilder {
             self.all_configurable_value_pointers
                 .extend(info.configurable_value_pointers.iter().cloned());
         }
+        for file_key in &info.configurable_string_files {
+            self.referenced_file_to_feature_names
+                .entry(file_key.clone())
+                .or_default()
+                .push(canonical_feature_name.clone());
+        }
         add_alias(
             &mut self.aliases,
             canonical_feature_name,
@@ -382,6 +420,13 @@ impl OptionsProviderBuilder {
 }
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
+    fn add_directories(&mut self, directories: &[impl AsRef<Path>]) -> Result<&Self, String> {
+        for directory in directories {
+            self.add_directory(directory)?;
+        }
+        Ok(self)
+    }
+
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String> {
         let directory = directory.as_ref();
         if !directory.is_dir() {
@@ -390,23 +435,23 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             ));
         }
 
-        // Look for .optify/config.json and load as settings for the files in the directory.
+        // Look for .optify/config.json which provides directory-level defaults.
+        // Builder-level options override when explicitly set (non-default values).
         let config_path = directory.join(".optify").join("config.json");
         let builder_options = if config_path.is_file() {
-            match read_json_from_file_as::<BuilderOptions>(&config_path) {
-                Ok(v) => v,
-                Err(e) => {
-                    return Err(format!(
+            read_json_from_file_as::<BuilderOptionsConfig>(&config_path)
+                .map_err(|e| {
+                    format!(
                         "Error loading builder options from {}: {e}",
                         config_path.as_path().display()
-                    ));
-                }
-            }
+                    )
+                })?
+                .merge_with(&self.builder_options)
         } else {
-            BuilderOptions::default()
+            self.builder_options.clone()
         };
 
-        let supported_extensions = Self::get_supported_extensions();
+        let supported_extensions = get_supported_extensions();
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .filter_map(|entry| {
@@ -436,7 +481,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                 };
 
                 if is_config_file {
-                    Some(path.to_path_buf())
+                    Some(Ok(path.to_path_buf()))
                 } else {
                     // Load the file content
                     match std::fs::read_to_string(path) {
@@ -447,7 +492,17 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                                 .to_str()
                                 .expect("path should be valid Unicode")
                                 .replace(std::path::MAIN_SEPARATOR, "/");
-                            self.loaded_files.insert(relative_path, contents);
+                            match self.loaded_files.entry(relative_path) {
+                                std::collections::hash_map::Entry::Occupied(entry) => {
+                                    return Some(Err(format!(
+                                        "File '{}' is already loaded from another directory.",
+                                        entry.key()
+                                    )));
+                                }
+                                std::collections::hash_map::Entry::Vacant(entry) => {
+                                    entry.insert(contents);
+                                }
+                            }
                         }
                         Err(e) => {
                             // TODO Yield errors.
@@ -459,12 +514,23 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             })
             .collect::<Vec<_>>()
             .into_par_iter()
-            .map(|path| Self::process_entry(&path, directory, &builder_options))
+            .map(|path_result| match path_result {
+                Ok(path) => Self::process_entry(&path, directory, &builder_options),
+                Err(e) => Err(e),
+            })
             .collect();
         for loading_result in loading_results {
             self.process_loading_result(&loading_result)?;
         }
 
+        Ok(self)
+    }
+
+    fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String> {
+        if let Some(ref schema_path) = options.schema_path {
+            self.with_schema(schema_path)?;
+        }
+        self.builder_options = options;
         Ok(self)
     }
 
@@ -506,28 +572,21 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .iter()
             .cloned()
             .collect();
+
+        let referenced_file_to_feature_names = if self.referenced_file_to_feature_names.is_empty() {
+            None
+        } else {
+            Some(self.referenced_file_to_feature_names.clone())
+        };
+
         Ok(OptionsProvider::new(
             self.aliases.clone(),
             all_configurable_value_pointers,
             self.conditions.clone(),
             self.features.clone(),
+            referenced_file_to_feature_names,
             self.loaded_files.clone(),
             self.sources.clone(),
         ))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_canonical_feature_name() {
-        let directory = std::path::Path::new("wtv");
-        let path = directory.join("dir1").join("dir2").join("feature_B.json");
-        assert_eq!(
-            "dir1/dir2/feature_B",
-            get_canonical_feature_name(&path, directory)
-        );
     }
 }

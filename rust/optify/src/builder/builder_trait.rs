@@ -1,11 +1,18 @@
+use crate::builder::builder_options::BuilderOptions;
 use std::path::Path;
 
 use crate::provider::OptionsRegistry;
 
 /// Trait defining the core functionality for building an options provider.
 pub trait OptionsRegistryBuilder<T: OptionsRegistry> {
+    // Adds multiple directories containing feature configurations.
+    fn add_directories(&mut self, directories: &[impl AsRef<Path>]) -> Result<&Self, String>;
+
     /// Adds a directory containing feature configurations.
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String>;
+
+    /// Sets builder options to configure how schemas are built.
+    fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String>;
 
     /// Sets a JSON schema for validation.
     /// When provided, files will be validated against this schema during loading when `add_directory` is called.

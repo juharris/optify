@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use crate::builder::builder_options::BuilderOptions;
 use crate::provider::{OptionsWatcher, WatcherOptions};
 
 use super::OptionsRegistryBuilder;
@@ -9,7 +10,7 @@ use super::OptionsRegistryBuilder;
 /// This builder is kept separate from the `OptionsProviderBuilder` in order to keep `OptionsProviderBuilder` and `OptionsProvider` as simple and efficient as possible for production use.
 #[derive(Clone)]
 pub struct OptionsWatcherBuilder {
-    schema_path: Option<PathBuf>,
+    builder_options: BuilderOptions,
     watched_directories: Vec<PathBuf>,
     watcher_options: WatcherOptions,
 }
@@ -23,7 +24,7 @@ impl Default for OptionsWatcherBuilder {
 impl OptionsWatcherBuilder {
     pub fn new() -> Self {
         OptionsWatcherBuilder {
-            schema_path: None,
+            builder_options: BuilderOptions::default(),
             watched_directories: Vec::new(),
             watcher_options: WatcherOptions::default(),
         }
@@ -36,6 +37,14 @@ impl OptionsWatcherBuilder {
 }
 
 impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
+    fn add_directories(&mut self, directories: &[impl AsRef<Path>]) -> Result<&Self, String> {
+        for directory in directories {
+            self.watched_directories
+                .push(directory.as_ref().to_path_buf());
+        }
+        Ok(self)
+    }
+
     /// Add a directory to watch for changes.
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String> {
         self.watched_directories
@@ -43,16 +52,21 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
         Ok(self)
     }
 
+    fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String> {
+        self.builder_options = options;
+        Ok(self)
+    }
+
     fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
-        self.schema_path = Some(schema_path.as_ref().to_path_buf());
+        self.builder_options.schema_path = Some(schema_path.as_ref().to_path_buf());
         Ok(self)
     }
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
         OptionsWatcher::new(
             &self.watched_directories,
-            self.schema_path.as_ref(),
             self.watcher_options.clone(),
+            self.builder_options.clone(),
         )
     }
 }
