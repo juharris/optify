@@ -41,11 +41,7 @@ export class OptifyReferencesCodeLensProvider implements vscode.CodeLensProvider
                 this.outputChannel.appendLine(`[CodeLens] ${document.fileName} is a feature file`);
                 const canonicalName = getCanonicalName(document.fileName, optifyRoot);
                 const metadata = featuresWithMetadata[canonicalName];
-                // FIXME Even when there are no dependents, we should still show the "Preview" lens.
-                const dependents = metadata?.dependents();
-                if (!dependents || dependents.length === 0) {
-                    return undefined;
-                }
+                const dependents = metadata?.dependents() ?? [];
 
                 return this.createFeatureDependentsCodeLenses(document.uri, dependents, featuresWithMetadata);
             }
@@ -90,12 +86,8 @@ export class OptifyReferencesCodeLensProvider implements vscode.CodeLensProvider
         dependents: string[],
         featuresWithMetadata: Record<string, { path(): string | null }>
     ): vscode.CodeLens[] {
-        // FIXME dependents should already be unique, but sorting is still fine.
-        const sortedDependents = [...new Set(dependents)].sort((a, b) => a.localeCompare(b));
-        const features = sortedDependents.flatMap(name => {
-            const filePath = featuresWithMetadata[name]?.path();
-            return filePath ? [{ name, path: filePath }] : [];
-        });
+        const sortedDependents = [...dependents].sort((a, b) => a.localeCompare(b));
+        const features = this.mapFeatureTargets(sortedDependents, featuresWithMetadata);
         const range = new vscode.Range(0, 0, 0, 0);
         const lenses: vscode.CodeLens[] = [
             new vscode.CodeLens(range, {
@@ -103,6 +95,35 @@ export class OptifyReferencesCodeLensProvider implements vscode.CodeLensProvider
                 command: 'optify.previewFeature',
                 arguments: [documentUri],
             }),
+        ];
+
+        if (features.length > 0) {
+            lenses.push(new vscode.CodeLens(range, {
+                title: 'Dependents',
+                command: 'optify.openFeatureList',
+                arguments: [features],
+            }));
+        }
+
+        for (const feature of features) {
+            lenses.push(new vscode.CodeLens(range, {
+                title: feature.name,
+                command: 'vscode.open',
+                arguments: [vscode.Uri.file(feature.path)],
+            }));
+        }
+
+        return lenses;
+    }
+
+    private createFeatureReferencesCodeLenses(
+        referencingFeatures: string[],
+        featuresWithMetadata: Record<string, { path(): string | null }>
+    ): vscode.CodeLens[] {
+        const sortedFeatures = [...new Set(referencingFeatures)].sort((a, b) => a.localeCompare(b));
+        const features = this.mapFeatureTargets(sortedFeatures, featuresWithMetadata);
+        const range = new vscode.Range(0, 0, 0, 0);
+        const lenses: vscode.CodeLens[] = [
             new vscode.CodeLens(range, {
                 title: 'Dependents',
                 command: 'optify.openFeatureList',
@@ -121,33 +142,18 @@ export class OptifyReferencesCodeLensProvider implements vscode.CodeLensProvider
         return lenses;
     }
 
-    private createFeatureReferencesCodeLenses(
-        referencingFeatures: string[],
+    private mapFeatureTargets(
+        featureNames: string[],
         featuresWithMetadata: Record<string, { path(): string | null }>
-    ): vscode.CodeLens[] {
-        const sortedFeatures = [...new Set(referencingFeatures)].sort((a, b) => a.localeCompare(b));
-        // FIXME Don't allocate intermediate lists. Maybe we shouldn't use flatMap.
-        const features = sortedFeatures.flatMap(name => {
+    ): Array<{ name: string; path: string }> {
+        const features: Array<{ name: string; path: string }> = [];
+        for (const name of featureNames) {
             const filePath = featuresWithMetadata[name]?.path();
-            return filePath ? [{ name, path: filePath }] : [];
-        });
-        const range = new vscode.Range(0, 0, 0, 0);
-        const lenses: vscode.CodeLens[] = [
-            new vscode.CodeLens(range, {
-                title: 'Dependents',
-                command: 'optify.openFeatureList',
-                arguments: [features],
-            }),
-        ];
-
-        for (const feature of features) {
-            lenses.push(new vscode.CodeLens(range, {
-                title: feature.name,
-                command: 'vscode.open',
-                arguments: [vscode.Uri.file(feature.path)],
-            }));
+            if (filePath) {
+                features.push({ name, path: filePath });
+            }
         }
 
-        return lenses;
+        return features;
     }
 }
