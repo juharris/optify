@@ -1,0 +1,10 @@
+{
+  "options": {
+    "message": {
+      "$type": "Optify.ConfigurableString",
+      "base": {
+        "liquid": "Hello {{ name }}"
+      }
+    }
+  }
+}

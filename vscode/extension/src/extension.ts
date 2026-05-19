@@ -16,6 +16,7 @@ const outputChannel = vscode.window.createOutputChannel('Optify');
 interface ActivePreview {
 	panel: vscode.WebviewPanel
 	documentChangeListener: vscode.Disposable
+	documentSaveListener: vscode.Disposable
 	debounceTimer?: NodeJS.Timeout
 	updatePreview: () => void
 	areConfigurableStringsEnabled: boolean
@@ -265,11 +266,31 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 
+		const documentSaveListener = vscode.workspace.onDidSaveTextDocument((document) => {
+			if (document.uri.fsPath !== filePath) {
+				return;
+			}
+
+			const preview = activePreviews.get(filePath);
+			if (!preview) {
+				return;
+			}
+
+			if (preview.debounceTimer) {
+				clearTimeout(preview.debounceTimer);
+				preview.debounceTimer = undefined;
+			}
+
+			preview.updatePreview();
+		});
+
 		context.subscriptions.push(documentChangeListener);
+		context.subscriptions.push(documentSaveListener);
 
 		activePreviews.set(filePath, {
 			panel,
 			documentChangeListener,
+			documentSaveListener,
 			updatePreview,
 			areConfigurableStringsEnabled: configurableStringsDefault,
 		});
@@ -418,6 +439,7 @@ function cleanPreview(filePath: string) {
 	const preview = activePreviews.get(filePath);
 	if (preview) {
 		preview.documentChangeListener.dispose();
+		preview.documentSaveListener.dispose();
 		// Clear any pending debounce timer
 		if (preview.debounceTimer) {
 			clearTimeout(preview.debounceTimer);
