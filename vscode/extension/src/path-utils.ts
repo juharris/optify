@@ -88,6 +88,13 @@ export function getRelativeOptifyPath(filePath: string, optifyRoot: string): str
  * (for example from `getRelativeOptifyPath(...)`).
  */
 export function isConfigFilePath(relativePath: string, optifyRoot: string): boolean {
+	const rootDirName = path.basename(optifyRoot).toLowerCase();
+	if (CONFIG_DIRECTORIES.has(rootDirName)) {
+		// If the discovered root itself is a config directory, treat all files under
+		// that root as config files, even when a marker directory is also present.
+		return true;
+	}
+
 	const markerPath = path.join(optifyRoot, MARKER_DIR_NAME);
 	if (!fs.existsSync(markerPath)) {
 		// No marker folder means the root itself was found by config folder name,

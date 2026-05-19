@@ -38,7 +38,6 @@ export class OptifyReferencesCodeLensProvider implements vscode.CodeLensProvider
 
             // Feature files: show the features that import this file.
             if (isOptifyFeatureFile(document.fileName, optifyRoot, workspaceFolder)) {
-                this.outputChannel.appendLine(`[CodeLens] ${document.fileName} is a feature file`);
                 const canonicalName = getCanonicalName(document.fileName, optifyRoot);
                 const metadata = featuresWithMetadata[canonicalName];
                 const dependents = metadata?.dependents() ?? [];
@@ -58,15 +57,12 @@ export class OptifyReferencesCodeLensProvider implements vscode.CodeLensProvider
             // restrict to top-level `options|configs|configurations` directories.
             // If the root itself is an options/config directory, all files under that root are in scope.
             const isConfigPath = isConfigFilePath(relativePath, optifyRoot);
-            this.outputChannel.appendLine(`[CodeLens] isConfigFilePath('${relativePath}', optifyRoot)=${isConfigPath}`);
             if (!isConfigPath) {
-                this.outputChannel.appendLine(`[CodeLens] Not a config file path`);
                 return undefined;
             }
 
             const referencingFeatures = provider.getFeaturesReferencingFile(relativePath);
             if (!referencingFeatures || referencingFeatures.length === 0) {
-                this.outputChannel.appendLine(`[CodeLens] No referencing features`);
                 return undefined;
             }
 

@@ -8,6 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## 1.9.0
 
 - Lower file edit debounce after saving from 1s to 10ms.
+- Preview: Fallback to rendering with Configurable Strings disabled if there is an error loading.
 
 ## 1.8.2
 

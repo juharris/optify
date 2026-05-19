@@ -124,6 +124,15 @@ suite('isConfigFilePath', () => {
 		const result = isConfigFilePath('a.txt', root);
 		assert.strictEqual(result, true);
 	});
+
+	test('returns true for config-directory roots with marker when path is nested', () => {
+		const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-config-root-'));
+		tempDirs.push(workspaceRoot);
+		const configsRoot = path.join(workspaceRoot, 'configs');
+		fs.mkdirSync(path.join(configsRoot, '.optify'), { recursive: true });
+		const result = isConfigFilePath('templates/something.liquid', configsRoot);
+		assert.strictEqual(result, true);
+	});
 });
 
 suite('findOptifyRoot', () => {
