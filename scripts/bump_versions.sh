@@ -4,6 +4,13 @@ set -e
 # major, minor, or patch
 strategy=$1
 
+sed_replace_in_place() {
+    local file="$1"
+    shift
+    sed -i.bak "$@" "$file"
+    rm -f "${file}.bak"
+}
+
 get_next_version() {
     local current_version=$1
     local strategy=$2
@@ -30,7 +37,7 @@ bump_version_in_toml() {
     local strategy="$2"
     local current_version=$(grep -m 1 '^version = ' $file | sed -E 's/version = "(.+)"/\1/')
     local next_version=$(get_next_version $current_version $strategy)
-    sed -i "" 's/^version = "'$current_version'"/version = "'$next_version'"/' "$file"
+    sed_replace_in_place "$file" "s/^version = \"${current_version}\"/version = \"${next_version}\"/"
 }
 
 bump_version_gemspec() {
@@ -38,16 +45,16 @@ bump_version_gemspec() {
     local strategy="$2"
     local current_version=$(grep -m 1 "^VERSION = '" $file | sed -E "s/VERSION = '(.+)'/\1/")
     local next_version=$(get_next_version $current_version $strategy)
-    sed -i "" "s/^VERSION = '${current_version}'/VERSION = '${next_version}'/" "$file"
+    sed_replace_in_place "$file" "s/^VERSION = '${current_version}'/VERSION = '${next_version}'/"
 }
 
 bump_dependency_in_toml() {
     local file="$1"
     local current_version=$2
     local next_version=$3
-    sed -i "" -E 's/^(optify = \{ path = ".+", version = ")'${current_version}'(" \}$)/\1'${next_version}'\2/' "$file"
+    sed_replace_in_place "$file" -E "s/^(optify = \\{ path = \".+\", version = \")${current_version}(\" \\}$)/\\1${next_version}\\2/"
     # Handle `optify = "x.y.z"` case as well
-    sed -i "" -E 's/^(optify = ")'${current_version}'("$)/\1'${next_version}'\2/' "$file"
+    sed_replace_in_place "$file" -E "s/^(optify = \")${current_version}(\"$)/\\1${next_version}\\2/"
 }
 
 # Go to the root directory of the project.
@@ -68,9 +75,20 @@ pushd elixir/optify
 bump_dependency_in_toml "native/optify_nif/Cargo.toml" $current_version $next_version
 bump_version_in_toml "native/optify_nif/Cargo.toml" $strategy
 # Bump version in mix.exs
-mix_current=$(grep -m 1 'version: "' mix.exs | sed -E 's/.*version: "(.+)".*/\1/')
+mix_current=$(sed -nE 's/^[[:space:]]*@version[[:space:]]+"(.+)".*/\1/p' mix.exs | head -n 1)
+if [[ -z "$mix_current" ]]; then
+    mix_current=$(sed -nE 's/.*version:[[:space:]]+"(.+)".*/\1/p' mix.exs | head -n 1)
+fi
+if [[ -z "$mix_current" ]]; then
+    echo "Unable to determine version from mix.exs. Expected @version \"x.y.z\" or version: \"x.y.z\"." >&2
+    exit 1
+fi
 mix_next=$(get_next_version $mix_current $strategy)
-sed -i "" "s/version: \"${mix_current}\"/version: \"${mix_next}\"/" mix.exs
+if grep -Eq '^[[:space:]]*@version[[:space:]]+"' mix.exs; then
+    sed_replace_in_place mix.exs -E "s/^[[:space:]]*@version[[:space:]]+\"${mix_current}\"/@version \"${mix_next}\"/"
+else
+    sed_replace_in_place mix.exs "s/version: \"${mix_current}\"/version: \"${mix_next}\"/"
+fi
 popd
 
 pushd python/optify
