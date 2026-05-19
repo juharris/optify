@@ -2,26 +2,29 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+const CONFIG_DIRECTORIES = new Set(['options', 'configs', 'configurations']);
+const MARKER_DIR_NAME = '.optify';
+
 export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
 	let currentDir = path.dirname(filePath);
+	const normalizedWorkspaceRoot = path.resolve(workspaceRoot);
 
-	const configDirs = new Set(['options', 'configs', 'configurations']);
-	const markerDirName = '.optify';
 	while (currentDir !== path.dirname(currentDir)) {
 		const currentDirName = path.basename(currentDir);
-		if (configDirs.has(currentDirName)) {
+		if (CONFIG_DIRECTORIES.has(currentDirName)) {
 			return currentDir;
 		}
 
-		const optifyConfigPath = path.join(currentDir, markerDirName);
+		const optifyConfigPath = path.join(currentDir, MARKER_DIR_NAME);
 		if (fs.existsSync(optifyConfigPath)) {
 			return currentDir;
 		}
 
-		currentDir = path.dirname(currentDir);
-		if (currentDir === workspaceRoot) {
+		if (path.resolve(currentDir) === normalizedWorkspaceRoot) {
 			return undefined;
 		}
+
+		currentDir = path.dirname(currentDir);
 	}
 
 	return undefined;
@@ -53,6 +56,56 @@ export function getCanonicalName(filePath: string, optifyRoot: string): string {
 	const result = path.join(path.dirname(relativePath), path.basename(relativePath, path.extname(relativePath)));
 
 	return result;
+}
+
+export function getRelativeOptifyPath(filePath: string, optifyRoot: string): string | undefined {
+	const relativePath = path.relative(optifyRoot, filePath);
+	if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+		return undefined;
+	}
+
+	// The Rust provider expects forward slashes across platforms.
+	if (path.sep === '/') {
+		return relativePath;
+	}
+	return relativePath.split(path.sep).join('/');
+}
+
+/**
+ * Returns true when a root-relative path should be treated as a config file path.
+ *
+ * This function exists because "inside the Optify root" can mean two different things:
+ * 1) Root discovered by marker folder (`<root>/.optify`):
+ *    - Root is a project folder.
+ *    - Files directly at root level, or under top-level `options|configs|configurations`, are in scope.
+ *    - Example: `a.txt` => true, `configs/feature.yaml` => true, `src/app.json` => false.
+ * 2) Root discovered by config folder name (`options|configs|configurations`):
+ *    - Root itself is already a config folder.
+ *    - Everything under it is treated as config files.
+ *    - Example: `nested/feature.yaml` => true.
+ *
+ * `relativePath` must already be relative to `optifyRoot` and use `/` separators
+ * (for example from `getRelativeOptifyPath(...)`).
+ */
+export function isConfigFilePath(relativePath: string, optifyRoot: string): boolean {
+	const markerPath = path.join(optifyRoot, MARKER_DIR_NAME);
+	if (!fs.existsSync(markerPath)) {
+		// No marker folder means the root itself was found by config folder name,
+		// so every file under that root is treated as a config file.
+		return true;
+	}
+
+	// Marker folder means this is a project root.
+	// Include files directly at the root level, or in top-level config directories.
+	const parts = relativePath.split('/');
+	if (parts.length === 1) {
+		// File directly at root (e.g., `a.txt`)
+		return true;
+	}
+
+	// File in subdirectory - only include if top-level is a config directory
+	const topLevel = parts[0]?.toLowerCase();
+	return CONFIG_DIRECTORIES.has(topLevel ?? '');
 }
 
 /**

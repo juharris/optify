@@ -4,8 +4,7 @@ import * as vscode from 'vscode';
 import { OptifyCompletionProvider } from './completion';
 import { ConfigParser } from './config-parser';
 import { OptifyDefinitionProvider } from './definitions';
-import { OptifyDependentsHoverProvider } from './dependents/hover';
-import { OptifyDependentsProvider } from './dependents/show';
+import { OptifyReferencesCodeLensProvider } from './dependents/code-lens';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
 import { OptifyDocumentLinkProvider } from './links';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveFilePathArg } from './path-utils';
@@ -130,19 +129,14 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set up context for when clauses
 	updateOptifyFileContext();
 
-	// Create the dependents providers
-	const dependentsProvider = new OptifyDependentsProvider(outputChannel);
-	const dependentsHoverProvider = new OptifyDependentsHoverProvider(outputChannel);
+	const referencesCodeLensProvider = new OptifyReferencesCodeLensProvider(outputChannel);
 
 	// Register callback to update previews and dependents when options change
 	registerUpdateCallback(() => {
 		for (const preview of activePreviews.values()) {
 			preview.updatePreview();
 		}
-		// Update dependents decoration for active editor
-		if (vscode.window.activeTextEditor) {
-			dependentsProvider.updateDependentsDecoration(vscode.window.activeTextEditor);
-		}
+		referencesCodeLensProvider.refresh();
 	});
 
 	async function openOrRevealPreview(filePath: string, optifyRoot: string, canonicalName: string): Promise<void> {
@@ -286,6 +280,19 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	}
 
+	const openFeatureListCommand = vscode.commands.registerCommand(
+		'optify.openFeatureList',
+		async (features: { name: string; path: string }[]) => {
+			const items = features.map(f => ({ label: f.name, filePath: f.path }));
+			const selected = await vscode.window.showQuickPick(items, {
+				placeHolder: 'Select a feature to open',
+			});
+			if (selected) {
+				await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(selected.filePath));
+			}
+		},
+	);
+
 	const previewCommand = vscode.commands.registerCommand('optify.previewFeature', async (filePathArg?: string | vscode.Uri) => {
 		const filePath = resolveFilePathArg(filePathArg) ?? vscode.window.activeTextEditor?.document.fileName;
 		if (!filePath) {
@@ -352,14 +359,9 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
-	const hoverProvider = vscode.languages.registerHoverProvider(
-		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
-		dependentsHoverProvider
-	);
-
-	const inlayHintsProvider = vscode.languages.registerInlayHintsProvider(
-		[{ scheme: 'file', pattern: '**/*.{json,yaml,yml,json5}' }],
-		dependentsProvider
+	const codeLensProvider = vscode.languages.registerCodeLensProvider(
+		[{ scheme: 'file', pattern: '**/*.{json,json5,md,liquid,txt,yaml,yml}' }],
+		referencesCodeLensProvider
 	);
 
 	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -378,42 +380,37 @@ export function activate(context: vscode.ExtensionContext) {
 		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath);
 		if (_isOptifyFeatureFile) {
 			diagnosticsProvider.updateDiagnostics(document);
-			// Update dependents decoration when opening a document
-			const editor = vscode.window.activeTextEditor;
-			if (editor && editor.document === document) {
-				dependentsProvider.updateDependentsDecoration(editor);
-			}
 		}
+		referencesCodeLensProvider.refresh();
 		updateOptifyFileContext(_isOptifyFeatureFile);
 	});
 
 	const onDidChangeActiveEditor = vscode.window.onDidChangeActiveTextEditor((editor) => {
 		updateOptifyFileContext();
-		// Update dependents decoration when switching editors
 		if (editor) {
-			dependentsProvider.updateDependentsDecoration(editor);
+			referencesCodeLensProvider.refresh();
 		}
 	});
 
-	// Update dependents for the active editor on activation
+	// Refresh CodeLens for the active editor on activation
 	if (vscode.window.activeTextEditor) {
-		dependentsProvider.updateDependentsDecoration(vscode.window.activeTextEditor);
+		referencesCodeLensProvider.refresh();
 	}
 
 	context.subscriptions.push(
 		outputChannel,
+		openFeatureListCommand,
 		previewCommand,
 		linkProvider,
 		definitionProvider,
 		completionProvider,
 		diagnosticCollection,
 		codeActionProvider,
-		hoverProvider,
-		inlayHintsProvider,
+		codeLensProvider,
 		onDidChangeDocument,
 		onDidOpenDocument,
 		onDidChangeActiveEditor,
-		dependentsProvider
+		referencesCodeLensProvider
 	);
 }
 
