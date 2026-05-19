@@ -340,29 +340,14 @@ export const PreviewApp: React.FC = () => {
 					>
 						{previewData.error}
 					</div>
-				</div>
-			)}
-
-			{previewData && !previewData.error && (
-				<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', marginBottom: '0.75rem' }}>
-					<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Configuration</h3>
-					<button
-						onClick={() => setExpandAll(prev => prev === true ? false : true)}
-						style={{
-							padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
-							backgroundColor: 'var(--vscode-button-secondaryBackground)',
-							color: 'var(--vscode-button-secondaryForeground)',
-							border: '1px solid var(--vscode-button-border, transparent)',
-						}}
-					>
-						{expandAll === true ? '⊟ Collapse All' : '⊞ Expand All'}
-					</button>
-					{/* Only show configurable strings toggle when the config default enables it; otherwise they won't work */}
+					{/* Show configurable strings toggle as disabled during errors so users can see its state */}
 					{previewData.areConfigurableStringsEnabledDefault && (
 						<button
-							onClick={handleToggleConfigurableStrings}
+							disabled
 							style={{
-								padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+								marginTop: '0.5rem',
+								padding: '2px 8px', fontSize: '0.8rem', cursor: 'not-allowed', borderRadius: '3px',
+								opacity: 0.5,
 								backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
 								color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
 								border: '1px solid var(--vscode-button-border, transparent)',
@@ -370,6 +355,71 @@ export const PreviewApp: React.FC = () => {
 						>
 							{configurableStringsLabel}
 						</button>
+					)}
+				</div>
+			)}
+
+			{previewData && !previewData.error && (
+				<div style={{ marginTop: '0.5rem', marginBottom: '0.75rem' }}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+						<h3 style={{ color: 'var(--vscode-foreground)', margin: 0 }}>Configuration</h3>
+						<button
+							onClick={() => setExpandAll(prev => prev === true ? false : true)}
+							style={{
+								padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+								backgroundColor: 'var(--vscode-button-secondaryBackground)',
+								color: 'var(--vscode-button-secondaryForeground)',
+								border: '1px solid var(--vscode-button-border, transparent)',
+							}}
+						>
+							{expandAll === true ? '⊟ Collapse All' : '⊞ Expand All'}
+						</button>
+						{/* Only show configurable strings toggle when the config default enables it; otherwise they won't work */}
+						{previewData.areConfigurableStringsEnabledDefault && (
+							<button
+								onClick={handleToggleConfigurableStrings}
+								style={{
+									padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
+									backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
+									color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
+									border: '1px solid var(--vscode-button-border, transparent)',
+								}}
+							>
+								{configurableStringsLabel}
+							</button>
+						)}
+					</div>
+					{previewData.configurableStringsStatusMessage && (
+						<div
+							style={{
+								marginTop: '0.5rem',
+								maxWidth: '70rem',
+							}}
+						>
+							<p
+								style={{
+									marginTop: 0,
+									marginBottom: previewData.configurableStringsError ? '0.5rem' : 0,
+									color: 'var(--vscode-descriptionForeground)',
+								}}
+							>
+								{previewData.configurableStringsStatusMessage}
+							</p>
+							{previewData.configurableStringsError && (
+								<div
+									style={{
+										padding: '0.75rem',
+										backgroundColor: 'var(--vscode-inputValidation-warningBackground)',
+										border: '1px solid var(--vscode-inputValidation-warningBorder)',
+										borderRadius: '4px',
+										color: 'var(--vscode-inputValidation-warningForeground)',
+										whiteSpace: 'pre-wrap' as const,
+									}}
+								>
+									{previewData.configurableStringsError}
+								</div>
+							)}
+						</div>
 					)}
 				</div>
 			)}

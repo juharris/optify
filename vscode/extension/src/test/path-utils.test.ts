@@ -1,7 +1,9 @@
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { getCanonicalName, resolveFilePathArg } from '../path-utils';
+import { findOptifyRoot, getCanonicalName, getRelativeOptifyPath, isConfigFilePath, resolveFilePathArg } from '../path-utils';
 
 suite('Utils Test Suite', () => {
 	if (process.platform === 'win32') {
@@ -59,5 +61,126 @@ suite('resolveFilePathArg', () => {
 	test('returns undefined for unexpected types', () => {
 		assert.strictEqual(resolveFilePathArg(42), undefined);
 		assert.strictEqual(resolveFilePathArg({ other: 'prop' }), undefined);
+	});
+});
+
+suite('getRelativeOptifyPath', () => {
+	test('returns a relative path using forward slashes', () => {
+		const result = getRelativeOptifyPath('/repo/configs/nested/file.json', '/repo');
+		assert.strictEqual(result, 'configs/nested/file.json');
+	});
+
+	test('returns relative path unchanged on POSIX separators', () => {
+		if (path.sep !== '/') {
+			return;
+		}
+
+		const result = getRelativeOptifyPath('/repo/options/child/file.yaml', '/repo');
+		assert.strictEqual(result, 'options/child/file.yaml');
+	});
+
+	test('returns undefined for files outside the optify root', () => {
+		const result = getRelativeOptifyPath('/repo-other/configs/file.json', '/repo');
+		assert.strictEqual(result, undefined);
+	});
+});
+
+suite('isConfigFilePath', () => {
+	const tempDirs: string[] = [];
+
+	suiteTeardown(() => {
+		for (const dir of tempDirs) {
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
+	});
+
+	test('returns true for config-directory roots (no marker)', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-config-root-'));
+		tempDirs.push(root);
+		const result = isConfigFilePath('any/subpath/file.yaml', root);
+		assert.strictEqual(result, true);
+	});
+
+	test('returns true for marker roots when path starts with options-like top-level directory', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-root-'));
+		tempDirs.push(root);
+		fs.mkdirSync(path.join(root, '.optify'));
+		const result = isConfigFilePath('configs/file.yaml', root);
+		assert.strictEqual(result, true);
+	});
+
+	test('returns false for marker roots when path is outside options-like directories', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-root-'));
+		tempDirs.push(root);
+		fs.mkdirSync(path.join(root, '.optify'));
+		const result = isConfigFilePath('src/file.yaml', root);
+		assert.strictEqual(result, false);
+	});
+
+	test('returns true for marker roots when file is directly at root level', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-root-'));
+		tempDirs.push(root);
+		fs.mkdirSync(path.join(root, '.optify'));
+		const result = isConfigFilePath('a.txt', root);
+		assert.strictEqual(result, true);
+	});
+
+	test('returns true for config-directory roots with marker when path is nested', () => {
+		const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-config-root-'));
+		tempDirs.push(workspaceRoot);
+		const configsRoot = path.join(workspaceRoot, 'configs');
+		fs.mkdirSync(path.join(configsRoot, '.optify'), { recursive: true });
+		const result = isConfigFilePath('templates/something.liquid', configsRoot);
+		assert.strictEqual(result, true);
+	});
+});
+
+suite('findOptifyRoot', () => {
+	const tempDirs: string[] = [];
+
+	suiteTeardown(() => {
+		for (const dir of tempDirs) {
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
+	});
+
+	test('returns config directory when discovered by folder name', () => {
+		const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-workspace-'));
+		tempDirs.push(workspaceRoot);
+		const configsDir = path.join(workspaceRoot, 'configs');
+		const nestedDir = path.join(configsDir, 'nested');
+		fs.mkdirSync(nestedDir, { recursive: true });
+		const filePath = path.join(nestedDir, 'feature.yaml');
+		fs.writeFileSync(filePath, 'a: 1');
+
+		const root = findOptifyRoot(filePath, workspaceRoot);
+		assert.strictEqual(root, configsDir);
+	});
+
+	test('returns project root when discovered by .optify marker', () => {
+		const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-workspace-'));
+		tempDirs.push(workspaceRoot);
+		fs.mkdirSync(path.join(workspaceRoot, '.optify'));
+		const nestedDir = path.join(workspaceRoot, 'src', 'nested');
+		fs.mkdirSync(nestedDir, { recursive: true });
+		const filePath = path.join(nestedDir, 'feature.yaml');
+		fs.writeFileSync(filePath, 'a: 1');
+
+		const root = findOptifyRoot(filePath, workspaceRoot);
+		assert.strictEqual(root, workspaceRoot);
+	});
+
+	test('prefers nearest config directory over marker root above it', () => {
+		const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-workspace-'));
+		tempDirs.push(workspaceRoot);
+		fs.mkdirSync(path.join(workspaceRoot, '.optify'));
+		const configsDir = path.join(workspaceRoot, 'configs');
+		const nestedDir = path.join(configsDir, 'nested');
+		fs.mkdirSync(nestedDir, { recursive: true });
+		const filePath = path.join(nestedDir, 'feature.yaml');
+		fs.writeFileSync(filePath, 'a: 1');
+
+		const root = findOptifyRoot(filePath, workspaceRoot);
+		assert.strictEqual(root, configsDir);
 	});
 });

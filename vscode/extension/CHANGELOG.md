@@ -5,6 +5,13 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.9.0
+
+- Use CodeLens to show dependents instead of inlay hints.
+- Show dependents of .liquid, .md, and .txt files.
+- Lower file edit debounce after saving from 1s to 10ms.
+- Preview: Fallback to rendering with Configurable Strings disabled if there is an error loading.
+
 ## 1.8.2
 
 - Optimize loading the preview page by loading graph and configuration data separately.
@@ -52,7 +59,6 @@ Improve Preview window with the help of some libraries and using React:
 ## 1.5.0
 
 - Support Configurable Strings
-- Lower file edit debounce after saving from 1s to 10ms.
 
 ## 1.4.1
 

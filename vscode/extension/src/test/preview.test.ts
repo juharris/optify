@@ -5,6 +5,7 @@ import { buildOptifyPreviewData, buildOptifyGraphData } from '../extension';
 import { findOptifyRoot } from '../path-utils';
 
 const expectedRoot = path.join(__dirname, '../../src/test/configs');
+const fallbackRoot = path.join(__dirname, '../../src/test/configs/configurable_string_missing_arguments');
 
 suite('Preview Builder Test Suite', () => {
 	test('preview error', () => {
@@ -61,5 +62,18 @@ suite('Preview Builder Test Suite', () => {
 
 		assert.equal(result.areConfigurableStringsEnabled, true);
 		assert.equal(result.areConfigurableStringsEnabledDefault, true);
+		assert.equal(result.configurableStringsError, undefined);
+		assert.equal(result.configurableStringsStatusMessage, undefined);
+	});
+
+	test('preview falls back when configurable strings cannot be rendered', () => {
+		const result = buildOptifyPreviewData(['feature'], fallbackRoot, undefined, true, true);
+		assert.ok(!('error' in result));
+
+		// Configurable strings are disabled automatically after a render failure.
+		assert.equal(result.areConfigurableStringsEnabled, false);
+		assert.equal(result.areConfigurableStringsEnabledDefault, true);
+		assert.ok(result.configurableStringsError);
+		assert.ok(result.configurableStringsStatusMessage);
 	});
 });

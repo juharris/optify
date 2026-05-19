@@ -33,6 +33,8 @@ export interface FeatureGraphData {
 export interface PreviewData {
 	features: string[];
 	config: any;
+	configurableStringsError?: string;
+	configurableStringsStatusMessage?: string;
 	dependents: DependentInfo[] | null;
 	isUnsaved: boolean;
 	error?: string;
@@ -104,7 +106,30 @@ export class PreviewBuilder {
 			cacheOptions = undefined;
 			preferences.setOverridesJson(editingOptions.overrides);
 		}
-		const builtConfig = provider.getAllOptions(editingOptions?.features ?? canonicalFeatures, preferences, cacheOptions);
+		const featureNames = editingOptions?.features ?? canonicalFeatures;
+		let builtConfig: any;
+		let configurableStringsError: string | undefined;
+		let configurableStringsStatusMessage: string | undefined;
+		let effectiveAreConfigurableStringsEnabled = !!areConfigurableStringsEnabled;
+
+		try {
+			builtConfig = provider.getAllOptions(featureNames, preferences, cacheOptions);
+		} catch (error) {
+			if (!effectiveAreConfigurableStringsEnabled) {
+				throw error;
+			}
+
+			const fallbackPreferences = new GetOptionsPreferences();
+			fallbackPreferences.setSkipFeatureNameConversion(true);
+			if (editingOptions?.overrides) {
+				fallbackPreferences.setOverridesJson(editingOptions.overrides);
+			}
+
+			builtConfig = provider.getAllOptions(featureNames, fallbackPreferences, cacheOptions);
+			effectiveAreConfigurableStringsEnabled = false;
+			configurableStringsError = `${error}`;
+			configurableStringsStatusMessage = "Configurable Strings were turned disabled because the preview could not load options with them enabled.";
+		}
 		const feature = canonicalFeatures.length === 1 ? canonicalFeatures[0] : undefined;
 		const featuresWithMetadata = provider.featuresWithMetadata();
 		const dependentNames = feature ? featuresWithMetadata[feature]?.dependents() : null;
@@ -133,9 +158,11 @@ export class PreviewBuilder {
 		return {
 			features: canonicalFeatures,
 			config: builtConfig,
+			configurableStringsError,
+			configurableStringsStatusMessage,
 			dependents,
 			isUnsaved: !!editingOptions,
-			areConfigurableStringsEnabled: !!areConfigurableStringsEnabled,
+			areConfigurableStringsEnabled: effectiveAreConfigurableStringsEnabled,
 			areConfigurableStringsEnabledDefault: !!configurableStringsDefault,
 			allFeatureNames,
 			featureAliases,
