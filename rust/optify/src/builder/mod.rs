@@ -1,6 +1,8 @@
 pub(crate) mod builder_impl;
 pub(crate) mod builder_options;
 pub(crate) mod builder_trait;
+mod extract_configurable_string_files_from_config;
+mod extract_files_from_config;
 mod get_canonical_feature_name;
 mod get_supported_extensions;
 pub(crate) mod loading_result;

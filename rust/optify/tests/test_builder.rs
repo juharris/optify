@@ -252,3 +252,22 @@ fn test_directory_config_merges_with_builder_options() -> Result<(), Box<dyn std
     assert_eq!(referenced_features, vec!["feature_with_cs"]);
     Ok(())
 }
+
+#[test]
+fn test_track_file_references_by_key_name_for_arguments_feature(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/configurable_string_cs_only");
+    let options = BuilderOptions {
+        track_file_references: optify::builder::TrackReferenceMode::KeyName,
+        ..BuilderOptions::default()
+    };
+
+    let provider = OptionsProvider::build_with_options(path, options)?;
+
+    let mut referenced_features = provider
+        .get_features_referencing_file("simple.txt")
+        .expect("key-name tracking should include file references in arguments");
+    referenced_features.sort_unstable();
+    assert_eq!(referenced_features, vec!["arguments", "feature_with_cs"]);
+    Ok(())
+}

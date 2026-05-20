@@ -1,0 +1,5 @@
+options:
+  my_message:
+    arguments:
+      arg:
+        file: simple.txt
