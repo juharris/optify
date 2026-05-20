@@ -146,6 +146,7 @@ jobs:
         shell: bash
         working-directory: ./js/optify-config
       - name: Install dependencies
+        if: ${{ !matrix.settings.docker }}
         run: yarn install --immutable
         working-directory: ./js/optify-config
       - name: Setup node x86
