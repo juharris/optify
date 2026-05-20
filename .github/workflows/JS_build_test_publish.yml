@@ -64,6 +64,7 @@ jobs:
             build: |
               set -eu
               rustup update stable
+              yarn install --immutable
               yarn build --target x86_64-unknown-linux-gnu
               yarn build:ts
           - host: macos-latest
@@ -78,6 +79,7 @@ jobs:
             build: |-
               set -eu
               rustup update stable
+              yarn install --immutable
               yarn build --target aarch64-unknown-linux-gnu
               yarn build:ts
           - host: ubuntu-latest
@@ -96,6 +98,7 @@ jobs:
               rustc --version
               corepack enable
               rustup target add aarch64-unknown-linux-musl
+              yarn install --immutable
               yarn build --target aarch64-unknown-linux-musl
               yarn build:ts
     name: "[${{ matrix.settings.target }}] Build"
