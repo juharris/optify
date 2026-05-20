@@ -124,7 +124,7 @@ jobs:
         with:
           cache: yarn
           cache-dependency-path: ./js/optify-config/yarn.lock
-          node-version: 20
+          node-version: 24
           
       - name: Install
         uses: dtolnay/rust-toolchain@stable
@@ -155,7 +155,7 @@ jobs:
           architecture: x86
           cache-dependency-path: ./js/optify-config/yarn.lock
           cache: yarn
-          node-version: 20
+          node-version: 24
       - name: "[Docker] Build"
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
@@ -436,7 +436,7 @@ jobs:
         with:
           cache: yarn
           cache-dependency-path: ./js/optify-config/yarn.lock
-          node-version: 20
+          node-version: 24
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
@@ -486,9 +486,10 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
-          node-version: 20
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          # Never use caching in release builds as shown at https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow
+          package-manager-cache: false
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
