@@ -5,10 +5,14 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.10.0
+
+- Show dependents of .liquid, .md, and .txt files when they are referenced by a key called "file", including in Configurable Strings.
+
 ## 1.9.0
 
 - Use CodeLens to show dependents instead of inlay hints.
-- Show dependents of .liquid, .md, and .txt files.
+- Show dependents of .liquid, .md, and .txt files when they are referenced in Configurable Strings.
 - Lower file edit debounce after saving from 1s to 10ms.
 - Preview: Fallback to rendering with Configurable Strings disabled if there is an error loading.
 

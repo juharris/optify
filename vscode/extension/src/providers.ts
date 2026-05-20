@@ -10,7 +10,7 @@ export function getOptionsProvider(optifyRoot: string): OptionsWatcher {
 	let result = providerCache.get(optifyRoot);
 	if (result === undefined) {
 		const builderOptions = new BuilderOptions();
-		builderOptions.setTrackFileReferencesMode('CONFIGURABLE_STRINGS');
+		builderOptions.setTrackFileReferencesMode('KEY_NAME');
 		const watcherOptions = new WatcherOptions();
 		watcherOptions.setDebounceDurationMs(10);
 		result = OptionsWatcher.build(optifyRoot, builderOptions, watcherOptions);
