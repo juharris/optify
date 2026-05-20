@@ -97,8 +97,7 @@ describe("OptionsWatcher", () => {
 		const referencingFeatures = watcherWithTracking.getFeaturesReferencingFile("simple.txt");
 		expect(referencingFeatures).not.toBeNull();
 		referencingFeatures!.sort();
-		expect(referencingFeatures)
-			.toEqual(["arguments", "feature_with_cs"]);
+		expect(referencingFeatures).toEqual(["arguments", "feature_with_cs"]);
 	});
 
 	test(
