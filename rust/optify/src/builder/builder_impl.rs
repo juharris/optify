@@ -6,12 +6,13 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::builder::builder_options::{BuilderOptions, BuilderOptionsConfig, TrackReferenceMode};
+use crate::builder::extract_configurable_string_files_from_config::extract_configurable_string_files_from_config;
+use crate::builder::extract_files_from_config::extract_files_from_config;
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::locator::find_configurable_values;
-use crate::configurable_string::ConfigurableString;
 use crate::configurable_string::LoadedFiles;
 use crate::json::merge::merge_json_with_defaults;
 use crate::json::reader::read_json_from_file_as;
@@ -61,29 +62,6 @@ fn add_alias(
         ));
     }
     Ok(())
-}
-
-fn extract_configurable_string_files_from_config(
-    raw_config: &serde_json::Value,
-    configurable_value_pointers: &[String],
-) -> Vec<String> {
-    let mut configurable_string_files = Vec::new();
-    let options_obj = match raw_config.get("options") {
-        Some(v) => v,
-        None => return configurable_string_files,
-    };
-
-    for pointer in configurable_value_pointers {
-        let json_pointer = format!("/{}", pointer);
-        if let Some(configurable_value) = options_obj.pointer(&json_pointer) {
-            if let Ok(cs) = serde_json::from_value::<ConfigurableString>(configurable_value.clone())
-            {
-                configurable_string_files.extend(cs.get_referenced_files());
-            }
-        }
-    }
-
-    configurable_string_files
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -336,23 +314,24 @@ impl OptionsProviderBuilder {
             ),
         };
 
-        let (configurable_value_pointers, configurable_string_files) =
-            if builder_options.are_configurable_strings_enabled {
-                let pointers = find_configurable_values(raw_config.get("options"));
-                let files = if matches!(
-                    builder_options.track_file_references,
-                    TrackReferenceMode::ConfigurableStrings
-                ) {
-                    // This is usually not enabled in production systems and is mainly for local development,
-                    // so we won't complicate `find_configurable_values` and make it also track referenced files.
+        let (configurable_value_pointers, configurable_string_files) = if builder_options
+            .are_configurable_strings_enabled
+        {
+            let pointers = find_configurable_values(raw_config.get("options"));
+
+            // Tracking file references is usually not enabled in production systems and is mainly for local development,
+            // so we won't complicate `find_configurable_values` and make it also track referenced files.
+            let files = match builder_options.track_file_references {
+                TrackReferenceMode::None => Vec::new(),
+                TrackReferenceMode::ConfigurableStrings => {
                     extract_configurable_string_files_from_config(&raw_config, &pointers)
-                } else {
-                    Vec::new()
-                };
-                (pointers, files)
-            } else {
-                (Vec::new(), Vec::new())
+                }
+                TrackReferenceMode::KeyName => extract_files_from_config(&raw_config, &pointers),
             };
+            (pointers, files)
+        } else {
+            (Vec::new(), Vec::new())
+        };
 
         Ok(LoadingResult {
             canonical_feature_name,

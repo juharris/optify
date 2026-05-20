@@ -7,7 +7,13 @@ use std::path::PathBuf;
 pub enum TrackReferenceMode {
     #[default]
     None,
+
+    /// Only check in Configurable Strings.
     ConfigurableStrings,
+
+    /// Check for any value of keys called "file"
+    /// and perhaps more in the future.
+    KeyName,
 }
 
 /// Deserializable form of builder options from `.optify/config.json`.
