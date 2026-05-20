@@ -91,10 +91,14 @@ describe("OptionsWatcher", () => {
 		expect(watcherWithNoneTracking.getFeaturesReferencingFile("simple.txt")).toBeNull();
 
 		const builderOptionsTracked = new BuilderOptions();
-		builderOptionsTracked.setTrackFileReferencesMode("CONFIGURABLE_STRINGS");
+		builderOptionsTracked.setTrackFileReferencesMode("KEY_NAME");
 
 		const watcherWithTracking = OptionsWatcher.build(configsPath, builderOptionsTracked);
-		expect(watcherWithTracking.getFeaturesReferencingFile("simple.txt")).toEqual(["feature_with_cs"]);
+		const referencingFeatures = watcherWithTracking.getFeaturesReferencingFile("simple.txt");
+		expect(referencingFeatures).not.toBeNull();
+		referencingFeatures!.sort();
+		expect(referencingFeatures)
+			.toEqual(["arguments", "feature_with_cs"]);
 	});
 
 	test(
