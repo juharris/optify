@@ -518,10 +518,12 @@ jobs:
         continue-on-error: true
         run: |
           set -ex
-          npm config set provenance true
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          npm publish --access public
+          npm publish
         working-directory: ./js/optify-config
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: "[dry-run] Publish"
+        if: github.ref != 'refs/heads/main'
+        shell: bash
+        run: |
+          set -ex
+          npm publish --dry-run
+        working-directory: ./js/optify-config
