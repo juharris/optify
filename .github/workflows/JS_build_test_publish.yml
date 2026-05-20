@@ -94,7 +94,6 @@ jobs:
               rustc --version
               rustup update stable
               rustc --version
-              npm install -g corepack
               corepack enable
               rustup target add aarch64-unknown-linux-musl
               yarn build --target aarch64-unknown-linux-musl
@@ -112,12 +111,8 @@ jobs:
           cache-workspace-crates: true
           cache-on-failure: true
           shared-key: ${{ matrix.settings.target }}-rust
-      - name: Install corepack
-        if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack
-      - name: "[Windows] Install corepack"
-        if: ${{ matrix.settings.target == 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack --force
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         if: ${{ !matrix.settings.docker }}
@@ -263,12 +258,8 @@ jobs:
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack
-      - name: "[Windows] Install corepack"
-        if: ${{ matrix.settings.target == 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack --force
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
@@ -309,8 +300,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        run: npm install -g corepack
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
@@ -331,7 +322,7 @@ jobs:
           name: package-runtime
           path: ./js/optify-config
       - name: Test bindings
-        run: docker run --rm -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config node:${{ matrix.node }}-slim bash -c 'set -ex && npm install -g corepack && corepack enable && yarn test'
+        run: docker run --rm -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config node:${{ matrix.node }}-slim bash -c 'set -ex && corepack enable && yarn test'
   test-linux-aarch64-gnu-binding:
     name: "[aarch64-unknown-linux-gnu] Test"
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
@@ -375,7 +366,6 @@ jobs:
           options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
-            npm install -g corepack
             corepack enable
             yarn test
   test-linux-aarch64-musl-binding:
@@ -393,7 +383,6 @@ jobs:
           path: ./js/optify-config
       - name: Install dependencies
         run: |
-          npm install -g corepack
           corepack enable
           yarn config set supportedArchitectures.cpu "arm64"
           yarn config set supportedArchitectures.libc "musl"
@@ -417,7 +406,6 @@ jobs:
           options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
-            npm install -g corepack
             corepack enable
             yarn test
   universal-macOS:
@@ -428,8 +416,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        run: npm install -g corepack
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
@@ -480,8 +468,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        run: npm install -g corepack
+      - name: Enable corepack
+        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
