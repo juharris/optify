@@ -111,16 +111,21 @@ jobs:
           cache-workspace-crates: true
           cache-on-failure: true
           shared-key: ${{ matrix.settings.target }}-rust
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         if: ${{ !matrix.settings.docker }}
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: 24
-          
+      - name: Enable corepack
+        if: ${{ !matrix.settings.docker }}
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        if: ${{ !matrix.settings.docker }}
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ matrix.settings.target }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ matrix.settings.target }}-
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !matrix.settings.docker }}
@@ -148,8 +153,6 @@ jobs:
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           architecture: x86
-          cache-dependency-path: ./js/optify-config/yarn.lock
-          cache: yarn
           node-version: 24
       - name: "[Docker] Build"
         uses: addnab/docker-run-action@v3
@@ -258,15 +261,19 @@ jobs:
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v6
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
           architecture: x64
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: ${{ matrix.node }}
+      - name: Enable corepack
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-${{ runner.arch }}-
       - name: Install dependencies
         run: |
           yarn install --immutable
@@ -300,14 +307,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: ${{ matrix.node }}
+      - name: Enable corepack
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-${{ runner.arch }}-
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
@@ -416,14 +427,18 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: 24
+      - name: Enable corepack
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-${{ runner.arch }}-
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
@@ -468,8 +483,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Enable corepack
-        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v6
         with:
@@ -477,6 +490,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           # Never use caching in release builds as shown at https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow
           package-manager-cache: false
+      - name: Enable corepack
+        run: corepack enable
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
