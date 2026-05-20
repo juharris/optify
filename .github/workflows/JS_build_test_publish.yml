@@ -64,6 +64,7 @@ jobs:
             build: |
               set -eu
               rustup update stable
+              yarn install --immutable
               yarn build --target x86_64-unknown-linux-gnu
               yarn build:ts
           - host: macos-latest
@@ -78,6 +79,7 @@ jobs:
             build: |-
               set -eu
               rustup update stable
+              yarn install --immutable
               yarn build --target aarch64-unknown-linux-gnu
               yarn build:ts
           - host: ubuntu-latest
@@ -87,16 +89,16 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
               set -eux
-              # Upgrade Node.js from 18 to 22 (napi-rs image has Node 18, but CLI v3 needs 20+)
+              # Upgrade Node.js from 18 to 24 (napi-rs image has Node 18, but CLI v3 needs 20+).
               # Download official Node.js musl binary (Alpine packages have library incompatibilities)
-              wget -qO- https://unofficial-builds.nodejs.org/download/release/v22.12.0/node-v22.12.0-linux-x64-musl.tar.gz | tar xz -C /usr/local --strip-components=1
+              wget -qO- https://unofficial-builds.nodejs.org/download/release/v24.15.0/node-v24.15.0-linux-x64-musl.tar.gz | tar xz -C /usr/local --strip-components=1
               node --version
               rustc --version
               rustup update stable
               rustc --version
-              npm install -g corepack
               corepack enable
               rustup target add aarch64-unknown-linux-musl
+              yarn install --immutable
               yarn build --target aarch64-unknown-linux-musl
               yarn build:ts
     name: "[${{ matrix.settings.target }}] Build"
@@ -112,20 +114,21 @@ jobs:
           cache-workspace-crates: true
           cache-on-failure: true
           shared-key: ${{ matrix.settings.target }}-rust
-      - name: Install corepack
-        if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack
-      - name: "[Windows] Install corepack"
-        if: ${{ matrix.settings.target == 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack --force
       - name: Setup node
         uses: actions/setup-node@v6
         if: ${{ !matrix.settings.docker }}
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
-          node-version: 20
-          
+          node-version: 24
+      - name: Enable corepack
+        if: ${{ !matrix.settings.docker }}
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        if: ${{ !matrix.settings.docker }}
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ matrix.settings.target }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ matrix.settings.target }}-
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !matrix.settings.docker }}
@@ -146,6 +149,7 @@ jobs:
         shell: bash
         working-directory: ./js/optify-config
       - name: Install dependencies
+        if: ${{ !matrix.settings.docker }}
         run: yarn install --immutable
         working-directory: ./js/optify-config
       - name: Setup node x86
@@ -153,9 +157,7 @@ jobs:
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           architecture: x86
-          cache-dependency-path: ./js/optify-config/yarn.lock
-          cache: yarn
-          node-version: 20
+          node-version: 24
       - name: "[Docker] Build"
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
@@ -259,23 +261,23 @@ jobs:
           - host: windows-latest
             target: x86_64-pc-windows-msvc
         node:
-          - '20'
+          - '24'
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        if: ${{ matrix.settings.target != 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack
-      - name: "[Windows] Install corepack"
-        if: ${{ matrix.settings.target == 'x86_64-pc-windows-msvc' }}
-        run: npm install -g corepack --force
       - name: Setup node
         uses: actions/setup-node@v6
         with:
           architecture: x64
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: ${{ matrix.node }}
+      - name: Enable corepack
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-${{ runner.arch }}-
       - name: Install dependencies
         run: |
           yarn install --immutable
@@ -305,18 +307,22 @@ jobs:
       fail-fast: true
       matrix:
         node:
-          - '20'
+          - '24'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        run: npm install -g corepack
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
           node-version: ${{ matrix.node }}
+      - name: Enable corepack
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-${{ runner.arch }}-
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
@@ -331,7 +337,7 @@ jobs:
           name: package-runtime
           path: ./js/optify-config
       - name: Test bindings
-        run: docker run --rm -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config node:${{ matrix.node }}-slim bash -c 'set -ex && npm install -g corepack && corepack enable && yarn test'
+        run: docker run --rm -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config node:${{ matrix.node }}-slim bash -c 'set -ex && corepack enable && yarn test'
   test-linux-aarch64-gnu-binding:
     name: "[aarch64-unknown-linux-gnu] Test"
     if: github.event.pull_request.draft == false || github.event_name != 'pull_request'
@@ -341,7 +347,7 @@ jobs:
       fail-fast: true
       matrix:
         node:
-          - '20'
+          - '24'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -375,7 +381,6 @@ jobs:
           options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
-            npm install -g corepack
             corepack enable
             yarn test
   test-linux-aarch64-musl-binding:
@@ -393,7 +398,6 @@ jobs:
           path: ./js/optify-config
       - name: Install dependencies
         run: |
-          npm install -g corepack
           corepack enable
           yarn config set supportedArchitectures.cpu "arm64"
           yarn config set supportedArchitectures.libc "musl"
@@ -413,12 +417,10 @@ jobs:
       - name: Setup and run tests
         uses: addnab/docker-run-action@v3
         with:
-          # Use node:20-alpine instead of lts-alpine because @napi-rs/cli@3.x requires Node.js 20+
-          image: node:20-alpine
+          image: node:24-alpine
           options: '--platform linux/arm64 -v ${{ github.workspace }}/tests:/build/tests -v ${{ github.workspace }}/rust:/build/rust -v ${{ github.workspace }}/js:/build/js -w /build/js/optify-config'
           run: |
             set -ex
-            npm install -g corepack
             corepack enable
             yarn test
   universal-macOS:
@@ -429,14 +431,18 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        run: npm install -g corepack
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
-          node-version: 20
+          node-version: 24
+      - name: Enable corepack
+        run: corepack enable
+      - name: Cache Yarn downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('js/optify-config/yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-${{ runner.arch }}-
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
@@ -481,14 +487,15 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Install corepack
-        run: npm install -g corepack
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          cache: yarn
-          cache-dependency-path: ./js/optify-config/yarn.lock
-          node-version: 20
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          # Never use caching in release builds as shown at https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow
+          package-manager-cache: false
+      - name: Enable corepack
+        run: corepack enable
       - name: Install dependencies
         run: yarn install --immutable
         working-directory: ./js/optify-config
@@ -520,10 +527,5 @@ jobs:
           set -ex
           npm publish
         working-directory: ./js/optify-config
-      - name: "[dry-run] Publish"
-        if: github.ref != 'refs/heads/main'
-        shell: bash
-        run: |
-          set -ex
-          npm publish --dry-run
-        working-directory: ./js/optify-config
+      # TODO `npm publish --dry-run` when not main, but only if the version is bumped;
+      # otherwise, it will fail.
