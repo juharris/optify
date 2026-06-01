@@ -12,8 +12,8 @@ use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
-use crate::configurable_string::locator::find_configurable_values;
 use crate::configurable_string::LoadedFiles;
+use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
 use crate::json::merge::merge_json_with_defaults;
 use crate::json::reader::read_json_from_file_as;
 use crate::provider::{
@@ -29,7 +29,7 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
-    all_configurable_value_pointers: HashSet<String>,
+    all_configurable_string_pointers: HashSet<String>,
     builder_options: BuilderOptions,
     conditions: Conditions,
     dependents: Dependents,
@@ -155,7 +155,7 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
-            all_configurable_value_pointers: HashSet::new(),
+            all_configurable_string_pointers: HashSet::new(),
             builder_options: BuilderOptions::default(),
             conditions: Conditions::new(),
             dependents: Dependents::new(),
@@ -172,7 +172,7 @@ impl OptionsProviderBuilder {
         self.prepare_build()?;
 
         let all_configurable_value_pointers = self
-            .all_configurable_value_pointers
+            .all_configurable_string_pointers
             .iter()
             .cloned()
             .collect();
@@ -324,13 +324,24 @@ impl OptionsProviderBuilder {
             let files = match builder_options.track_file_references {
                 TrackReferenceMode::None => Vec::new(),
                 TrackReferenceMode::ConfigurableStrings => {
-                    extract_configurable_string_files_from_config(&raw_config, &pointers)
+                    extract_configurable_string_files_from_config(
+                        &raw_config,
+                        &pointers.configurable_string_pointers,
+                    )
                 }
-                TrackReferenceMode::KeyName => extract_files_from_config(&raw_config, &pointers),
+                TrackReferenceMode::KeyName => {
+                    extract_files_from_config(&raw_config, &pointers.configurable_string_pointers)
+                }
             };
             (pointers, files)
         } else {
-            (Vec::new(), Vec::new())
+            (
+                ConfigurableValuePointers {
+                    configurable_string_pointers: Vec::new(),
+                    configurable_list_pointers: Vec::new(),
+                },
+                Vec::new(),
+            )
         };
 
         Ok(LoadingResult {
@@ -372,9 +383,17 @@ impl OptionsProviderBuilder {
             self.imports
                 .insert(canonical_feature_name.clone(), imports.clone());
         }
-        if !info.configurable_value_pointers.is_empty() {
-            self.all_configurable_value_pointers
-                .extend(info.configurable_value_pointers.iter().cloned());
+        if !info
+            .configurable_value_pointers
+            .configurable_string_pointers
+            .is_empty()
+        {
+            self.all_configurable_string_pointers.extend(
+                info.configurable_value_pointers
+                    .configurable_string_pointers
+                    .iter()
+                    .cloned(),
+            );
         }
         for file_key in &info.configurable_string_files {
             self.referenced_file_to_feature_names
@@ -547,7 +566,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         self.prepare_build()?;
 
         let all_configurable_value_pointers = self
-            .all_configurable_value_pointers
+            .all_configurable_string_pointers
             .iter()
             .cloned()
             .collect();

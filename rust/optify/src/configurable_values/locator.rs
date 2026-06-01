@@ -3,8 +3,8 @@ pub(crate) const STRING_TYPE: &str = "Optify.ConfigurableString";
 pub(crate) const LIST_TYPE: &str = "Optify.ConfigurableList";
 
 pub(crate) struct ConfigurableValuePointers {
-    configurable_string_pointers: Vec<String>,
-    configurable_list_pointers: Vec<String>,
+    pub configurable_string_pointers: Vec<String>,
+    pub configurable_list_pointers: Vec<String>,
 }
 
 /// Finds pointers like JSON pointers to configurable values
