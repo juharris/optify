@@ -1,3 +1,5 @@
+use crate::json::escape_json_pointer;
+
 pub(crate) const TYPE_KEY: &str = "$type";
 pub(crate) const STRING_TYPE: &str = "Optify.ConfigurableString";
 pub(crate) const LIST_TYPE: &str = "Optify.ConfigurableList";
@@ -53,8 +55,7 @@ fn find_configurable_values_recursive(
 
             // Recursively search object properties
             for (key, val) in obj {
-                // Escape values in the key because "/" needs to be escaped.
-                let key = key.replace("~", "~0").replace("/", "~1");
+                escape_json_pointer!(key);
                 let new_path = if current_pointer.is_empty() {
                     key.to_string()
                 } else {
@@ -84,6 +85,8 @@ fn find_configurable_values_recursive(
 mod tests {
     use super::*;
     use serde_json::json;
+
+    // TODO Add tests for finding configurable lists.
 
     #[test]
     fn test_configurable_string_at_root() {

@@ -8,6 +8,7 @@ pub struct GetOptionsPreferences {
     /// Defaults to false: no configurable strings will be resolved.
     /// Configurable strings must have been enabled when the options were built to have them resolved at runtime.
     pub are_configurable_strings_enabled: bool,
+    // TODO pub are_configurable_values_enabled: bool,
     pub constraints: Option<Constraints>,
     /// Overrides to apply after the built configuration.
     pub overrides: Option<SourceValue>,

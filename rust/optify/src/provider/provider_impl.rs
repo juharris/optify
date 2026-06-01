@@ -2,6 +2,8 @@ use std::{collections::HashMap, path::Path, sync::RwLock};
 
 use crate::builder::builder_options::BuilderOptions;
 use crate::json::escape_json_pointer;
+use crate::configurable_values::configurable_list_impl::ConfigurableList;
+
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
@@ -30,7 +32,8 @@ pub(crate) type OptionsCache = HashMap<(String, Vec<String>, bool), serde_json::
 pub struct CacheOptions {}
 
 pub struct OptionsProvider {
-    all_configurable_value_pointers: Vec<String>,
+    all_configurable_string_pointers: Vec<String>,
+    all_configurable_list_pointers: Vec<String>,
     aliases: Aliases,
     conditions: Conditions,
     features: Features,
@@ -50,7 +53,8 @@ pub struct OptionsProvider {
 impl OptionsProvider {
     pub(crate) fn new(
         aliases: Aliases,
-        all_configurable_value_pointers: Vec<String>,
+        all_configurable_string_pointers: Vec<String>,
+        all_configurable_list_pointers: Vec<String>,
         conditions: Conditions,
         features: Features,
         referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
@@ -58,7 +62,8 @@ impl OptionsProvider {
         sources: Sources,
     ) -> Self {
         OptionsProvider {
-            all_configurable_value_pointers,
+            all_configurable_string_pointers,
+            all_configurable_list_pointers,
             aliases,
             conditions,
             features,
@@ -272,14 +277,14 @@ impl OptionsProvider {
         Ok(None)
     }
 
-    /// Process configurable strings in the JSON value based on the pointers.
-    pub fn process_configurable_strings(
+    fn process_configurable_lists(
         &self,
         value: &mut serde_json::Value,
         key_prefix: Option<&str>,
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<(), String> {
         if preferences
+            // TODO Check `are_configurable_values_enabled` when that is implemented.
             .map(|p| !p.are_configurable_strings_enabled)
             // Configurable strings are disabled by default.
             .unwrap_or(true)
@@ -287,7 +292,7 @@ impl OptionsProvider {
             return Ok(());
         }
 
-        for pointer in &self.all_configurable_value_pointers {
+        for pointer in &self.all_configurable_list_pointers {
             let relative_pointer = match key_prefix {
                 Some(key_prefix) => {
                     escape_json_pointer!(key_prefix);
@@ -306,10 +311,76 @@ impl OptionsProvider {
             if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
                 // Only continue if it has the right indicator property because it may have been overridden.
                 if let Some(type_value) =
-                    configurable_value.get(crate::configurable_string::locator::TYPE_KEY)
+                    configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
                 {
                     if let Some(type_str) = type_value.as_str() {
-                        if type_str != crate::configurable_string::locator::TYPE {
+                        if type_str != crate::configurable_values::locator::LIST_TYPE {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+
+                let configurable_list: ConfigurableList =
+                    match serde_json::from_value(configurable_value.clone()) {
+                        Ok(cl) => cl,
+                        Err(e) => {
+                            return Err(format!(
+                                "Failed to deserialize ConfigurableList at {}: {}",
+                                pointer, e
+                            ));
+                        }
+                    };
+
+                // Replace the value at the pointer location with the built list.
+                let built_list = configurable_list.build()?;
+                *configurable_value = serde_json::Value::Array(built_list);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Process configurable strings in the JSON value based on the pointers.
+    fn process_configurable_strings(
+        &self,
+        value: &mut serde_json::Value,
+        key_prefix: Option<&str>,
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<(), String> {
+        if preferences
+            .map(|p| !p.are_configurable_strings_enabled)
+            // Configurable strings are disabled by default.
+            .unwrap_or(true)
+        {
+            return Ok(());
+        }
+
+        for pointer in &self.all_configurable_string_pointers {
+            let relative_pointer = match key_prefix {
+                Some(key_prefix) => {
+                    if !pointer.starts_with(key_prefix) {
+                        // The pointer does not start with the key prefix so it will not be used.
+                        continue;
+                    } else {
+                        // Remove the key prefix because we need pointers relative the current key.
+                        pointer[key_prefix.len()..].to_string()
+                    }
+                }
+                // There is not key prefix when the entire configuration is requested.
+                _ => format!("/{}", pointer),
+            };
+
+            if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
+                // Only continue if it has the right indicator property because it may have been overridden.
+                if let Some(type_value) =
+                    configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
+                {
+                    if let Some(type_str) = type_value.as_str() {
+                        if type_str != crate::configurable_values::locator::STRING_TYPE {
                             continue;
                         }
                     } else {
@@ -330,8 +401,7 @@ impl OptionsProvider {
                         }
                     };
 
-                // Replace the value at the pointer location with the built string
-
+                // Replace the value at the pointer location with the built string.
                 let built_string = configurable_string.build(&self.loaded_files)?;
                 *configurable_value = serde_json::Value::String(built_string);
             }
@@ -395,7 +465,9 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<serde_json::Value, String> {
         let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         let mut value = self.get_entire_config(&feature_names, cache_options, preferences)?;
+        // Strings need to be processed before lists because lists may contain strings.
         self.process_configurable_strings(&mut value, None, preferences)?;
+        self.process_configurable_lists(&mut value, None, preferences)?;
         Ok(value)
     }
 

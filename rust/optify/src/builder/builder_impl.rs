@@ -30,6 +30,7 @@ type Imports = HashMap<String, Vec<String>>;
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
     all_configurable_string_pointers: HashSet<String>,
+    all_configurable_list_pointers: HashSet<String>,
     builder_options: BuilderOptions,
     conditions: Conditions,
     dependents: Dependents,
@@ -156,6 +157,7 @@ impl OptionsProviderBuilder {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
             all_configurable_string_pointers: HashSet::new(),
+            all_configurable_list_pointers: HashSet::new(),
             builder_options: BuilderOptions::default(),
             conditions: Conditions::new(),
             dependents: Dependents::new(),
@@ -171,8 +173,13 @@ impl OptionsProviderBuilder {
     pub fn build_and_clear(&mut self) -> Result<OptionsProvider, String> {
         self.prepare_build()?;
 
-        let all_configurable_value_pointers = self
+        let all_configurable_string_pointers = self
             .all_configurable_string_pointers
+            .iter()
+            .cloned()
+            .collect();
+        let all_configurable_list_pointers = self
+            .all_configurable_list_pointers
             .iter()
             .cloned()
             .collect();
@@ -185,7 +192,8 @@ impl OptionsProviderBuilder {
 
         Ok(OptionsProvider::new(
             std::mem::take(&mut self.aliases),
-            all_configurable_value_pointers,
+            all_configurable_string_pointers,
+            all_configurable_list_pointers,
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
             referenced_file_to_feature_names,
@@ -565,8 +573,13 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     fn build(&mut self) -> Result<OptionsProvider, String> {
         self.prepare_build()?;
 
-        let all_configurable_value_pointers = self
+        let all_configurable_string_pointers = self
             .all_configurable_string_pointers
+            .iter()
+            .cloned()
+            .collect();
+        let all_configurable_list_pointers = self
+            .all_configurable_list_pointers
             .iter()
             .cloned()
             .collect();
@@ -579,7 +592,8 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
 
         Ok(OptionsProvider::new(
             self.aliases.clone(),
-            all_configurable_value_pointers,
+            all_configurable_string_pointers,
+            all_configurable_list_pointers,
             self.conditions.clone(),
             self.features.clone(),
             referenced_file_to_feature_names,
