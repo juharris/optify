@@ -51,6 +51,7 @@ pub struct OptionsProvider {
 }
 
 impl OptionsProvider {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         aliases: Aliases,
         all_configurable_string_pointers: Vec<String>,
@@ -575,6 +576,7 @@ impl OptionsRegistry for OptionsProvider {
             self.get_options_for_key(key, &filtered_feature_names, feature_names, preferences)?;
 
         self.process_configurable_strings(&mut value, Some(key), preferences)?;
+        self.process_configurable_lists(&mut value, Some(key), preferences)?;
         if cache_options.is_some() {
             let are_configurable_strings_enabled = preferences
                 .map(|p| p.are_configurable_strings_enabled)

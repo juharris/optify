@@ -403,6 +403,18 @@ impl OptionsProviderBuilder {
                     .cloned(),
             );
         }
+        if !info
+            .configurable_value_pointers
+            .configurable_list_pointers
+            .is_empty()
+        {
+            self.all_configurable_list_pointers.extend(
+                info.configurable_value_pointers
+                    .configurable_list_pointers
+                    .iter()
+                    .cloned(),
+            );
+        }
         for file_key in &info.configurable_string_files {
             self.referenced_file_to_feature_names
                 .entry(file_key.clone())
