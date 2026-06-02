@@ -91,7 +91,7 @@ jobs:
       working-directory: ./elixir/optify
 
     - name: "[Elixir] Compile"
-      run: mix compile --warnings-as-errors
+      run: mix compile --force --warnings-as-errors
       working-directory: ./elixir/optify
 
     - name: "[Elixir] Check formatting"
