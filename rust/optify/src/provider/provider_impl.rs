@@ -1,6 +1,7 @@
 use std::{collections::HashMap, path::Path, sync::RwLock};
 
 use crate::builder::builder_options::BuilderOptions;
+use crate::json::escape_json_pointer;
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
@@ -289,7 +290,8 @@ impl OptionsProvider {
         for pointer in &self.all_configurable_value_pointers {
             let relative_pointer = match key_prefix {
                 Some(key_prefix) => {
-                    if !pointer.starts_with(key_prefix) {
+                    escape_json_pointer!(key_prefix);
+                    if !pointer.starts_with(key_prefix.as_ref()) {
                         // The pointer does not start with the key prefix so it will not be used.
                         continue;
                     } else {

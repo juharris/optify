@@ -1,0 +1,6 @@
+options:
+  key~with/escape~chars:
+    arguments~ff/22:
+      ~/`~/``/chars~:
+        $type: Optify.ConfigurableString
+        base: "string"

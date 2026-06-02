@@ -6,6 +6,10 @@
 The core implementation of Optify in Rust.
 Simplifies getting the right configuration options for a process using pre-loaded configurations from files (JSON, YAML, etc.) to manage options for experiments or flights.
 
+## Usage
+
+<!-- TODO -->
+
 See [tests](../../tests/) for examples and tests for different implementations of this format for managing options.
 
 See the root [README.md](../../README.md) for more information and examples.
