@@ -4,3 +4,4 @@
 --enable-experimental-rbs-comments
 --ignore=tmp/
 --ignore=vendor/
+--parser=prism
