@@ -19,6 +19,7 @@ exclude = [
 
 [dependencies]
 config = "0.15.23"
+cow-utils = "0.1.3"
 dunce = "1.0.5"
 # HTTP/file schema resolution (`resolve-http`, `resolve-file`) requires a TLS backend.
 # `tls-ring` fails to cross-compile for aarch64; the default `tls-aws-lc-rs` needs cmake/lld unavailable in CI Docker containers.

@@ -89,6 +89,8 @@ if grep -Eq '^[[:space:]]*@version[[:space:]]+"' mix.exs; then
 else
     sed_replace_in_place mix.exs "s/version: \"${mix_current}\"/version: \"${mix_next}\"/"
 fi
+# Update Cargo.lock
+mix compile --force
 popd
 
 pushd python/optify

@@ -1,6 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
+use optify::provider::OptionsRegistry;
+use optify::OptionsProvider;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
@@ -101,14 +103,15 @@ fn benchmark_loading(c: &mut Criterion) {
 
     create_test_files(test_dir, num_files);
 
+    // Ensure that there are no errors.
+    OptionsProvider::build(test_dir).unwrap();
+
     let mut group = c.benchmark_group(format!("loading-{num_files}"));
 
     group.bench_function("parallel loading", |b| {
         b.iter(|| {
             let mut builder = OptionsProviderBuilder::new();
             builder.add_directory(black_box(test_dir)).unwrap();
-            // Ensure that there are no errors in the builder.
-            builder.build().unwrap();
         })
     });
 

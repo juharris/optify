@@ -1,6 +1,7 @@
 use std::fs;
 
-use optify::provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry};
+use optify::provider::{GetOptionsPreferences, OptionsRegistry};
+use optify::OptionsProvider;
 
 fn test_suite(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
     let provider = OptionsProvider::build(path.join("configs"))?;

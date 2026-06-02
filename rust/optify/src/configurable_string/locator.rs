@@ -1,6 +1,6 @@
+use crate::json::escape_json_pointer;
+
 pub(crate) const TYPE_KEY: &str = "$type";
-// TODO Think of a better name. Everything is "configurable".
-// like PrecomputedValue? ConfigurableOption? OptifyOption?
 pub(crate) const TYPE: &str = "Optify.ConfigurableString";
 
 /// Finds pointers like JSON pointers to configurable values
@@ -34,8 +34,7 @@ fn find_configurable_strings_recursive(
 
             // Recursively search object properties
             for (key, val) in obj {
-                // Escape values in the key because "/" needs to be escaped.
-                let key = key.replace("~", "~0").replace("/", "~1");
+                escape_json_pointer!(key);
                 let new_path = if current_pointer.is_empty() {
                     key.to_string()
                 } else {
