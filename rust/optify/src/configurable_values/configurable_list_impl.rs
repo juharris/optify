@@ -23,6 +23,7 @@ pub(crate) struct ConfigurableList {
 
 impl ConfigurableList {
     pub fn build(self) -> Result<Vec<serde_json::Value>, String> {
+        // TODO Investigate memory optimizations.
         let mut items: Vec<Item> = self
             .items
             .into_values()
