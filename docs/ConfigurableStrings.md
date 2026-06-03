@@ -43,7 +43,7 @@ In `.optify/config.json` for the directory where you want to enable configurable
 ```JSON
 {
   "$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/optify_config.json",
-  "areConfigurableStringsEnabled": true
+  "areConfigurableValuesEnabled": true
 }
 ```
 
