@@ -25,6 +25,9 @@
 				},
 				"message": {
 					"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+				},
+				"tools": {
+					"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableList"
 				}
 			}
 		}

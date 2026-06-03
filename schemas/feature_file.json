@@ -114,6 +114,57 @@
 			"$ref": "#/definitions/condition",
 			"description": "Conditions to enable this feature file when it is requested and when constraints are given. These conditions are meant for temporary experimental features that should only be enabled in some requests.\n\nIf no constraints are given, then these conditions are ignored. Most projects should either always use constraints in every request or never use constraints in order to avoid confusion.\n\nConditions cannot be used in imported features. This helps keep retrieving and building configuration options for a list of features fast and more predictable because imports do not need to be re-evaluated. Instead, keep each feature file as granular and self-contained as possible, then use conditions and import the required granular features in a feature file that defines a common scenario.\n\nSee https://github.com/juharris/optify?tab=readme-ov-file#conditions for more information and examples."
 		},
+		"configurableList": {
+			"description": "A list or an object for a template to build a list when the configuration is built.",
+			"anyOf": [
+				{
+					"type": "null"
+				},
+				{
+					"type": "array",
+					"description": "The exact array to use. Overrides values from previous features. Not merged with arrays from previous or next features."
+				},
+				{
+					"type": "object",
+					"description": "An object with consistent keys and `null` values will be removed from the list. This allows items to be added or removed individually by setting values to non-null or null respectively when the configuration is built.\n\nSee https://github.com/juharris/optify/blob/main/docs/ConfigurableLists.md for details.",
+					"additionalProperties": {
+						"$ref": "#/definitions/configurableListItem"
+					},
+					"properties": {
+						"$type": {
+							"type": "string",
+							"description": "The type for this object to help Optify determine if pre-processing is needed for this object.",
+							"enum": [
+								"Optify.ConfigurableList"
+							]
+						}
+					}
+				}
+			]
+		},
+		"configurableListItem": {
+			"description": "The value for an item in a configurable list.",
+			"anyOf": [
+				{
+					"type": "null"
+				},
+				{
+					"type": "object",
+					"properties": {
+						"$value": {
+							"description": "The actual value to use for this item.",
+							"additionalProperties": true
+						},
+						"$order": {
+							"description": "Helps sort this item in the list. Items with smaller order values come first.",
+							"type": "number",
+							"default": 0.0
+						}
+					},
+					"additionalProperties": false
+				}
+			]
+		},
 		"configurableString": {
 			"description": "A string or a template that can be filled in when the configuration is built. There are no required properties because files that only override arguments should not need to re-specify the type and base value.\n\nSee https://github.com/juharris/optify/blob/main/docs/ConfigurableStrings.md for details.",
 			"anyOf": [
@@ -128,7 +179,7 @@
 					"properties": {
 						"$type": {
 							"type": "string",
-							"description": "The type for this object to help Optify determine if pre-processing is needed.",
+							"description": "The type for this object to help Optify determine if pre-processing is needed for this object.",
 							"enum": [
 								"Optify.ConfigurableString"
 							]
