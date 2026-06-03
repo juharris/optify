@@ -38,7 +38,7 @@ Imagine it was the result of merging multiple configuration files based on sever
                     "name": "code_executor",
                     "description": {
                         "$type": "Optify.ConfigurableString",
-                        "base": "Excutes code snippets in a secure environment."
+                        "base": "Executes code snippets in a secure environment."
                     }
                 }
             },
@@ -79,7 +79,7 @@ Here is how your code would see the configuration when using an `OptionsProvider
         "tools": [
             {
                 "name": "code_executor",
-                "description": "Excutes code snippets in a secure environment."
+                "description": "Executes code snippets in a secure environment."
             },
             {
                 "name": "web_search",

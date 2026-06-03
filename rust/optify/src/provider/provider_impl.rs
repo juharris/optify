@@ -282,16 +282,7 @@ impl OptionsProvider {
         &self,
         value: &mut serde_json::Value,
         key_prefix: Option<&str>,
-        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<(), String> {
-        if preferences
-            .map(|p| !p.are_configurable_values_enabled())
-            // Configurable strings are disabled by default.
-            .unwrap_or(true)
-        {
-            return Ok(());
-        }
-
         for pointer in &self.all_configurable_list_pointers {
             let relative_pointer = match key_prefix {
                 Some(key_prefix) => {
@@ -349,16 +340,7 @@ impl OptionsProvider {
         &self,
         value: &mut serde_json::Value,
         key_prefix: Option<&str>,
-        preferences: Option<&GetOptionsPreferences>,
     ) -> Result<(), String> {
-        if preferences
-            .map(|p| !p.are_configurable_values_enabled())
-            // Configurable strings are disabled by default.
-            .unwrap_or(true)
-        {
-            return Ok(());
-        }
-
         for pointer in &self.all_configurable_string_pointers {
             let relative_pointer = match key_prefix {
                 Some(key_prefix) => {
@@ -466,9 +448,15 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<serde_json::Value, String> {
         let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         let mut value = self.get_entire_config(&feature_names, cache_options, preferences)?;
-        // Strings need to be processed before lists because lists may contain strings.
-        self.process_configurable_strings(&mut value, None, preferences)?;
-        self.process_configurable_lists(&mut value, None, preferences)?;
+        if preferences
+            .map(|p| p.are_configurable_values_enabled())
+            // Configurable strings are disabled by default.
+            .unwrap_or(false)
+        {
+            // Strings need to be processed before lists because lists may contain strings.
+            self.process_configurable_strings(&mut value, None)?;
+            self.process_configurable_lists(&mut value, None)?;
+        }
         Ok(value)
     }
 
@@ -574,8 +562,16 @@ impl OptionsRegistry for OptionsProvider {
         let mut value =
             self.get_options_for_key(key, &filtered_feature_names, feature_names, preferences)?;
 
-        self.process_configurable_strings(&mut value, Some(key), preferences)?;
-        self.process_configurable_lists(&mut value, Some(key), preferences)?;
+        if preferences
+            .map(|p| p.are_configurable_values_enabled())
+            // Configurable strings are disabled by default.
+            .unwrap_or(false)
+        {
+            // Strings need to be processed before lists because lists may contain strings.
+            self.process_configurable_strings(&mut value, Some(key))?;
+            self.process_configurable_lists(&mut value, Some(key))?;
+        }
+
         if cache_options.is_some() {
             let are_configurable_strings_enabled = preferences
                 .map(|p| p.are_configurable_strings_enabled)

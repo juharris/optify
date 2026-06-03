@@ -12,7 +12,7 @@
 		"tools": [
 			{
 				"name": "code_executor",
-				"description": "Excutes code snippets in a secure environment."
+				"description": "Executes code snippets in a secure environment."
 			},
 			{
 				"name": "web_search",
