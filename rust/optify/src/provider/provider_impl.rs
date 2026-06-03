@@ -285,8 +285,7 @@ impl OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<(), String> {
         if preferences
-            // TODO Check `are_configurable_values_enabled` when that is implemented.
-            .map(|p| !p.are_configurable_strings_enabled)
+            .map(|p| !p.are_configurable_values_enabled())
             // Configurable strings are disabled by default.
             .unwrap_or(true)
         {
@@ -353,7 +352,7 @@ impl OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<(), String> {
         if preferences
-            .map(|p| !p.are_configurable_strings_enabled)
+            .map(|p| !p.are_configurable_values_enabled())
             // Configurable strings are disabled by default.
             .unwrap_or(true)
         {
