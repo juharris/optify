@@ -24,6 +24,8 @@ In `.optify/config.json` for the directory where you want to enable configurable
 }
 ```
 
+Configurable values must also be enabled in the preferences given when getting options from an `OptionsProvider`.
+
 ## List Entries
 
 **Delete**: A key with a `null` value means to remove the entry from the list.

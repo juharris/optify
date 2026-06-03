@@ -9,7 +9,7 @@ Other properties such as the tool input schema can also be customized adjacent t
 Here is a simple configuration.
 Imagine it was the result of merging multiple configuration files based on several features.
 
-```JSON
+```JSONC
 {
     "options": {
         "model": {

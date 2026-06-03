@@ -22,7 +22,6 @@ pub enum TrackReferenceMode {
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct BuilderOptionsConfig {
-    /// DEPRECATED: Use `configurable_values` instead to specify which types of configurable values to enable.
     #[serde(default)]
     #[serde(alias = "areConfigurableStringsEnabled")]
     pub are_configurable_values_enabled: Option<bool>,

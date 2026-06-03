@@ -47,6 +47,8 @@ In `.optify/config.json` for the directory where you want to enable configurable
 }
 ```
 
+Configurable values must also be enabled in the preferences given when getting options from an `OptionsProvider`.
+
 ## Basic Structure
 
 A configurable string is defined using the special type `Optify.ConfigurableString` with two main components:
