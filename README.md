@@ -134,28 +134,9 @@ Objects are merged with the last feature taking precedence.
 I.e., all types override previous values except for objects/dictionaries which are merged recursively.
 
 **Array items are not overwritten** because it would make it impossible or confusing to insert items or remove items.
-To replicate an array that needs configurable items, use an object with keys to sort and treat `null` values as removed items.
-For example, consider this configuration built after merging others:
-```JSON
-{
-    "items": {
-        "item_01": {"k": "value 1"},
-        "item_03": null,
-        "item_05": {"k": "value 5"}
-    }
-}
-```
 
-It represents an array: `[{"k": "value 1"}, {"k": "value 5"}]`
-
-The following Python code can be used to filter, sort, and convert it to the dictionary to a list:
-```Python
-items = sorted(
-    ((k,v) for k, v in config["items"].items() if v is not None),
-    key=lambda kv: kv[0])
-items = [v for (_k,v) in items]
-```
-
+Use a [Configurable List](./docs/ConfigurableLists.md) to build an array that needs configurable items.
+It enables using an object with consistent keys and `null` values will be removed.
 
 As explained below, the .NET version works a little differently than the versions in this repository which are backed by the Rust implementation.
 

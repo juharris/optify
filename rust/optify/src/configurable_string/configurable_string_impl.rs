@@ -21,7 +21,6 @@ pub enum ReplacementValue {
 /// Helps build a string by components declared in files.
 /// Parsed from a `serde_json::Value`.
 #[derive(Deserialize, Debug)]
-#[allow(dead_code)]
 pub struct ConfigurableString {
     pub base: ReplacementValue,
     pub arguments: Option<HashMap<String, ReplacementValue>>,

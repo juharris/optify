@@ -1,0 +1,21 @@
+{
+  "features": [
+    "CL_docs_example"
+  ],
+  "options": {
+    "items": [
+      {
+        "prop": "early value"
+      },
+      "value",
+      {
+        "prop": "don't care where this goes"
+      },
+      3,
+      null,
+      {
+        "prop": "late value"
+      }
+    ]
+  }
+}

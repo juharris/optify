@@ -12,7 +12,8 @@
 		{
 			"fileMatch": [
 				"rust/optify/tests/**/*.json",
-				"tests/{configurable_values,invalid_suites,test_suites}/**/configs/**/*.json"
+				"tests/{configurable_values,invalid_suites,test_suites}/**/configs/**/*.json",
+				"!tests/{configurable_values,invalid_suites,test_suites}/**/configs/.optify/config.json"
 			],
 			"url": "./schemas/feature_file.json"
 		},

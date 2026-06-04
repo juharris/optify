@@ -8,6 +8,7 @@ pub struct GetOptionsPreferences {
     /// Defaults to false: no configurable strings will be resolved.
     /// Configurable strings must have been enabled when the options were built to have them resolved at runtime.
     pub are_configurable_strings_enabled: bool,
+    pub are_configurable_values_enabled: bool,
     pub constraints: Option<Constraints>,
     /// Overrides to apply after the built configuration.
     pub overrides: Option<SourceValue>,
@@ -26,10 +27,17 @@ impl GetOptionsPreferences {
     pub fn new() -> Self {
         Self {
             are_configurable_strings_enabled: false,
+            are_configurable_values_enabled: false,
             constraints: None,
             overrides: None,
             skip_feature_name_conversion: false,
         }
+    }
+
+    pub fn are_configurable_values_enabled(&self) -> bool {
+        // Assume that if `are_configurable_strings_enabled` (the legacy value),
+        // then they will want configurable lists too.
+        self.are_configurable_values_enabled || self.are_configurable_strings_enabled
     }
 
     pub fn set_constraints(&mut self, constraints: Option<serde_json::Value>) {

@@ -1,0 +1,25 @@
+options:
+  items:
+    $type: "Optify.ConfigurableList"
+    item_a:
+      $value: "value"
+    item_b:
+      # Should be early
+      $order: -27.2
+      $value:
+        prop: "early value"
+    item_c:
+      $value:
+        prop: "don't care where this goes"
+    # Remove an item
+    item_d: null
+    item_e:
+      $value: 3
+    item_f:
+      # Should be later
+      $order: 999
+      $value:
+        prop: "late value"
+    # `null` entry
+    item_g:
+      $value: null

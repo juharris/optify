@@ -23,7 +23,8 @@ pub enum TrackReferenceMode {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct BuilderOptionsConfig {
     #[serde(default)]
-    pub are_configurable_strings_enabled: Option<bool>,
+    #[serde(alias = "areConfigurableStringsEnabled")]
+    pub are_configurable_values_enabled: Option<bool>,
     #[serde(default)]
     pub schema_path: Option<PathBuf>,
     #[serde(default)]
@@ -35,15 +36,17 @@ impl BuilderOptionsConfig {
     /// Fields in `overrides` that differ from `BuilderOptions::default()` take priority.
     pub fn merge_with(self, overrides: &BuilderOptions) -> BuilderOptions {
         let defaults = BuilderOptions::default();
+        let are_configurable_values_enabled = if overrides.are_configurable_values_enabled
+            != defaults.are_configurable_values_enabled
+        {
+            overrides.are_configurable_values_enabled
+        } else {
+            self.are_configurable_values_enabled
+                .unwrap_or(defaults.are_configurable_values_enabled)
+        };
         BuilderOptions {
-            are_configurable_strings_enabled: if overrides.are_configurable_strings_enabled
-                != defaults.are_configurable_strings_enabled
-            {
-                overrides.are_configurable_strings_enabled
-            } else {
-                self.are_configurable_strings_enabled
-                    .unwrap_or(defaults.are_configurable_strings_enabled)
-            },
+            are_configurable_strings_enabled: are_configurable_values_enabled,
+            are_configurable_values_enabled,
             schema_path: if overrides.schema_path != defaults.schema_path {
                 overrides.schema_path.clone()
             } else {
@@ -64,7 +67,9 @@ impl BuilderOptionsConfig {
 /// Options for handling files in a directory.
 #[derive(Clone, Default)]
 pub struct BuilderOptions {
+    /// DEPRECATED: Use `are_configurable_values_enabled` instead to enable all configurable values.
     pub are_configurable_strings_enabled: bool,
+    pub are_configurable_values_enabled: bool,
     pub schema_path: Option<PathBuf>,
     pub track_file_references: TrackReferenceMode,
 }
@@ -78,11 +83,12 @@ mod tests {
         // Builder-level overrides have non-default values, so they take priority over the config file values.
         let overrides = BuilderOptions {
             are_configurable_strings_enabled: true,
+            are_configurable_values_enabled: true,
             schema_path: Some(PathBuf::from("override_schema.json")),
             track_file_references: TrackReferenceMode::ConfigurableStrings,
         };
         let config = BuilderOptionsConfig {
-            are_configurable_strings_enabled: Some(false),
+            are_configurable_values_enabled: Some(false),
             schema_path: Some(PathBuf::from("config_schema.json")),
             track_file_references: Some(TrackReferenceMode::None),
         };
@@ -90,6 +96,7 @@ mod tests {
         let merged = config.merge_with(&overrides);
 
         assert!(merged.are_configurable_strings_enabled);
+        assert!(merged.are_configurable_values_enabled);
         assert_eq!(
             merged.schema_path,
             Some(PathBuf::from("override_schema.json"))
@@ -105,7 +112,7 @@ mod tests {
         // Builder-level overrides are all at default, so config values provide the defaults.
         let overrides = BuilderOptions::default();
         let config = BuilderOptionsConfig {
-            are_configurable_strings_enabled: Some(true),
+            are_configurable_values_enabled: Some(true),
             schema_path: Some(PathBuf::from("config_schema.json")),
             track_file_references: Some(TrackReferenceMode::ConfigurableStrings),
         };
@@ -113,6 +120,7 @@ mod tests {
         let merged = config.merge_with(&overrides);
 
         assert!(merged.are_configurable_strings_enabled);
+        assert!(merged.are_configurable_values_enabled);
         assert_eq!(
             merged.schema_path,
             Some(PathBuf::from("config_schema.json"))
@@ -129,11 +137,12 @@ mod tests {
         // Config provides the default for are_configurable_strings_enabled.
         let overrides = BuilderOptions {
             are_configurable_strings_enabled: false,
+            are_configurable_values_enabled: false,
             schema_path: None,
             track_file_references: TrackReferenceMode::ConfigurableStrings,
         };
         let config = BuilderOptionsConfig {
-            are_configurable_strings_enabled: Some(true),
+            are_configurable_values_enabled: Some(true),
             schema_path: Some(PathBuf::from("config_schema.json")),
             track_file_references: None,
         };
@@ -141,6 +150,7 @@ mod tests {
         let merged = config.merge_with(&overrides);
 
         assert!(merged.are_configurable_strings_enabled);
+        assert!(merged.are_configurable_values_enabled);
         assert_eq!(
             merged.schema_path,
             Some(PathBuf::from("config_schema.json"))
@@ -155,15 +165,17 @@ mod tests {
     fn test_merge_with_empty_config_uses_overrides() {
         // Config has no values set; overrides provide everything.
         let overrides = BuilderOptions {
-            are_configurable_strings_enabled: true,
+            are_configurable_values_enabled: true,
             schema_path: Some(PathBuf::from("override_schema.json")),
             track_file_references: TrackReferenceMode::ConfigurableStrings,
+            ..Default::default()
         };
         let config = BuilderOptionsConfig::default();
 
         let merged = config.merge_with(&overrides);
 
         assert!(merged.are_configurable_strings_enabled);
+        assert!(merged.are_configurable_values_enabled);
         assert_eq!(
             merged.schema_path,
             Some(PathBuf::from("override_schema.json"))

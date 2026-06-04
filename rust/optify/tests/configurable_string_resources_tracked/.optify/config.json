@@ -1,4 +1,4 @@
 {
-    "areConfigurableStringsEnabled": true,
-    "trackFileReferences": "configurableStrings"
+    "areConfigurableValuesEnabled": true,
+    "trackFileReferences": "keyName"
 }

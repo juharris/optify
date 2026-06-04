@@ -1,4 +1,5 @@
 use crate::{
+    configurable_values::locator::ConfigurableValuePointers,
     provider::SourceValue,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
@@ -10,7 +11,7 @@ pub(crate) struct LoadingResult {
     /// A list of file paths that are explicitly referenced within this feature's ConfigurableStrings.
     /// This is only populated if the builder enables tracking.
     pub configurable_string_files: Vec<String>,
-    pub configurable_value_pointers: Vec<String>,
+    pub configurable_value_pointers: ConfigurableValuePointers,
     pub imports: Option<Vec<String>>,
     pub metadata: OptionsMetadata,
     pub original_config: serde_json::Value,
