@@ -27,7 +27,7 @@ simple_feature_trials = [
 configurable_provider = Optify::OptionsProvider.build('../../tests/test_suites/configurable_values/configs')
 
 configurable_preferences = Optify::GetOptionsPreferences.new
-configurable_preferences.enable_configurable_strings
+configurable_preferences.enable_configurable_values
 
 configurable_feature_trials = [
   ['simple'],

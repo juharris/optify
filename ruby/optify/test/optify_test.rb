@@ -33,7 +33,7 @@ class OptifyTest < Test::Unit::TestCase
         features = expected_info['features']
         constraints = expected_info['constraints']
         preferences = Optify::GetOptionsPreferences.new
-        preferences.enable_configurable_strings
+        preferences.enable_configurable_values
         preferences.constraints = constraints
         expected_options.each do |key, expected_value|
           options = provider.get_options_hash_with_preferences(key, features, preferences)

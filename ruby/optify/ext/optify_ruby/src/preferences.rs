@@ -17,17 +17,17 @@ impl MutGetOptionsPreferences {
         Self(RefCell::new(GetOptionsPreferences::new()))
     }
 
-    // Configurable Strings Section
-    pub fn are_configurable_strings_enabled(&self) -> bool {
-        self.0.borrow().are_configurable_strings_enabled
+    // Configurable Values Section
+    pub fn are_configurable_values_enabled(&self) -> bool {
+        self.0.borrow().are_configurable_values_enabled
     }
 
-    pub fn disable_configurable_strings(&self) {
-        self.0.borrow_mut().are_configurable_strings_enabled = false;
+    pub fn disable_configurable_values(&self) {
+        self.0.borrow_mut().are_configurable_values_enabled = false;
     }
 
-    pub fn enable_configurable_strings(&self) {
-        self.0.borrow_mut().are_configurable_strings_enabled = true;
+    pub fn enable_configurable_values(&self) {
+        self.0.borrow_mut().are_configurable_values_enabled = true;
     }
 
     // Constraints Section

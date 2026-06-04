@@ -13,24 +13,24 @@ class ProviderCacheTest < Test::Unit::TestCase
     end
   end
 
-  def test_cache_with_configurable_strings
+  def test_cache_with_configurable_values_simple
     provider = Optify::OptionsProvider
                .build('../../tests/test_suites/simple/configs')
                .init
     cache_options = Optify::CacheOptions.new
     preferences = Optify::GetOptionsPreferences.new
-    assert !preferences.are_configurable_strings_enabled?
-    preferences.enable_configurable_strings
-    assert preferences.are_configurable_strings_enabled?
-    preferences.disable_configurable_strings
-    assert !preferences.are_configurable_strings_enabled?
+    assert !preferences.are_configurable_values_enabled?
+    preferences.enable_configurable_values
+    assert preferences.are_configurable_values_enabled?
+    preferences.disable_configurable_values
+    assert !preferences.are_configurable_values_enabled?
 
     config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options, preferences)
     config_a2 = provider.get_options('myConfig', ['a'], MyConfig, cache_options, nil)
     assert_same(config_a, config_a2)
 
-    preferences.enable_configurable_strings
-    assert preferences.are_configurable_strings_enabled?
+    preferences.enable_configurable_values
+    assert preferences.are_configurable_values_enabled?
     config_a_enabled = provider.get_options('myConfig', ['A'], MyConfig, cache_options, preferences)
     assert_not_same(config_a, config_a_enabled)
 
@@ -121,7 +121,7 @@ class ProviderCacheTest < Test::Unit::TestCase
                .init
     cache_options = Optify::CacheOptions.new
     preferences = Optify::GetOptionsPreferences.new
-    preferences.enable_configurable_strings
+    preferences.enable_configurable_values
 
     greeting1 = provider.get_options('greeting', ['simple'], StringConfig, cache_options, preferences)
     assert_equal('Hello, World!', greeting1)
