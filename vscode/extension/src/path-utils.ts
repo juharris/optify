@@ -48,7 +48,12 @@ export function isOptifyFeatureFile(filePath: string,
 
 		optifyRoot = findOptifyRoot(filePath, workspaceFolder.uri.fsPath);
 	}
-	return optifyRoot !== undefined;
+	return optifyRoot !== undefined && !isOptifyMetadataFile(filePath, optifyRoot);
+}
+
+function isOptifyMetadataFile(filePath: string, optifyRoot: string): boolean {
+	const relativePath = path.relative(path.join(optifyRoot, MARKER_DIR_NAME), filePath);
+	return relativePath !== '' && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
 }
 
 export function getCanonicalName(filePath: string, optifyRoot: string): string {

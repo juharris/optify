@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { findOptifyRoot, getCanonicalName, getRelativeOptifyPath, isConfigFilePath, resolveFilePathArg } from '../path-utils';
+import { findOptifyRoot, getCanonicalName, getRelativeOptifyPath, isConfigFilePath, isOptifyFeatureFile, resolveFilePathArg } from '../path-utils';
 
 suite('Utils Test Suite', () => {
 	if (process.platform === 'win32') {
@@ -132,6 +132,47 @@ suite('isConfigFilePath', () => {
 		fs.mkdirSync(path.join(configsRoot, '.optify'), { recursive: true });
 		const result = isConfigFilePath('templates/something.liquid', configsRoot);
 		assert.strictEqual(result, true);
+	});
+});
+
+suite('isOptifyFeatureFile', () => {
+	const tempDirs: string[] = [];
+
+	suiteTeardown(() => {
+		for (const dir of tempDirs) {
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
+	});
+
+	test('returns false for marker directory config file', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-config-'));
+		tempDirs.push(root);
+		fs.mkdirSync(path.join(root, '.optify'));
+		const configPath = path.join(root, '.optify', 'config.json');
+		fs.writeFileSync(configPath, '{}');
+
+		assert.strictEqual(isOptifyFeatureFile(configPath, root), false);
+	});
+
+	test('returns false for nested marker directory files', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-nested-'));
+		tempDirs.push(root);
+		const nestedMarkerDir = path.join(root, '.optify', 'schemas');
+		fs.mkdirSync(nestedMarkerDir, { recursive: true });
+		const schemaPath = path.join(nestedMarkerDir, 'feature.json');
+		fs.writeFileSync(schemaPath, '{}');
+
+		assert.strictEqual(isOptifyFeatureFile(schemaPath, root), false);
+	});
+
+	test('returns true for JSON feature file under marker root', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-marker-feature-'));
+		tempDirs.push(root);
+		fs.mkdirSync(path.join(root, '.optify'));
+		const featurePath = path.join(root, 'feature.json');
+		fs.writeFileSync(featurePath, '{}');
+
+		assert.strictEqual(isOptifyFeatureFile(featurePath, root), true);
 	});
 });
 
