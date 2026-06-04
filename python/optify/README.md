@@ -134,11 +134,11 @@ watcher = OptionsWatcher.build('path/to/configs')
 ### Setup
 
 ```shell
-pyenv virtualenv optify-dev
+pyenv virtualenv 3.12 optify-dev
 pyenv local optify-dev
-pyenv activate optify-dev
 
 pip install -e '.[dev]'
+pip install maturin
 ```
 
 ### Build

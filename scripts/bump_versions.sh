@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+# Run as `bash --login ./scripts/bump_versions.sh <strategy>` to automatically get the right environments for pyenv and other managers.
+
 # major, minor, or patch
 strategy=$1
 
@@ -85,7 +87,7 @@ if [[ -z "$mix_current" ]]; then
 fi
 mix_next=$(get_next_version $mix_current $strategy)
 if grep -Eq '^[[:space:]]*@version[[:space:]]+"' mix.exs; then
-    sed_replace_in_place mix.exs -E "s/^[[:space:]]*@version[[:space:]]+\"${mix_current}\"/@version \"${mix_next}\"/"
+    sed_replace_in_place mix.exs -E "s/@version[[:space:]]+\"${mix_current}\"/@version \"${mix_next}\"/"
 else
     sed_replace_in_place mix.exs "s/version: \"${mix_current}\"/version: \"${mix_next}\"/"
 fi
