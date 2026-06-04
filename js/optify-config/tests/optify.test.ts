@@ -21,7 +21,7 @@ const runSuite = (suitePath: string) => {
 		const expectedInfo = JSON.parse(fs.readFileSync(expectationPath, "utf8"));
 		const { constraints, options: expectedOptions, features } = expectedInfo;
 		const preferences = new GetOptionsPreferences();
-		preferences.enableConfigurableStrings();
+		preferences.enableConfigurableValues();
 		if (constraints) {
 			preferences.setConstraints(constraints);
 		}
@@ -81,7 +81,7 @@ describe("getOptions", () => {
 
 		test(`${name} getOptions with schema matches getOptionsJson`, () => {
 			const preferences = new GetOptionsPreferences();
-			preferences.enableConfigurableStrings();
+			preferences.enableConfigurableValues();
 			const fromJson = JSON.parse(provider.getOptionsJson("myConfig", ["A"], preferences));
 			const fromGetOptions = provider.getOptions("myConfig", ["A"], MyConfigSchema, preferences);
 			expect(fromGetOptions).toEqual(fromJson);

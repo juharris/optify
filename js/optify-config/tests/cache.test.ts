@@ -106,7 +106,7 @@ describe("getOptions caching", () => {
 			const config1 = provider.getOptions("myConfig", ["A"], MyConfigSchema, null, cacheOptions);
 
 			const preferences = new GetOptionsPreferences();
-			preferences.enableConfigurableStrings();
+			preferences.enableConfigurableValues();
 			const config2 = provider.getOptions("myConfig", ["A"], MyConfigSchema, preferences, cacheOptions);
 
 			expect(config1).not.toBe(config2);

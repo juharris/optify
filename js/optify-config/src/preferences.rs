@@ -15,22 +15,40 @@ impl JsGetOptionsPreferences {
     }
   }
 
-  /// Indicates if configurable strings are enabled.
+  /// Deprecated: Use `areConfigurableValuesEnabled` instead.
   #[napi]
   pub fn are_configurable_strings_enabled(&self) -> bool {
-    self.inner.are_configurable_strings_enabled
+    self.inner.are_configurable_values_enabled
   }
 
-  /// Enables configurable strings which are disabled by default.
+  /// Deprecated: Use `enableConfigurableValues` instead.
   #[napi]
   pub fn enable_configurable_strings(&mut self) {
-    self.inner.are_configurable_strings_enabled = true;
+    self.inner.are_configurable_values_enabled = true;
   }
 
-  /// Disables configurable strings which are disabled by default.
+  /// Deprecated: Use `disableConfigurableValues` instead.
   #[napi]
   pub fn disable_configurable_strings(&mut self) {
-    self.inner.are_configurable_strings_enabled = false;
+    self.inner.are_configurable_values_enabled = false;
+  }
+
+  /// Indicates if configurable values are enabled.
+  #[napi]
+  pub fn are_configurable_values_enabled(&self) -> bool {
+    self.inner.are_configurable_values_enabled
+  }
+
+  /// Enables configurable values which are disabled by default.
+  #[napi]
+  pub fn enable_configurable_values(&mut self) {
+    self.inner.are_configurable_values_enabled = true;
+  }
+
+  /// Disables configurable values which are disabled by default.
+  #[napi]
+  pub fn disable_configurable_values(&mut self) {
+    self.inner.are_configurable_values_enabled = false;
   }
 
   #[napi]
