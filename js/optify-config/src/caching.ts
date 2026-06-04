@@ -51,8 +51,8 @@ function getSchemaId(instance: CacheableInstance, schema: object): number {
 }
 
 /** Creates a cache key for getAllOptions caching. */
-function createAllOptionsCacheKey(featureNames: string[], areConfigurableStringsEnabled: boolean): string {
-	return JSON.stringify([featureNames, areConfigurableStringsEnabled]);
+function createAllOptionsCacheKey(featureNames: string[], areConfigurableValuesEnabled: boolean): string {
+	return JSON.stringify([featureNames, areConfigurableValuesEnabled]);
 }
 
 /**
@@ -63,10 +63,10 @@ function createOptionsCacheKey(
 	instance: CacheableInstance,
 	key: string,
 	featureNames: string[],
-	areConfigurableStringsEnabled: boolean,
+	areConfigurableValuesEnabled: boolean,
 	schema: object,
 ): string {
-	return JSON.stringify([key, featureNames, areConfigurableStringsEnabled, getSchemaId(instance, schema)]);
+	return JSON.stringify([key, featureNames, areConfigurableValuesEnabled, getSchemaId(instance, schema)]);
 }
 
 function createOptionsCache(cacheInitOptions?: CacheInitOptions | null): OptionsCache {
@@ -131,10 +131,10 @@ export function getAllOptionsWithCaching(
 		const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
 		const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
 
-		const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
+		const areConfigurableValuesEnabled = preferences?.areConfigurableValuesEnabled?.() ?? false;
 
 		const cache = instance[OPTIONS_CACHE_KEY] ?? initCache(instance);
-		const cacheKey = createAllOptionsCacheKey(filteredFeatures, areConfigurableStringsEnabled);
+		const cacheKey = createAllOptionsCacheKey(filteredFeatures, areConfigurableValuesEnabled);
 		const cachedResult = cache.get(cacheKey);
 		if (cachedResult !== undefined) {
 			return cachedResult;
@@ -143,8 +143,8 @@ export function getAllOptionsWithCaching(
 		// For cache miss, create preferences that skip feature name conversion since features are already filtered.
 		const cacheMissPreferences = new nativeBinding.GetOptionsPreferences();
 		cacheMissPreferences.setSkipFeatureNameConversion(true);
-		if (areConfigurableStringsEnabled) {
-			cacheMissPreferences.enableConfigurableStrings();
+		if (areConfigurableValuesEnabled) {
+			cacheMissPreferences.enableConfigurableValues();
 		}
 
 		const result = instance._getAllOptions(filteredFeatures, cacheMissPreferences);
@@ -177,11 +177,11 @@ export function getOptionsWithCaching<T>(
 		const filterPreferences = preferences || new nativeBinding.GetOptionsPreferences();
 		const filteredFeatures = instance.getFilteredFeatures(featureNames, filterPreferences);
 
-		const areConfigurableStringsEnabled = preferences?.areConfigurableStringsEnabled?.() ?? false;
+		const areConfigurableValuesEnabled = preferences?.areConfigurableValuesEnabled?.() ?? false;
 
 		const cache = instance[OPTIONS_CACHE_KEY] ?? initCache(instance);
 
-		const cacheKey = createOptionsCacheKey(instance, key, filteredFeatures, areConfigurableStringsEnabled, schema);
+		const cacheKey = createOptionsCacheKey(instance, key, filteredFeatures, areConfigurableValuesEnabled, schema);
 		const cachedResult = cache.get(cacheKey);
 		if (cachedResult !== undefined) {
 			return cachedResult as T;
@@ -190,8 +190,8 @@ export function getOptionsWithCaching<T>(
 		// For cache miss, create preferences that skip feature name conversion since features are already filtered.
 		const cacheMissPreferences = new nativeBinding.GetOptionsPreferences();
 		cacheMissPreferences.setSkipFeatureNameConversion(true);
-		if (areConfigurableStringsEnabled) {
-			cacheMissPreferences.enableConfigurableStrings();
+		if (areConfigurableValuesEnabled) {
+			cacheMissPreferences.enableConfigurableValues();
 		}
 
 		const result = schema.parse(instance._getOptions(key, filteredFeatures, cacheMissPreferences));

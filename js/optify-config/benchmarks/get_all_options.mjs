@@ -12,7 +12,7 @@ const configurableConfigsPath = path.join(__dirname, "../../../tests/test_suites
 const provider = OptionsProvider.build(configurableConfigsPath);
 
 const preferences = new GetOptionsPreferences();
-preferences.enableConfigurableStrings();
+preferences.enableConfigurableValues();
 
 const featureTrials = [
 	["simple"],
