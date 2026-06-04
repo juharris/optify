@@ -5,6 +5,11 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.11.0
+
+- Feature: Support [Configurable Lists](https://github.com/juharris/optify/blob/main/docs/ConfigurableLists.md)
+- Fix: Don't show CodeLens in .optify/config.json
+
 ## 1.10.0
 
 - Show dependents of .liquid, .md, and .txt files when they are referenced by a key called "file", including in Configurable Strings.
