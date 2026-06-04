@@ -128,8 +128,8 @@ module Optify
       end
 
       # Features are filtered, so we don't need the constraints in the cache key.
-      are_configurable_strings_enabled = preferences&.are_configurable_strings_enabled? || false
-      cache_key = [key, feature_names, are_configurable_strings_enabled, config_class]
+      are_configurable_values_enabled = preferences&.are_configurable_values_enabled? || false
+      cache_key = [key, feature_names, are_configurable_values_enabled, config_class]
       ProviderModule._cache_getset(
         @cache, #: as !nil
         cache_key,
@@ -141,7 +141,7 @@ module Optify
         # We already know there are no overrides because we checked above.
         cache_miss_preferences = GetOptionsPreferences.new
         cache_miss_preferences.skip_feature_name_conversion = true
-        cache_miss_preferences.enable_configurable_strings if are_configurable_strings_enabled
+        cache_miss_preferences.enable_configurable_values if are_configurable_values_enabled
 
         _get_options(key, feature_names, config_class, nil, cache_miss_preferences)
       end

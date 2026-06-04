@@ -73,7 +73,7 @@ class AdditionalFeaturesTest < Test::Unit::TestCase
                       .add_directory('../../tests/test_suites/configurable_values/configs')
                       .build
       preferences = Optify::GetOptionsPreferences.new
-      preferences.enable_configurable_strings
+      preferences.enable_configurable_values
       preferences.overrides = {
         'message' => {
           '$type' => 'Optify.ConfigurableString',

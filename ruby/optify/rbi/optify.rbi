@@ -78,18 +78,30 @@ module Optify
 
   # Preferences when getting options.
   class GetOptionsPreferences
-    # Indicates if configurable strings are enabled.
-    # They are disabled by default.
+    # Deprecated: Use `are_configurable_values_enabled?` instead.
     sig { returns(T::Boolean) }
     def are_configurable_strings_enabled?; end
 
-    # Disable configurable strings which default to disabled.
+    # Deprecated: Use `disable_configurable_values` instead.
     sig { void }
     def disable_configurable_strings; end
 
-    # Enable configurable strings which default to disabled.
+    # Deprecated: Use `enable_configurable_values` instead.
     sig { void }
     def enable_configurable_strings; end
+
+    # Indicates if configurable values, such as strings and lists, are enabled.
+    # They are disabled by default.
+    sig { returns(T::Boolean) }
+    def are_configurable_values_enabled?; end
+
+    # Disable configurable values which default to disabled.
+    sig { void }
+    def disable_configurable_values; end
+
+    # Enable configurable values which default to disabled.
+    sig { void }
+    def enable_configurable_values; end
 
     # Set constraints for the current request to limit the features that can be enabled.
     sig { params(value: T.nilable(T::Hash[T.untyped, T.untyped])).void }
