@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use crate::json::escape_json_pointer;
 
 pub(crate) const TYPE_KEY: &str = "$type";
@@ -7,6 +9,25 @@ pub(crate) const LIST_TYPE: &str = "Optify.ConfigurableList";
 pub(crate) struct ConfigurableValuePointers {
     pub configurable_string_pointers: Vec<String>,
     pub configurable_list_pointers: Vec<String>,
+    pub keyed_configurable_list_pointers: HashMap<String, HashSet<String>>,
+    pub keyed_configurable_string_pointers: HashMap<String, HashSet<String>>,
+}
+
+impl Default for ConfigurableValuePointers {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ConfigurableValuePointers {
+    pub fn new() -> Self {
+        ConfigurableValuePointers {
+            configurable_string_pointers: Vec::new(),
+            configurable_list_pointers: Vec::new(),
+            keyed_configurable_list_pointers: HashMap::new(),
+            keyed_configurable_string_pointers: HashMap::new(),
+        }
+    }
 }
 
 /// Finds pointers like JSON pointers to configurable values
@@ -14,21 +35,20 @@ pub(crate) struct ConfigurableValuePointers {
 pub(crate) fn find_configurable_values(
     options: Option<&serde_json::Value>,
 ) -> ConfigurableValuePointers {
-    let mut result = ConfigurableValuePointers {
-        configurable_string_pointers: Vec::new(),
-        configurable_list_pointers: Vec::new(),
-    };
+    let mut result = ConfigurableValuePointers::default();
 
     if let Some(value) = options {
-        find_configurable_values_recursive(value, "", &mut result);
+        find_configurable_values_recursive(value, None, "", "", &mut result);
     }
 
     result
 }
 
-fn find_configurable_values_recursive(
-    value: &serde_json::Value,
+fn find_configurable_values_recursive<'a>(
+    value: &'a serde_json::Value,
+    mut top_level_key: Option<&'a str>,
     current_pointer: &str,
+    current_keyed_pointer: &str,
     result: &mut ConfigurableValuePointers,
 ) {
     match value {
@@ -39,40 +59,81 @@ fn find_configurable_values_recursive(
                     Some(STRING_TYPE) => {
                         result
                             .configurable_string_pointers
-                            .push(current_pointer.to_string());
+                            .push(current_pointer.to_owned());
+                        if let Some(key) = top_level_key {
+                            result
+                                .keyed_configurable_string_pointers
+                                .entry(key.to_owned())
+                                .or_default()
+                                .insert(current_keyed_pointer.to_owned());
+                        }
                         // Do not recurse because configurable strings cannot contain nested configurable values.
                         return;
                     }
                     Some(LIST_TYPE) => {
                         result
                             .configurable_list_pointers
-                            .push(current_pointer.to_string());
+                            .push(current_pointer.to_owned());
+                        if let Some(key) = top_level_key {
+                            result
+                                .keyed_configurable_list_pointers
+                                .entry(key.to_owned())
+                                .or_default()
+                                .insert(current_keyed_pointer.to_owned());
+                        }
                         // Continue recursing because configurable lists can contain nested configurable values such as strings.
                     }
                     _ => {}
                 }
             }
 
-            // Recursively search object properties
+            // Recursively search object properties.
             for (key, val) in obj {
-                escape_json_pointer!(key);
-                let new_path = if current_pointer.is_empty() {
-                    key.to_string()
+                let next_pointer: String;
+                let next_keyed_pointer: String;
+                if current_pointer.is_empty() {
+                    top_level_key = Some(key);
+                    escape_json_pointer!(key);
+                    next_pointer = format!("/{key}");
+                    // FIXME Shouldn't need to make a new string.
+                    next_keyed_pointer = current_keyed_pointer.to_owned();
                 } else {
-                    format!("{current_pointer}/{key}")
+                    escape_json_pointer!(key);
+                    next_pointer = format!("{current_pointer}/{key}");
+                    next_keyed_pointer = format!("{current_keyed_pointer}/{key}");
                 };
-                find_configurable_values_recursive(val, &new_path, result);
+                find_configurable_values_recursive(
+                    val,
+                    top_level_key,
+                    &next_pointer,
+                    &next_keyed_pointer,
+                    result,
+                );
             }
         }
         serde_json::Value::Array(arr) => {
             // Recursively search array elements
             for (index, val) in arr.iter().enumerate() {
-                let new_path = if current_pointer.is_empty() {
-                    format!("{index}")
+                // Assume current_pointer is set.
+                let next_pointer: String;
+                let next_keyed_pointer: String;
+                if current_pointer.is_empty() {
+                    // Shouldn't happen because the top level should not be an array.
+                    top_level_key = Some("$");
+                    next_pointer = format!("/{index}");
+                    // FIXME Shouldn't need to make a new string.
+                    next_keyed_pointer = current_keyed_pointer.to_owned();
                 } else {
-                    format!("{current_pointer}/{index}")
+                    next_pointer = format!("{current_pointer}/{index}");
+                    next_keyed_pointer = format!("{current_keyed_pointer}/{index}");
                 };
-                find_configurable_values_recursive(val, &new_path, result);
+                find_configurable_values_recursive(
+                    val,
+                    top_level_key,
+                    &next_pointer,
+                    &next_keyed_pointer,
+                    result,
+                );
             }
         }
         _ => {
@@ -115,7 +176,7 @@ mod tests {
 
         assert_eq!(
             pointers.configurable_string_pointers,
-            vec!["feature".to_string()]
+            vec!["/feature".to_string()]
         );
     }
 
@@ -137,7 +198,7 @@ mod tests {
 
         assert_eq!(
             pointers.configurable_string_pointers,
-            vec!["nested/deep/value".to_string()]
+            vec!["/nested/deep/value".to_string()]
         );
     }
 
@@ -157,7 +218,7 @@ mod tests {
 
         assert_eq!(
             pointers.configurable_string_pointers,
-            vec!["array/0".to_string()]
+            vec!["/array/0".to_string()]
         );
     }
 
@@ -201,10 +262,10 @@ mod tests {
         assert_eq!(
             pointers.configurable_string_pointers,
             vec![
-                "array/0".to_string(),
-                "array/2".to_string(),
-                "feature".to_string(),
-                "nested/deep/value".to_string()
+                "/array/0".to_string(),
+                "/array/2".to_string(),
+                "/feature".to_string(),
+                "/nested/deep/value".to_string()
             ]
         );
     }
@@ -279,6 +340,15 @@ mod tests {
                             }
                         }
                     }
+                },
+                "s~": {
+                    TYPE_KEY: STRING_TYPE,
+                },
+                "s/c": {
+                    TYPE_KEY: STRING_TYPE,
+                },
+                "s/c~": {
+                    TYPE_KEY: STRING_TYPE,
                 }
             }
         });
@@ -287,7 +357,12 @@ mod tests {
 
         assert_eq!(
             pointers.configurable_string_pointers,
-            vec!["level1/level2/level3/level4/level5".to_string()]
+            vec![
+                "/level1/level2/level3/level4/level5".to_string(),
+                "/level1/s~1c".to_string(),
+                "/level1/s~1c~0".to_string(),
+                "/level1/s~0".to_string(),
+            ]
         );
     }
 
@@ -316,7 +391,10 @@ mod tests {
 
         assert_eq!(
             pointers.configurable_string_pointers,
-            vec!["items/0/0".to_string(), "items/1/nested_object".to_string()]
+            vec![
+                "/items/0/0".to_string(),
+                "/items/1/nested_object".to_string()
+            ]
         );
     }
 
@@ -341,7 +419,7 @@ mod tests {
         // Should only find the top-level configurable string, not the nested one
         assert_eq!(
             pointers.configurable_string_pointers,
-            vec!["feature".to_string()]
+            vec!["/feature".to_string()]
         );
     }
 
@@ -383,9 +461,9 @@ mod tests {
         assert_eq!(
             pointers.configurable_string_pointers,
             vec![
-                "array/0".to_string(),
-                "feature".to_string(),
-                "nested/deep/value".to_string()
+                "/array/0".to_string(),
+                "/feature".to_string(),
+                "/nested/deep/value".to_string()
             ]
         );
     }

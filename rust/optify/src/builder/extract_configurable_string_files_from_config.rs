@@ -11,8 +11,7 @@ pub(crate) fn extract_configurable_string_files_from_config(
     };
 
     for pointer in configurable_value_pointers {
-        let json_pointer = format!("/{}", pointer);
-        if let Some(configurable_value) = options_obj.pointer(&json_pointer) {
+        if let Some(configurable_value) = options_obj.pointer(pointer) {
             if let Ok(cs) = serde_json::from_value::<ConfigurableString>(configurable_value.clone())
             {
                 configurable_string_files.extend(cs.get_referenced_files());

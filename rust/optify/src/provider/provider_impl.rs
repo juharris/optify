@@ -2,7 +2,6 @@ use std::{collections::HashMap, path::Path, sync::RwLock};
 
 use crate::builder::builder_options::BuilderOptions;
 use crate::configurable_values::configurable_list_impl::ConfigurableList;
-use crate::json::escape_json_pointer;
 
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
@@ -289,25 +288,25 @@ impl OptionsProvider {
     fn process_configurable_lists(
         &self,
         value: &mut serde_json::Value,
-        key_prefix: Option<&str>,
+        key: Option<&str>,
     ) -> Result<(), String> {
-        for pointer in &self.all_configurable_list_pointers {
-            let relative_pointer = match key_prefix {
-                Some(key_prefix) => {
-                    escape_json_pointer!(key_prefix);
-                    if !pointer.starts_with(key_prefix.as_ref()) {
-                        // The pointer does not start with the key prefix so it will not be used.
-                        continue;
-                    } else {
-                        // Remove the key prefix because we need pointers relative the current key.
-                        pointer[key_prefix.len()..].to_string()
+        match key {
+            Some(key) => match self.keyed_configurable_list_pointers.get(key) {
+                Some(pointers) => {
+                    for pointer in pointers {
+                        self.handle_configurable_list_pointer(value, pointer)?;
                     }
                 }
+                _ => {
+                    // There are no pointers for the key.
+                }
+            },
+            None => {
                 // There is no key prefix when the entire configuration is requested.
-                _ => format!("/{}", pointer),
-            };
-
-            self.handle_configurable_list_pointer(value, pointer, &relative_pointer)?;
+                for pointer in &self.all_configurable_list_pointers {
+                    self.handle_configurable_list_pointer(value, pointer)?;
+                }
+            }
         }
 
         Ok(())
@@ -317,9 +316,8 @@ impl OptionsProvider {
         &self,
         value: &mut serde_json::Value,
         pointer: &String,
-        relative_pointer: &String,
     ) -> Result<(), String> {
-        if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
+        if let Some(configurable_value) = value.pointer_mut(pointer) {
             // Only continue if it has the right indicator property because it may have been overridden.
             if let Some(type_value) =
                 configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
@@ -358,25 +356,25 @@ impl OptionsProvider {
     fn process_configurable_strings(
         &self,
         value: &mut serde_json::Value,
-        key_prefix: Option<&str>,
+        key: Option<&str>,
     ) -> Result<(), String> {
-        for pointer in &self.all_configurable_string_pointers {
-            let relative_pointer = match key_prefix {
-                Some(key_prefix) => {
-                    escape_json_pointer!(key_prefix);
-                    if !pointer.starts_with(key_prefix.as_ref()) {
-                        // The pointer does not start with the key prefix so it will not be used.
-                        continue;
-                    } else {
-                        // Remove the key prefix because we need pointers relative the current key.
-                        pointer[key_prefix.len()..].to_string()
+        match key {
+            Some(key) => match self.keyed_configurable_string_pointers.get(key) {
+                Some(pointers) => {
+                    for pointer in pointers {
+                        self.handle_configurable_string_pointer(value, pointer)?;
                     }
                 }
+                _ => {
+                    // There are no pointers for the key.
+                }
+            },
+            None => {
                 // There is no key prefix when the entire configuration is requested.
-                _ => format!("/{}", pointer),
-            };
-
-            self.handle_configurable_string_pointer(value, pointer, &relative_pointer)?;
+                for pointer in &self.all_configurable_string_pointers {
+                    self.handle_configurable_string_pointer(value, pointer)?;
+                }
+            }
         }
 
         Ok(())
@@ -386,9 +384,8 @@ impl OptionsProvider {
         &self,
         value: &mut serde_json::Value,
         pointer: &String,
-        relative_pointer: &String,
     ) -> Result<(), String> {
-        if let Some(configurable_value) = value.pointer_mut(relative_pointer) {
+        if let Some(configurable_value) = value.pointer_mut(pointer) {
             // Only continue if it has the right indicator property because it may have been overridden.
             if let Some(type_value) =
                 configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
