@@ -192,8 +192,10 @@ impl OptionsProviderBuilder {
 
         Ok(OptionsProvider::new(
             std::mem::take(&mut self.aliases),
-            all_configurable_string_pointers,
             all_configurable_list_pointers,
+            all_configurable_string_pointers,
+            HashMap::new(),
+            HashMap::new(),
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
             referenced_file_to_feature_names,
@@ -604,8 +606,10 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
 
         Ok(OptionsProvider::new(
             self.aliases.clone(),
-            all_configurable_string_pointers,
             all_configurable_list_pointers,
+            all_configurable_string_pointers,
+            HashMap::new(),
+            HashMap::new(),
             self.conditions.clone(),
             self.features.clone(),
             referenced_file_to_feature_names,

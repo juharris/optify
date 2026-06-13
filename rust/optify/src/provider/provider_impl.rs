@@ -32,8 +32,12 @@ pub(crate) type OptionsCache = HashMap<(String, Vec<String>, bool), serde_json::
 pub struct CacheOptions {}
 
 pub struct OptionsProvider {
-    all_configurable_string_pointers: Vec<String>,
+    // Configurable Values
     all_configurable_list_pointers: Vec<String>,
+    all_configurable_string_pointers: Vec<String>,
+    keyed_configurable_list_pointers: HashMap<String, Vec<String>>,
+    keyed_configurable_string_pointers: HashMap<String, Vec<String>>,
+
     aliases: Aliases,
     conditions: Conditions,
     features: Features,
@@ -54,8 +58,10 @@ impl OptionsProvider {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         aliases: Aliases,
-        all_configurable_string_pointers: Vec<String>,
         all_configurable_list_pointers: Vec<String>,
+        all_configurable_string_pointers: Vec<String>,
+        keyed_configurable_list_pointers: HashMap<String, Vec<String>>,
+        keyed_configurable_string_pointers: HashMap<String, Vec<String>>,
         conditions: Conditions,
         features: Features,
         referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
@@ -63,8 +69,10 @@ impl OptionsProvider {
         sources: Sources,
     ) -> Self {
         OptionsProvider {
-            all_configurable_string_pointers,
             all_configurable_list_pointers,
+            all_configurable_string_pointers,
+            keyed_configurable_list_pointers,
+            keyed_configurable_string_pointers,
             aliases,
             conditions,
             features,
@@ -295,41 +303,52 @@ impl OptionsProvider {
                         pointer[key_prefix.len()..].to_string()
                     }
                 }
-                // There is not key prefix when the entire configuration is requested.
+                // There is no key prefix when the entire configuration is requested.
                 _ => format!("/{}", pointer),
             };
 
-            if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
-                // Only continue if it has the right indicator property because it may have been overridden.
-                if let Some(type_value) =
-                    configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
-                {
-                    if let Some(type_str) = type_value.as_str() {
-                        if type_str != crate::configurable_values::locator::LIST_TYPE {
-                            continue;
-                        }
-                    } else {
-                        continue;
+            self.handle_configurable_list_pointer(value, pointer, &relative_pointer)?;
+        }
+
+        Ok(())
+    }
+
+    fn handle_configurable_list_pointer(
+        &self,
+        value: &mut serde_json::Value,
+        pointer: &String,
+        relative_pointer: &String,
+    ) -> Result<(), String> {
+        if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
+            // Only continue if it has the right indicator property because it may have been overridden.
+            if let Some(type_value) =
+                configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
+            {
+                if let Some(type_str) = type_value.as_str() {
+                    if type_str != crate::configurable_values::locator::LIST_TYPE {
+                        return Ok(());
                     }
                 } else {
-                    continue;
+                    return Ok(());
                 }
-
-                let configurable_list: ConfigurableList =
-                    match serde_json::from_value(configurable_value.clone()) {
-                        Ok(cl) => cl,
-                        Err(e) => {
-                            return Err(format!(
-                                "Failed to deserialize ConfigurableList at {}: {}",
-                                pointer, e
-                            ));
-                        }
-                    };
-
-                // Replace the value at the pointer location with the built list.
-                let built_list = configurable_list.build()?;
-                *configurable_value = serde_json::Value::Array(built_list);
+            } else {
+                return Ok(());
             }
+
+            let configurable_list: ConfigurableList =
+                match serde_json::from_value(configurable_value.clone()) {
+                    Ok(cl) => cl,
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to deserialize ConfigurableList at {}: {}",
+                            pointer, e
+                        ));
+                    }
+                };
+
+            // Replace the value at the pointer location with the built list.
+            let built_list = configurable_list.build()?;
+            *configurable_value = serde_json::Value::Array(built_list);
         }
 
         Ok(())
@@ -353,43 +372,53 @@ impl OptionsProvider {
                         pointer[key_prefix.len()..].to_string()
                     }
                 }
-                // There is not key prefix when the entire configuration is requested.
+                // There is no key prefix when the entire configuration is requested.
                 _ => format!("/{}", pointer),
             };
 
-            if let Some(configurable_value) = value.pointer_mut(&relative_pointer) {
-                // Only continue if it has the right indicator property because it may have been overridden.
-                if let Some(type_value) =
-                    configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
-                {
-                    if let Some(type_str) = type_value.as_str() {
-                        if type_str != crate::configurable_values::locator::STRING_TYPE {
-                            continue;
-                        }
-                    } else {
-                        continue;
-                    }
-                } else {
-                    continue;
-                }
-
-                let configurable_string: ConfigurableString =
-                    match serde_json::from_value(configurable_value.clone()) {
-                        Ok(cs) => cs,
-                        Err(e) => {
-                            return Err(format!(
-                                "Failed to deserialize ConfigurableString at {}: {}",
-                                pointer, e
-                            ));
-                        }
-                    };
-
-                // Replace the value at the pointer location with the built string.
-                let built_string = configurable_string.build(&self.loaded_files)?;
-                *configurable_value = serde_json::Value::String(built_string);
-            }
+            self.handle_configurable_string_pointer(value, pointer, &relative_pointer)?;
         }
 
+        Ok(())
+    }
+
+    fn handle_configurable_string_pointer(
+        &self,
+        value: &mut serde_json::Value,
+        pointer: &String,
+        relative_pointer: &String,
+    ) -> Result<(), String> {
+        if let Some(configurable_value) = value.pointer_mut(relative_pointer) {
+            // Only continue if it has the right indicator property because it may have been overridden.
+            if let Some(type_value) =
+                configurable_value.get(crate::configurable_values::locator::TYPE_KEY)
+            {
+                if let Some(type_str) = type_value.as_str() {
+                    if type_str != crate::configurable_values::locator::STRING_TYPE {
+                        return Ok(());
+                    }
+                } else {
+                    return Ok(());
+                }
+            } else {
+                return Ok(());
+            }
+
+            let configurable_string: ConfigurableString =
+                match serde_json::from_value(configurable_value.clone()) {
+                    Ok(cs) => cs,
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to deserialize ConfigurableString at {}: {}",
+                            pointer, e
+                        ));
+                    }
+                };
+
+            // Replace the value at the pointer location with the built string.
+            let built_string = configurable_string.build(&self.loaded_files)?;
+            *configurable_value = serde_json::Value::String(built_string);
+        }
         Ok(())
     }
 }
