@@ -395,7 +395,7 @@ impl OptionsProviderBuilder {
         if let Some(imports) = info.imports {
             self.imports.insert(canonical_feature_name.clone(), imports);
         }
-        self.process_loaded_configurable_value_pointers(&info.configurable_value_pointers);
+        self.process_loaded_configurable_value_pointers(info.configurable_value_pointers);
         for file_key in &info.configurable_string_files {
             self.referenced_file_to_feature_names
                 .entry(file_key.clone())
@@ -417,29 +417,29 @@ impl OptionsProviderBuilder {
         Ok(())
     }
 
-    fn process_loaded_configurable_value_pointers(&mut self, pointers: &ConfigurableValuePointers) {
+    fn process_loaded_configurable_value_pointers(&mut self, pointers: ConfigurableValuePointers) {
         if !pointers.configurable_list_pointers.is_empty() {
             self.all_configurable_list_pointers
-                .extend(pointers.configurable_list_pointers.iter().cloned());
+                .extend(pointers.configurable_list_pointers);
         }
         if !pointers.configurable_string_pointers.is_empty() {
             self.all_configurable_string_pointers
-                .extend(pointers.configurable_string_pointers.iter().cloned());
+                .extend(pointers.configurable_string_pointers);
         }
         if !pointers.keyed_configurable_list_pointers.is_empty() {
-            for (key, set) in &pointers.keyed_configurable_list_pointers {
+            for (key, keyed_pointers) in pointers.keyed_configurable_list_pointers {
                 self.keyed_configurable_list_pointers
-                    .entry(key.clone())
-                    .and_modify(|dest_set| dest_set.extend(set.clone()))
-                    .or_insert(set.clone());
+                    .entry(key)
+                    .and_modify(|dest_set| dest_set.extend(keyed_pointers.clone()))
+                    .or_insert(keyed_pointers.into_iter().collect());
             }
         }
         if !pointers.keyed_configurable_string_pointers.is_empty() {
-            for (key, set) in &pointers.keyed_configurable_string_pointers {
+            for (key, keyed_pointers) in pointers.keyed_configurable_string_pointers {
                 self.keyed_configurable_string_pointers
-                    .entry(key.clone())
-                    .and_modify(|dest_set| dest_set.extend(set.clone()))
-                    .or_insert(set.clone());
+                    .entry(key)
+                    .and_modify(|dest_set| dest_set.extend(keyed_pointers.clone()))
+                    .or_insert(keyed_pointers.into_iter().collect());
             }
         }
     }
