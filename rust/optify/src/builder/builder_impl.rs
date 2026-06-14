@@ -31,6 +31,8 @@ pub struct OptionsProviderBuilder {
     aliases: Aliases,
     all_configurable_string_pointers: HashSet<String>,
     all_configurable_list_pointers: HashSet<String>,
+    keyed_configurable_list_pointers: HashMap<String, HashSet<String>>,
+    keyed_configurable_string_pointers: HashMap<String, HashSet<String>>,
     builder_options: BuilderOptions,
     conditions: Conditions,
     dependents: Dependents,
@@ -158,6 +160,8 @@ impl OptionsProviderBuilder {
             aliases: Aliases::new(),
             all_configurable_string_pointers: HashSet::new(),
             all_configurable_list_pointers: HashSet::new(),
+            keyed_configurable_list_pointers: HashMap::new(),
+            keyed_configurable_string_pointers: HashMap::new(),
             builder_options: BuilderOptions::default(),
             conditions: Conditions::new(),
             dependents: Dependents::new(),
@@ -173,16 +177,24 @@ impl OptionsProviderBuilder {
     pub fn build_and_clear(&mut self) -> Result<OptionsProvider, String> {
         self.prepare_build()?;
 
-        let all_configurable_string_pointers = self
-            .all_configurable_string_pointers
-            .iter()
-            .cloned()
-            .collect();
-        let all_configurable_list_pointers = self
-            .all_configurable_list_pointers
-            .iter()
-            .cloned()
-            .collect();
+        let all_configurable_list_pointers =
+            std::mem::take(&mut self.all_configurable_list_pointers)
+                .into_iter()
+                .collect();
+        let all_configurable_string_pointers =
+            std::mem::take(&mut self.all_configurable_string_pointers)
+                .into_iter()
+                .collect();
+        let keyed_configurable_list_pointers =
+            std::mem::take(&mut self.keyed_configurable_list_pointers)
+                .into_iter()
+                .map(|(key, set)| (key, set.into_iter().collect()))
+                .collect();
+        let keyed_configurable_string_pointers =
+            std::mem::take(&mut self.keyed_configurable_string_pointers)
+                .into_iter()
+                .map(|(key, set)| (key, set.into_iter().collect()))
+                .collect();
 
         let referenced_file_to_feature_names = if self.referenced_file_to_feature_names.is_empty() {
             None
@@ -192,8 +204,10 @@ impl OptionsProviderBuilder {
 
         Ok(OptionsProvider::new(
             std::mem::take(&mut self.aliases),
-            all_configurable_string_pointers,
             all_configurable_list_pointers,
+            all_configurable_string_pointers,
+            keyed_configurable_list_pointers,
+            keyed_configurable_string_pointers,
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
             referenced_file_to_feature_names,
@@ -322,35 +336,26 @@ impl OptionsProviderBuilder {
             ),
         };
 
-        let (configurable_value_pointers, configurable_string_files) = if builder_options
-            .are_configurable_strings_enabled
-        {
-            let pointers = find_configurable_values(raw_config.get("options"));
+        let (configurable_value_pointers, configurable_string_files) =
+            if builder_options.are_configurable_strings_enabled {
+                let pointers = find_configurable_values(raw_config.get("options"));
 
-            // Tracking file references is usually not enabled in production systems and is mainly for local development,
-            // so we won't complicate `find_configurable_values` and make it also track referenced files.
-            let files = match builder_options.track_file_references {
-                TrackReferenceMode::None => Vec::new(),
-                TrackReferenceMode::ConfigurableStrings => {
-                    extract_configurable_string_files_from_config(
-                        &raw_config,
-                        &pointers.configurable_string_pointers,
-                    )
-                }
-                TrackReferenceMode::KeyName => {
-                    extract_files_from_config(&raw_config, &pointers.configurable_string_pointers)
-                }
+                // Tracking file references is usually not enabled in production systems and is mainly for local development,
+                // so we won't complicate `find_configurable_values` and make it also track referenced files.
+                let files = match builder_options.track_file_references {
+                    TrackReferenceMode::None => Vec::new(),
+                    TrackReferenceMode::ConfigurableStrings => {
+                        extract_configurable_string_files_from_config(
+                            &raw_config,
+                            &pointers.configurable_string_pointers,
+                        )
+                    }
+                    TrackReferenceMode::KeyName => extract_files_from_config(&raw_config),
+                };
+                (pointers, files)
+            } else {
+                (ConfigurableValuePointers::default(), Vec::new())
             };
-            (pointers, files)
-        } else {
-            (
-                ConfigurableValuePointers {
-                    configurable_string_pointers: Vec::new(),
-                    configurable_list_pointers: Vec::new(),
-                },
-                Vec::new(),
-            )
-        };
 
         Ok(LoadingResult {
             canonical_feature_name,
@@ -366,55 +371,31 @@ impl OptionsProviderBuilder {
 
     fn process_loading_result(
         &mut self,
-        loading_result: &Result<LoadingResult, String>,
+        loading_result: Result<LoadingResult, String>,
     ) -> Result<(), String> {
-        let info = loading_result.as_ref()?;
+        let info = loading_result?;
         let canonical_feature_name = &info.canonical_feature_name;
 
         if self.schema.is_some() {
-            self.validate_with_schema(info)?;
+            self.validate_with_schema(&info)?;
         }
         if self
             .sources
-            .insert(canonical_feature_name.clone(), info.source.clone())
+            .insert(canonical_feature_name.clone(), info.source)
             .is_some()
         {
             return Err(format!(
                 "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
             ));
         }
-        if let Some(conditions) = &info.conditions {
+        if let Some(conditions) = info.conditions {
             self.conditions
-                .insert(canonical_feature_name.clone(), conditions.clone());
+                .insert(canonical_feature_name.clone(), conditions);
         }
-        if let Some(imports) = &info.imports {
-            self.imports
-                .insert(canonical_feature_name.clone(), imports.clone());
+        if let Some(imports) = info.imports {
+            self.imports.insert(canonical_feature_name.clone(), imports);
         }
-        if !info
-            .configurable_value_pointers
-            .configurable_string_pointers
-            .is_empty()
-        {
-            self.all_configurable_string_pointers.extend(
-                info.configurable_value_pointers
-                    .configurable_string_pointers
-                    .iter()
-                    .cloned(),
-            );
-        }
-        if !info
-            .configurable_value_pointers
-            .configurable_list_pointers
-            .is_empty()
-        {
-            self.all_configurable_list_pointers.extend(
-                info.configurable_value_pointers
-                    .configurable_list_pointers
-                    .iter()
-                    .cloned(),
-            );
-        }
+        self.process_loaded_configurable_value_pointers(info.configurable_value_pointers);
         for file_key in &info.configurable_string_files {
             self.referenced_file_to_feature_names
                 .entry(file_key.clone())
@@ -426,14 +407,41 @@ impl OptionsProviderBuilder {
             canonical_feature_name,
             canonical_feature_name,
         )?;
-        if let Some(ref aliases) = info.metadata.aliases {
+        if let Some(aliases) = &info.metadata.aliases {
             for alias in aliases {
                 add_alias(&mut self.aliases, alias, canonical_feature_name)?;
             }
         }
         self.features
-            .insert(canonical_feature_name.clone(), info.metadata.clone());
+            .insert(canonical_feature_name.clone(), info.metadata);
         Ok(())
+    }
+
+    fn process_loaded_configurable_value_pointers(&mut self, pointers: ConfigurableValuePointers) {
+        if !pointers.configurable_list_pointers.is_empty() {
+            self.all_configurable_list_pointers
+                .extend(pointers.configurable_list_pointers);
+        }
+        if !pointers.configurable_string_pointers.is_empty() {
+            self.all_configurable_string_pointers
+                .extend(pointers.configurable_string_pointers);
+        }
+        if !pointers.keyed_configurable_list_pointers.is_empty() {
+            for (key, keyed_pointers) in pointers.keyed_configurable_list_pointers {
+                self.keyed_configurable_list_pointers
+                    .entry(key)
+                    .and_modify(|dest_set| dest_set.extend(keyed_pointers.clone()))
+                    .or_insert(keyed_pointers.into_iter().collect());
+            }
+        }
+        if !pointers.keyed_configurable_string_pointers.is_empty() {
+            for (key, keyed_pointers) in pointers.keyed_configurable_string_pointers {
+                self.keyed_configurable_string_pointers
+                    .entry(key)
+                    .and_modify(|dest_set| dest_set.extend(keyed_pointers.clone()))
+                    .or_insert(keyed_pointers.into_iter().collect());
+            }
+        }
     }
 }
 
@@ -538,7 +546,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             })
             .collect();
         for loading_result in loading_results {
-            self.process_loading_result(&loading_result)?;
+            self.process_loading_result(loading_result)?;
         }
 
         Ok(self)
@@ -595,6 +603,16 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .iter()
             .cloned()
             .collect();
+        let keyed_configurable_list_pointers = self
+            .keyed_configurable_list_pointers
+            .iter()
+            .map(|(key, set)| (key.clone(), set.iter().cloned().collect()))
+            .collect();
+        let keyed_configurable_string_pointers = self
+            .keyed_configurable_string_pointers
+            .iter()
+            .map(|(key, set)| (key.clone(), set.iter().cloned().collect()))
+            .collect();
 
         let referenced_file_to_feature_names = if self.referenced_file_to_feature_names.is_empty() {
             None
@@ -604,8 +622,10 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
 
         Ok(OptionsProvider::new(
             self.aliases.clone(),
-            all_configurable_string_pointers,
             all_configurable_list_pointers,
+            all_configurable_string_pointers,
+            keyed_configurable_list_pointers,
+            keyed_configurable_string_pointers,
             self.conditions.clone(),
             self.features.clone(),
             referenced_file_to_feature_names,

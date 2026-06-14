@@ -260,18 +260,18 @@ fn benchmark_many_features(c: &mut Criterion) {
         "with_files",
     ];
 
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.are_configurable_strings_enabled = true;
+    let preferences = Some(&preferences);
     for key in keys {
         group.bench_function(key, |b| {
-            let mut preferences = GetOptionsPreferences::new();
-            preferences.are_configurable_strings_enabled = true;
-            let preferences = Some(&preferences);
             b.iter(|| {
                 provider
                     .get_options_with_preferences(
                         black_box(key),
                         black_box(&features),
                         None,
-                        preferences,
+                        black_box(preferences),
                     )
                     .unwrap()
             })
