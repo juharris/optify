@@ -531,8 +531,10 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                             }
                         }
                         Err(e) => {
-                            // TODO Yield errors.
-                            eprintln!("Error reading file {}: {e}\nSkipping file.", path.display());
+                            return Some(Err(format!(
+                                "Error reading file {}: {e}",
+                                path.display()
+                            )));
                         }
                     }
                     None
