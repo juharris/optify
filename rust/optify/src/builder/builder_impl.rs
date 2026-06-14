@@ -371,31 +371,29 @@ impl OptionsProviderBuilder {
 
     fn process_loading_result(
         &mut self,
-        loading_result: &Result<LoadingResult, String>,
+        loading_result: Result<LoadingResult, String>,
     ) -> Result<(), String> {
-        // TODO Move data instead of copying.
-        let info = loading_result.as_ref()?;
+        let info = loading_result?;
         let canonical_feature_name = &info.canonical_feature_name;
 
         if self.schema.is_some() {
-            self.validate_with_schema(info)?;
+            self.validate_with_schema(&info)?;
         }
         if self
             .sources
-            .insert(canonical_feature_name.clone(), info.source.clone())
+            .insert(canonical_feature_name.clone(), info.source)
             .is_some()
         {
             return Err(format!(
                 "Error when loading feature. The canonical feature name '{canonical_feature_name}' was already added. It may be an alias for another feature."
             ));
         }
-        if let Some(conditions) = &info.conditions {
+        if let Some(conditions) = info.conditions {
             self.conditions
-                .insert(canonical_feature_name.clone(), conditions.clone());
+                .insert(canonical_feature_name.clone(), conditions);
         }
-        if let Some(imports) = &info.imports {
-            self.imports
-                .insert(canonical_feature_name.clone(), imports.clone());
+        if let Some(imports) = info.imports {
+            self.imports.insert(canonical_feature_name.clone(), imports);
         }
         self.process_loaded_configurable_value_pointers(&info.configurable_value_pointers);
         for file_key in &info.configurable_string_files {
@@ -409,13 +407,13 @@ impl OptionsProviderBuilder {
             canonical_feature_name,
             canonical_feature_name,
         )?;
-        if let Some(ref aliases) = info.metadata.aliases {
+        if let Some(aliases) = &info.metadata.aliases {
             for alias in aliases {
                 add_alias(&mut self.aliases, alias, canonical_feature_name)?;
             }
         }
         self.features
-            .insert(canonical_feature_name.clone(), info.metadata.clone());
+            .insert(canonical_feature_name.clone(), info.metadata);
         Ok(())
     }
 
@@ -548,7 +546,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             })
             .collect();
         for loading_result in loading_results {
-            self.process_loading_result(&loading_result)?;
+            self.process_loading_result(loading_result)?;
         }
 
         Ok(self)
