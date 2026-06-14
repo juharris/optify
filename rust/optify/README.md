@@ -90,6 +90,7 @@ cargo bench
 
 # Run one specific benchmark, example:
 cargo bench --bench get_options_benchmark
+cargo bench --bench get_options_benchmark -- 'get_options/many features'
 
 # Open one of the reports
 open target/criterion/*/report/index.html
