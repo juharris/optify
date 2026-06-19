@@ -4,8 +4,13 @@ use crate::{
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
+pub(crate) enum LoadingResult {
+    Feature(FeatureLoadingResult),
+    Raw(String),
+}
+
 /// The result of loading a feature configuration file.
-pub(crate) struct LoadingResult {
+pub(crate) struct FeatureLoadingResult {
     pub canonical_feature_name: String,
     pub conditions: Option<ConditionExpression>,
     /// A list of file paths that are explicitly referenced within this feature's ConfigurableStrings.
