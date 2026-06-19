@@ -31,7 +31,7 @@ function readConfigurableStringsDefault(optifyRoot: string): boolean {
 		if (fs.existsSync(configPath)) {
 			const configText = fs.readFileSync(configPath, 'utf8');
 			const config = JSON.parse(configText);
-			return config.areConfigurableStringsEnabled === true;
+			return config.areConfigurableValuesEnabled === true || config.areConfigurableStringsEnabled === true;
 		}
 	} catch (error) {
 		// Ignore errors reading config
