@@ -37,24 +37,21 @@ fn merge_json_with_defaults_at_path(
                 let previous_path_len = path.len();
                 push_json_pointer_segment(path, key);
 
-                if frozen_paths.contains(path.as_str()) {
-                    path.truncate(previous_path_len);
-                    continue;
-                }
-
-                match target_map.get_mut(key) {
-                    Some(target_value) => {
-                        // They both have a value for this key.
-                        merge_json_with_defaults_at_path(
-                            target_value,
-                            defaults_value,
-                            frozen_paths,
-                            path,
-                        );
-                    }
-                    None => {
-                        // Default value is missing from target.
-                        target_map.insert(key.clone(), defaults_value.clone());
+                if !frozen_paths.contains(path.as_str()) {
+                    match target_map.get_mut(key) {
+                        Some(target_value) => {
+                            // They both have a value for this key.
+                            merge_json_with_defaults_at_path(
+                                target_value,
+                                defaults_value,
+                                frozen_paths,
+                                path,
+                            );
+                        }
+                        None => {
+                            // Default value is missing from target.
+                            target_map.insert(key.clone(), defaults_value.clone());
+                        }
                     }
                 }
 
@@ -64,7 +61,9 @@ fn merge_json_with_defaults_at_path(
         (serde_json::Value::Object(_), _) => {
             // `defaults` is not an object.
             // A lower-priority primitive would have stopped deeper defaults if it had been the target.
-            // Remember that lower-priority objects cannot add children at this path later.
+            // Remember that lower-priority objects cannot add children at this path later
+            // because the default would have overwritten them if we were merge for low to high,
+            // but we merge from high priority to low priority to attempt to copy less.
             frozen_paths.insert(path.clone());
         }
         _ => {
