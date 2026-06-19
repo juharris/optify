@@ -14,7 +14,7 @@ use crate::builder::loading_result::LoadingResult;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
-use crate::json::merge::merge_json_with_defaults;
+use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
 use crate::provider::{
     Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
@@ -81,6 +81,7 @@ fn resolve_imports(
 ) -> Result<(), String> {
     // Build full configuration for the feature so that we don't need to traverse imports for the feature when configurations are requested from the provider.
     let mut merged_config = sources.get(canonical_feature_name).unwrap().clone();
+    let mut frozen_paths = FrozenPaths::new();
     for import in imports_for_feature.iter().rev() {
         // Validate imports.
         if features_in_resolution_path.contains(import) {
@@ -147,7 +148,7 @@ fn resolve_imports(
             }
         }
 
-        merge_json_with_defaults(&mut merged_config, source);
+        merge_json_with_defaults(&mut merged_config, source, &mut frozen_paths);
     }
 
     sources.insert(canonical_feature_name.to_owned(), merged_config);
