@@ -1,0 +1,11 @@
+{
+	"features": ["simple", "raw_overrides", "override_name"],
+	"options": {
+		"greeting": "raw greeting",
+		"message": {
+			"arguments": {
+				"name": "space"
+			}
+		}
+	}
+}

@@ -2,7 +2,7 @@ use optify::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
 };
-use std::sync::OnceLock;
+use std::{fs, sync::OnceLock};
 
 static CONDITIONS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 static CONFIGURABLE_STRINGS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
@@ -257,6 +257,83 @@ fn test_provider_get_all_options_multiple_features() -> Result<(), Box<dyn std::
         key: opts
     });
     assert_eq!(entire_config, expected);
+    Ok(())
+}
+
+#[test]
+fn test_provider_get_all_options_multiple_features_freezes_primitive_paths(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let temp_dir = tempfile::tempdir()?;
+    fs::write(
+        temp_dir.path().join("low.json"),
+        r#"{
+            "options": {
+                "rootSettings": {
+                    "low": true
+                },
+                "settings": {
+                    "nested": {
+                        "low": true
+                    },
+                    "sibling": "from low"
+                }
+            }
+        }"#,
+    )?;
+    fs::write(
+        temp_dir.path().join("middle.json"),
+        r#"{
+            "options": {
+                "rootSettings": false,
+                "settings": {
+                    "nested": false,
+                    "sibling": "from middle"
+                }
+            }
+        }"#,
+    )?;
+    fs::write(
+        temp_dir.path().join("high.json"),
+        r#"{
+            "options": {
+                "rootSettings": {
+                    "high": true
+                },
+                "settings": {
+                    "nested": {
+                        "high": true
+                    }
+                }
+            }
+        }"#,
+    )?;
+
+    let provider = OptionsProvider::build(temp_dir.path())?;
+    let feature_names = ["low", "middle", "high"];
+    let expected_settings = serde_json::json!({
+        "nested": {
+            "high": true
+        },
+        "sibling": "from middle"
+    });
+    let expected_root_settings = serde_json::json!({
+        "high": true
+    });
+
+    let root_options = provider.get_options("rootSettings", &feature_names)?;
+    let options = provider.get_options("settings", &feature_names)?;
+    let all_options = provider.get_all_options(&feature_names, None, None)?;
+
+    assert_eq!(root_options, expected_root_settings);
+    assert_eq!(options, expected_settings);
+    assert_eq!(
+        all_options,
+        serde_json::json!({
+            "rootSettings": expected_root_settings,
+            "settings": expected_settings
+        })
+    );
+
     Ok(())
 }
 

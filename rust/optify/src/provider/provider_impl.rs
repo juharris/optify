@@ -6,7 +6,7 @@ use crate::configurable_values::configurable_list_impl::ConfigurableList;
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
-    json::merge::merge_json_with_defaults,
+    json::merge::{merge_json_with_defaults, FrozenPaths},
     provider::GetOptionsPreferences,
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
@@ -133,6 +133,7 @@ impl OptionsProvider {
 
                 // Merge sources as defaults in reverse (highest to lowest priority).
                 // Skip last source if no overrides (already used as base).
+                let mut frozen_paths = FrozenPaths::new();
                 let skip_count = if overrides.is_some() { 0 } else { 1 };
                 for canonical_feature_name in feature_names.iter().rev().skip(skip_count) {
                     let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
@@ -141,7 +142,7 @@ impl OptionsProvider {
                         // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
                         format!("Feature name {canonical_feature_name:?} is not a known feature.")
                     })?;
-                    merge_json_with_defaults(&mut result, source);
+                    merge_json_with_defaults(&mut result, source, &mut frozen_paths);
                 }
 
                 result
@@ -186,6 +187,7 @@ impl OptionsProvider {
                     // No override. Find first source with key (iterating in reverse = highest priority first).
                     // Use the last source with the key to avoid merging to an empty object.
                     let mut result = None;
+                    let mut frozen_paths = FrozenPaths::new();
                     for canonical_feature_name in filtered_feature_names.iter().rev() {
                         let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
                             format!(
@@ -195,7 +197,11 @@ impl OptionsProvider {
 
                         if let Some(source_value) = source.get(key) {
                             match &mut result {
-                                Some(existing) => merge_json_with_defaults(existing, source_value),
+                                Some(existing) => merge_json_with_defaults(
+                                    existing,
+                                    source_value,
+                                    &mut frozen_paths,
+                                ),
                                 None => result = Some(source_value.clone()),
                             }
                         }
@@ -207,6 +213,7 @@ impl OptionsProvider {
                     // Start with override as base (highest priority).
                     // Sources are ordered from lowest to highest priority, so we iterate in reverse.
                     let mut result = override_value.clone();
+                    let mut frozen_paths = FrozenPaths::new();
                     for canonical_feature_name in filtered_feature_names.iter().rev() {
                         let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
                             format!(
@@ -215,7 +222,7 @@ impl OptionsProvider {
                         })?;
 
                         if let Some(source_value) = source.get(key) {
-                            merge_json_with_defaults(&mut result, source_value);
+                            merge_json_with_defaults(&mut result, source_value, &mut frozen_paths);
                         }
                     }
                     Some(result)
