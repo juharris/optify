@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) enum LoadingResult {
     Feature(FeatureLoadingResult),
-    Raw(String),
+    Raw(RawLoadingResult),
 }
 
 /// The result of loading a feature configuration file.
@@ -21,4 +21,10 @@ pub(crate) struct FeatureLoadingResult {
     pub metadata: OptionsMetadata,
     pub original_config: serde_json::Value,
     pub source: SourceValue,
+}
+
+/// The result of loading a feature configuration file.
+pub(crate) struct RawLoadingResult {
+    pub contents: String,
+    pub relative_path: String,
 }

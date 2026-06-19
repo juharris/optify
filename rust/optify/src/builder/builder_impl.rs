@@ -10,7 +10,7 @@ use crate::builder::extract_configurable_string_files_from_config::extract_confi
 use crate::builder::extract_files_from_config::extract_files_from_config;
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
-use crate::builder::loading_result::{FeatureLoadingResult, LoadingResult};
+use crate::builder::loading_result::{FeatureLoadingResult, LoadingResult, RawLoadingResult};
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
@@ -286,102 +286,9 @@ impl OptionsProviderBuilder {
             None => false,
         };
 
-        // TODO Split into 2 methods.
         if is_config_file {
-            let absolute_path = dunce::canonicalize(path).expect("path should be valid");
-            // TODO Optimization: Find a more efficient way to build a more generic view of the file.
-            // The `config` library is helpful because it handles many file types.
-            // It would also be nice to support comments in .json files, even though it is not standard.
-            // The `config` library does support .json5 which supports comments.
-            let file = config::File::from(path);
-            let config_for_path = match config::Config::builder().add_source(file).build() {
-                Ok(conf) => conf,
-                Err(e) => {
-                    return Err(format!(
-                        "Error loading file '{}': {e}",
-                        absolute_path.to_string_lossy(),
-                    ))
-                }
-            };
-
-            // We need the raw JSON for validation.
-            let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
-                Ok(v) => v,
-                Err(e) => {
-                    return Err(format!(
-                        "Error deserializing configuration for file '{}': {e}",
-                        absolute_path.to_string_lossy(),
-                    ))
-                }
-            };
-
-            let feature_config: FeatureConfiguration =
-                match serde_json::from_value(raw_config.clone()) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        return Err(format!(
-                            "Error deserializing configuration for file '{}': {e}",
-                            absolute_path.to_string_lossy(),
-                        ))
-                    }
-                };
-
-            let source = feature_config
-                .options
-                .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
-
-            let canonical_feature_name = get_canonical_feature_name(path, directory);
-
-            // Ensure the name is set in the metadata.
-            let metadata = match feature_config.metadata {
-                Some(mut metadata) => {
-                    metadata.name = Some(canonical_feature_name.clone());
-                    metadata.path = Some(absolute_path.to_string_lossy().to_string());
-                    metadata
-                }
-                None => OptionsMetadata::new(
-                    None,
-                    None,
-                    None,
-                    Some(canonical_feature_name.clone()),
-                    None,
-                    Some(absolute_path.to_string_lossy().to_string()),
-                ),
-            };
-
-            let (configurable_value_pointers, configurable_string_files) =
-                if builder_options.are_configurable_strings_enabled {
-                    let pointers = find_configurable_values(raw_config.get("options"));
-
-                    // Tracking file references is usually not enabled in production systems and is mainly for local development,
-                    // so we won't complicate `find_configurable_values` and make it also track referenced files.
-                    let files = match builder_options.track_file_references {
-                        TrackReferenceMode::None => Vec::new(),
-                        TrackReferenceMode::ConfigurableStrings => {
-                            extract_configurable_string_files_from_config(
-                                &raw_config,
-                                &pointers.configurable_string_pointers,
-                            )
-                        }
-                        TrackReferenceMode::KeyName => extract_files_from_config(&raw_config),
-                    };
-                    (pointers, files)
-                } else {
-                    (ConfigurableValuePointers::default(), Vec::new())
-                };
-
-            Ok(LoadingResult::Feature(FeatureLoadingResult {
-                canonical_feature_name,
-                conditions: feature_config.conditions,
-                configurable_string_files,
-                configurable_value_pointers,
-                imports: feature_config.imports,
-                metadata,
-                original_config: raw_config,
-                source,
-            }))
+            process_config_file_entry(path, directory, builder_options)
         } else {
-            // Load the file content
             match std::fs::read_to_string(path) {
                 Ok(contents) => {
                     let relative_path = path
@@ -390,20 +297,13 @@ impl OptionsProviderBuilder {
                         .to_str()
                         .expect("path should be valid Unicode")
                         .replace(std::path::MAIN_SEPARATOR, "/");
-                    match self.loaded_files.entry(relative_path) {
-                        std::collections::hash_map::Entry::Occupied(entry) => {
-                            return Some(Err(format!(
-                                "File '{}' is already loaded from another directory.",
-                                entry.key()
-                            )));
-                        }
-                        std::collections::hash_map::Entry::Vacant(entry) => {
-                            entry.insert(contents);
-                        }
-                    }
+                    Ok(LoadingResult::Raw(RawLoadingResult {
+                        contents,
+                        relative_path,
+                    }))
                 }
                 Err(e) => {
-                    return Some(Err(format!("Error reading file {}: {e}", path.display())));
+                    return Err(format!("Error reading file {}: {e}", path.display()));
                 }
             }
         }
@@ -415,12 +315,22 @@ impl OptionsProviderBuilder {
     ) -> Result<(), String> {
         match loading_result? {
             LoadingResult::Feature(feature) => self.process_feature_loading_result(feature),
-            LoadingResult::Raw(contents) => self.process_raw_loading_result(contents),
+            LoadingResult::Raw(raw) => self.process_raw_loading_result(raw),
         }
     }
 
-    fn process_raw_loading_result(&mut self, contents: String) -> Result<(), String> {
-        // TODO Add to self.loading_files
+    fn process_raw_loading_result(&mut self, raw_result: RawLoadingResult) -> Result<(), String> {
+        match self.loaded_files.entry(raw_result.relative_path) {
+            std::collections::hash_map::Entry::Occupied(entry) => {
+                return Err(format!(
+                    "File '{}' is already loaded from another directory.",
+                    entry.key()
+                ));
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(raw_result.contents);
+            }
+        }
         Ok(())
     }
 
@@ -494,6 +404,104 @@ impl OptionsProviderBuilder {
             }
         }
     }
+}
+
+fn process_config_file_entry(
+    path: &Path,
+    directory: &Path,
+    builder_options: &BuilderOptions,
+) -> Result<LoadingResult, String> {
+    let absolute_path = dunce::canonicalize(path).expect("path should be valid");
+    // TODO Optimization: Find a more efficient way to build a more generic view of the file.
+    // The `config` library is helpful because it handles many file types.
+    // It would also be nice to support comments in .json files, even though it is not standard.
+    // The `config` library does support .json5 which supports comments.
+    let file = config::File::from(path);
+    let config_for_path = match config::Config::builder().add_source(file).build() {
+        Ok(conf) => conf,
+        Err(e) => {
+            return Err(format!(
+                "Error loading file '{}': {e}",
+                absolute_path.to_string_lossy(),
+            ))
+        }
+    };
+
+    // We need the raw JSON for validation.
+    let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(format!(
+                "Error deserializing configuration for file '{}': {e}",
+                absolute_path.to_string_lossy(),
+            ))
+        }
+    };
+
+    let feature_config: FeatureConfiguration = match serde_json::from_value(raw_config.clone()) {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(format!(
+                "Error deserializing configuration for file '{}': {e}",
+                absolute_path.to_string_lossy(),
+            ))
+        }
+    };
+
+    let source = feature_config
+        .options
+        .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+
+    let canonical_feature_name = get_canonical_feature_name(path, directory);
+
+    // Ensure the name is set in the metadata.
+    let metadata = match feature_config.metadata {
+        Some(mut metadata) => {
+            metadata.name = Some(canonical_feature_name.clone());
+            metadata.path = Some(absolute_path.to_string_lossy().to_string());
+            metadata
+        }
+        None => OptionsMetadata::new(
+            None,
+            None,
+            None,
+            Some(canonical_feature_name.clone()),
+            None,
+            Some(absolute_path.to_string_lossy().to_string()),
+        ),
+    };
+
+    let (configurable_value_pointers, configurable_string_files) =
+        if builder_options.are_configurable_strings_enabled {
+            let pointers = find_configurable_values(raw_config.get("options"));
+
+            // Tracking file references is usually not enabled in production systems and is mainly for local development,
+            // so we won't complicate `find_configurable_values` and make it also track referenced files.
+            let files = match builder_options.track_file_references {
+                TrackReferenceMode::None => Vec::new(),
+                TrackReferenceMode::ConfigurableStrings => {
+                    extract_configurable_string_files_from_config(
+                        &raw_config,
+                        &pointers.configurable_string_pointers,
+                    )
+                }
+                TrackReferenceMode::KeyName => extract_files_from_config(&raw_config),
+            };
+            (pointers, files)
+        } else {
+            (ConfigurableValuePointers::default(), Vec::new())
+        };
+
+    Ok(LoadingResult::Feature(FeatureLoadingResult {
+        canonical_feature_name,
+        conditions: feature_config.conditions,
+        configurable_string_files,
+        configurable_value_pointers,
+        imports: feature_config.imports,
+        metadata,
+        original_config: raw_config,
+        source,
+    }))
 }
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
