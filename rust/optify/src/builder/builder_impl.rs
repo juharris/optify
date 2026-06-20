@@ -10,7 +10,7 @@ use crate::builder::extract_configurable_string_files_from_config::extract_confi
 use crate::builder::extract_files_from_config::extract_files_from_config;
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
-use crate::builder::loading_result::LoadingResult;
+use crate::builder::loading_result::{FeatureLoadingResult, LoadingResult, RawLoadingResult};
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
@@ -217,27 +217,6 @@ impl OptionsProviderBuilder {
         ))
     }
 
-    fn validate_with_schema(&self, info: &LoadingResult) -> Result<(), String> {
-        let validator = match &self.schema {
-            Some(v) => v,
-            None => return Ok(()),
-        };
-
-        let json_value = &info.original_config;
-        if validator.is_valid(json_value) {
-            Ok(())
-        } else {
-            let errors = validator.iter_errors(json_value);
-            let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
-            let path = info.metadata.path.as_ref().unwrap();
-            Err(format!(
-                "Schema validation failed for {:?} : {}",
-                path,
-                error_messages.join(", ")
-            ))
-        }
-    }
-
     fn prepare_build(&mut self) -> Result<(), String> {
         let mut resolved_imports: HashSet<String> = HashSet::new();
         for (canonical_feature_name, imports_for_feature) in &self.imports {
@@ -271,115 +250,55 @@ impl OptionsProviderBuilder {
         Ok(())
     }
 
-    fn process_entry(
+    fn process_path(
         path: &Path,
         directory: &Path,
         builder_options: &BuilderOptions,
+        supported_extensions: &HashSet<&str>,
+        feature_contents_validator: &Option<Arc<Validator>>,
     ) -> Result<LoadingResult, String> {
-        let absolute_path = dunce::canonicalize(path).expect("path should be valid");
-        // TODO Optimization: Find a more efficient way to build a more generic view of the file.
-        // The `config` library is helpful because it handles many file types.
-        // It would also be nice to support comments in .json files, even though it is not standard.
-        // The `config` library does support .json5 which supports comments.
-        let file = config::File::from(path);
-        let config_for_path = match config::Config::builder().add_source(file).build() {
-            Ok(conf) => conf,
-            Err(e) => {
-                return Err(format!(
-                    "Error loading file '{}': {e}",
-                    absolute_path.to_string_lossy(),
-                ))
-            }
+        let is_config_file = match path.extension() {
+            Some(ext) => match ext.to_str() {
+                Some(ext_str) => supported_extensions.contains(ext_str),
+                None => false,
+            },
+            None => false,
         };
 
-        // We need the raw JSON for validation.
-        let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
-            Ok(v) => v,
-            Err(e) => {
-                return Err(format!(
-                    "Error deserializing configuration for file '{}': {e}",
-                    absolute_path.to_string_lossy(),
-                ))
+        if is_config_file {
+            process_config_file_entry(path, directory, builder_options, feature_contents_validator)
+        } else {
+            match std::fs::read_to_string(path) {
+                Ok(contents) => {
+                    let relative_path = path
+                        .strip_prefix(directory)
+                        .unwrap()
+                        .to_str()
+                        .expect("path should be valid Unicode")
+                        .replace(std::path::MAIN_SEPARATOR, "/");
+                    Ok(LoadingResult::Raw(RawLoadingResult {
+                        contents,
+                        relative_path,
+                    }))
+                }
+                Err(e) => Err(format!("Error reading file {}: {e}", path.display())),
             }
-        };
-
-        let feature_config: FeatureConfiguration = match serde_json::from_value(raw_config.clone())
-        {
-            Ok(v) => v,
-            Err(e) => {
-                return Err(format!(
-                    "Error deserializing configuration for file '{}': {e}",
-                    absolute_path.to_string_lossy(),
-                ))
-            }
-        };
-
-        let source = feature_config
-            .options
-            .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
-
-        let canonical_feature_name = get_canonical_feature_name(path, directory);
-
-        // Ensure the name is set in the metadata.
-        let metadata = match feature_config.metadata {
-            Some(mut metadata) => {
-                metadata.name = Some(canonical_feature_name.clone());
-                metadata.path = Some(absolute_path.to_string_lossy().to_string());
-                metadata
-            }
-            None => OptionsMetadata::new(
-                None,
-                None,
-                None,
-                Some(canonical_feature_name.clone()),
-                None,
-                Some(absolute_path.to_string_lossy().to_string()),
-            ),
-        };
-
-        let (configurable_value_pointers, configurable_string_files) =
-            if builder_options.are_configurable_strings_enabled {
-                let pointers = find_configurable_values(raw_config.get("options"));
-
-                // Tracking file references is usually not enabled in production systems and is mainly for local development,
-                // so we won't complicate `find_configurable_values` and make it also track referenced files.
-                let files = match builder_options.track_file_references {
-                    TrackReferenceMode::None => Vec::new(),
-                    TrackReferenceMode::ConfigurableStrings => {
-                        extract_configurable_string_files_from_config(
-                            &raw_config,
-                            &pointers.configurable_string_pointers,
-                        )
-                    }
-                    TrackReferenceMode::KeyName => extract_files_from_config(&raw_config),
-                };
-                (pointers, files)
-            } else {
-                (ConfigurableValuePointers::default(), Vec::new())
-            };
-
-        Ok(LoadingResult {
-            canonical_feature_name,
-            conditions: feature_config.conditions,
-            configurable_string_files,
-            configurable_value_pointers,
-            imports: feature_config.imports,
-            metadata,
-            original_config: raw_config,
-            source,
-        })
+        }
     }
 
     fn process_loading_result(
         &mut self,
         loading_result: Result<LoadingResult, String>,
     ) -> Result<(), String> {
-        let info = loading_result?;
-        let canonical_feature_name = &info.canonical_feature_name;
-
-        if self.schema.is_some() {
-            self.validate_with_schema(&info)?;
+        match loading_result? {
+            LoadingResult::Feature(feature) => self.process_feature_loading_result(feature),
+            LoadingResult::Raw(raw) => self.process_raw_loading_result(raw),
         }
+    }
+
+    fn process_feature_loading_result(&mut self, info: FeatureLoadingResult) -> Result<(), String> {
+        let canonical_feature_name = info.canonical_feature_name;
+
         if self
             .sources
             .insert(canonical_feature_name.clone(), info.source)
@@ -405,16 +324,32 @@ impl OptionsProviderBuilder {
         }
         add_alias(
             &mut self.aliases,
-            canonical_feature_name,
-            canonical_feature_name,
+            &canonical_feature_name,
+            &canonical_feature_name,
         )?;
         if let Some(aliases) = &info.metadata.aliases {
             for alias in aliases {
-                add_alias(&mut self.aliases, alias, canonical_feature_name)?;
+                add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
             }
         }
-        self.features
-            .insert(canonical_feature_name.clone(), info.metadata);
+        self.features.insert(canonical_feature_name, info.metadata);
+        Ok(())
+    }
+
+    fn process_raw_loading_result(&mut self, raw_result: RawLoadingResult) -> Result<(), String> {
+        match self.loaded_files.entry(raw_result.relative_path) {
+            std::collections::hash_map::Entry::Occupied(entry) => {
+                // Since the files are loaded from a directory,
+                // this should only happen when two directories have files with the same path relative to the given directory.
+                return Err(format!(
+                    "File '{}' is already loaded from another directory.",
+                    entry.key()
+                ));
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(raw_result.contents);
+            }
+        }
         Ok(())
     }
 
@@ -444,6 +379,127 @@ impl OptionsProviderBuilder {
             }
         }
     }
+}
+
+fn validate_with_schema(
+    validator: &Option<Arc<Validator>>,
+    original_config: &serde_json::Value,
+    path: &String,
+) -> Result<(), String> {
+    match validator {
+        Some(validator) => {
+            if validator.is_valid(original_config) {
+                Ok(())
+            } else {
+                let errors = validator.iter_errors(original_config);
+                let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
+                Err(format!(
+                    "Schema validation failed for {:?} : {}",
+                    path,
+                    error_messages.join(", ")
+                ))
+            }
+        }
+        None => Ok(()),
+    }
+}
+
+fn process_config_file_entry(
+    path: &Path,
+    directory: &Path,
+    builder_options: &BuilderOptions,
+    feature_contents_validator: &Option<Arc<Validator>>,
+) -> Result<LoadingResult, String> {
+    let absolute_path = dunce::canonicalize(path)
+        .expect("path should be valid")
+        .to_string_lossy()
+        .to_string();
+    // TODO Optimization: Find a more efficient way to build a more generic view of the file.
+    // The `config` library is helpful because it handles many file types.
+    // It would also be nice to support comments in .json files, even though it is not standard.
+    // The `config` library does support .json5 which supports comments.
+    let file = config::File::from(path);
+    let config_for_path = match config::Config::builder().add_source(file).build() {
+        Ok(conf) => conf,
+        Err(e) => return Err(format!("Error loading file '{}': {e}", absolute_path)),
+    };
+
+    // We need the raw JSON for validation.
+    let raw_config: serde_json::Value = match config_for_path.try_deserialize() {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(format!(
+                "Error deserializing configuration for file '{}': {e}",
+                absolute_path,
+            ))
+        }
+    };
+
+    validate_with_schema(feature_contents_validator, &raw_config, &absolute_path)?;
+
+    let feature_config: FeatureConfiguration = match serde_json::from_value(raw_config.clone()) {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(format!(
+                "Error deserializing configuration for file '{}': {e}",
+                absolute_path,
+            ))
+        }
+    };
+
+    let source = feature_config
+        .options
+        .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+
+    let canonical_feature_name = get_canonical_feature_name(path, directory);
+
+    // Ensure the name is set in the metadata.
+    let metadata = match feature_config.metadata {
+        Some(mut metadata) => {
+            metadata.name = Some(canonical_feature_name.clone());
+            metadata.path = Some(absolute_path);
+            metadata
+        }
+        None => OptionsMetadata::new(
+            None,
+            None,
+            None,
+            Some(canonical_feature_name.clone()),
+            None,
+            Some(absolute_path),
+        ),
+    };
+
+    let (configurable_value_pointers, configurable_string_files) =
+        if builder_options.are_configurable_strings_enabled {
+            let pointers = find_configurable_values(raw_config.get("options"));
+
+            // Tracking file references is usually not enabled in production systems and is mainly for local development,
+            // so we won't complicate `find_configurable_values` and make it also track referenced files.
+            let files = match builder_options.track_file_references {
+                TrackReferenceMode::None => Vec::new(),
+                TrackReferenceMode::ConfigurableStrings => {
+                    extract_configurable_string_files_from_config(
+                        &raw_config,
+                        &pointers.configurable_string_pointers,
+                    )
+                }
+                TrackReferenceMode::KeyName => extract_files_from_config(&raw_config),
+            };
+            (pointers, files)
+        } else {
+            (ConfigurableValuePointers::default(), Vec::new())
+        };
+
+    Ok(LoadingResult::Feature(FeatureLoadingResult {
+        canonical_feature_name,
+        conditions: feature_config.conditions,
+        configurable_string_files,
+        configurable_value_pointers,
+        imports: feature_config.imports,
+        metadata,
+        source,
+    }))
 }
 
 impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
@@ -479,6 +535,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         };
 
         let supported_extensions = get_supported_extensions();
+
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .filter_map(|entry| {
@@ -499,52 +556,18 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     return None;
                 }
 
-                let is_config_file = match path.extension() {
-                    Some(ext) => match ext.to_str() {
-                        Some(ext_str) => supported_extensions.contains(ext_str),
-                        None => false,
-                    },
-                    None => false,
-                };
-
-                if is_config_file {
-                    Some(Ok(path.to_path_buf()))
-                } else {
-                    // Load the file content
-                    match std::fs::read_to_string(path) {
-                        Ok(contents) => {
-                            let relative_path = path
-                                .strip_prefix(directory)
-                                .unwrap()
-                                .to_str()
-                                .expect("path should be valid Unicode")
-                                .replace(std::path::MAIN_SEPARATOR, "/");
-                            match self.loaded_files.entry(relative_path) {
-                                std::collections::hash_map::Entry::Occupied(entry) => {
-                                    return Some(Err(format!(
-                                        "File '{}' is already loaded from another directory.",
-                                        entry.key()
-                                    )));
-                                }
-                                std::collections::hash_map::Entry::Vacant(entry) => {
-                                    entry.insert(contents);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            return Some(Err(format!(
-                                "Error reading file {}: {e}",
-                                path.display()
-                            )));
-                        }
-                    }
-                    None
-                }
+                Some(Ok(path.to_path_buf()))
             })
             .collect::<Vec<_>>()
             .into_par_iter()
             .map(|path_result| match path_result {
-                Ok(path) => Self::process_entry(&path, directory, &builder_options),
+                Ok(path) => Self::process_path(
+                    &path,
+                    directory,
+                    &builder_options,
+                    &supported_extensions,
+                    &self.schema,
+                ),
                 Err(e) => Err(e),
             })
             .collect();
