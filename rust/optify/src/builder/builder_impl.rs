@@ -281,9 +281,7 @@ impl OptionsProviderBuilder {
                         relative_path,
                     }))
                 }
-                Err(e) => {
-                    Err(format!("Error reading file {}: {e}", path.display()))
-                }
+                Err(e) => Err(format!("Error reading file {}: {e}", path.display())),
             }
         }
     }

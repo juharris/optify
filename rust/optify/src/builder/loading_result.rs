@@ -4,6 +4,7 @@ use crate::{
     schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
+#[allow(clippy::large_enum_variant)]
 pub(crate) enum LoadingResult {
     Feature(FeatureLoadingResult),
     Raw(RawLoadingResult),
