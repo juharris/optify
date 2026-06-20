@@ -217,19 +217,17 @@ impl OptionsProviderBuilder {
         ))
     }
 
-    fn validate_with_schema(&self, info: &FeatureLoadingResult) -> Result<(), String> {
-        let validator = match &self.schema {
-            Some(v) => v,
-            None => return Ok(()),
-        };
-
-        let json_value = &info.original_config;
-        if validator.is_valid(json_value) {
+    fn validate_with_schema(
+        &self,
+        validator: &Arc<Validator>,
+        original_config: &serde_json::Value,
+        path: &String,
+    ) -> Result<(), String> {
+        if validator.is_valid(original_config) {
             Ok(())
         } else {
-            let errors = validator.iter_errors(json_value);
+            let errors = validator.iter_errors(original_config);
             let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
-            let path = info.metadata.path.as_ref().unwrap();
             Err(format!(
                 "Schema validation failed for {:?} : {}",
                 path,
@@ -275,9 +273,8 @@ impl OptionsProviderBuilder {
         path: &Path,
         directory: &Path,
         builder_options: &BuilderOptions,
+        supported_extensions: &HashSet<&str>,
     ) -> Result<LoadingResult, String> {
-        // TODO Move to a constant.
-        let supported_extensions = get_supported_extensions();
         let is_config_file = match path.extension() {
             Some(ext) => match ext.to_str() {
                 Some(ext_str) => supported_extensions.contains(ext_str),
@@ -320,11 +317,11 @@ impl OptionsProviderBuilder {
     }
 
     fn process_feature_loading_result(&mut self, info: FeatureLoadingResult) -> Result<(), String> {
-        // TODO Use actual value and avoid last clone.
-        let canonical_feature_name = &info.canonical_feature_name;
+        let canonical_feature_name = info.canonical_feature_name;
 
-        if self.schema.is_some() {
-            self.validate_with_schema(&info)?;
+        if let Some(validator) = &self.schema {
+            let path = info.metadata.path.as_ref().unwrap();
+            self.validate_with_schema(validator, &info.original_config, path)?;
         }
         if self
             .sources
@@ -351,16 +348,15 @@ impl OptionsProviderBuilder {
         }
         add_alias(
             &mut self.aliases,
-            canonical_feature_name,
-            canonical_feature_name,
+            &canonical_feature_name,
+            &canonical_feature_name,
         )?;
         if let Some(aliases) = &info.metadata.aliases {
             for alias in aliases {
-                add_alias(&mut self.aliases, alias, canonical_feature_name)?;
+                add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
             }
         }
-        self.features
-            .insert(canonical_feature_name.clone(), info.metadata);
+        self.features.insert(canonical_feature_name, info.metadata);
         Ok(())
     }
 
@@ -539,6 +535,8 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.builder_options.clone()
         };
 
+        let supported_extensions = get_supported_extensions();
+
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
             .into_iter()
             .filter_map(|entry| {
@@ -564,7 +562,9 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .collect::<Vec<_>>()
             .into_par_iter()
             .map(|path_result| match path_result {
-                Ok(path) => Self::process_path(&path, directory, &builder_options),
+                Ok(path) => {
+                    Self::process_path(&path, directory, &builder_options, &supported_extensions)
+                }
                 Err(e) => Err(e),
             })
             .collect();
