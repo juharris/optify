@@ -16,6 +16,10 @@ pub(crate) fn merge_json_with_defaults(
     defaults: &serde_json::Value,
     frozen_paths: &mut FrozenPaths,
 ) {
+    if frozen_paths.contains("") {
+        return;
+    }
+
     let mut path = String::new();
     merge_json_with_defaults_at_path(target, defaults, frozen_paths, &mut path);
 }
@@ -27,17 +31,13 @@ fn merge_json_with_defaults_at_path(
     frozen_paths: &mut FrozenPaths,
     path: &mut String,
 ) {
-    if frozen_paths.contains(path.as_str()) {
-        return;
-    }
-
     match (target, defaults) {
         (serde_json::Value::Object(target_map), serde_json::Value::Object(defaults_map)) => {
             for (key, defaults_value) in defaults_map {
                 let previous_path_len = path.len();
                 push_json_pointer_segment(path, key);
 
-                if !frozen_paths.contains(path.as_str()) {
+                if !frozen_paths.contains(path) {
                     match target_map.get_mut(key) {
                         Some(target_value) => {
                             // They both have a value for this key.
