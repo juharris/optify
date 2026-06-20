@@ -282,7 +282,7 @@ impl OptionsProviderBuilder {
                     }))
                 }
                 Err(e) => {
-                    return Err(format!("Error reading file {}: {e}", path.display()));
+                    Err(format!("Error reading file {}: {e}", path.display()))
                 }
             }
         }

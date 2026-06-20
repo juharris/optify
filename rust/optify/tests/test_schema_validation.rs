@@ -70,7 +70,7 @@ fn test_invalid_file_fails_schema_validation() -> Result<(), String> {
     assert!(
         error_message
             .contains("Additional properties are not allowed ('invalidProperty' was unexpected)"),
-        "Expected error message to mention schema validation, got: {error_message}"
+        "Expected error message to mention banned properties, got: {error_message}"
     );
 
     Ok(())
