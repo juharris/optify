@@ -1,4 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use optify::builder::BuilderOptions;
 use optify::builder::OptionsProviderBuilder;
 use optify::builder::OptionsRegistryBuilder;
 use optify::provider::OptionsRegistry;
@@ -55,6 +56,7 @@ fn create_test_files(dir: &Path, num_files: usize) {
         file.write_all(content.as_bytes()).unwrap();
     }
 
+    // Create features with imports.
     for i in num_files / 2..num_files {
         let file_path = dir.join(format!("test_{i}.yaml"));
         let mut file = fs::File::create(&file_path).unwrap();
@@ -90,6 +92,18 @@ options:
         );
         file.write_all(content.as_bytes()).unwrap();
     }
+
+    // Create raw files.
+    for i in 0..num_files / 2 {
+        let file_path = dir.join(format!("test_{i}.txt"));
+        let mut file = fs::File::create(&file_path).unwrap();
+
+        let content = format!(
+            r#"This is what goes in the file {i}
+            "#
+        );
+        file.write_all(content.as_bytes()).unwrap();
+    }
 }
 
 fn cleanup_test_files(dir: &Path) {
@@ -110,7 +124,15 @@ fn benchmark_loading(c: &mut Criterion) {
 
     group.bench_function("parallel loading", |b| {
         b.iter(|| {
-            let mut builder = OptionsProviderBuilder::new();
+            let mut builder = black_box(OptionsProviderBuilder::new());
+            black_box(
+                builder
+                    .with_options(BuilderOptions {
+                        are_configurable_values_enabled: true,
+                        ..Default::default()
+                    })
+                    .unwrap(),
+            );
             builder.add_directory(black_box(test_dir)).unwrap();
         })
     });
