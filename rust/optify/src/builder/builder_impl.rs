@@ -271,7 +271,7 @@ impl OptionsProviderBuilder {
         Ok(())
     }
 
-    fn process_entry(
+    fn process_path(
         path: &Path,
         directory: &Path,
         builder_options: &BuilderOptions,
@@ -319,22 +319,8 @@ impl OptionsProviderBuilder {
         }
     }
 
-    fn process_raw_loading_result(&mut self, raw_result: RawLoadingResult) -> Result<(), String> {
-        match self.loaded_files.entry(raw_result.relative_path) {
-            std::collections::hash_map::Entry::Occupied(entry) => {
-                return Err(format!(
-                    "File '{}' is already loaded from another directory.",
-                    entry.key()
-                ));
-            }
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(raw_result.contents);
-            }
-        }
-        Ok(())
-    }
-
     fn process_feature_loading_result(&mut self, info: FeatureLoadingResult) -> Result<(), String> {
+        // TODO Use actual value and avoid last clone.
         let canonical_feature_name = &info.canonical_feature_name;
 
         if self.schema.is_some() {
@@ -375,6 +361,23 @@ impl OptionsProviderBuilder {
         }
         self.features
             .insert(canonical_feature_name.clone(), info.metadata);
+        Ok(())
+    }
+
+    fn process_raw_loading_result(&mut self, raw_result: RawLoadingResult) -> Result<(), String> {
+        match self.loaded_files.entry(raw_result.relative_path) {
+            std::collections::hash_map::Entry::Occupied(entry) => {
+                // Since the files are loaded from a directory,
+                // this should only happen when two directories have files with the same path relative to the given directory.
+                return Err(format!(
+                    "File '{}' is already loaded from another directory.",
+                    entry.key()
+                ));
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(raw_result.contents);
+            }
+        }
         Ok(())
     }
 
@@ -561,7 +564,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .collect::<Vec<_>>()
             .into_par_iter()
             .map(|path_result| match path_result {
-                Ok(path) => Self::process_entry(&path, directory, &builder_options),
+                Ok(path) => Self::process_path(&path, directory, &builder_options),
                 Err(e) => Err(e),
             })
             .collect();
