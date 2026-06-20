@@ -64,7 +64,12 @@ fn test_invalid_file_fails_schema_validation() -> Result<(), String> {
 
     let error_message = result.err().unwrap();
     assert!(
-        error_message.contains("Schema validation failed"),
+        error_message.contains("Failed to build provider: Schema validation failed for \""),
+        "Expected error message to mention schema validation, got: {error_message}"
+    );
+    assert!(
+        error_message
+            .contains("Additional properties are not allowed ('invalidProperty' was unexpected)"),
         "Expected error message to mention schema validation, got: {error_message}"
     );
 

@@ -217,25 +217,6 @@ impl OptionsProviderBuilder {
         ))
     }
 
-    fn validate_with_schema(
-        &self,
-        validator: &Arc<Validator>,
-        original_config: &serde_json::Value,
-        path: &String,
-    ) -> Result<(), String> {
-        if validator.is_valid(original_config) {
-            Ok(())
-        } else {
-            let errors = validator.iter_errors(original_config);
-            let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
-            Err(format!(
-                "Schema validation failed for {:?} : {}",
-                path,
-                error_messages.join(", ")
-            ))
-        }
-    }
-
     fn prepare_build(&mut self) -> Result<(), String> {
         let mut resolved_imports: HashSet<String> = HashSet::new();
         for (canonical_feature_name, imports_for_feature) in &self.imports {
@@ -274,6 +255,7 @@ impl OptionsProviderBuilder {
         directory: &Path,
         builder_options: &BuilderOptions,
         supported_extensions: &HashSet<&str>,
+        feature_contents_validator: &Option<Arc<Validator>>,
     ) -> Result<LoadingResult, String> {
         let is_config_file = match path.extension() {
             Some(ext) => match ext.to_str() {
@@ -284,7 +266,7 @@ impl OptionsProviderBuilder {
         };
 
         if is_config_file {
-            process_config_file_entry(path, directory, builder_options)
+            process_config_file_entry(path, directory, builder_options, feature_contents_validator)
         } else {
             match std::fs::read_to_string(path) {
                 Ok(contents) => {
@@ -319,10 +301,6 @@ impl OptionsProviderBuilder {
     fn process_feature_loading_result(&mut self, info: FeatureLoadingResult) -> Result<(), String> {
         let canonical_feature_name = info.canonical_feature_name;
 
-        if let Some(validator) = &self.schema {
-            let path = info.metadata.path.as_ref().unwrap();
-            self.validate_with_schema(validator, &info.original_config, path)?;
-        }
         if self
             .sources
             .insert(canonical_feature_name.clone(), info.source)
@@ -405,12 +383,39 @@ impl OptionsProviderBuilder {
     }
 }
 
+fn validate_with_schema(
+    validator: &Option<Arc<Validator>>,
+    original_config: &serde_json::Value,
+    path: &String,
+) -> Result<(), String> {
+    match validator {
+        Some(validator) => {
+            if validator.is_valid(original_config) {
+                Ok(())
+            } else {
+                let errors = validator.iter_errors(original_config);
+                let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
+                Err(format!(
+                    "Schema validation failed for {:?} : {}",
+                    path,
+                    error_messages.join(", ")
+                ))
+            }
+        }
+        None => Ok(()),
+    }
+}
+
 fn process_config_file_entry(
     path: &Path,
     directory: &Path,
     builder_options: &BuilderOptions,
+    feature_contents_validator: &Option<Arc<Validator>>,
 ) -> Result<LoadingResult, String> {
-    let absolute_path = dunce::canonicalize(path).expect("path should be valid");
+    let absolute_path = dunce::canonicalize(path)
+        .expect("path should be valid")
+        .to_string_lossy()
+        .to_string();
     // TODO Optimization: Find a more efficient way to build a more generic view of the file.
     // The `config` library is helpful because it handles many file types.
     // It would also be nice to support comments in .json files, even though it is not standard.
@@ -418,12 +423,7 @@ fn process_config_file_entry(
     let file = config::File::from(path);
     let config_for_path = match config::Config::builder().add_source(file).build() {
         Ok(conf) => conf,
-        Err(e) => {
-            return Err(format!(
-                "Error loading file '{}': {e}",
-                absolute_path.to_string_lossy(),
-            ))
-        }
+        Err(e) => return Err(format!("Error loading file '{}': {e}", absolute_path)),
     };
 
     // We need the raw JSON for validation.
@@ -432,17 +432,19 @@ fn process_config_file_entry(
         Err(e) => {
             return Err(format!(
                 "Error deserializing configuration for file '{}': {e}",
-                absolute_path.to_string_lossy(),
+                absolute_path,
             ))
         }
     };
+
+    validate_with_schema(feature_contents_validator, &raw_config, &absolute_path)?;
 
     let feature_config: FeatureConfiguration = match serde_json::from_value(raw_config.clone()) {
         Ok(v) => v,
         Err(e) => {
             return Err(format!(
                 "Error deserializing configuration for file '{}': {e}",
-                absolute_path.to_string_lossy(),
+                absolute_path,
             ))
         }
     };
@@ -457,7 +459,7 @@ fn process_config_file_entry(
     let metadata = match feature_config.metadata {
         Some(mut metadata) => {
             metadata.name = Some(canonical_feature_name.clone());
-            metadata.path = Some(absolute_path.to_string_lossy().to_string());
+            metadata.path = Some(absolute_path);
             metadata
         }
         None => OptionsMetadata::new(
@@ -466,7 +468,7 @@ fn process_config_file_entry(
             None,
             Some(canonical_feature_name.clone()),
             None,
-            Some(absolute_path.to_string_lossy().to_string()),
+            Some(absolute_path),
         ),
     };
 
@@ -498,7 +500,6 @@ fn process_config_file_entry(
         configurable_value_pointers,
         imports: feature_config.imports,
         metadata,
-        original_config: raw_config,
         source,
     }))
 }
@@ -562,9 +563,13 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .collect::<Vec<_>>()
             .into_par_iter()
             .map(|path_result| match path_result {
-                Ok(path) => {
-                    Self::process_path(&path, directory, &builder_options, &supported_extensions)
-                }
+                Ok(path) => Self::process_path(
+                    &path,
+                    directory,
+                    &builder_options,
+                    &supported_extensions,
+                    &self.schema,
+                ),
                 Err(e) => Err(e),
             })
             .collect();

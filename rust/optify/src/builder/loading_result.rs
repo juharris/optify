@@ -19,7 +19,6 @@ pub(crate) struct FeatureLoadingResult {
     pub configurable_value_pointers: ConfigurableValuePointers,
     pub imports: Option<Vec<String>>,
     pub metadata: OptionsMetadata,
-    pub original_config: serde_json::Value,
     pub source: SourceValue,
 }
 

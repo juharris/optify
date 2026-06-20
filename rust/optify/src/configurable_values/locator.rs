@@ -146,8 +146,6 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    // TODO Add tests for finding configurable lists.
-
     #[test]
     fn test_configurable_string_at_root() {
         let json_value = json!({
