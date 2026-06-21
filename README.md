@@ -40,6 +40,7 @@ else:
 
 You can ensure your code effortlessly scales to new scenarios working with a list of enabled features:
 ```Python
+features = ['feature_A', 'feature_B']
 handler_options = provider.get_options('handler', features)
 handler = handlers[handler_options.handler_name]
 handler.handle(params)
