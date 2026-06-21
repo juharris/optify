@@ -77,22 +77,22 @@ pushd elixir/optify
 bump_dependency_in_toml "native/optify_nif/Cargo.toml" $current_version $next_version
 bump_version_in_toml "native/optify_nif/Cargo.toml" $strategy
 # Bump version in mix.exs
-mix_current=$(sed -nE 's/^[[:space:]]*@version[[:space:]]+"(.+)".*/\1/p' mix.exs | head -n 1)
-if [[ -z "$mix_current" ]]; then
-    mix_current=$(sed -nE 's/.*version:[[:space:]]+"(.+)".*/\1/p' mix.exs | head -n 1)
+current_version=$(sed -nE 's/^[[:space:]]*@version[[:space:]]+"(.+)".*/\1/p' mix.exs | head -n 1)
+if [[ -z "$current_version" ]]; then
+    current_version=$(sed -nE 's/.*version:[[:space:]]+"(.+)".*/\1/p' mix.exs | head -n 1)
 fi
-if [[ -z "$mix_current" ]]; then
+if [[ -z "$current_version" ]]; then
     echo "Unable to determine version from mix.exs. Expected @version \"x.y.z\" or version: \"x.y.z\"." >&2
     exit 1
 fi
-mix_next=$(get_next_version $mix_current $strategy)
+next_version=$(get_next_version $current_version $strategy)
 if grep -Eq '^[[:space:]]*@version[[:space:]]+"' mix.exs; then
-    sed_replace_in_place mix.exs -E "s/@version[[:space:]]+\"${mix_current}\"/@version \"${mix_next}\"/"
+    sed_replace_in_place mix.exs -E "s/@version[[:space:]]+\"${current_version}\"/@version \"${next_version}\"/"
 else
-    sed_replace_in_place mix.exs "s/version: \"${mix_current}\"/version: \"${mix_next}\"/"
+    sed_replace_in_place mix.exs "s/version: \"${current_version}\"/version: \"${next_version}\"/"
 fi
-# Update Cargo.lock
-mix compile --force
+# Update Cargo.lock in the Elixir native crate.
+cargo check
 popd
 
 pushd python/optify
