@@ -43,9 +43,9 @@ module Optify
     #: (Array[untyped], untyped) -> (Array[untyped] | Set[untyped])
     def self._convert_array(value, unwrapped_type)
       inner_type = unwrapped_type.type
-      return Set.new(value.map { |v| _convert_value(v, inner_type) }).freeze if unwrapped_type.is_a?(T::Types::TypedSet)
+      return value.map { |v| _convert_value(v, inner_type) }.freeze if unwrapped_type.is_a?(T::Types::TypedArray)
 
-      value.map { |v| _convert_value(v, inner_type) }.freeze
+      Set.new(value.map { |v| _convert_value(v, inner_type) }).freeze
     end
 
     #: (untyped, T::Types::Base) -> untyped
