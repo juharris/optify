@@ -1,0 +1,66 @@
+name: "Bump Versions: Create PR"
+
+on:
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: "Version bump strategy"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: minor
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-and-pr:
+    name: "Bump Versions and Open Draft PR"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: "[Rust] Setup cache"
+        uses: Swatinem/rust-cache@v2
+        with:
+          # Just the ones where we use `cargo`.
+          workspaces: |
+            elixir/optify
+            python/optify
+            rust/optify
+          cache-workspace-crates: true
+          cache-on-failure: true
+          shared-key: ubuntu-latest-rust
+
+      - name: "[JS] Install corepack"
+        run: npm install -g corepack
+
+      - name: "Setup node"
+        uses: actions/setup-node@v6
+        with:
+          cache: yarn
+          cache-dependency-path: ./js/optify-config/yarn.lock
+          node-version: 20
+
+      - name: "Run bump script"
+        shell: bash
+        run: bash --login ./scripts/bump_versions.sh "${{ github.event.inputs.strategy }}"
+
+      - name: "Create bump PR"
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore: bump versions (${{ github.event.inputs.strategy }})"
+          title: "chore: Bump versions (${{ github.event.inputs.strategy }})"
+          body: |
+            Bump versions using `scripts/bump_versions.sh`
+          branch: "bump-versions-${{ github.event.inputs.strategy }}-${{ github.run_number }}"
+          draft: true
