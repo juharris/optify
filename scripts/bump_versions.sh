@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Run as `bash --login ./scripts/bump_versions.sh <strategy>` to automatically get the right environments for pyenv and other managers.
+# Run as `bash --login ./scripts/bump_versions.sh <strategy>` to automatically get the right environments for Node and other managers.
 
 # major, minor, or patch
 strategy=$1
@@ -99,7 +99,7 @@ pushd python/optify
 bump_dependency_in_toml "Cargo.toml" $current_version $next_version
 bump_version_in_toml "pyproject.toml" $strategy
 bump_version_in_toml "Cargo.toml" $strategy
-maturin build
+cargo check
 popd
 
 pushd ruby/optify
