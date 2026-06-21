@@ -31,5 +31,13 @@ module Optify
     # @return [Boolean] true if the objects are equal; otherwise, false.
     sig { params(other: T.untyped).returns(T::Boolean) }
     def ==(other); end
+
+    # Support equality by value so that instances can be used in Sets and as Hash keys.
+    sig { params(other: T.untyped).returns(T::Boolean) }
+    def eql?(other); end
+
+    # @return a hash value based on the object's class and instance variables.
+    sig { returns(Integer) }
+    def hash; end
   end
 end

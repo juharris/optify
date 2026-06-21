@@ -55,7 +55,7 @@ module Optify
         unwrapped = unwrapped_type #: as untyped
         inner_type = unwrapped.type
         if unwrapped.is_a?(T::Types::TypedSet)
-          return value.map { |v| _convert_value(v, inner_type) }.to_set.freeze
+          return Set.new(value.map { |v| _convert_value(v, inner_type) }).freeze
         end
 
         return value.map { |v| _convert_value(v, inner_type) }.freeze
@@ -130,6 +130,23 @@ module Optify
       instance_variables.all? do |name|
         instance_variable_get(name) == other.instance_variable_get(name)
       end
+    end
+
+    # Support equality by value so that instances can be used in Sets and as Hash keys.
+    #: (untyped) -> bool
+    def eql?(other)
+      return true if other.equal?(self)
+      return false unless other.is_a?(self.class)
+
+      instance_variables.all? do |name|
+        instance_variable_get(name).eql?(other.instance_variable_get(name))
+      end
+    end
+
+    # @return [Integer] a hash value based on the object's class and instance variables.
+    #: () -> Integer
+    def hash
+      [self.class, *instance_variables.map { |name| instance_variable_get(name) }].hash
     end
 
     # Convert this object to a JSON string.
