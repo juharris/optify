@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'set'
 require 'sorbet-runtime'
 require 'tapioca'
 
@@ -51,8 +52,12 @@ module Optify
 
       case value
       when Array
-        inner_type = unwrapped_type #: as untyped
-                     .type
+        unwrapped = unwrapped_type #: as untyped
+        inner_type = unwrapped.type
+        if unwrapped.is_a?(T::Types::TypedSet)
+          return value.map { |v| _convert_value(v, inner_type) }.to_set.freeze
+        end
+
         return value.map { |v| _convert_value(v, inner_type) }.freeze
       when Hash
         # Handle `T.nilable(T::Hash[...])` and `T.any(...)`.
@@ -157,6 +162,8 @@ module Optify
       case value
       when Array
         value.map { |v| _convert_value_for_to_h(v) }
+      when Set
+        value.map { |v| _convert_value_for_to_h(v) }.to_a
       when Hash
         value.transform_values { |v| _convert_value_for_to_h(v) }
       when nil

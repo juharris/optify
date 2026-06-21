@@ -101,6 +101,12 @@ module FromHashTest
 
     sig { returns(T.untyped) }
     attr_reader :untyped
+
+    sig { returns(T::Set[String]) }
+    attr_reader :set_of_strings
+
+    sig { returns(T.nilable(T::Set[TestObject])) }
+    attr_reader :nilable_set_of_objects
   end
 
   class FromHashTest < Test::Unit::TestCase
@@ -427,6 +433,31 @@ module FromHashTest
       c = TestConfig.from_hash(hash)
       assert_equal([1, 2, 3], c.untyped)
       assert_equal(hash, c.to_h)
+    end
+
+    def test_set_of_strings
+      hash = { set_of_strings: %w[hello world hello] }
+      c = TestConfig.from_hash(hash)
+      assert_instance_of(Set, c.set_of_strings)
+      assert_equal(Set['hello', 'world'], c.set_of_strings)
+      assert(c.set_of_strings.frozen?)
+      to_h = c.to_h
+      assert_instance_of(Array, to_h[:set_of_strings])
+      assert_equal(Set['hello', 'world'], to_h[:set_of_strings].to_set)
+    end
+
+    def test_nilable_set_of_objects
+      c = TestConfig.from_hash({ nilable_set_of_objects: nil })
+      assert_nil(c.nilable_set_of_objects)
+
+      hash = { nilable_set_of_objects: [{ num: 1 }, { num: 2 }] }
+      c = TestConfig.from_hash(hash)
+      assert_instance_of(Set, c.nilable_set_of_objects)
+      set = T.must(c.nilable_set_of_objects)
+      assert_equal(2, set.size)
+      assert(set.include?(TestObject.from_hash({ num: 1 })))
+      assert(set.include?(TestObject.from_hash({ num: 2 })))
+      assert(set.frozen?)
     end
   end
 end
