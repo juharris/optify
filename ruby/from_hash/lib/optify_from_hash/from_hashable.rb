@@ -146,7 +146,7 @@ module Optify
     # @return [Integer] a hash value based on the object's class and instance variables.
     #: () -> Integer
     def hash
-      [self.class, *instance_variables.map { |name| instance_variable_get(name) }].hash
+      [self.class, *instance_variables.sort.map { |name| instance_variable_get(name) }].hash
     end
 
     # Convert this object to a JSON string.

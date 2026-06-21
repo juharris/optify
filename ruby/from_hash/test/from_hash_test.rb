@@ -443,7 +443,7 @@ module FromHashTest
       assert(c.set_of_strings.frozen?)
       to_h = c.to_h
       assert_instance_of(Array, to_h[:set_of_strings])
-      assert_equal(Set['hello', 'world'], to_h[:set_of_strings].to_set)
+      assert_equal(%w[hello world].sort, to_h[:set_of_strings].sort)
     end
 
     def test_nilable_set_of_objects
