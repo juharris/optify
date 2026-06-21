@@ -453,7 +453,7 @@ module FromHashTest
       hash = { nilable_set_of_objects: [{ num: 1 }, { num: 2 }] }
       c = TestConfig.from_hash(hash)
       assert_instance_of(Set, c.nilable_set_of_objects)
-      set = T.must(c.nilable_set_of_objects)
+      set = c.nilable_set_of_objects #: as !nil
       assert_equal(2, set.size)
       assert(set.include?(TestObject.from_hash({ num: 1 })))
       assert(set.include?(TestObject.from_hash({ num: 2 })))

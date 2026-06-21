@@ -40,6 +40,14 @@ module Optify
       instance.freeze
     end
 
+    #: (Array[untyped], untyped) -> (Array[untyped] | Set[untyped])
+    def self._convert_array(value, unwrapped_type)
+      inner_type = unwrapped_type.type
+      return Set.new(value.map { |v| _convert_value(v, inner_type) }).freeze if unwrapped_type.is_a?(T::Types::TypedSet)
+
+      value.map { |v| _convert_value(v, inner_type) }.freeze
+    end
+
     #: (untyped, T::Types::Base) -> untyped
     def self._convert_value(value, type)
       if type.is_a?(T::Types::Untyped)
@@ -52,13 +60,7 @@ module Optify
 
       case value
       when Array
-        unwrapped = unwrapped_type #: as untyped
-        inner_type = unwrapped.type
-        if unwrapped.is_a?(T::Types::TypedSet)
-          return Set.new(value.map { |v| _convert_value(v, inner_type) }).freeze
-        end
-
-        return value.map { |v| _convert_value(v, inner_type) }.freeze
+        return _convert_array(value, unwrapped_type)
       when Hash
         # Handle `T.nilable(T::Hash[...])` and `T.any(...)`.
         # We used to use `type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)`, but it's not needed now that we handle
@@ -117,7 +119,7 @@ module Optify
       end
     end
 
-    private_class_method :_convert_hash, :_convert_value, :_unwrap_nilable
+    private_class_method :_convert_array, :_convert_hash, :_convert_value, :_unwrap_nilable
 
     # Compare this object with another object for equality.
     # @param other The object to compare.
@@ -136,7 +138,7 @@ module Optify
     #: (untyped) -> bool
     def eql?(other)
       return true if other.equal?(self)
-      return false unless other.is_a?(self.class)
+      return false if self.class != other.class
 
       instance_variables.all? do |name|
         instance_variable_get(name).eql?(other.instance_variable_get(name))
@@ -177,10 +179,8 @@ module Optify
     #: (untyped) -> untyped
     def self._convert_value_for_to_h(value)
       case value
-      when Array
+      when Array, Set
         value.map { |v| _convert_value_for_to_h(v) }
-      when Set
-        value.map { |v| _convert_value_for_to_h(v) }.to_a
       when Hash
         value.transform_values { |v| _convert_value_for_to_h(v) }
       when nil
