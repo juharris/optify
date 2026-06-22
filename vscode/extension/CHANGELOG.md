@@ -7,7 +7,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 1.11.1
 
-- Fix: Handle `"areConfigurableValuesEnabled"` in .optify/config.json
+- Hide import graph by default.
+- Optimization: builder: Load raw files in parallel.
+- Fix: Handle `"areConfigurableValuesEnabled"` in `.optify/config.json`.
+- Fix: Handle merges alternating between objects and primitives.
 
 ## 1.11.0
 
