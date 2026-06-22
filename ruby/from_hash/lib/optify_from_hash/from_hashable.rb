@@ -179,6 +179,7 @@ module Optify
     #: (untyped) -> untyped
     def self._convert_value_for_to_h(value)
       case value
+      # Treat sets like arrays for JSON serialization.
       when Array, Set
         value.map { |v| _convert_value_for_to_h(v) }
       when Hash

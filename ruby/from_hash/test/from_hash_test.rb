@@ -444,6 +444,7 @@ module FromHashTest
       to_h = c.to_h
       assert_instance_of(Array, to_h[:set_of_strings])
       assert_equal(%w[hello world], to_h[:set_of_strings].sort)
+      assert_equal('{"set_of_strings":["hello","world"]}', c.to_json)
     end
 
     def test_nilable_set_of_objects
