@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'set'
 require 'sorbet-runtime'
 require 'tapioca'
 
@@ -39,6 +40,14 @@ module Optify
       instance.freeze
     end
 
+    #: (Array[untyped], untyped) -> (Array[untyped] | Set[untyped])
+    def self._convert_array(value, unwrapped_type)
+      inner_type = unwrapped_type.type
+      return value.map { |v| _convert_value(v, inner_type) }.freeze if unwrapped_type.is_a?(T::Types::TypedArray)
+
+      Set.new(value.map { |v| _convert_value(v, inner_type) }).freeze
+    end
+
     #: (untyped, T::Types::Base) -> untyped
     def self._convert_value(value, type)
       if type.is_a?(T::Types::Untyped)
@@ -51,9 +60,7 @@ module Optify
 
       case value
       when Array
-        inner_type = unwrapped_type #: as untyped
-                     .type
-        return value.map { |v| _convert_value(v, inner_type) }.freeze
+        return _convert_array(value, unwrapped_type)
       when Hash
         # Handle `T.nilable(T::Hash[...])` and `T.any(...)`.
         # We used to use `type = type.unwrap_nilable if type.respond_to?(:unwrap_nilable)`, but it's not needed now that we handle
@@ -112,7 +119,7 @@ module Optify
       end
     end
 
-    private_class_method :_convert_hash, :_convert_value, :_unwrap_nilable
+    private_class_method :_convert_array, :_convert_hash, :_convert_value, :_unwrap_nilable
 
     # Compare this object with another object for equality.
     # @param other The object to compare.
@@ -125,6 +132,23 @@ module Optify
       instance_variables.all? do |name|
         instance_variable_get(name) == other.instance_variable_get(name)
       end
+    end
+
+    # Support equality by value so that instances can be used in Sets and as Hash keys.
+    #: (untyped) -> bool
+    def eql?(other)
+      return true if other.equal?(self)
+      return false if self.class != other.class
+
+      instance_variables.all? do |name|
+        instance_variable_get(name).eql?(other.instance_variable_get(name))
+      end
+    end
+
+    # @return [Integer] a hash value based on the object's class and instance variables.
+    #: () -> Integer
+    def hash
+      [self.class, *instance_variables.sort.map { |name| instance_variable_get(name) }].hash
     end
 
     # Convert this object to a JSON string.
@@ -155,7 +179,8 @@ module Optify
     #: (untyped) -> untyped
     def self._convert_value_for_to_h(value)
       case value
-      when Array
+      # Treat sets like arrays for JSON serialization.
+      when Array, Set
         value.map { |v| _convert_value_for_to_h(v) }
       when Hash
         value.transform_values { |v| _convert_value_for_to_h(v) }

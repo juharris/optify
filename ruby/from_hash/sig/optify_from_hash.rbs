@@ -4,6 +4,8 @@ end
 
 # A base class for classes that can be created from a hash.
 class Optify::FromHashable
+  extend T::Helpers
+
   # Create a new instance of the class from a hash.
   #
   # @param hash The hash to create the instance from.
@@ -24,4 +26,10 @@ class Optify::FromHashable
   # @param other The object to compare.
   # @return [Boolean] true if the objects are equal; otherwise, false.
   def ==: (untyped other) -> bool
+
+  # Support equality by value so that instances can be used in Sets and as Hash keys.
+  def eql?: (untyped other) -> bool
+
+  # @return a hash value based on the object's class and instance variables.
+  def hash: () -> Integer
 end
