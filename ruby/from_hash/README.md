@@ -72,6 +72,7 @@ bundle exec rake test
 ## Style
 To check for issues, run:
 ```shell
+bundle exec tapioca gem --verify
 bundle exec rubocop
 bundle exec srb tc
 ```

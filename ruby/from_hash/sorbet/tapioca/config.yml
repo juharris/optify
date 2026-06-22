@@ -2,6 +2,7 @@ gem:
   # Add your `gem` command parameters here:
   #
   exclude:
+  # Missing on MacOS
   - rubydex
   # doc: true
   # workers: 5
