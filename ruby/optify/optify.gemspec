@@ -44,11 +44,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sorbet-runtime', sorbet_version, sorbet_version_upper_bound
 
   spec.add_development_dependency 'rake-compiler', '~> 1.3.0'
-  spec.add_development_dependency 'rbs', '~> 4.0.0.dev.4'
+  spec.add_development_dependency 'rbs', '~> 4.0.3'
   spec.add_development_dependency 'rubocop', '~> 1.82.1'
   spec.add_development_dependency 'rubocop-sorbet', '~> 0.11.0'
   spec.add_development_dependency 'sorbet', sorbet_version, sorbet_version_upper_bound
-  spec.add_development_dependency 'tapioca', '~> 0.17.7'
+  spec.add_development_dependency 'tapioca', '~> 0.19.1'
 
   # Tests
   spec.add_development_dependency 'test-unit', '~> 3.6.8'

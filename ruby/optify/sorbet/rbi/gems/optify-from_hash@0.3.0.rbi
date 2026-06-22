@@ -8,15 +8,13 @@
 # frozen_string_literal: true
 # typed: strong
 
-# source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#7
+# pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:9
 # Tools for working with configurations declared in files.
 module Optify; end
 
 # A base class for classes that can be created from a hash.
 #
-# @abstract It cannot be directly instantiated. Subclasses must implement the `abstract` methods below.
-#
-# source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#9
+# pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:11
 class Optify::FromHashable
   extend T::Sig
   extend T::Helpers
@@ -24,52 +22,50 @@ class Optify::FromHashable
   abstract!
 
   # Compare this object with another object for equality.
-  #
-  # source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#108
-  # Compare this object with another object for equality.
   # @param other The object to compare.
   # @return [Boolean] true if the objects are equal; otherwise, false.
+  #
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:128
   sig { params(other: T.untyped).returns(T::Boolean) }
   def ==(other); end
+
+  # Support equality by value so that instances can be used in Sets and as Hash keys.
+  #
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:139
+  sig { params(other: T.untyped).returns(T::Boolean) }
+  def eql?(other); end
+
+  # @return [Integer] a hash value based on the object's class and instance variables.
+  #
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:150
+  sig { returns(::Integer) }
+  def hash; end
 
   # Convert this object to a Hash recursively.
   # This is mostly the reverse operation of `from_hash`,
   # as keys will be symbols
   # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
+  # @return [Hash] The hash representation of this object.
   #
-  # source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#123
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:166
   sig { returns(T::Hash[::Symbol, T.untyped]) }
   def to_h; end
 
-  private
-
-  # source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#139
-  sig { params(value: T.untyped).returns(T.untyped) }
-  def _convert_value_to_hash(value); end
+  # Convert this object to a JSON string.
+  #
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:156
+  sig { params(state: T.nilable(::JSON::Ext::Generator::State)).returns(::String) }
+  def to_json(state = T.unsafe(nil)); end
 
   class << self
     # Create a new immutable instance of the class from a hash.
     #
-    # This is a class method so that it can set members with private setters.
-    #
-    # source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#20
-    # Create a new instance of the class from a hash.
-    # This is a class method that so that it can set members with private setters.
     # @param hash The hash to create the instance from.
     # @return The new instance.
+    #
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:21
+    # Create a new instance of the class from a hash.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
     def from_hash(hash); end
-
-    private
-
-    # @raise [TypeError]
-    #
-    # source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#79
-    sig { params(hash: T::Hash[T.untyped, T.untyped], type: T.untyped).returns(T.untyped) }
-    def _convert_hash(hash, type); end
-
-    # source://optify-from_hash//lib/optify_from_hash/from_hashable.rb#43
-    sig { params(value: T.untyped, type: T.untyped).returns(T.untyped) }
-    def _convert_value(value, type); end
   end
 end

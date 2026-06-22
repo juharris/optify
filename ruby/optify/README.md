@@ -127,6 +127,7 @@ bundle exec srb tc
 
 To automatically change code and address issues, run:
 ```shell
+bundle update
 bundle exec rubocop --autocorrect
 bin/tapioca annotations
 bin/tapioca gem

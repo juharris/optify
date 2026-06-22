@@ -4,6 +4,8 @@ end
 
 # A base class for classes that can be created from a hash.
 class Optify::FromHashable
+  extend T::Helpers
+
   # Create a new instance of the class from a hash.
   #
   # @param hash The hash to create the instance from.
