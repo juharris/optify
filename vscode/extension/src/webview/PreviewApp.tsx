@@ -56,10 +56,9 @@ const LoadingIndicator: React.FC<{ label: string }> = ({ label }) => (
 export const PreviewApp: React.FC = () => {
 	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
 	const [graphData, setGraphData] = useState<FeatureGraphData | undefined>(undefined);
-	const [isConfigLoading, setIsConfigLoading] = useState(true);
 	const [isGraphLoading, setIsGraphLoading] = useState(true);
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-	const [showGraph, setShowGraph] = useState(true);
+	const [showGraph, setShowGraph] = useState(false);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(true);
 	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
 
@@ -76,7 +75,6 @@ export const PreviewApp: React.FC = () => {
 			if (message.type === 'updateConfig') {
 				setPreviewData(message.data);
 				setSelectedFeatures(message.data.features.map(f => ({ value: f, label: f })));
-				setIsConfigLoading(false);
 			} else if (message.type === 'updateGraph') {
 				setGraphData(message.data.graphData);
 				setIsGraphLoading(false);
