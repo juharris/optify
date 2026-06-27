@@ -52,6 +52,9 @@ class Level2Config < Optify::FromHashable
   sig { returns(T.nilable(T::Boolean)) }
   attr_reader :active
 
+  sig { returns(T::Set[String]) }
+  attr_reader :label_set
+
   sig { returns(T::Array[Level3Config]) }
   attr_reader :items
 
@@ -84,6 +87,7 @@ DEEP_HASH = {
     title: 'main',
     index: 1,
     active: true,
+    label_set: %w[main primary],
     items: [
       {
         label: 'item1',
@@ -113,6 +117,7 @@ DEEP_HASH = {
       title: 'secondary',
       index: 2,
       active: false,
+      label_set: %w[secondary alternate],
       items: [
         {
           label: 'sec-item1',
@@ -139,6 +144,10 @@ DEEP_HASH = {
     }
   ]
 }.freeze
+
+# Verify that round-tripping from_hash -> to_h produces a hash equal to the original.
+round_tripped = Level1Config.from_hash(DEEP_HASH).to_h
+raise "Round-trip check failed:\n#{round_tripped}" unless round_tripped == DEEP_HASH
 
 Benchmark.bm(10) do |x|
   WARMUP_COUNT.times do
