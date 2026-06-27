@@ -45,7 +45,7 @@ module Optify
       inner_type = unwrapped_type.type
       return value.map { |v| _convert_value(v, inner_type) }.freeze if unwrapped_type.is_a?(T::Types::TypedArray)
 
-      Set.new(value.map { |v| _convert_value(v, inner_type) }).freeze
+      value.each_with_object(Set.new) { |v, set| set.add(_convert_value(v, inner_type)) }.freeze
     end
 
     #: (untyped, T::Types::Base) -> untyped
