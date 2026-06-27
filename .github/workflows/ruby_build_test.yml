@@ -1,4 +1,4 @@
-name: "[Ruby] Build & Test"
+name: "💎[Ruby] Build & Test"
 
 on:
   push:
@@ -58,7 +58,7 @@ jobs:
         with:
           # Can see versions using `curl https://cache.ruby-lang.org/pub/misc/ci_versions/cruby.json`
           # We don't need the latest bleeding edge.
-          # Ruby 4.0 is not yet released, so exclude it.
+          # Exclude Ruby 4.0 since the main dependents don't use it yet.
           stable-ruby-versions: |
             exclude: [head, "4.0"]
 

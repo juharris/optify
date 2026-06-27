@@ -1,0 +1,117 @@
+PATH
+  remote: .
+  specs:
+    optify-config (1.22.2)
+      optify-from_hash (~> 0.3.0)
+      rb_sys (~> 0.9.124)
+      sin_lru_redux (~> 2.5.2)
+      sorbet-runtime (>= 0.5, < 1)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ast (2.4.3)
+    benchmark (0.5.0)
+    erubi (1.13.1)
+    json (2.19.9)
+    language_server-protocol (3.17.0.5)
+    lint_roller (1.1.0)
+    logger (1.7.0)
+    netrc (0.11.0)
+    optify-from_hash (0.3.0)
+      sorbet-runtime (>= 0.5, < 1)
+    parallel (1.28.0)
+    parser (3.3.11.1)
+      ast (~> 2.4.1)
+      racc
+    power_assert (3.0.1)
+    prism (1.9.0)
+    racc (1.8.1)
+    rainbow (3.1.1)
+    rake (13.4.2)
+    rake-compiler (1.3.1)
+      rake
+    rake-compiler-dock (1.12.0)
+    rb_sys (0.9.128)
+      rake-compiler-dock (= 1.12.0)
+    rbi (0.3.14)
+      prism (~> 1.0)
+      rbs (>= 4.0.1)
+    rbs (4.0.3)
+      logger
+      prism (>= 1.6.0)
+      tsort
+    regexp_parser (2.12.0)
+    require-hooks (0.4.0)
+    rexml (3.4.4)
+    rubocop (1.82.1)
+      json (~> 2.3)
+      language_server-protocol (~> 3.17.0.2)
+      lint_roller (~> 1.1.0)
+      parallel (~> 1.10)
+      parser (>= 3.3.0.2)
+      rainbow (>= 2.2.2, < 4.0)
+      regexp_parser (>= 2.9.3, < 3.0)
+      rubocop-ast (>= 1.48.0, < 2.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (>= 2.4.0, < 4.0)
+    rubocop-ast (1.49.1)
+      parser (>= 3.3.7.2)
+      prism (~> 1.7)
+    rubocop-sorbet (0.11.0)
+      lint_roller
+      rubocop (>= 1.75.2)
+    ruby-progressbar (1.13.0)
+    rubydex (0.2.5-x86_64-linux)
+    sin_lru_redux (2.5.2)
+    sorbet (0.6.13308)
+      sorbet-static (= 0.6.13308)
+    sorbet-runtime (0.6.13308)
+    sorbet-static (0.6.13308-x86_64-linux)
+    sorbet-static-and-runtime (0.6.13308)
+      sorbet (= 0.6.13308)
+      sorbet-runtime (= 0.6.13308)
+    spoom (1.8.1)
+      erubi (>= 1.10.0)
+      prism (>= 0.28.0)
+      rbi (>= 0.3.14)
+      rbs (>= 4.0.0.dev.5)
+      rexml (>= 3.2.6)
+      sorbet-static-and-runtime (>= 0.5.10187)
+      thor (>= 0.19.2)
+    tapioca (0.19.1)
+      benchmark
+      bundler (>= 2.2.25)
+      netrc (>= 0.11.0)
+      parallel (>= 1.21.0)
+      rbi (>= 0.3.7)
+      require-hooks (>= 0.2.2)
+      rubydex (>= 0.1.0.beta10)
+      sorbet-static-and-runtime (>= 0.6.12698)
+      spoom (>= 1.7.9)
+      thor (>= 1.2.0)
+      tsort
+    test-unit (3.6.9)
+      power_assert
+    thor (1.5.0)
+    tsort (0.2.0)
+    unicode-display_width (3.2.0)
+      unicode-emoji (~> 4.1)
+    unicode-emoji (4.2.0)
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  optify-config!
+  optify-from_hash
+  rake-compiler (~> 1.3.0)
+  rbs (~> 4.0.3)
+  rubocop (~> 1.82.1)
+  rubocop-sorbet (~> 0.11.0)
+  sorbet (>= 0.5, < 1)
+  tapioca (~> 0.19.1)
+  test-unit (~> 3.6.8)
+
+BUNDLED WITH
+   2.7.2
