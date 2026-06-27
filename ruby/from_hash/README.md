@@ -69,6 +69,13 @@ Run:
 bundle exec rake test
 ```
 
+## Benchmarks
+
+Run:
+```shell
+ruby benchmarks/load.rb
+```
+
 ## Style
 To check for issues, run:
 ```shell
