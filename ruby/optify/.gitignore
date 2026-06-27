@@ -2,8 +2,9 @@
 tmp/
 /pkg/
 
-# Ignoring cause we'll build the library for multiple Ruby versions.
-Gemfile.lock
+# It is advised to ignore the Gemfile.lock because we can build for multiple versions,
+# but ignoring is cause issues with `bundle exec tapioca gem --verify`.
+# Gemfile.lock
 
 *.bundle
 
