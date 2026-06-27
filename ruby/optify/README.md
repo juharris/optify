@@ -130,7 +130,7 @@ To automatically change code and address issues, run:
 bundle update
 bundle exec rubocop --autocorrect
 bin/tapioca annotations
-bin/tapioca gem
+bundle exec tapioca gem
 bin/tapioca todo
 # Maybe one day:
 # spoom bump --from false --to true
@@ -139,12 +139,13 @@ bin/tapioca todo
 
 All in one line:
 ```shell
-bundle exec rubocop --autocorrect && bin/tapioca annotations && bin/tapioca gem && bin/tapioca todo
+bundle exec rubocop --autocorrect && bin/tapioca annotations && bundle exec tapioca gem && bin/tapioca todo
 ```
 
 Verify the changes with:
 ```shell
 bundle exec srb tc
+bundle exec tapioca gem --verify
 ```
 
 ## Publishing
