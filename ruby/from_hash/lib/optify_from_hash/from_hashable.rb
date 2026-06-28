@@ -94,15 +94,14 @@ module Optify
       elsif type.is_a?(T::Types::TypedHash)
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
-
-        convert_key = if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
-                        lambda(&:to_sym)
-                      else
-                        lambda(&:itself)
-                      end
-
         type_for_values = type.values
-        return hash.map { |k, v| [convert_key.call(k), _convert_value(v, type_for_values)] }.to_h
+
+        result = hash
+                 .transform_values { |v| _convert_value(v, type_for_values) }
+
+        return result.transform_keys!(&:to_sym) if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
+
+        return result
       end
 
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
