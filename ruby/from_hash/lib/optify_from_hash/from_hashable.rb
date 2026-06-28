@@ -29,7 +29,6 @@ module Optify
       TracePoint.trace(:end) do |tp|
         if tp.self == subclass
           # TODO: Try to re-use the once already initialized, maybe.
-          # TODO Handle inherited attributes.
           return_type_cache = {}
           subclass.public_instance_methods(false).each do |method_name|
             method = subclass.instance_method(method_name)
@@ -37,7 +36,6 @@ module Optify
             next if sig.nil?
 
             return_type = sig.return_type
-            # puts "#{subclass}.#{method_name} has return type: #{return_type}"
             return_type_cache[method_name] = return_type
           end
 
@@ -65,17 +63,31 @@ module Optify
       instance = new
 
       hash.each do |key, value|
-        sig_return_type = @return_type_cache.fetch(key.to_sym) do
-          raise ArgumentError,
-                "Error converting hash to `#{name}` because no type was found for key \"#{key}\". " \
-                "Perhaps \"#{key}\" is not a valid attribute for `#{name}`. " \
-                "Types exist for #{@return_type_cache.keys}"
-        end
-        value = _convert_value(value, sig_return_type)
+        return_type = _get_return_type(key)
+        value = _convert_value(value, return_type)
         instance.instance_variable_set("@#{key}", value)
       end
 
       instance.freeze
+    end
+
+    #: (untyped) -> T::Types::Base
+    def self._get_return_type(key)
+      key = key.to_sym
+      @return_type_cache.fetch(key) do
+        parent = superclass #: untyped
+        while parent != Object
+          if parent.respond_to?(:return_type_cache)
+            return_type = parent.return_type_cache[key]
+            return return_type if return_type
+          end
+          parent = parent.superclass
+        end
+        raise ArgumentError,
+              "Error converting hash to `#{name}` because no type was found for key \"#{key}\". " \
+              "Perhaps \"#{key}\" is not a valid attribute for `#{name}`. " \
+              "Types exist for #{@return_type_cache.keys}"
+      end
     end
 
     #: (Array[untyped], untyped) -> (Array[untyped] | Set[untyped])
@@ -156,7 +168,11 @@ module Optify
       end
     end
 
-    private_class_method :_convert_array, :_convert_hash, :_convert_value, :_unwrap_nilable
+    private_class_method :_convert_array,
+                         :_convert_hash,
+                         :_convert_value,
+                         :_get_return_type,
+                         :_unwrap_nilable
 
     # Compare this object with another object for equality.
     # @param other The object to compare.
