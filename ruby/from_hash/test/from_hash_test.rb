@@ -411,7 +411,7 @@ module FromHashTest
         TestConfig.from_hash(hash)
       end
       assert_match(<<~ERROR_MESSAGE.chomp,
-        Error converting hash to `FromHashTest::TestConfig` because of key "rbs_sig_num"\. Perhaps "rbs_sig_num" is not a valid attribute for `FromHashTest::TestConfig`. Signatures exist for
+        Error converting hash to `FromHashTest::TestConfig` because no type was found for key "rbs_sig_num"\. Perhaps "rbs_sig_num" is not a valid attribute for `FromHashTest::TestConfig`\. Types exist for \[
       ERROR_MESSAGE
                    exception.message)
     end

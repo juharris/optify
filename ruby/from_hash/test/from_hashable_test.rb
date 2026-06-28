@@ -66,7 +66,7 @@ module FromHashableTest
         TestObject.from_hash({ bad: 1 })
       end
       assert_equal(<<~ERROR_MESSAGE.chomp,
-        Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`. Signatures exist for [:hash, :num]
+        Error converting hash to `FromHashableTest::TestObject` because no type was found for key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`. Types exist for [:hash, :num]
       ERROR_MESSAGE
                    err.message)
     end
@@ -77,7 +77,7 @@ module FromHashableTest
       end
 
       assert_equal(<<~ERROR_MESSAGE.chomp,
-        Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`. Signatures exist for [:hash, :num]
+        Error converting hash to `FromHashableTest::TestObject` because no type was found for key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`. Types exist for [:hash, :num]
       ERROR_MESSAGE
                    err.message)
     end

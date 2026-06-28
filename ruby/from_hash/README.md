@@ -73,13 +73,13 @@ bundle exec rake test
 To check for issues, run:
 ```shell
 bundle exec tapioca gem --verify
-bundle exec rubocop
+bundle exec rubocop --cache true
 bundle exec srb tc
 ```
 
 To automatically change code and address issues, run:
 ```shell
-bundle exec rubocop --autocorrect
+bundle exec rubocop --autocorrect --cache true
 bin/tapioca annotations
 bundle exec tapioca gem
 bin/tapioca todo
@@ -90,7 +90,7 @@ bin/tapioca todo
 
 All in one line:
 ```shell
-bundle exec rubocop --autocorrect && bin/tapioca annotations && bundle exec tapioca gem && bin/tapioca todo
+bundle exec rubocop --autocorrect --cache true && bin/tapioca annotations && bundle exec tapioca gem && bin/tapioca todo
 ```
 
 Verify the changes with:

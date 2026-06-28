@@ -29,6 +29,7 @@ module Optify
       TracePoint.trace(:end) do |tp|
         if tp.self == subclass
           # TODO: Try to re-use the once already initialized, maybe.
+          # TODO Handle inherited attributes.
           return_type_cache = {}
           subclass.public_instance_methods(false).each do |method_name|
             method = subclass.instance_method(method_name)
@@ -66,9 +67,9 @@ module Optify
       hash.each do |key, value|
         sig_return_type = @return_type_cache.fetch(key.to_sym) do
           raise ArgumentError,
-                "Error converting hash to `#{name}` because of key \"#{key}\". " \
+                "Error converting hash to `#{name}` because no type was found for key \"#{key}\". " \
                 "Perhaps \"#{key}\" is not a valid attribute for `#{name}`. " \
-                "Signatures exist for #{@return_type_cache.keys}"
+                "Types exist for #{@return_type_cache.keys}"
         end
         value = _convert_value(value, sig_return_type)
         instance.instance_variable_set("@#{key}", value)
@@ -215,7 +216,7 @@ module Optify
     #: (untyped) -> untyped
     def self._convert_value_for_to_h(value)
       case value
-      # Treat sets like arrays for JSON serialization.
+      # Treat sets like arrays for JSON serialization; otherwise, the elements are not shown.
       when Array, Set
         value.map { |v| _convert_value_for_to_h(v) }
       when Hash
