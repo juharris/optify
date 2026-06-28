@@ -13,14 +13,14 @@ module Optify
     extend T::Helpers
     abstract!
 
-    @signature_cache = {} #: Hash[Symbol, T::Types::Base]
+    @return_type_cache = {} #: Hash[Symbol, T::Types::Base]
 
     # class << self
     #   #: Hash[Symbol, T::Types::Base]
-    #   attr_reader :signature_cache
+    #   attr_reader :return_type_cache
     # end
 
-    #: (Class[untyped]) -> void
+    #: [T < Optify::FromHashable] (Class[T]) -> void
     def self.inherited(subclass)
       super
 
@@ -28,8 +28,8 @@ module Optify
       TracePoint.trace(:end) do |tp|
         if tp.self == subclass
           puts "Static setup: #{subclass} has just inherited #{self}"
-          # TODO: Try to re-use the once already initialized.
-          cache = {} #: Hash[Symbol, T::Types::Base]
+          # TODO: Try to re-use the once already initialized, maybe.
+          return_type_cache = {}
           subclass.public_instance_methods(false).each do |method_name|
             method = subclass.instance_method(method_name)
             sig = T::Utils.signature_for_method(method)
@@ -37,16 +37,16 @@ module Optify
 
             return_type = sig.return_type
             puts "#{subclass}.#{method_name} has return type: #{return_type}"
-            cache[method_name] = return_type
+            return_type_cache[method_name] = return_type
           end
 
           subclass.class_eval do
-            @signature_cache = cache
+            @return_type_cache = return_type_cache
 
             # Create a singleton reader method specifically for this child class
             class << self
               #: Hash[Symbol, T::Types::Base]
-              attr_reader :signature_cache
+              attr_reader :return_type_cache
             end
           end
 
@@ -76,7 +76,7 @@ module Optify
 
         # sig_return_type = sig.return_type
         # puts "#{name}.#{key}: Getting return type from signature cache: #{@signature_cache}"
-        sig_return_type = @signature_cache.fetch(key) do
+        sig_return_type = @return_type_cache.fetch(key) do
           raise "A Sorbet signature is required for `#{name}.#{key}`."
         end
         value = _convert_value(value, sig_return_type)
