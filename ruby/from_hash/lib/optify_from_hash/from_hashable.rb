@@ -41,7 +41,7 @@ module Optify
           end
 
           subclass.class_eval do
-            @return_type_cache = return_type_cache
+            @return_type_cache = return_type_cache.freeze
 
             # Create a singleton reader method specifically for this child class
             class << self
@@ -76,8 +76,8 @@ module Optify
 
         # sig_return_type = sig.return_type
         # puts "#{name}.#{key}: Getting return type from signature cache: #{@signature_cache}"
-        sig_return_type = @return_type_cache.fetch(key) do
-          raise "A Sorbet signature is required for `#{name}.#{key}`."
+        sig_return_type = @return_type_cache.fetch(key.to_sym) do
+          raise "A Sorbet signature is required for `#{name}.#{key}`.\n@return_type_cache.size=#{@return_type_cache.size}, keys=#{@return_type_cache.keys}"
         end
         value = _convert_value(value, sig_return_type)
         instance.instance_variable_set("@#{key}", value)
