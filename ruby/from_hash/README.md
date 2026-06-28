@@ -120,5 +120,12 @@ bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > sig/optify_from_hash.rb
 
 See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
 
+## Benchmarks
+
+Run:
+```shell
+ruby benchmarks/load.rb
+```
+
 ## Publishing
 A GitHub Action is setup to publish the gem as needed.
