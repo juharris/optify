@@ -1,15 +1,11 @@
-# typed: strict
+# typed: true
 # frozen_string_literal: true
 
 require 'benchmark'
 require_relative '../lib/optify-from_hash'
 
-puts "PID: #{Process.pid}"
-
-N = 1_000
+N = 3_000
 WARMUP_COUNT = 10
-
-# Four-level-deep class hierarchy for the benchmark.
 
 class Level4Config < Optify::FromHashable
   sig { returns(String) }
@@ -117,7 +113,7 @@ DEEP_HASH = {
       title: 'secondary',
       index: 2,
       active: false,
-      label_set: %w[secondary alternate],
+      label_set: %w[a b c d],
       items: [
         {
           label: 'sec-item1',
@@ -147,7 +143,7 @@ DEEP_HASH = {
 
 # Verify that round-tripping from_hash -> to_h produces a hash equal to the original.
 round_tripped = Level1Config.from_hash(DEEP_HASH).to_h
-raise "Round-trip check failed:\n#{round_tripped}" unless round_tripped == DEEP_HASH
+raise "Round-trip check failed:\n#{round_tripped}" if round_tripped != DEEP_HASH
 
 Benchmark.bm(10) do |x|
   WARMUP_COUNT.times do
