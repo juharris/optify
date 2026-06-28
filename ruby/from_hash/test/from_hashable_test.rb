@@ -65,26 +65,21 @@ module FromHashableTest
       err = assert_raise(ArgumentError) do
         TestObject.from_hash({ bad: 1 })
       end
-      assert_equal(
-        'Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`.',
-        err.message
-      )
-
-      assert_instance_of(NameError, err.cause)
-      assert_equal('undefined method \'bad\' for class \'FromHashableTest::TestObject\'', err.cause.message)
+      assert_equal(<<~ERROR_MESSAGE.chomp,
+        Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`. Signatures exist for [:hash, :num]
+      ERROR_MESSAGE
+                   err.message)
     end
 
     def test_unknown_property_in_object
       err = assert_raise(ArgumentError) do
         TestObjectWithObject.from_hash({ object: { bad: 2 } })
       end
-      assert_equal(
-        'Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`.',
-        err.message
-      )
 
-      assert_instance_of(NameError, err.cause)
-      assert_equal('undefined method \'bad\' for class \'FromHashableTest::TestObject\'', err.cause.message)
+      assert_equal(<<~ERROR_MESSAGE.chomp,
+        Error converting hash to `FromHashableTest::TestObject` because of key "bad". Perhaps "bad" is not a valid attribute for `FromHashableTest::TestObject`. Signatures exist for [:hash, :num]
+      ERROR_MESSAGE
+                   err.message)
     end
   end
 end

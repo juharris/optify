@@ -15,6 +15,7 @@ module Optify
 
     @return_type_cache = {} #: Hash[Symbol, T::Types::Base]
 
+    # Doesn't seem to do anything useful to have this here, but leaving it in for now in case I figured out how to use it.
     # class << self
     #   #: Hash[Symbol, T::Types::Base]
     #   attr_reader :return_type_cache
@@ -27,7 +28,6 @@ module Optify
       # Trace the execution after the subclass finishes loading to capture its methods
       TracePoint.trace(:end) do |tp|
         if tp.self == subclass
-          puts "Static setup: #{subclass} has just inherited #{self}"
           # TODO: Try to re-use the once already initialized, maybe.
           return_type_cache = {}
           subclass.public_instance_methods(false).each do |method_name|
@@ -36,7 +36,7 @@ module Optify
             next if sig.nil?
 
             return_type = sig.return_type
-            puts "#{subclass}.#{method_name} has return type: #{return_type}"
+            # puts "#{subclass}.#{method_name} has return type: #{return_type}"
             return_type_cache[method_name] = return_type
           end
 
@@ -64,20 +64,11 @@ module Optify
       instance = new
 
       hash.each do |key, value|
-        # begin
-        #   method = instance_method(key)
-        # rescue StandardError
-        #   raise ArgumentError,
-        #         "Error converting hash to `#{name}` because of key \"#{key}\". Perhaps \"#{key}\" is not a valid attribute for `#{name}`."
-        # end
-
-        # sig = T::Utils.signature_for_method(method)
-        # raise "A Sorbet signature is required for `#{name}.#{key}`." if sig.nil?
-
-        # sig_return_type = sig.return_type
-        # puts "#{name}.#{key}: Getting return type from signature cache: #{@signature_cache}"
         sig_return_type = @return_type_cache.fetch(key.to_sym) do
-          raise "A Sorbet signature is required for `#{name}.#{key}`.\n@return_type_cache.size=#{@return_type_cache.size}, keys=#{@return_type_cache.keys}"
+          raise ArgumentError,
+                "Error converting hash to `#{name}` because of key \"#{key}\". " \
+                "Perhaps \"#{key}\" is not a valid attribute for `#{name}`. " \
+                "Signatures exist for #{@return_type_cache.keys}"
         end
         value = _convert_value(value, sig_return_type)
         instance.instance_variable_set("@#{key}", value)
