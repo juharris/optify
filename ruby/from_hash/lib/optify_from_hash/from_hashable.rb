@@ -86,7 +86,7 @@ module Optify
         raise ArgumentError,
               "Error converting hash to `#{name}` because no type was found for key \"#{key}\". " \
               "Perhaps \"#{key}\" is not a valid attribute for `#{name}`. " \
-              "Types exist for #{@return_type_cache.keys}"
+              "Types exist for #{@return_type_cache.keys.sort!}"
       end
     end
 
