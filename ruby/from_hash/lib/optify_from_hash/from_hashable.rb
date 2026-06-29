@@ -13,13 +13,12 @@ module Optify
     extend T::Helpers
     abstract!
 
-    @return_type_cache = {} #: Hash[Symbol, T::Types::Base]
+    @key_to_type = {} #: Hash[Symbol, T::Types::Base]
 
-    # Doesn't seem to do anything useful to have this here, but leaving it in for now in case I figured out how to use it.
-    # class << self
-    #   #: Hash[Symbol, T::Types::Base]
-    #   attr_reader :return_type_cache
-    # end
+    class << self
+      #: Hash[Symbol, T::Types::Base]
+      attr_reader :key_to_type
+    end
 
     #: [T < Optify::FromHashable] (Class[T]) -> void
     def self.inherited(subclass)
@@ -28,30 +27,25 @@ module Optify
       # Trace the execution after the subclass finishes loading to capture its methods
       TracePoint.trace(:end) do |tp|
         if tp.self == subclass
-          # TODO: Try to re-use the once already initialized, maybe.
-          return_type_cache = {}
-          subclass.public_instance_methods(false).each do |method_name|
-            method = subclass.instance_method(method_name)
-            sig = T::Utils.signature_for_method(method)
-            next if sig.nil?
-
-            return_type = sig.return_type
-            return_type_cache[method_name] = return_type
-          end
-
-          subclass.class_eval do
-            @return_type_cache = return_type_cache.freeze
-
-            # Create a singleton reader method specifically for this child class
-            class << self
-              #: Hash[Symbol, T::Types::Base]
-              attr_reader :return_type_cache
-            end
-          end
-
+          subclass.instance_variable_set(:@key_to_type, _build_key_to_type(subclass))
           tp.disable
         end
       end
+    end
+
+    #: [Type < Optify::FromHashable] (Class[Type]) -> Hash[Symbol, T::Types::Base]
+    def self._build_key_to_type(subclass)
+      result = {}
+
+      subclass.public_instance_methods(false).each do |method_name|
+        method = subclass.instance_method(method_name)
+        sig = T::Utils.signature_for_method(method)
+        next if sig.nil?
+
+        result[method_name] = sig.return_type
+      end
+
+      result.freeze
     end
 
     # Create a new immutable instance of the class from a hash.
@@ -74,11 +68,11 @@ module Optify
     #: (untyped) -> T::Types::Base
     def self._get_return_type(key)
       key = key.to_sym
-      @return_type_cache.fetch(key) do
+      @key_to_type.fetch(key) do
         parent = superclass #: untyped
         while parent != Object
-          if parent.respond_to?(:return_type_cache)
-            return_type = parent.return_type_cache[key]
+          if parent.respond_to?(:key_to_type)
+            return_type = parent.key_to_type[key]
             return return_type if return_type
           end
           parent = parent.superclass
@@ -86,7 +80,7 @@ module Optify
         raise ArgumentError,
               "Error converting hash to `#{name}` because no type was found for key \"#{key}\". " \
               "Perhaps \"#{key}\" is not a valid attribute for `#{name}`. " \
-              "Types exist for #{@return_type_cache.keys.sort!}"
+              "Types exist for #{@key_to_type.keys.sort!}"
       end
     end
 
@@ -169,6 +163,7 @@ module Optify
     end
 
     private_class_method :_convert_array,
+                         :_build_key_to_type,
                          :_convert_hash,
                          :_convert_value,
                          :_get_return_type,
