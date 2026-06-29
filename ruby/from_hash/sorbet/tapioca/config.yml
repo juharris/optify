@@ -1,9 +1,10 @@
 gem:
   # Add your `gem` command parameters here:
   #
-  exclude:
+  # exclude:
   # Missing on MacOS
-  - rubydex
+  # Maybe not needed to exclude since it's in the Gemfile.lock?
+  # - rubydex
   # doc: true
   # workers: 5
 dsl:

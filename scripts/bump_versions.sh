@@ -106,6 +106,8 @@ pushd ruby/optify
 bump_dependency_in_toml "ext/optify_ruby/Cargo.toml" $current_version $next_version
 bump_version_in_toml "ext/optify_ruby/Cargo.toml" $strategy
 bump_version_gemspec "optify.gemspec" $strategy
+# Update Gemfile.lock
+bundle install
 popd
 
 pushd js/optify-config
