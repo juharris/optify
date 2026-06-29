@@ -1,14 +1,14 @@
 PATH
   remote: ../from_hash
   specs:
-    optify-from_hash (0.3.0)
+    optify-from_hash (0.3.1)
       sorbet-runtime (>= 0.5, < 1)
 
 PATH
   remote: .
   specs:
-    optify-config (1.22.2)
-      optify-from_hash (~> 0.3.0)
+    optify-config (1.22.3)
+      optify-from_hash (~> 0.3.1)
       rb_sys (~> 0.9.124)
       sin_lru_redux (~> 2.5.2)
       sorbet-runtime (>= 0.5, < 1)

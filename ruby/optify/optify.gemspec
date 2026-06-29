@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-VERSION = '1.22.2'
+VERSION = '1.22.3'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-config'
@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   # needed until rubygems Rust support is out of beta
   spec.add_dependency 'rb_sys', '~> 0.9.124'
 
-  spec.add_dependency 'optify-from_hash', '~> 0.3.0'
+  spec.add_dependency 'optify-from_hash', '~> 0.3.1'
   spec.add_dependency 'sin_lru_redux', '~> 2.5.2'
 
   sorbet_version = '>= 0.5'

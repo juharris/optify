@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    optify-from_hash (0.3.0)
+    optify-from_hash (0.3.1)
       sorbet-runtime (>= 0.5, < 1)
 
 GEM
@@ -49,6 +49,7 @@ GEM
       parser (>= 3.3.7.2)
       prism (~> 1.7)
     ruby-progressbar (1.13.0)
+    rubydex (0.2.5-arm64-darwin)
     rubydex (0.2.5-x86_64-linux)
     sorbet (0.6.13308)
       sorbet-static (= 0.6.13308)

@@ -49,7 +49,15 @@ jobs:
         with:
           cache: yarn
           cache-dependency-path: ./js/optify-config/yarn.lock
-          node-version: 20
+          node-version: 22
+
+      # setup-ruby also runs `bundle install`.
+      # It uses the Ruby version from .ruby-version.
+      - uses: ruby/setup-ruby@v1
+        name: "💎[Ruby] Setup"
+        with:
+          bundler-cache: true
+          working-directory: ./ruby/optify
 
       - name: "Run bump script"
         shell: bash

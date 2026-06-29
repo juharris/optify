@@ -1,9 +1,8 @@
 gem:
   # Add your `gem` command parameters here:
   #
-  exclude:
-  # Missing on MacOS
-  - rubydex
+  # exclude:
+  # - gem_name
   # doc: true
   # workers: 5
 dsl:
