@@ -13,6 +13,41 @@ module Optify
     extend T::Helpers
     abstract!
 
+    @key_to_type = {} #: Hash[Symbol, T::Types::Base]
+
+    class << self
+      #: Hash[Symbol, T::Types::Base]
+      attr_reader :key_to_type
+    end
+
+    #: [T < Optify::FromHashable] (Class[T]) -> void
+    def self.inherited(subclass)
+      super
+
+      # Trace the execution after the subclass finishes loading to capture its methods.
+      TracePoint.trace(:end) do |tp|
+        if tp.self == subclass
+          subclass.instance_variable_set(:@key_to_type, _build_key_to_type(subclass))
+          tp.disable
+        end
+      end
+    end
+
+    #: [Type < Optify::FromHashable] (Class[Type]) -> Hash[Symbol, T::Types::Base]
+    private_class_method def self._build_key_to_type(subclass)
+      result = {}
+
+      subclass.public_instance_methods(false).each do |method_name|
+        method = subclass.instance_method(method_name)
+        sig = T::Utils.signature_for_method(method)
+        next if sig.nil?
+
+        result[method_name] = sig.return_type
+      end
+
+      result.freeze
+    end
+
     # Create a new immutable instance of the class from a hash.
     #
     # @param hash The hash to create the instance from.
@@ -22,26 +57,35 @@ module Optify
       instance = new
 
       hash.each do |key, value|
-        begin
-          method = instance_method(key)
-        rescue StandardError
-          raise ArgumentError,
-                "Error converting hash to `#{name}` because of key \"#{key}\". Perhaps \"#{key}\" is not a valid attribute for `#{name}`."
-        end
-
-        sig = T::Utils.signature_for_method(method)
-        raise "A Sorbet signature is required for `#{name}.#{key}`." if sig.nil?
-
-        sig_return_type = sig.return_type
-        value = _convert_value(value, sig_return_type)
+        value_type = _get_value_type(key)
+        value = _convert_value(value, value_type)
         instance.instance_variable_set("@#{key}", value)
       end
 
       instance.freeze
     end
 
+    #: (untyped) -> T::Types::Base
+    private_class_method def self._get_value_type(key)
+      key = key.to_sym
+      @key_to_type.fetch(key) do
+        parent = superclass #: untyped
+        while parent != Object
+          if parent.respond_to?(:key_to_type)
+            result = parent.key_to_type[key]
+            return result if result
+          end
+          parent = parent.superclass
+        end
+        raise ArgumentError,
+              "Error converting hash to `#{name}` because no type was found for key \"#{key}\". " \
+              "Perhaps \"#{key}\" is not a valid attribute for `#{name}`. " \
+              "Types exist for #{@key_to_type.keys.sort!}"
+      end
+    end
+
     #: (Array[untyped], untyped) -> (Array[untyped] | Set[untyped])
-    def self._convert_array(value, unwrapped_type)
+    private_class_method def self._convert_array(value, unwrapped_type)
       inner_type = unwrapped_type.type
       return value.map { |v| _convert_value(v, inner_type) }.freeze if unwrapped_type.is_a?(T::Types::TypedArray)
 
@@ -49,7 +93,7 @@ module Optify
     end
 
     #: (untyped, T::Types::Base) -> untyped
-    def self._convert_value(value, type)
+    private_class_method def self._convert_value(value, type)
       if type.is_a?(T::Types::Untyped)
         # No preferred type is given, so return the value as is.
         return value
@@ -84,7 +128,7 @@ module Optify
     end
 
     #: (Hash[untyped, untyped], T::Types::Base) -> untyped
-    def self._convert_hash(hash, type)
+    private_class_method def self._convert_hash(hash, type)
       if type.respond_to?(:raw_type)
         # There is an object for the hash.
         # It could be a custom class, a String, or maybe something else.
@@ -94,15 +138,14 @@ module Optify
       elsif type.is_a?(T::Types::TypedHash)
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
-
-        convert_key = if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
-                        lambda(&:to_sym)
-                      else
-                        lambda(&:itself)
-                      end
-
         type_for_values = type.values
-        return hash.map { |k, v| [convert_key.call(k), _convert_value(v, type_for_values)] }.to_h
+
+        result = hash
+                 .transform_values { |v| _convert_value(v, type_for_values) }
+
+        return result.transform_keys!(&:to_sym) if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
+
+        return result
       end
 
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
@@ -110,7 +153,7 @@ module Optify
 
     # Unwrap `T.nilable(...)` to get the inner type, or return the type as-is.
     #: (T::Types::Base) -> T::Types::Base
-    def self._unwrap_nilable(type)
+    private_class_method def self._unwrap_nilable(type)
       if type.respond_to?(:unwrap_nilable)
         type #: as untyped
           .unwrap_nilable
@@ -118,8 +161,6 @@ module Optify
         type
       end
     end
-
-    private_class_method :_convert_array, :_convert_hash, :_convert_value, :_unwrap_nilable
 
     # Compare this object with another object for equality.
     # @param other The object to compare.
@@ -177,9 +218,9 @@ module Optify
     end
 
     #: (untyped) -> untyped
-    def self._convert_value_for_to_h(value)
+    private_class_method def self._convert_value_for_to_h(value)
       case value
-      # Treat sets like arrays for JSON serialization.
+      # Treat sets like arrays for JSON serialization; otherwise, the elements are not shown.
       when Array, Set
         value.map { |v| _convert_value_for_to_h(v) }
       when Hash
@@ -194,7 +235,5 @@ module Optify
         end
       end
     end
-
-    private_class_method :_convert_value_for_to_h
   end
 end

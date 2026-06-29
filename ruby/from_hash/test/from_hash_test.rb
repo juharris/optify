@@ -407,10 +407,13 @@ module FromHashTest
 
     def test_rbs_sig_num
       hash = { rbs_sig_num: 421 }
-      exception = assert_raises(RuntimeError) do
+      exception = assert_raises(ArgumentError) do
         TestConfig.from_hash(hash)
       end
-      assert_equal("A Sorbet signature is required for `#{TestConfig.name}.rbs_sig_num`.", exception.message)
+      assert_match(<<~ERROR_MESSAGE.chomp,
+        Error converting hash to `FromHashTest::TestConfig` because no type was found for key "rbs_sig_num"\. Perhaps "rbs_sig_num" is not a valid attribute for `FromHashTest::TestConfig`\. Types exist for \[
+      ERROR_MESSAGE
+                   exception.message)
     end
 
     def test_untyped

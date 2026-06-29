@@ -4,7 +4,7 @@
 require 'benchmark'
 require_relative '../lib/optify-from_hash'
 
-N = 3_000
+N = 5_000
 WARMUP_COUNT = 10
 
 class Level4Config < Optify::FromHashable
@@ -56,6 +56,12 @@ class Level2Config < Optify::FromHashable
 
   sig { returns(Level3Config) }
   attr_reader :meta
+
+  sig { returns(T.nilable(T::Hash[Symbol, String])) }
+  attr_reader :hash_symbol_to_string
+
+  sig { returns(T.nilable(T::Hash[String, String])) }
+  attr_reader :hash_string_to_string
 end
 
 class Level1Config < Optify::FromHashable
@@ -114,6 +120,8 @@ DEEP_HASH = {
       index: 2,
       active: false,
       label_set: %w[a b c d],
+      hash_symbol_to_string: { a: 'A', b: 'B' },
+      hash_string_to_string: { 'key1' => 'A', 'key2' => 'B' },
       items: [
         {
           label: 'sec-item1',
