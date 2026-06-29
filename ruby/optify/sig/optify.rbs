@@ -19,6 +19,11 @@ end
 # Options for caching.
 # Only enabling or disabling caching is supported for now.
 class Optify::CacheOptions < FromHashable
+  attr_accessor on_cache_event: (^(
+    ::Array[untyped] key,
+    untyped value,
+    bool is_cache_hit,
+  ) -> void)?
 end
 
 # The mode for the cache.

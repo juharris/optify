@@ -13,6 +13,8 @@ module Optify
   # Options for caching.
   # Only enabling or disabling caching is supported for now.
   class CacheOptions < FromHashable
+    #: (^(Array[untyped] key, untyped value, bool is_cache_hit) -> void)?
+    attr_accessor :on_cache_event
   end
 
   # Provides configurations based on keys and enabled feature names.
