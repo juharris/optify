@@ -24,7 +24,7 @@ module Optify
     def self.inherited(subclass)
       super
 
-      # Trace the execution after the subclass finishes loading to capture its methods
+      # Trace the execution after the subclass finishes loading to capture its methods.
       TracePoint.trace(:end) do |tp|
         if tp.self == subclass
           subclass.instance_variable_set(:@key_to_type, _build_key_to_type(subclass))
@@ -34,7 +34,7 @@ module Optify
     end
 
     #: [Type < Optify::FromHashable] (Class[Type]) -> Hash[Symbol, T::Types::Base]
-    def self._build_key_to_type(subclass)
+    private_class_method def self._build_key_to_type(subclass)
       result = {}
 
       subclass.public_instance_methods(false).each do |method_name|
@@ -57,8 +57,8 @@ module Optify
       instance = new
 
       hash.each do |key, value|
-        return_type = _get_return_type(key)
-        value = _convert_value(value, return_type)
+        value_type = _get_value_type(key)
+        value = _convert_value(value, value_type)
         instance.instance_variable_set("@#{key}", value)
       end
 
@@ -66,14 +66,14 @@ module Optify
     end
 
     #: (untyped) -> T::Types::Base
-    def self._get_return_type(key)
+    private_class_method def self._get_value_type(key)
       key = key.to_sym
       @key_to_type.fetch(key) do
         parent = superclass #: untyped
         while parent != Object
           if parent.respond_to?(:key_to_type)
-            return_type = parent.key_to_type[key]
-            return return_type if return_type
+            result = parent.key_to_type[key]
+            return result if result
           end
           parent = parent.superclass
         end
@@ -85,7 +85,7 @@ module Optify
     end
 
     #: (Array[untyped], untyped) -> (Array[untyped] | Set[untyped])
-    def self._convert_array(value, unwrapped_type)
+    private_class_method def self._convert_array(value, unwrapped_type)
       inner_type = unwrapped_type.type
       return value.map { |v| _convert_value(v, inner_type) }.freeze if unwrapped_type.is_a?(T::Types::TypedArray)
 
@@ -93,7 +93,7 @@ module Optify
     end
 
     #: (untyped, T::Types::Base) -> untyped
-    def self._convert_value(value, type)
+    private_class_method def self._convert_value(value, type)
       if type.is_a?(T::Types::Untyped)
         # No preferred type is given, so return the value as is.
         return value
@@ -128,7 +128,7 @@ module Optify
     end
 
     #: (Hash[untyped, untyped], T::Types::Base) -> untyped
-    def self._convert_hash(hash, type)
+    private_class_method def self._convert_hash(hash, type)
       if type.respond_to?(:raw_type)
         # There is an object for the hash.
         # It could be a custom class, a String, or maybe something else.
@@ -153,7 +153,7 @@ module Optify
 
     # Unwrap `T.nilable(...)` to get the inner type, or return the type as-is.
     #: (T::Types::Base) -> T::Types::Base
-    def self._unwrap_nilable(type)
+    private_class_method def self._unwrap_nilable(type)
       if type.respond_to?(:unwrap_nilable)
         type #: as untyped
           .unwrap_nilable
@@ -161,13 +161,6 @@ module Optify
         type
       end
     end
-
-    private_class_method :_convert_array,
-                         :_build_key_to_type,
-                         :_convert_hash,
-                         :_convert_value,
-                         :_get_return_type,
-                         :_unwrap_nilable
 
     # Compare this object with another object for equality.
     # @param other The object to compare.
@@ -225,7 +218,7 @@ module Optify
     end
 
     #: (untyped) -> untyped
-    def self._convert_value_for_to_h(value)
+    private_class_method def self._convert_value_for_to_h(value)
       case value
       # Treat sets like arrays for JSON serialization; otherwise, the elements are not shown.
       when Array, Set
@@ -242,7 +235,5 @@ module Optify
         end
       end
     end
-
-    private_class_method :_convert_value_for_to_h
   end
 end
