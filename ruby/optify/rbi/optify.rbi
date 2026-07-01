@@ -19,7 +19,7 @@ module Optify
   end
 
   # Options for caching.
-  class CacheOptions < FromHashable
+  class CacheOptions
     sig do
       returns(
         T.nilable(

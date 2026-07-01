@@ -17,7 +17,7 @@ class Optify::BaseConfig < FromHashable
 end
 
 # Options for caching.
-class Optify::CacheOptions < FromHashable
+class Optify::CacheOptions
   def initialize: () -> ^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void?
                 | (?on_cache_event: ^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void? on_cache_event) -> void
 end
