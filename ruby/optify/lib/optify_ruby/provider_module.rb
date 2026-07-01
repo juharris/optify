@@ -9,20 +9,20 @@ module Optify
   # @!visibility private
   module ProviderModule
     #: [T] (LruRedux::Cache | Hash[Array[untyped], T], Array[untyped], (^(Array[untyped] key, T value, bool is_cache_hit) -> void)?) { -> T } -> T
-    def self._cache_getset(cache, cache_key, on_cache_event = nil, &block)
+    def self._cache_getset(cache, cache_key, on_cache_event, &block)
       is_cache_hit = true #: bool
-      if cache.is_a? LruRedux::Cache
-        result = cache.getset(cache_key) do
-          is_cache_hit = false
-          block.call
-        end
-      else
-        # Plain Hash - use fetch with block and store result
-        result = cache.fetch(cache_key) do
-          is_cache_hit = false
-          cache[cache_key] = block.call
-        end
-      end
+      result = if cache.is_a? LruRedux::Cache
+                 cache.getset(cache_key) do
+                   is_cache_hit = false
+                   block.call
+                 end
+               else
+                 # Plain Hash - use fetch with block and store result
+                 cache.fetch(cache_key) do
+                   is_cache_hit = false
+                   cache[cache_key] = block.call
+                 end
+               end
       on_cache_event&.call(cache_key, result, is_cache_hit)
       result
     end
@@ -115,7 +115,7 @@ module Optify
         .from_hash(hash)
     end
 
-    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, Optify::CacheOptions cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
+    #: [Config] (String, Array[String], Class[Config], Optify::CacheOptions, ?Optify::GetOptionsPreferences? ) -> Config
     def _get_options_with_cache(key, feature_names, config_class, cache_options, preferences = nil)
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
