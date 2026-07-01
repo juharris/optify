@@ -77,7 +77,7 @@ jobs:
       contents: write
     
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     # Ruby
     # Gem: optify-from_hash
@@ -149,7 +149,7 @@ jobs:
       contents: write
     
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
@@ -192,6 +192,23 @@ jobs:
         bundle exec srb tc
         bundle exec rubocop
       working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "Create sig/optify.rbs"
+      # See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
+      # Only do it for Ubuntu because we only publish with Ubuntu.
+      # Do for PRs so that we can ensure the command exits successfully.
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        mkdir --parents sig
+        bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: "Upload sig/optify.rbs"
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v7
+      with:
+        name: optify.rbs
+        path: ./ruby/optify/sig/optify.rbs
+        if-no-files-found: error
     - name: "[Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -224,7 +241,13 @@ jobs:
         - arm64-darwin
         - x86_64-linux
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
+
+    - name: "Download sig/optify.rbs"
+      uses: actions/download-artifact@v8
+      with:
+        name: optify.rbs
+        path: ./ruby/optify/sig
 
     - name: "[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
@@ -248,16 +271,9 @@ jobs:
       name: "[Ruby] Setup"
       with:
         bundler-cache: true
-        # The version to use to run rb-sys, but the cross-gem step will use a Docker container with it's own Ruby version, I think.
+        # The version to use to run rb-sys, but the cross-gem step will use a Docker container with its own Ruby version, I think.
         ruby-version: "3.4.1"
         # Don't put the working-directory here because we don't want to install the Ruby project in this context.
-    - name: "Create sig/optify.rbs"
-      # See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
-      shell: bash
-      run: |
-        mkdir --parents sig
-        bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
-      working-directory: ./ruby/optify
 
     # Initialize some Rust resources
     # such as ensuring that /home/runner/.cargo/registry is created.
@@ -317,7 +333,13 @@ jobs:
       id-token: write
       contents: read
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
+
+    - name: "Download sig/optify.rbs"
+      uses: actions/download-artifact@v8
+      with:
+        name: optify.rbs
+        path: ./ruby/optify/sig
 
     - name: "[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
@@ -335,14 +357,6 @@ jobs:
       with:
         bundler-cache: true
         working-directory: ./ruby/optify
-
-    - name: "Create sig/optify.rbs"
-      # See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
-      shell: bash
-      run: |
-        mkdir --parents sig
-        bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
-      working-directory: ./ruby/optify
 
     - name: Build gem
       run: |
