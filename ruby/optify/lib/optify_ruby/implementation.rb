@@ -14,6 +14,14 @@ module Optify
   class CacheOptions < FromHashable
     #: (^(Array[untyped] key, untyped value, bool is_cache_hit) -> void)?
     attr_accessor :on_cache_event
+
+    #: (
+    #|   ?on_cache_event: (^(Array[untyped] key, untyped value, bool is_cache_hit) -> void)?,
+    #| ) -> void
+    def initialize(on_cache_event: nil)
+      super()
+      @on_cache_event = on_cache_event
+    end
   end
 
   # Provides configurations based on keys and enabled feature names.
