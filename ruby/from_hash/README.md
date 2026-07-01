@@ -106,19 +106,7 @@ bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 
 Note that classes that inherit from `Optify:FromHashable` need Sorbet signatures for their attributes for `from_hash` to work.
 So some classes will need Sorbet signatures.
-When it is possible to convert an RBS signature, then this library will try to support it.
-
-<!--
-If RBS supports checks **at runtime** and we can support RBS style signatures in comments for configuration objects:
-bundle exec spoom srb sigs translate --from=rbi --to=rbs lib test
- -->
-
-To generate the RBS file:
-```shell
-bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > sig/optify_from_hash.rbs
-```
-
-See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
+We may investigate supporting RBS in the future.
 
 ## Benchmarks
 

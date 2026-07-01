@@ -98,11 +98,6 @@ jobs:
 
         bundle exec srb tc
         bundle exec rubocop
-
-        # Ensure that the RBS file is up-to-date.
-        mkdir -p tmp
-        bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > tmp/optify_from_hash.rbs~
-        diff -u sig/optify_from_hash.rbs tmp/optify_from_hash.rbs~
       working-directory: ./ruby/from_hash
     - name: "Test"
       run: bundle exec rake test
@@ -113,6 +108,17 @@ jobs:
       run: |
         set -ex
         bundle exec rake build
+      working-directory: ./ruby/from_hash
+
+    - name: "Create sig/optify_from_hash.rbs"
+      # See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
+      # Only do it for Ubuntu because we only publish with Ubuntu.
+      # Do for PRs so that we can ensure the command exits successfully.
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        mkdir --parents sig
+        bundle exec rbs prototype rbi rbi/optify_from_hash.rbi > sig/optify_from_hash.rbs
       working-directory: ./ruby/from_hash
 
     - name: "Publish"
@@ -185,11 +191,6 @@ jobs:
         bundle exec tapioca gem --verify
         bundle exec srb tc
         bundle exec rubocop
-
-        # Ensure that the RBS file is up-to-date.
-        mkdir -p tmp
-        bundle exec rbs prototype rbi rbi/optify.rbi > tmp/optify.rbs~
-        diff -u sig/optify.rbs tmp/optify.rbs~
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: "[Rust] Lint"
       run : cargo fmt -- --check
@@ -250,6 +251,13 @@ jobs:
         # The version to use to run rb-sys, but the cross-gem step will use a Docker container with it's own Ruby version, I think.
         ruby-version: "3.4.1"
         # Don't put the working-directory here because we don't want to install the Ruby project in this context.
+    - name: "Create sig/optify.rbs"
+      # See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
+      shell: bash
+      run: |
+        mkdir --parents sig
+        bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
+      working-directory: ./ruby/optify
 
     # Initialize some Rust resources
     # such as ensuring that /home/runner/.cargo/registry is created.
@@ -327,6 +335,14 @@ jobs:
       with:
         bundler-cache: true
         working-directory: ./ruby/optify
+
+    - name: "Create sig/optify.rbs"
+      # See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
+      shell: bash
+      run: |
+        mkdir --parents sig
+        bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
+      working-directory: ./ruby/optify
 
     - name: Build gem
       run: |

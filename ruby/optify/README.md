@@ -101,18 +101,6 @@ bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 Note that classes that inherit from `Optify:FromHashable` such as `OptionsMetadata` need Sorbet signatures for their attributes for `from_hash` to work.
 So some classes will need Sorbet signatures.
 
-<!--
-If RBS supports checks **at runtime** and we can support RBS style signatures in comments for configuration objects:
-bundle exec spoom srb sigs translate --from=rbi --to=rbs lib test
- -->
-
-To generate the RBS file:
-```shell
-bundle exec rbs prototype rbi rbi/optify.rbi > sig/optify.rbs
-```
-
-See guidance in https://github.com/ruby/rbs/blob/master/docs/gem.md
-
 ## Formatting
 To automatically change the Rust code, run:
 ```shell
