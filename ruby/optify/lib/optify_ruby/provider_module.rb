@@ -10,7 +10,7 @@ module Optify
   module ProviderModule
     #: [T] (LruRedux::Cache | Hash[Array[untyped], T], Array[untyped], (^(Array[untyped] key, T value, bool is_cache_hit) -> void)?) { -> T } -> T
     def self._cache_getset(cache, cache_key, on_cache_event = nil, &block)
-      is_cache_hit = true
+      is_cache_hit = true #: bool
       if cache.is_a? LruRedux::Cache
         result = cache.getset(cache_key) do
           is_cache_hit = false
