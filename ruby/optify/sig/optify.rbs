@@ -18,8 +18,8 @@ end
 
 # Options for caching.
 class Optify::CacheOptions
-  def initialize: () -> ^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void?
-                | (?on_cache_event: ^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void? on_cache_event) -> void
+  def initialize: () -> (^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void)?
+                | (?on_cache_event: (^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void)? on_cache_event) -> void
 end
 
 # The mode for the cache.
