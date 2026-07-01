@@ -38,6 +38,32 @@ class ProviderCacheTest < Test::Unit::TestCase
     assert_same(config_a_enabled, config_a2_enabled)
   end
 
+  def test_cache_options_on_cache_event
+    provider = Optify::OptionsProvider
+               .build('../../tests/test_suites/simple/configs')
+               .init
+    events = []
+    cache_options = Optify::CacheOptions.new
+    cache_options.on_cache_event = proc do |cache_key, value, is_cache_hit|
+      events << [cache_key, value, is_cache_hit]
+    end
+
+    config_a = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
+    config_b = provider.get_options('myConfig', ['B'], MyConfig, cache_options)
+    config_a2 = provider.get_options('myConfig', ['A'], MyConfig, cache_options)
+
+    expected_cache_key_a = ['myConfig', ['feature_A'], false, MyConfig]
+    expected_cache_key_b = ['myConfig', ['feature_B/initial'], false, MyConfig]
+    assert_equal(
+      [
+        [expected_cache_key_a, config_a, false],
+        [expected_cache_key_b, config_b, false],
+        [expected_cache_key_a, config_a2, true],
+      ],
+      events,
+    )
+  end
+
   def test_cache_with_constraints
     provider = Optify::OptionsProvider
                .build('../../tests/test_suites/simple/configs')

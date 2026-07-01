@@ -8,17 +8,23 @@ require 'sorbet-runtime'
 module Optify
   # @!visibility private
   module ProviderModule
-    #: [T] (LruRedux::Cache | Hash[untyped, untyped], Array[untyped]) { -> T } -> T
-    def self._cache_getset(cache, cache_key, &block)
-      if cache.is_a? LruRedux::Cache
-        cache.getset(cache_key, &block)
-      else
-        # Plain Hash - use fetch with block and store result
-        cache.fetch(cache_key) do
-          result = block.call
-          cache[cache_key] = result
-        end
-      end
+    #: [T] (LruRedux::Cache | Hash[Array[untyped], T], Array[untyped], (^(Array[untyped] key, T value, bool is_cache_hit) -> void)?) { -> T } -> T
+    def self._cache_getset(cache, cache_key, on_cache_event, &block)
+      is_cache_hit = true #: bool
+      result = if cache.is_a? LruRedux::Cache
+                 cache.getset(cache_key) do
+                   is_cache_hit = false
+                   block.call
+                 end
+               else
+                 # Plain Hash - use fetch with block and store result
+                 cache.fetch(cache_key) do
+                   is_cache_hit = false
+                   cache[cache_key] = block.call
+                 end
+               end
+      on_cache_event&.call(cache_key, result, is_cache_hit)
+      result
     end
 
     #: (CacheInitOptions?) -> ( Hash[Array[untyped], untyped] | LruRedux::Cache)
@@ -109,8 +115,8 @@ module Optify
         .from_hash(hash)
     end
 
-    #: [Config] (String key, Array[String] feature_names, Class[Config] config_class, Optify::CacheOptions _cache_options, ?Optify::GetOptionsPreferences? preferences) -> Config
-    def _get_options_with_cache(key, feature_names, config_class, _cache_options, preferences = nil)
+    #: [Config] (String, Array[String], Class[Config], Optify::CacheOptions, ?Optify::GetOptionsPreferences? ) -> Config
+    def _get_options_with_cache(key, feature_names, config_class, cache_options, preferences = nil)
       # Cache directly in Ruby instead of Rust because:
       # * Avoid any possible conversion overhead.
       # * Memory management: probably better to do it in Ruby for a Ruby app and avoid memory in Rust.
@@ -133,6 +139,7 @@ module Optify
       ProviderModule._cache_getset(
         @cache, #: as !nil
         cache_key,
+        cache_options.on_cache_event,
       ) do
         # Handle a cache miss.
 
