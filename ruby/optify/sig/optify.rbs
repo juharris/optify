@@ -17,13 +17,7 @@ class Optify::BaseConfig < FromHashable
 end
 
 # Options for caching.
-# Only enabling or disabling caching is supported for now.
 class Optify::CacheOptions < FromHashable
-  attr_accessor on_cache_event: (^(
-    ::Array[untyped] key,
-    untyped value,
-    bool is_cache_hit,
-  ) -> void)?
 end
 
 # The mode for the cache.
@@ -37,7 +31,8 @@ Optify::Optify::CacheMode::THREAD_SAFE: Symbol
 # Options for initializing the cache.
 class Optify::CacheInitOptions
   # A value from `CacheMode`.
-  def initialize: () -> Integer?
+  def initialize: () -> (^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void)?
+                | () -> Integer?
                 | () -> Symbol
                 | (?max_size: Integer? max_size, ?mode: Symbol mode) -> void
 end

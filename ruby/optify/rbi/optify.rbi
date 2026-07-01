@@ -19,10 +19,20 @@ module Optify
   end
 
   # Options for caching.
-  # Only enabling or disabling caching is supported for now.
   class CacheOptions < FromHashable
-    sig { returns(T.nilable(T.proc.params(key: T::Array[T.untyped], value: T.untyped, is_cache_hit: T::Boolean).void)) }
-    attr_accessor :on_cache_event
+    sig do
+      returns(
+        T.nilable(
+          T.proc.params(
+            key: T::Array[T.untyped],
+            value: T.untyped,
+            is_cache_hit: T::Boolean,
+          )
+              .void,
+        ),
+      )
+    end
+    attr_reader :on_cache_event
   end
 
   # The mode for the cache.
