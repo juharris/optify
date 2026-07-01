@@ -11,9 +11,16 @@ require_relative './provider_module'
 # Tools for working with configurations declared in files.
 module Optify
   # Options for caching.
-  class CacheOptions < FromHashable
+  class CacheOptions
     #: (^(Array[untyped] key, untyped value, bool is_cache_hit) -> void)?
     attr_accessor :on_cache_event
+
+    #: (
+    #|   ?on_cache_event: (^(Array[untyped] key, untyped value, bool is_cache_hit) -> void)?,
+    #| ) -> void
+    def initialize(on_cache_event: nil)
+      @on_cache_event = on_cache_event
+    end
   end
 
   # Provides configurations based on keys and enabled feature names.

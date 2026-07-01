@@ -17,7 +17,9 @@ class Optify::BaseConfig < FromHashable
 end
 
 # Options for caching.
-class Optify::CacheOptions < FromHashable
+class Optify::CacheOptions
+  def initialize: () -> (^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void)?
+                | (?on_cache_event: (^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void)? on_cache_event) -> void
 end
 
 # The mode for the cache.
@@ -31,8 +33,7 @@ Optify::Optify::CacheMode::THREAD_SAFE: Symbol
 # Options for initializing the cache.
 class Optify::CacheInitOptions
   # A value from `CacheMode`.
-  def initialize: () -> (^(::Array[untyped] key, untyped value, bool is_cache_hit) -> void)?
-                | () -> Integer?
+  def initialize: () -> Integer?
                 | () -> Symbol
                 | (?max_size: Integer? max_size, ?mode: Symbol mode) -> void
 end

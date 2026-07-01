@@ -19,7 +19,7 @@ module Optify
   end
 
   # Options for caching.
-  class CacheOptions < FromHashable
+  class CacheOptions
     sig do
       returns(
         T.nilable(
@@ -33,6 +33,19 @@ module Optify
       )
     end
     attr_reader :on_cache_event
+
+    sig do
+      params(
+        on_cache_event: T.nilable(
+          T.proc.params(
+            key: T::Array[T.untyped],
+            value: T.untyped,
+            is_cache_hit: T::Boolean,
+          ).void,
+        ),
+      ).void
+    end
+    def initialize(on_cache_event: nil); end
   end
 
   # The mode for the cache.
