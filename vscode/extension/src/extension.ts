@@ -19,13 +19,13 @@ interface ActivePreview {
 	documentSaveListener: vscode.Disposable
 	debounceTimer?: NodeJS.Timeout
 	updatePreview: () => void
-	areConfigurableStringsEnabled: boolean
+	areConfigurableValuesEnabled: boolean
 	customFeatures?: string[]
 }
 
 const activePreviews = new Map<string, ActivePreview>();
 
-function readConfigurableStringsDefault(optifyRoot: string): boolean {
+function readConfigurableValuesDefault(optifyRoot: string): boolean {
 	try {
 		const configPath = path.join(optifyRoot, '.optify', 'config.json');
 		if (fs.existsSync(configPath)) {
@@ -43,14 +43,14 @@ export function buildOptifyPreviewData(
 	canonicalFeatures: string[],
 	optifyRoot: string,
 	editingOptions: PreviewWhileEditingOptions | undefined = undefined,
-	areConfigurableStringsEnabled: boolean = false,
-	configurableStringsDefault: boolean = false,
+	areConfigurableValuesEnabled: boolean = false,
+	configurableValuesDefault: boolean = false,
 ): PreviewData | { error: string } {
 	const previewBuilder = new PreviewBuilder();
 	try {
 		// If some of the next lines fail in Rust from an unwrap or expect, then the exception is not caught.
 		const provider = getOptionsProvider(optifyRoot);
-		const data = previewBuilder.buildPreviewData(canonicalFeatures, provider, editingOptions, areConfigurableStringsEnabled, configurableStringsDefault);
+		const data = previewBuilder.buildPreviewData(canonicalFeatures, provider, editingOptions, areConfigurableValuesEnabled, configurableValuesDefault);
 		return data;
 	} catch (error) {
 		const message = `Failed to build preview${editingOptions ? " while editing" : ""}: ${error}`;
@@ -73,8 +73,8 @@ function sendPreviewUpdate(panel: vscode.WebviewPanel, data: PreviewData | { err
 			dependents: null,
 			isUnsaved: false,
 			error: data.error,
-			areConfigurableStringsEnabled: false,
-			areConfigurableStringsEnabledDefault: false,
+			areConfigurableValuesEnabled: false,
+			areConfigurableValuesEnabledDefault: false,
 			allFeatureNames: [],
 			featureAliases: {},
 			featurePaths: {},
@@ -147,7 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		const configurableStringsDefault = readConfigurableStringsDefault(optifyRoot);
+		const configurableValuesDefault = readConfigurableValuesDefault(optifyRoot);
 
 		const panel = vscode.window.createWebviewPanel(
 			'optifyPreview',
@@ -171,8 +171,8 @@ export function activate(context: vscode.ExtensionContext) {
 				features,
 				optifyRoot,
 				undefined,
-				preview?.areConfigurableStringsEnabled ?? configurableStringsDefault,
-				configurableStringsDefault,
+				preview?.areConfigurableValuesEnabled ?? configurableValuesDefault,
+				configurableValuesDefault,
 			);
 			sendPreviewUpdate(panel, data);
 			const graphData = buildOptifyGraphData(features, optifyRoot);
@@ -189,8 +189,8 @@ export function activate(context: vscode.ExtensionContext) {
 						features,
 						optifyRoot,
 						undefined,
-						preview?.areConfigurableStringsEnabled ?? configurableStringsDefault,
-						configurableStringsDefault,
+						preview?.areConfigurableValuesEnabled ?? configurableValuesDefault,
+						configurableValuesDefault,
 					);
 					sendPreviewUpdate(panel, initialData);
 					const graphData = buildOptifyGraphData(features, optifyRoot);
@@ -200,16 +200,16 @@ export function activate(context: vscode.ExtensionContext) {
 						const uri = vscode.Uri.file(message.path);
 						vscode.window.showTextDocument(uri);
 					}
-				} else if (message.command === 'setConfigurableStrings') {
+				} else if (message.command === 'setConfigurableValues') {
 					const preview = activePreviews.get(filePath);
 					if (preview) {
-						preview.areConfigurableStringsEnabled = message.enabled === true;
+						preview.areConfigurableValuesEnabled = message.enabled === true;
 						const data = buildOptifyPreviewData(
 							preview.customFeatures ?? [canonicalName],
 							optifyRoot,
 							undefined,
-							preview.areConfigurableStringsEnabled,
-							configurableStringsDefault,
+							preview.areConfigurableValuesEnabled,
+							configurableValuesDefault,
 						);
 						sendPreviewUpdate(panel, data);
 					}
@@ -223,8 +223,8 @@ export function activate(context: vscode.ExtensionContext) {
 							targetFeatures,
 							optifyRoot,
 							undefined,
-							preview.areConfigurableStringsEnabled,
-							configurableStringsDefault,
+							preview.areConfigurableValuesEnabled,
+							configurableValuesDefault,
 						);
 						sendPreviewUpdate(panel, data);
 						const graphData = buildOptifyGraphData(targetFeatures, optifyRoot);
@@ -258,8 +258,8 @@ export function activate(context: vscode.ExtensionContext) {
 							features: editingFeatures,
 							overrides: config.options ? JSON.stringify(config.options) : undefined
 						},
-						preview.areConfigurableStringsEnabled,
-						configurableStringsDefault,
+						preview.areConfigurableValuesEnabled,
+						configurableValuesDefault,
 					);
 					sendPreviewUpdate(panel, data);
 				}, EDIT_DEBOUNCE_MILLISECONDS);
@@ -292,7 +292,7 @@ export function activate(context: vscode.ExtensionContext) {
 			documentChangeListener,
 			documentSaveListener,
 			updatePreview,
-			areConfigurableStringsEnabled: configurableStringsDefault,
+			areConfigurableValuesEnabled: configurableValuesDefault,
 		});
 
 		// Clean up when panel is closed

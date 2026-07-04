@@ -33,13 +33,13 @@ export interface FeatureGraphData {
 export interface PreviewData {
 	features: string[];
 	config: any;
-	configurableStringsError?: string;
-	configurableStringsStatusMessage?: string;
+	configurableValuesError?: string;
+	configurableValuesMessage?: string;
 	dependents: DependentInfo[] | null;
 	isUnsaved: boolean;
 	error?: string;
-	areConfigurableStringsEnabled: boolean;
-	areConfigurableStringsEnabledDefault: boolean;
+	areConfigurableValuesEnabled: boolean;
+	areConfigurableValuesEnabledDefault: boolean;
 	allFeatureNames: string[];
 	featureAliases: Record<string, string[]>;
 	featurePaths: Record<string, string>;
@@ -92,13 +92,13 @@ export class PreviewBuilder {
 		canonicalFeatures: string[],
 		provider: OptionsWatcher,
 		editingOptions?: PreviewWhileEditingOptions,
-		areConfigurableStringsEnabled?: boolean,
-		configurableStringsDefault?: boolean,
+		areConfigurableValuesEnabled?: boolean,
+		configurableValuesDefault?: boolean,
 	): PreviewData {
 		const preferences = new GetOptionsPreferences();
 		preferences.setSkipFeatureNameConversion(true);
-		if (areConfigurableStringsEnabled) {
-			preferences.enableConfigurableStrings();
+		if (areConfigurableValuesEnabled) {
+			preferences.enableConfigurableValues();
 		}
 		let cacheOptions: CacheOptions | undefined = DEFAULT_CACHE_OPTIONS;
 		if (editingOptions?.overrides) {
@@ -108,14 +108,14 @@ export class PreviewBuilder {
 		}
 		const featureNames = editingOptions?.features ?? canonicalFeatures;
 		let builtConfig: any;
-		let configurableStringsError: string | undefined;
-		let configurableStringsStatusMessage: string | undefined;
-		let effectiveAreConfigurableStringsEnabled = !!areConfigurableStringsEnabled;
+		let configurableValuesError: string | undefined;
+		let configurableValuesStatusMessage: string | undefined;
+		let effectiveAreConfigurableValuesEnabled = !!areConfigurableValuesEnabled;
 
 		try {
 			builtConfig = provider.getAllOptions(featureNames, preferences, cacheOptions);
 		} catch (error) {
-			if (!effectiveAreConfigurableStringsEnabled) {
+			if (!effectiveAreConfigurableValuesEnabled) {
 				throw error;
 			}
 
@@ -126,9 +126,9 @@ export class PreviewBuilder {
 			}
 
 			builtConfig = provider.getAllOptions(featureNames, fallbackPreferences, cacheOptions);
-			effectiveAreConfigurableStringsEnabled = false;
-			configurableStringsError = `${error}`;
-			configurableStringsStatusMessage = "Configurable Strings were turned disabled because the preview could not load options with them enabled.";
+			effectiveAreConfigurableValuesEnabled = false;
+			configurableValuesError = `${error}`;
+			configurableValuesStatusMessage = "Configurable Values are disabled because the preview could not load options with them enabled.";
 		}
 		const feature = canonicalFeatures.length === 1 ? canonicalFeatures[0] : undefined;
 		const featuresWithMetadata = provider.featuresWithMetadata();
@@ -158,12 +158,12 @@ export class PreviewBuilder {
 		return {
 			features: canonicalFeatures,
 			config: builtConfig,
-			configurableStringsError,
-			configurableStringsStatusMessage,
+			configurableValuesError: configurableValuesError,
+			configurableValuesMessage: configurableValuesStatusMessage,
 			dependents,
 			isUnsaved: !!editingOptions,
-			areConfigurableStringsEnabled: effectiveAreConfigurableStringsEnabled,
-			areConfigurableStringsEnabledDefault: !!configurableStringsDefault,
+			areConfigurableValuesEnabled: effectiveAreConfigurableValuesEnabled,
+			areConfigurableValuesEnabledDefault: !!configurableValuesDefault,
 			allFeatureNames,
 			featureAliases,
 			featurePaths,

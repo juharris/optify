@@ -35,9 +35,9 @@ suite('Preview Builder Test Suite', () => {
 		assert.equal(typeof result.featureAliases, 'object');
 		assert.equal(typeof result.featurePaths, 'object');
 
-		// Configurable strings default to disabled
-		assert.equal(result.areConfigurableStringsEnabled, false);
-		assert.equal(result.areConfigurableStringsEnabledDefault, false);
+		// Configurable values default to disabled
+		assert.equal(result.areConfigurableValuesEnabled, false);
+		assert.equal(result.areConfigurableValuesEnabledDefault, false);
 	});
 
 	test('graph data', () => {
@@ -60,10 +60,10 @@ suite('Preview Builder Test Suite', () => {
 		const result = buildOptifyPreviewData(['feature'], expectedRoot, undefined, true, true);
 		assert.ok(!('error' in result));
 
-		assert.equal(result.areConfigurableStringsEnabled, true);
-		assert.equal(result.areConfigurableStringsEnabledDefault, true);
-		assert.equal(result.configurableStringsError, undefined);
-		assert.equal(result.configurableStringsStatusMessage, undefined);
+		assert.equal(result.areConfigurableValuesEnabled, true);
+		assert.equal(result.areConfigurableValuesEnabledDefault, true);
+		assert.equal(result.configurableValuesError, undefined);
+		assert.equal(result.configurableValuesMessage, undefined);
 	});
 
 	test('preview falls back when configurable strings cannot be rendered', () => {
@@ -71,9 +71,9 @@ suite('Preview Builder Test Suite', () => {
 		assert.ok(!('error' in result));
 
 		// Configurable strings are disabled automatically after a render failure.
-		assert.equal(result.areConfigurableStringsEnabled, false);
-		assert.equal(result.areConfigurableStringsEnabledDefault, true);
-		assert.ok(result.configurableStringsError);
-		assert.ok(result.configurableStringsStatusMessage);
+		assert.equal(result.areConfigurableValuesEnabled, false);
+		assert.equal(result.areConfigurableValuesEnabledDefault, true);
+		assert.ok(result.configurableValuesError);
+		assert.ok(result.configurableValuesMessage);
 	});
 });

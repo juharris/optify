@@ -92,10 +92,10 @@ export const PreviewApp: React.FC = () => {
 		vscode.postMessage({ command: 'openFile', path });
 	}, []);
 
-	const handleToggleConfigurableStrings = useCallback(() => {
+	const handleToggleConfigurableValues = useCallback(() => {
 		if (!previewData) { return; }
-		const newValue = !previewData.areConfigurableStringsEnabled;
-		vscode.postMessage({ command: 'setConfigurableStrings', enabled: newValue });
+		const newValue = !previewData.areConfigurableValuesEnabled;
+		vscode.postMessage({ command: 'setConfigurableValues', enabled: newValue });
 	}, [previewData]);
 
 	const selectOptions = useMemo(() => {
@@ -223,9 +223,9 @@ export const PreviewApp: React.FC = () => {
 		},
 	], []);
 
-	const configurableStringsLabel = previewData?.areConfigurableStringsEnabled
-		? '✓ Configurable Strings Enabled'
-		: '✗ Configurable Strings Disabled';
+	const configurableValuesLabel = previewData?.areConfigurableValuesEnabled
+		? '✓ Configurable Values Enabled'
+		: '✗ Configurable Values Disabled';
 
 	return (
 		<div style={{ padding: '1rem', fontFamily: 'var(--vscode-font-family)' }}>
@@ -338,20 +338,20 @@ export const PreviewApp: React.FC = () => {
 					>
 						{previewData.error}
 					</div>
-					{/* Show configurable strings toggle as disabled during errors so users can see its state */}
-					{previewData.areConfigurableStringsEnabledDefault && (
+					{/* Show configurable values toggle as disabled during errors so users can see its state */}
+					{previewData.areConfigurableValuesEnabledDefault && (
 						<button
 							disabled
 							style={{
 								marginTop: '0.5rem',
 								padding: '2px 8px', fontSize: '0.8rem', cursor: 'not-allowed', borderRadius: '3px',
 								opacity: 0.5,
-								backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
-								color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
+								backgroundColor: previewData.areConfigurableValuesEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
+								color: previewData.areConfigurableValuesEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
 								border: '1px solid var(--vscode-button-border, transparent)',
 							}}
 						>
-							{configurableStringsLabel}
+							{configurableValuesLabel}
 						</button>
 					)}
 				</div>
@@ -372,22 +372,22 @@ export const PreviewApp: React.FC = () => {
 						>
 							{expandAll === true ? '⊟ Collapse All' : '⊞ Expand All'}
 						</button>
-						{/* Only show configurable strings toggle when the config default enables it; otherwise they won't work */}
-						{previewData.areConfigurableStringsEnabledDefault && (
+						{/* Only show configurable values toggle when the config default enables it; otherwise they won't work */}
+						{previewData.areConfigurableValuesEnabledDefault && (
 							<button
-								onClick={handleToggleConfigurableStrings}
+								onClick={handleToggleConfigurableValues}
 								style={{
 									padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '3px',
-									backgroundColor: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
-									color: previewData.areConfigurableStringsEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
+									backgroundColor: previewData.areConfigurableValuesEnabled ? 'var(--vscode-button-background)' : 'var(--vscode-button-secondaryBackground)',
+									color: previewData.areConfigurableValuesEnabled ? 'var(--vscode-button-foreground)' : 'var(--vscode-button-secondaryForeground)',
 									border: '1px solid var(--vscode-button-border, transparent)',
 								}}
 							>
-								{configurableStringsLabel}
+								{configurableValuesLabel}
 							</button>
 						)}
 					</div>
-					{previewData.configurableStringsStatusMessage && (
+					{previewData.configurableValuesMessage && (
 						<div
 							style={{
 								marginTop: '0.5rem',
@@ -397,13 +397,13 @@ export const PreviewApp: React.FC = () => {
 							<p
 								style={{
 									marginTop: 0,
-									marginBottom: previewData.configurableStringsError ? '0.5rem' : 0,
+									marginBottom: previewData.configurableValuesError ? '0.5rem' : 0,
 									color: 'var(--vscode-descriptionForeground)',
 								}}
 							>
-								{previewData.configurableStringsStatusMessage}
+								{previewData.configurableValuesMessage}
 							</p>
-							{previewData.configurableStringsError && (
+							{previewData.configurableValuesError && (
 								<div
 									style={{
 										padding: '0.75rem',
@@ -414,7 +414,7 @@ export const PreviewApp: React.FC = () => {
 										whiteSpace: 'pre-wrap' as const,
 									}}
 								>
-									{previewData.configurableStringsError}
+									{previewData.configurableValuesError}
 								</div>
 							)}
 						</div>
