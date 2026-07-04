@@ -24,8 +24,8 @@ export interface ReadyMessage {
 	command: 'ready';
 }
 
-export interface SetConfigurableStringsMessage {
-	command: 'setConfigurableStrings';
+export interface SetConfigurableValuesMessage {
+	command: 'setConfigurableValues';
 	enabled: boolean;
 }
 
@@ -35,4 +35,4 @@ export interface SetFeaturesMessage {
 }
 
 export type MessageFromExtension = UpdateConfigMessage | UpdateGraphMessage;
-export type MessageToExtension = OpenFileMessage | ReadyMessage | SetConfigurableStringsMessage | SetFeaturesMessage;
+export type MessageToExtension = OpenFileMessage | ReadyMessage | SetConfigurableValuesMessage | SetFeaturesMessage;
