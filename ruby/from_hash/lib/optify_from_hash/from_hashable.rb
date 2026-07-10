@@ -205,7 +205,7 @@ module Optify
     # @return [Hash] The hash representation of this object.
     #: () -> Hash[Symbol, untyped]
     def to_h
-      result = Hash.new(instance_variables.size)
+      result = self.class.send(:_new_hash_for_to_h, instance_variables.size)
 
       instance_variables.each do |var_name|
         # Remove the @ prefix to get the method name
@@ -215,6 +215,14 @@ module Optify
       end
 
       result
+    end
+
+    #: (Integer) -> Hash[untyped, untyped]
+    private_class_method def self._new_hash_for_to_h(capacity)
+      result = Hash.new(capacity: capacity)
+      return result if result.default.nil?
+
+      {}
     end
 
     #: (untyped) -> untyped

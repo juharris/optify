@@ -35,6 +35,14 @@ module FromHashableTest
       assert a1 == a2
     end
 
+    def test_to_h_has_no_default_value
+      object = TestObject.from_hash({ num: 1, hash: { k: 1 } })
+      hash = object.to_h
+
+      assert_nil(hash.default)
+      assert_nil(hash[:missing])
+    end
+
     def test_equality_numbers
       a1 = TestObject.from_hash({ num: 1 })
       a2 = TestObject.from_hash({ num: 1 })
