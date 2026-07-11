@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-LIB_VERSION = '0.3.1'
+LIB_VERSION = '0.3.2'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-from_hash'

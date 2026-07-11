@@ -61,6 +61,15 @@ module FromHashableTest
       assert a1 != a2
     end
 
+    def test_to_h
+      object = TestObject.from_hash({ num: 1, hash: { k: 1 } })
+      hash = object.to_h
+
+      assert_equal({ num: 1, hash: { k: 1 } }, hash)
+      assert_nil(hash.default)
+      assert_nil(hash[:missing])
+    end
+
     def test_unknown_property_symbol_key
       err = assert_raise(ArgumentError) do
         TestObject.from_hash({ bad: 1 })

@@ -205,7 +205,7 @@ module Optify
     # @return [Hash] The hash representation of this object.
     #: () -> Hash[Symbol, untyped]
     def to_h
-      result = Hash.new(instance_variables.size)
+      result = Hash.new(capacity: instance_variables.size)
 
       instance_variables.each do |var_name|
         # Remove the @ prefix to get the method name
