@@ -35,14 +35,6 @@ module FromHashableTest
       assert a1 == a2
     end
 
-    def test_to_h_has_no_default_value
-      object = TestObject.from_hash({ num: 1, hash: { k: 1 } })
-      hash = object.to_h
-
-      assert_nil(hash.default)
-      assert_nil(hash[:missing])
-    end
-
     def test_equality_numbers
       a1 = TestObject.from_hash({ num: 1 })
       a2 = TestObject.from_hash({ num: 1 })
@@ -67,6 +59,15 @@ module FromHashableTest
       assert_not_same(a1, a2)
       assert_not_equal(a1, a2)
       assert a1 != a2
+    end
+    
+    def test_to_h
+      object = TestObject.from_hash({ num: 1, hash: { k: 1 } })
+      hash = object.to_h
+
+      assert_equal({ num: 1, hash: { k: 1 } }, hash)
+      assert_nil(hash.default)
+      assert_nil(hash[:missing])
     end
 
     def test_unknown_property_symbol_key
