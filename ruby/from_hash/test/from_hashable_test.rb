@@ -60,7 +60,7 @@ module FromHashableTest
       assert_not_equal(a1, a2)
       assert a1 != a2
     end
-    
+
     def test_to_h
       object = TestObject.from_hash({ num: 1, hash: { k: 1 } })
       hash = object.to_h
