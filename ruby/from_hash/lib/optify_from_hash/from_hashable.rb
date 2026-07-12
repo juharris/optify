@@ -4,7 +4,6 @@
 require 'json'
 require 'set'
 require 'sorbet-runtime'
-require 'tapioca'
 
 module Optify
   # A base class for classes that can be created from a hash.
