@@ -121,10 +121,7 @@
 				},
 				{
 					"type": "array",
-					"description": "The exact array to use. Overrides values from previous features. Not merged with arrays from previous or next features.",
-					"items": {
-						"$dynamicRef": "#configurableListValue"
-					}
+					"description": "The exact array to use. Overrides values from previous features. Not merged with arrays from previous or next features."
 				},
 				{
 					"type": "object",
@@ -154,7 +151,6 @@
 					"type": "object",
 					"properties": {
 						"$value": {
-							"$dynamicRef": "#configurableListValue",
 							"description": "The actual value to use for this item.",
 							"additionalProperties": true
 						},
@@ -167,10 +163,6 @@
 					"additionalProperties": false
 				}
 			]
-		},
-		"configurableListValue": {
-			"$dynamicAnchor": "configurableListValue",
-			"description": "The value type for ConfigurableList items. Custom schemas can override this dynamic anchor to constrain list values."
 		},
 		"configurableString": {
 			"description": "A string or a template that can be filled in when the configuration is built. There are no required properties because files that only override arguments should not need to re-specify the type and base value.\n\nSee https://github.com/juharris/optify/blob/main/docs/ConfigurableStrings.md for details.",

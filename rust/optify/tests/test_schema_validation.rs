@@ -58,6 +58,48 @@ fn test_configurable_list_item_type_is_validated() -> Result<(), String> {
                 }
             }"#,
         ),
+        (
+            "tool using a plugin property",
+            r#"{
+                "options": {
+                    "tools": [{ "title": "Not a tool property" }]
+                }
+            }"#,
+        ),
+        (
+            "plugin using a tool property",
+            r#"{
+                "options": {
+                    "plugins": [{ "name": "Not a plugin property" }]
+                }
+            }"#,
+        ),
+        (
+            "configurable tool using a plugin property",
+            r#"{
+                "options": {
+                    "tools": {
+                        "$type": "Optify.ConfigurableList",
+                        "invalid": {
+                            "$value": { "title": "Not a tool property" }
+                        }
+                    }
+                }
+            }"#,
+        ),
+        (
+            "configurable plugin using a tool property",
+            r#"{
+                "options": {
+                    "plugins": {
+                        "$type": "Optify.ConfigurableList",
+                        "invalid": {
+                            "$value": { "name": "Not a plugin property" }
+                        }
+                    }
+                }
+            }"#,
+        ),
     ];
 
     for (case_name, invalid_config) in invalid_configs {
@@ -103,6 +145,28 @@ fn test_configurable_list_partial_items_are_valid() -> Result<(), String> {
                     },
                     "order_only": {
                         "$order": 1
+                    }
+                }
+            }
+        }"#,
+        r#"{
+            "options": {
+                "tools": [{ "name": "tool" }],
+                "plugins": [{ "title": "plugin" }]
+            }
+        }"#,
+        r#"{
+            "options": {
+                "tools": {
+                    "$type": "Optify.ConfigurableList",
+                    "tool": {
+                        "$value": { "name": "tool" }
+                    }
+                },
+                "plugins": {
+                    "$type": "Optify.ConfigurableList",
+                    "plugin": {
+                        "$value": { "title": "plugin" }
                     }
                 }
             }

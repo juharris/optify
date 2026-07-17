@@ -1,4 +1,14 @@
 options:
+  tools:
+    $type: Optify.ConfigurableList
+    t:
+      $value:
+        name: "This is a tool"
+  plugins:
+    $type: Optify.ConfigurableList
+    b:
+      $value:
+        title: B
   items:
     $type: "Optify.ConfigurableList"
     item_a:

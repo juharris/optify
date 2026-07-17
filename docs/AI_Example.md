@@ -34,7 +34,7 @@ Imagine it was the result of merging multiple configuration files based on sever
         "tools": {
             "$type": "Optify.ConfigurableList",
             "code_executor": {
-                "$value":{
+                "$value": {
                     "name": "code_executor",
                     "description": {
                         "$type": "Optify.ConfigurableString",
@@ -45,7 +45,7 @@ Imagine it was the result of merging multiple configuration files based on sever
             // Map to `null` to disable a tool.
             "math": null,
             "web_search": {
-                "$value":{
+                "$value": {
                     "name": "web_search",
                     "description": {
                         "$type": "Optify.ConfigurableString",
@@ -89,3 +89,78 @@ Here is how your code would see the configuration when using an `OptionsProvider
     }
 }
 ```
+
+## Schema
+
+A custom schema at `.optify/schema.json` can specify the value type for `tools` while continuing to use Optify's standard definitions:
+
+```JSON
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "additionalProperties": false,
+    "minProperties": 1,
+    "properties": {
+        "conditions": {
+            "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/conditions"
+        },
+        "imports": {
+            "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/imports"
+        },
+        "metadata": {
+            "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/metadata"
+        },
+        "options": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+                "model": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "parameters": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "system_instructions": {
+                    "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+                },
+                "tools": {
+                    "allOf": [
+                        {
+                            "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableList"
+                        }
+                    ],
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "description": {
+                                "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "additionalProperties": {
+                        "properties": {
+                            "$value": {
+                                "$ref": "#/properties/options/properties/tools/items"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+This validates both literal tool arrays and configurable tool entries while providing editor suggestions for `name`, `description`, and the nested ConfigurableString properties.
+The tool schema is defined once under `items` and reused for each configurable entry's `$value`.
+`name` and `description` intentionally remain optional because each feature file is validated before features are merged, and a feature may override only one property.
