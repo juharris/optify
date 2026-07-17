@@ -1,5 +1,5 @@
 use config;
-use jsonschema::{Draft, Registry, Validator};
+use jsonschema::{Registry, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -613,7 +613,6 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .map_err(|e| format!("Failed to prepare schema registry: {e}"))?;
 
         let validator = Validator::options()
-            .with_draft(Draft::Draft7)
             .with_base_uri(schema_uri.as_str())
             .with_registry(&registry)
             .build(&schema_json)

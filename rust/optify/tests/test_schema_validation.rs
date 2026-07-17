@@ -3,6 +3,128 @@ use optify::{
     provider::{OptionsProvider, OptionsRegistry, OptionsWatcher},
 };
 
+const CONFIGURABLE_VALUES_CONFIGS_DIR: &str = "../../tests/test_suites/configurable_values/configs";
+const CONFIGURABLE_VALUES_SCHEMA_PATH: &str =
+    "../../tests/test_suites/configurable_values/configs/.optify/schema.json";
+
+fn build_configurable_values_config(config: &str) -> Result<OptionsProvider, String> {
+    use std::fs;
+    use tempfile::TempDir;
+
+    let temp_dir = TempDir::new().expect("temp dir to be created");
+    let config_path = temp_dir.path().join("config.json");
+    fs::write(&config_path, config).expect("config file to be written");
+
+    OptionsProvider::build_with_schema(temp_dir.path(), CONFIGURABLE_VALUES_SCHEMA_PATH)
+}
+
+#[test]
+fn test_configurable_list_item_type_is_validated() -> Result<(), String> {
+    let invalid_configs = [
+        (
+            "direct array",
+            r#"{
+                "options": {
+                    "tools": [42]
+                }
+            }"#,
+        ),
+        (
+            "item property",
+            r#"{
+                "options": {
+                    "tools": [{ "description": 42 }]
+                }
+            }"#,
+        ),
+        (
+            "configurable string property",
+            r#"{
+                "options": {
+                    "tools": [{ "description": { "invalid": true } }]
+                }
+            }"#,
+        ),
+        (
+            "configurable item",
+            r#"{
+                "options": {
+                    "tools": {
+                        "$type": "Optify.ConfigurableList",
+                        "invalid": {
+                            "$value": 42
+                        }
+                    }
+                }
+            }"#,
+        ),
+    ];
+
+    for (case_name, invalid_config) in invalid_configs {
+        let result = build_configurable_values_config(invalid_config);
+        let error_message = match result {
+            Ok(_) => {
+                return Err(format!(
+                    "Expected {case_name} ConfigurableList item schema validation to fail"
+                ));
+            }
+            Err(error) => error,
+        };
+
+        assert!(
+            error_message.contains("Schema validation failed"),
+            "Expected {case_name} schema validation error, got: {error_message}"
+        );
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_configurable_list_partial_items_are_valid() -> Result<(), String> {
+    let partial_configs = [
+        r#"{
+            "options": {
+                "tools": [
+                    { "description": "Only a description" },
+                    { "name": "only_a_name" }
+                ]
+            }
+        }"#,
+        r#"{
+            "options": {
+                "tools": {
+                    "$type": "Optify.ConfigurableList",
+                    "description_only": {
+                        "$value": { "description": "Only a description" }
+                    },
+                    "name_only": {
+                        "$value": { "name": "only_a_name" }
+                    },
+                    "order_only": {
+                        "$order": 1
+                    }
+                }
+            }
+        }"#,
+    ];
+
+    for partial_config in partial_configs {
+        build_configurable_values_config(partial_config)?;
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_configurable_values_configs_adhere_to_schema() -> Result<(), String> {
+    OptionsProvider::build_with_schema(
+        CONFIGURABLE_VALUES_CONFIGS_DIR,
+        CONFIGURABLE_VALUES_SCHEMA_PATH,
+    )
+    .map(|_| ())
+}
+
 #[test]
 fn test_simple_configs_adhere_to_schema() -> Result<(), String> {
     let configs_dir = "../../tests/test_suites/simple/configs";

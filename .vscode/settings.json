@@ -12,20 +12,26 @@
 		{
 			"fileMatch": [
 				"rust/optify/tests/**/*.json",
-				"tests/{configurable_values,invalid_suites,test_suites}/**/configs/**/*.json",
-				"!tests/{configurable_values,invalid_suites,test_suites}/**/configs/.optify/config.json"
+				"tests/{invalid_suites,test_suites}/**/configs/**/*.json",
+				"!tests/test_suites/configurable_values/configs/**/*.json",
+				"!tests/test_suites/inheritance/configs/**/*.json",
+				"!tests/**/configs/.optify/config.json",
+				"!tests/**/configs/.optify/schema.json"
 			],
 			"url": "./schemas/feature_file.json"
 		},
 		{
 			"fileMatch": [
-				"tests/test_suites/configurable_values/configs/**/*.json"
+				"tests/test_suites/configurable_values/configs/**/*.json",
+				"!tests/test_suites/configurable_values/configs/.optify/config.json",
+				"!tests/test_suites/configurable_values/configs/.optify/schema.json"
 			],
 			"url": "./tests/test_suites/configurable_values/configs/.optify/schema.json"
 		},
 		{
 			"fileMatch": [
-				"tests/test_suites/inheritance/configs/**/*.json"
+				"tests/test_suites/inheritance/configs/**/*.json",
+				"!tests/test_suites/inheritance/configs/.optify/schema.json"
 			],
 			"url": "./tests/test_suites/inheritance/configs/.optify/schema.json"
 		}
@@ -33,7 +39,8 @@
 	"yaml.schemas": {
 		"./schemas/feature_file.json": [
 			"rust/optify/tests/**/*.{yaml,yml}",
-			"tests/{configurable_values,invalid_suites,test_suites}/**/configs/**/*.{yaml,yml}"
+			"tests/{test_suites/!(configurable_values|inheritance),invalid_suites}/**/configs/**/*.{yaml,yml}",
+			"tests/test_suites/configurable_values_no_schema/configs/**/*.{yaml,yml}"
 		],
 		"./tests/test_suites/configurable_values/configs/.optify/schema.json": [
 			"tests/test_suites/configurable_values/configs/**/*.{yaml,yml}"
