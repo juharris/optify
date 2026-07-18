@@ -19,41 +19,43 @@ Imagine it was the result of merging multiple configuration files based on sever
                 "temperature": 0.7
             }
         },
-        "system_instructions": {
-            "$type": "Optify.ConfigurableString",
-            "base": {
-                "file": "templates/system_instructions.liquid"
-            },
-            "arguments": {
-                "product_name": "MyApp",
-                "personality": {
-                    "file": "shared/personality.txt"
-                }
-            }
-        },
-        "tools": {
-            "$type": "Optify.ConfigurableList",
-            "code_executor": {
-                "$value": {
-                    "name": "code_executor",
-                    "description": {
-                        "$type": "Optify.ConfigurableString",
-                        "base": "Executes code snippets in a secure environment."
+        "chat": {
+            "system_instructions": {
+                "$type": "Optify.ConfigurableString",
+                "base": {
+                    "file": "templates/system_instructions.liquid"
+                },
+                "arguments": {
+                    "product_name": "MyApp",
+                    "personality": {
+                        "file": "shared/personality.txt"
                     }
                 }
             },
-            // Map to `null` to disable a tool.
-            "math": null,
-            "web_search": {
-                "$value": {
-                    "name": "web_search",
-                    "description": {
-                        "$type": "Optify.ConfigurableString",
-                        "base": {
-                            "liquid": "Search the web using {{ provider }}."
-                        },
-                        "arguments": {
-                            "provider": "Bing Search"
+            "tools": {
+                "$type": "Optify.ConfigurableList",
+                "code_executor": {
+                    "$value": {
+                        "name": "code_executor",
+                        "description": {
+                            "$type": "Optify.ConfigurableString",
+                            "base": "Executes code snippets in a secure environment."
+                        }
+                    }
+                },
+                // Map to `null` to disable a tool.
+                "math": null,
+                "web_search": {
+                    "$value": {
+                        "name": "web_search",
+                        "description": {
+                            "$type": "Optify.ConfigurableString",
+                            "base": {
+                                "liquid": "Search the web using {{ provider }}."
+                            },
+                            "arguments": {
+                                "provider": "Bing Search"
+                            }
                         }
                     }
                 }
@@ -75,17 +77,19 @@ Here is how your code would see the configuration when using an `OptionsProvider
                 "temperature": 0.7
             }
         },
-        "system_instructions": "You are a helpful assistant for MyApp.\n\nYou are nice.",
-        "tools": [
-            {
-                "name": "code_executor",
-                "description": "Executes code snippets in a secure environment."
-            },
-            {
-                "name": "web_search",
-                "description": "Search the web using Bing Search."
-            }
-        ]
+        "chat": {
+            "system_instructions": "You are a helpful assistant for MyApp.\n\nYou are nice.",
+            "tools": [
+                {
+                    "name": "code_executor",
+                    "description": "Executes code snippets in a secure environment."
+                },
+                {
+                    "name": "web_search",
+                    "description": "Search the web using Bing Search."
+                }
+            ]
+        }
     }
 }
 ```
@@ -117,6 +121,7 @@ A custom schema at `.optify/schema.json` can specify the value type for `tools` 
             "properties": {
                 "model": {
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                         "name": {
                             "type": "string"
@@ -126,31 +131,37 @@ A custom schema at `.optify/schema.json` can specify the value type for `tools` 
                         }
                     }
                 },
-                "system_instructions": {
-                    "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
-                },
-                "tools": {
-                    "allOf": [
-                        {
-                            "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableList"
-                        }
-                    ],
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "description": {
-                                "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+                "chat": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "system_instructions": {
+                            "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+                        },
+                        "tools": {
+                            "allOf": [
+                                {
+                                    "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableList"
+                                }
+                            ],
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "description": {
+                                        "$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                }
                             },
-                            "name": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "additionalProperties": {
-                        "properties": {
-                            "$value": {
-                                "$ref": "#/properties/options/properties/tools/items"
+                            "additionalProperties": {
+                                "properties": {
+                                    "$value": {
+                                        "$ref": "#/properties/options/properties/tools/items"
+                                    }
+                                }
                             }
                         }
                     }
@@ -161,6 +172,6 @@ A custom schema at `.optify/schema.json` can specify the value type for `tools` 
 }
 ```
 
-This validates both literal tool arrays and configurable tool entries while providing editor suggestions for `name`, `description`, and the nested ConfigurableString properties.
-The tool schema is defined once under `items` and reused for each configurable entry's `$value`.
-`name` and `description` intentionally remain optional because each feature file is validated before features are merged, and a feature may override only one property.
+This validates both literal tool arrays and configurable tool entries while providing editor suggestions for `"name"`, `"description"`, and the nested ConfigurableString properties.
+The tool schema is defined once under `"items"` and reused for each configurable entry's `"$value"`.
+`"name"` and `"description"` intentionally remain optional because each feature file is validated before features are merged, and a feature may only set one property.

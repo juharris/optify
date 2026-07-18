@@ -8,16 +8,18 @@
 				"temperature": 0.7
 			}
 		},
-		"system_instructions": "You are a helpful assistant for MyApp.\n\nYou are nice.",
-		"tools": [
-			{
-				"name": "code_executor",
-				"description": "Executes code snippets in a secure environment."
-			},
-			{
-				"name": "web_search",
-				"description": "Search the web using Bing Search."
-			}
-		]
+		"chat": {
+			"system_instructions": "You are a helpful assistant for MyApp.\n\nYou are nice.",
+			"tools": [
+				{
+					"name": "code_executor",
+					"description": "Executes code snippets in a secure environment."
+				},
+				{
+					"name": "web_search",
+					"description": "Search the web using Bing Search."
+				}
+			]
+		}
 	}
 }
