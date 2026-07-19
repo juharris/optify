@@ -1,10 +1,13 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use optify::provider::{CacheOptions, GetOptionsPreferences, OptionsProvider, OptionsRegistry};
 
-const CONFIGS_DIR: &str = "../../tests/test_suites/configurable_values/configs";
+const CONFIGS_DIRS: &[&str] = &[
+    "../../tests/test_suites/configurable_values/configs",
+    "../../tests/test_suites/configurable_values_no_schema/configs",
+];
 
 fn get_provider() -> OptionsProvider {
-    OptionsProvider::build(CONFIGS_DIR).unwrap()
+    OptionsProvider::build_from_directories(CONFIGS_DIRS).unwrap()
 }
 
 fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
@@ -78,7 +81,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
                 let cache_options = CacheOptions {};
                 // Pre-populate cache
                 let _ = provider
-                    .get_options_with_preferences(*key, *features, Some(&cache_options), None)
+                    .get_options_with_preferences(key, features, Some(&cache_options), None)
                     .unwrap();
 
                 b.iter(|| {

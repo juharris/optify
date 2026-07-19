@@ -1,5 +1,5 @@
 {
-	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"title": "Optify Feature Configuration",
 	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats. See https://github.com/juharris/optify for more information.",
 	"type": "object",
@@ -7,13 +7,13 @@
 	"minProperties": 1,
 	"properties": {
 		"conditions": {
-			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/conditions"
+			"$ref": "../../../../../schemas/feature_file.json#/definitions/conditions"
 		},
 		"imports": {
-			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/imports"
+			"$ref": "../../../../../schemas/feature_file.json#/definitions/imports"
 		},
 		"metadata": {
-			"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/metadata"
+			"$ref": "../../../../../schemas/feature_file.json#/definitions/metadata"
 		},
 		"options": {
 			"type": "object",
@@ -21,13 +21,62 @@
 			"minProperties": 1,
 			"properties": {
 				"greeting": {
-					"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+					"$ref": "../../../../../schemas/feature_file.json#/definitions/configurableString"
 				},
 				"message": {
-					"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableString"
+					"$ref": "../../../../../schemas/feature_file.json#/definitions/configurableString"
 				},
 				"tools": {
-					"$ref": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json#/definitions/configurableList"
+					"allOf": [
+						{
+							"$ref": "../../../../../schemas/feature_file.json#/definitions/configurableList"
+						}
+					],
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"description": {
+								"$ref": "../../../../../schemas/feature_file.json#/definitions/configurableString"
+							},
+							"name": {
+								"type": "string"
+							}
+						}
+					},
+					"additionalProperties": {
+						"properties": {
+							"$value": {
+								"$ref": "#/properties/options/properties/tools/items"
+							}
+						}
+					}
+				},
+				"plugins": {
+					"allOf": [
+						{
+							"$ref": "../../../../../schemas/feature_file.json#/definitions/configurableList"
+						}
+					],
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"details": {
+								"$ref": "../../../../../schemas/feature_file.json#/definitions/configurableString"
+							},
+							"title": {
+								"type": "string"
+							}
+						}
+					},
+					"additionalProperties": {
+						"properties": {
+							"$value": {
+								"$ref": "#/properties/options/properties/plugins/items"
+							}
+						}
+					}
 				}
 			}
 		}

@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
   spec.extensions = ['ext/optify_ruby/extconf.rb']
 
   # needed until rubygems Rust support is out of beta
-  spec.add_dependency 'rb_sys', '~> 0.9.124'
+  spec.add_dependency 'rb_sys', '~> 0.9.128'
 
   spec.add_dependency 'optify-from_hash', "~> #{FROM_HASH_DEP_VERSION}"
   spec.add_dependency 'sin_lru_redux', '~> 2.5.2'

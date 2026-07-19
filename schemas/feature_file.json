@@ -1,6 +1,5 @@
 {
-	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"title": "Optify Feature Configuration",
 	"description": "Schema for Optify feature configuration files supporting JSON and YAML formats. See https://github.com/juharris/optify for more information.",
 	"type": "object",
