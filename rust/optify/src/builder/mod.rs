@@ -6,7 +6,6 @@ mod extract_files_from_config;
 mod get_canonical_feature_name;
 mod get_supported_extensions;
 pub(crate) mod loading_result;
-pub(crate) mod uri;
 pub(crate) mod watcher_builder;
 
 pub use builder_impl::*;

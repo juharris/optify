@@ -1,5 +1,5 @@
 use config;
-use jsonschema::{Registry, Validator};
+use jsonschema::{Draft, Registry, Validator};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -11,7 +11,6 @@ use crate::builder::extract_files_from_config::extract_files_from_config;
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::{FeatureLoadingResult, LoadingResult, RawLoadingResult};
-use crate::builder::uri::path_to_file_uri;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
@@ -588,11 +587,9 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     }
 
     fn with_schema(&mut self, schema_path: impl AsRef<Path>) -> Result<&Self, String> {
-        let schema_path = dunce::canonicalize(schema_path.as_ref())
-            .map_err(|e| format!("Failed to resolve schema path: {e}"))?;
-        let schema_json = crate::json::reader::read_json_from_file(&schema_path)
+        let schema_path = schema_path.as_ref();
+        let schema_json = crate::json::reader::read_json_from_file(schema_path)
             .map_err(|e| format!("Failed to read schema file: {e}"))?;
-        let schema_uri = path_to_file_uri(&schema_path)?;
 
         // Load the embedded schema file (this is resolved at compile time).
         const EMBEDDED_SCHEMA: &[u8] =
@@ -609,7 +606,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .map_err(|e| format!("Failed to prepare schema registry: {e}"))?;
 
         let validator = Validator::options()
-            .with_base_uri(schema_uri.as_str())
+            .with_draft(Draft::Draft7)
             .with_registry(&registry)
             .build(&schema_json)
             .map_err(|e| format!("Invalid schema: {e}"))?;
