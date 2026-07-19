@@ -301,6 +301,24 @@ jobs:
         # Useful when the number is changed for the action, but the Docker image is not yet published.
         # Images: https://hub.docker.com/u/rbsys
         # tag: '0.9.124'
+        # Ensure the container uses a Rust toolchain compatible with current crates.
+        # kstring@2.0.4 requires rustc 1.96.0
+        pre-script: |
+          {
+            minimum_rustc="1.96.0";
+            current_rustc="$(rustc --version)";
+            current_rustc="${current_rustc#rustc }";
+            current_rustc="${current_rustc%% *}";
+            lowest_rustc="$(printf "%s\n" "$current_rustc" "$minimum_rustc" | sort -V | head -n 1)";
+
+            if [ "$current_rustc" = "$lowest_rustc" ] && [ "$current_rustc" != "$minimum_rustc" ]; then
+              rustup toolchain install "$minimum_rustc";
+              rustup default "$minimum_rustc";
+              rustup target add "$RUST_TARGET";
+            fi;
+
+            rustc --version;
+          }
         working-directory: ./ruby/optify
 
     - name: "Configure RubyGems credentials"
