@@ -11,6 +11,7 @@ use crate::builder::extract_files_from_config::extract_files_from_config;
 use crate::builder::get_canonical_feature_name::get_canonical_feature_name;
 use crate::builder::get_supported_extensions::get_supported_extensions;
 use crate::builder::loading_result::{FeatureLoadingResult, LoadingResult, RawLoadingResult};
+use crate::builder::uri::path_to_file_uri;
 use crate::builder::OptionsRegistryBuilder;
 use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
@@ -591,12 +592,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .map_err(|e| format!("Failed to resolve schema path: {e}"))?;
         let schema_json = crate::json::reader::read_json_from_file(&schema_path)
             .map_err(|e| format!("Failed to read schema file: {e}"))?;
-        let schema_uri = url::Url::from_file_path(&schema_path).map_err(|()| {
-            format!(
-                "Failed to convert schema path to a file URI: {}",
-                schema_path.display()
-            )
-        })?;
+        let schema_uri = path_to_file_uri(&schema_path)?;
 
         // Load the embedded schema file (this is resolved at compile time).
         const EMBEDDED_SCHEMA: &[u8] =
