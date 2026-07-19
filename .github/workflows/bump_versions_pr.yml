@@ -1,4 +1,4 @@
-name: "Bump Versions: Create PR"
+name: "🤜Bump Versions: Create PR"
 
 on:
   workflow_dispatch:

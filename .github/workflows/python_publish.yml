@@ -2,7 +2,7 @@
 # It was modified.
 # To regenerate it, run `maturin generate-ci github`.
 
-name: "[Python] Build & Publish"
+name: "🐍[Python] Build & Publish"
 
 on:
   workflow_dispatch:

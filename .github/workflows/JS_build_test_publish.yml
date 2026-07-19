@@ -1,4 +1,4 @@
-name: "[JS] Build, Test, and Publish"
+name: "⏣[JS] Build, Test, and Publish"
 
 env:
   DEBUG: napi:*
