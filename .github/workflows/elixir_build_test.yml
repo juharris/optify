@@ -1,4 +1,4 @@
-name: "[Elixir] Build & Test"
+name: "💧[Elixir] Build & Test"
 
 on:
   push:

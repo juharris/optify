@@ -1,4 +1,4 @@
-name: "Build & Test"
+name: "🚦Build & Test"
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
   setup:
     # Drafts: Only run on Ubuntu.
     # Non-drafts: Run on both Ubuntu and macOS.
-    name: "Setup Build Matrix"
+    name: "🧭Setup Build Matrix"
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
@@ -48,7 +48,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   test:
-    name: "Build & Test"
+    name: "🧪Build & Test"
     needs: setup
     runs-on: ${{ matrix.os }}
     permissions:
@@ -62,7 +62,7 @@ jobs:
     - uses: actions/checkout@v6
 
     # Rust
-    - name: "[Rust] Setup cache"
+    - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: |
@@ -73,19 +73,19 @@ jobs:
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
-    - name: "[Rust] Build"
+    - name: "🦀[Rust] Build"
       run: cargo build --release
       working-directory: ./rust/optify
-    - name: "[Rust] Lint"
+    - name: "🦀[Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./rust/optify
-    - name: "[Rust] Clippy"
+    - name: "🦀[Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./rust/optify
-    - name: "[Rust] Test"
+    - name: "🦀[Rust] Test"
       run: cargo test --release
       working-directory: ./rust/optify
-    - name: "[Rust] Copy schema for publish"
+    - name: "🦀[Rust] Copy schema for publish"
       if: matrix.os == 'ubuntu-latest'
       run: |
         mkdir schemas
@@ -94,7 +94,7 @@ jobs:
     - uses: rust-lang/crates-io-auth-action@v1
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       id: auth
-    - name: "[Rust] Publish"
+    - name: "🦀[Rust] Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
       # It probably just fails if the crate is already published.
@@ -105,28 +105,28 @@ jobs:
       env:
         CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       working-directory: ./rust/optify
-    - name: "[Rust] Publish (dry run)"
+    - name: "🦀[Rust] Publish (dry run)"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
         cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify
-    - name: "[Rust CLI] Build"
+    - name: "🦀[Rust CLI] Build"
       run: cargo build --release
       working-directory: ./rust/optify-cli
-    - name: "[Rust CLI] Lint"
+    - name: "🦀[Rust CLI] Lint"
       run: cargo fmt -- --check
       working-directory: ./rust/optify-cli
-    - name: "[Rust CLI] Clippy"
+    - name: "🦀[Rust CLI] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings
       working-directory: ./rust/optify-cli
-    - name: "[Rust CLI] Test"
+    - name: "🦀[Rust CLI] Test"
       run: cargo test --release
       working-directory: ./rust/optify-cli
-    - name: "[Rust CLI] Integration tests"
+    - name: "🦀[Rust CLI] Integration tests"
       run: bash tests/test_cli.sh
       working-directory: ./rust/optify-cli
-    - name: "[Rust CLI] Publish"
+    - name: "🦀[Rust CLI] Publish"
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       shell: bash
       continue-on-error: true
@@ -135,7 +135,7 @@ jobs:
       env:
         CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       working-directory: ./rust/optify-cli
-    - name: "[Rust CLI] Publish (dry run)"
+    - name: "🦀[Rust CLI] Publish (dry run)"
       if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       # May fail on PRs when optify-cli depends on unpublished optify changes,
       # since --dry-run resolves the optify crate from crates.io, not the workspace.
@@ -146,55 +146,55 @@ jobs:
       working-directory: ./rust/optify-cli
 
     # JavaScript
-    - name: "[JS][Rust] Lint"
+    - name: "⏣[JS][Rust] Lint"
       # Don't use Clippy because it gives too many errors.
       # It seems like the macros confuse it.
       run : cargo fmt -- --check
       working-directory: ./js/optify-config
-    - name: "[JS] Install corepack"
+    - name: "⏣[JS] Install corepack"
       run: npm install -g corepack
-    - name: Setup node
+    - name: "⏣Setup node"
       uses: actions/setup-node@v6
       with:
         cache: yarn
         cache-dependency-path: ./js/optify-config/yarn.lock
         node-version: 20
-    - name: "[JS] Install dependencies"
+    - name: "⏣[JS] Install dependencies"
       run: yarn install --immutable
       working-directory: ./js/optify-config
-    - name: "[JS] Format check"
+    - name: "⏣[JS] Format check"
       run: yarn fmt:check
       working-directory: ./js/optify-config
-    - name: "[JS] Lint"
+    - name: "⏣[JS] Lint"
       run: yarn lint
       working-directory: ./js/optify-config
-    - name: "[JS] Build"
+    - name: "⏣[JS] Build"
       run: |
         yarn build
         yarn build:ts
       working-directory: ./js/optify-config
-    - name: "[JS] Test"
+    - name: "⏣[JS] Test"
       run: yarn test
       working-directory: ./js/optify-config
 
     # Python
     - uses: actions/setup-python@v6
-      name: "[Python] Setup"
+      name: "🐍[Python] Setup"
       with:
         cache: pip
         # Respect PyO3's maximum supported Python version.
         python-version: '3.14'
-    - name: "[Python] Build"
+    - name: "🐍[Python] Build"
       shell: bash
       run: pip install -e .[dev]
       working-directory: ./python/optify
-    - name: "[Python][Rust] Lint"
+    - name: "🐍[Python][Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./python/optify
-    - name: "[Python][Rust] Clippy"
+    - name: "🐍[Python][Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./python/optify
-    - name: "[Python] Test"
+    - name: "🐍[Python] Test"
       shell: bash
       run: pytest
       working-directory: ./python/optify

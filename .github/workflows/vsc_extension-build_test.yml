@@ -1,4 +1,4 @@
-name: "[VS Code Ext] Build & Test"
+name: "🟦[VS Code Ext] Build & Test"
 
 on:
   push:
