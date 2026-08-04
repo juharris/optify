@@ -279,29 +279,6 @@ impl OptionsProviderBuilder {
                     }))
                 }
 
-                fn drain_sorted_pointers(pointers: &mut HashSet<String>) -> Vec<String> {
-                    drain_sorted_pointers_from_set(std::mem::take(pointers))
-                }
-
-                fn drain_sorted_pointers_from_set(pointers: HashSet<String>) -> Vec<String> {
-                    let mut sorted_pointers: Vec<String> = pointers.into_iter().collect();
-                    sort_pointers_deepest_first(&mut sorted_pointers);
-                    sorted_pointers
-                }
-
-                fn sorted_pointers_from_set(pointers: &HashSet<String>) -> Vec<String> {
-                    let mut sorted_pointers: Vec<String> = pointers.iter().cloned().collect();
-                    sort_pointers_deepest_first(&mut sorted_pointers);
-                    sorted_pointers
-                }
-
-                fn sort_pointers_deepest_first(pointers: &mut [String]) {
-                    pointers.sort_unstable_by(|a, b| pointer_depth(b).cmp(&pointer_depth(a)).then_with(|| a.cmp(b)));
-                }
-
-                fn pointer_depth(pointer: &str) -> usize {
-                    pointer.matches('/').count()
-                }
                 Err(e) => Err(format!("Error reading file {}: {e}", path.display())),
             }
         }
@@ -314,6 +291,34 @@ impl OptionsProviderBuilder {
         match loading_result? {
             LoadingResult::Feature(feature) => self.process_feature_loading_result(feature),
             LoadingResult::Raw(raw) => self.process_raw_loading_result(raw),
+        }
+
+        fn drain_sorted_pointers(pointers: &mut HashSet<String>) -> Vec<String> {
+            drain_sorted_pointers_from_set(std::mem::take(pointers))
+        }
+
+        fn drain_sorted_pointers_from_set(pointers: HashSet<String>) -> Vec<String> {
+            let mut sorted_pointers: Vec<String> = pointers.into_iter().collect();
+            sort_pointers_deepest_first(&mut sorted_pointers);
+            sorted_pointers
+        }
+
+        fn sorted_pointers_from_set(pointers: &HashSet<String>) -> Vec<String> {
+            let mut sorted_pointers: Vec<String> = pointers.iter().cloned().collect();
+            sort_pointers_deepest_first(&mut sorted_pointers);
+            sorted_pointers
+        }
+
+        fn sort_pointers_deepest_first(pointers: &mut [String]) {
+            pointers.sort_unstable_by(|a, b| {
+                pointer_depth(b)
+                    .cmp(&pointer_depth(a))
+                    .then_with(|| a.cmp(b))
+            });
+        }
+
+        fn pointer_depth(pointer: &str) -> usize {
+            pointer.matches('/').count()
         }
     }
 
