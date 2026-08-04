@@ -1,0 +1,44 @@
+{
+	"features": ["configurable_lists_3_deep"],
+	"options": {
+		"items": [
+			{
+				"name": "group-a",
+				"items": [
+					{
+						"name": "section-1",
+						"items": [
+							{
+								"name": "leaf-a"
+							},
+							{
+								"name": "leaf-b"
+							}
+						]
+					},
+					{
+						"name": "section-2",
+						"items": [
+							{
+								"name": "leaf-c"
+							}
+						]
+					}
+				]
+			},
+			{
+				"name": "group-b",
+				"items": [
+					{
+						"name": "section-3",
+						"items": [
+							{
+								"name": "leaf-d"
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+}

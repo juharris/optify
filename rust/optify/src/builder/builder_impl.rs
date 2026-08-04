@@ -67,6 +67,34 @@ fn add_alias(
     Ok(())
 }
 
+fn drain_sorted_pointers(pointers: &mut HashSet<String>) -> Vec<String> {
+    drain_sorted_pointers_from_set(std::mem::take(pointers))
+}
+
+fn drain_sorted_pointers_from_set(pointers: HashSet<String>) -> Vec<String> {
+    let mut sorted_pointers: Vec<String> = pointers.into_iter().collect();
+    sort_pointers_deepest_first(&mut sorted_pointers);
+    sorted_pointers
+}
+
+fn sorted_pointers_from_set(pointers: &HashSet<String>) -> Vec<String> {
+    let mut sorted_pointers: Vec<String> = pointers.iter().cloned().collect();
+    sort_pointers_deepest_first(&mut sorted_pointers);
+    sorted_pointers
+}
+
+fn sort_pointers_deepest_first(pointers: &mut [String]) {
+    pointers.sort_unstable_by(|a, b| {
+        pointer_depth(b)
+            .cmp(&pointer_depth(a))
+            .then_with(|| a.cmp(b))
+    });
+}
+
+fn pointer_depth(pointer: &str) -> usize {
+    pointer.matches('/').count()
+}
+
 #[allow(clippy::too_many_arguments)]
 fn resolve_imports(
     canonical_feature_name: &str,
@@ -179,9 +207,7 @@ impl OptionsProviderBuilder {
         self.prepare_build()?;
 
         let all_configurable_list_pointers =
-            std::mem::take(&mut self.all_configurable_list_pointers)
-                .into_iter()
-                .collect();
+            drain_sorted_pointers(&mut self.all_configurable_list_pointers);
         let all_configurable_string_pointers =
             std::mem::take(&mut self.all_configurable_string_pointers)
                 .into_iter()
@@ -189,7 +215,7 @@ impl OptionsProviderBuilder {
         let keyed_configurable_list_pointers =
             std::mem::take(&mut self.keyed_configurable_list_pointers)
                 .into_iter()
-                .map(|(key, set)| (key, set.into_iter().collect()))
+                .map(|(key, set)| (key, drain_sorted_pointers_from_set(set)))
                 .collect();
         let keyed_configurable_string_pointers =
             std::mem::take(&mut self.keyed_configurable_string_pointers)
@@ -281,6 +307,7 @@ impl OptionsProviderBuilder {
                         relative_path,
                     }))
                 }
+
                 Err(e) => Err(format!("Error reading file {}: {e}", path.display())),
             }
         }
@@ -631,15 +658,12 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             .iter()
             .cloned()
             .collect();
-        let all_configurable_list_pointers = self
-            .all_configurable_list_pointers
-            .iter()
-            .cloned()
-            .collect();
+        let all_configurable_list_pointers =
+            sorted_pointers_from_set(&self.all_configurable_list_pointers);
         let keyed_configurable_list_pointers = self
             .keyed_configurable_list_pointers
             .iter()
-            .map(|(key, set)| (key.clone(), set.iter().cloned().collect()))
+            .map(|(key, set)| (key.clone(), sorted_pointers_from_set(set)))
             .collect();
         let keyed_configurable_string_pointers = self
             .keyed_configurable_string_pointers
