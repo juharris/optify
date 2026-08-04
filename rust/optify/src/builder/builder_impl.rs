@@ -206,7 +206,8 @@ impl OptionsProviderBuilder {
     pub fn build_and_clear(&mut self) -> Result<OptionsProvider, String> {
         self.prepare_build()?;
 
-        let all_configurable_list_pointers = drain_sorted_pointers(&mut self.all_configurable_list_pointers);
+        let all_configurable_list_pointers =
+            drain_sorted_pointers(&mut self.all_configurable_list_pointers);
         let all_configurable_string_pointers =
             std::mem::take(&mut self.all_configurable_string_pointers)
                 .into_iter()
