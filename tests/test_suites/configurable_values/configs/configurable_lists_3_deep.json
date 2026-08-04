@@ -1,0 +1,73 @@
+{
+	"options": {
+		"items": {
+			"$type": "Optify.ConfigurableList",
+			"group_a": {
+				"$order": -10,
+				"$value": {
+					"name": "group-a",
+					"items": {
+						"$type": "Optify.ConfigurableList",
+						"section_1": {
+							"$order": -5,
+							"$value": {
+								"name": "section-1",
+								"items": {
+									"$type": "Optify.ConfigurableList",
+									"leaf_b": {
+										"$order": 10,
+										"$value": {
+											"name": "leaf-b"
+										}
+									},
+									"leaf_a": {
+										"$order": -10,
+										"$value": {
+											"name": "leaf-a"
+										}
+									}
+								}
+							}
+						},
+						"section_2": {
+							"$order": 5,
+							"$value": {
+								"name": "section-2",
+								"items": {
+									"$type": "Optify.ConfigurableList",
+									"leaf_c": {
+										"$value": {
+											"name": "leaf-c"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+			"group_b": {
+				"$order": 10,
+				"$value": {
+					"name": "group-b",
+					"items": {
+						"$type": "Optify.ConfigurableList",
+						"section_3": {
+							"$value": {
+								"name": "section-3",
+								"items": {
+									"$type": "Optify.ConfigurableList",
+									"leaf_d": {
+										"$value": {
+											"name": "leaf-d"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
