@@ -72,8 +72,8 @@ pushd ruby/optify
 bump_dependency_in_toml "ext/optify_ruby/Cargo.toml" $current_version $next_version
 bump_version_in_toml "ext/optify_ruby/Cargo.toml" $strategy
 bump_version_gemspec "optify.gemspec" $strategy
-# Update Gemfile.lock (unset BUNDLE_FROZEN in case it was set by setup-ruby's bundler-cache)
-BUNDLE_FROZEN=false bundle install
+# Update Gemfile.lock after the gemspec version change.
+bundle lock
 popd
 
 pushd js/optify-config
