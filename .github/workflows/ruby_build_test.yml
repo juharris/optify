@@ -89,6 +89,9 @@ jobs:
       with:
         bundler-cache: true
         working-directory: ./ruby/from_hash
+    - name: "[from_hash] Check Gemfile.lock is up to date"
+      run: bundle check
+      working-directory: ./ruby/from_hash
     - name: "[from_hash] Lint"
       shell: bash
       run: |
@@ -158,6 +161,10 @@ jobs:
       with:
         bundler-cache: true
         working-directory: ${{ env.WORKING_DIRECTORY }}
+
+    - name: "[optify] Check Gemfile.lock is up to date"
+      run: bundle check
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
     # Rust
     # Required for the main Ruby gem.
