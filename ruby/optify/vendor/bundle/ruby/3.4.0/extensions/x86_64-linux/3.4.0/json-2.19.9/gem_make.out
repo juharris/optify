@@ -1,0 +1,26 @@
+current directory: /home/runner/work/optify/optify/ruby/optify/vendor/bundle/ruby/3.4.0/gems/json-2.19.9/ext/json/ext/parser
+/opt/hostedtoolcache/Ruby/3.4.4/x64/bin/ruby extconf.rb
+checking for rb_enc_interned_str() in ruby/encoding.h... yes
+checking for rb_str_to_interned_str() in ruby.h... yes
+checking for rb_hash_new_capa() in ruby.h... yes
+checking for rb_hash_bulk_insert() in ruby.h... yes
+checking for RUBY_TYPED_EMBEDDABLE in ruby.h... yes
+checking for whether -std=c99 is accepted as CFLAGS... yes
+checking for x86intrin.h... yes
+checking for cpuid.h... yes
+creating Makefile
+
+current directory: /home/runner/work/optify/optify/ruby/optify/vendor/bundle/ruby/3.4.0/gems/json-2.19.9/ext/json/ext/parser
+make DESTDIR\= sitearchdir\=./.gem.20260804-2442-s526cy sitelibdir\=./.gem.20260804-2442-s526cy clean
+
+current directory: /home/runner/work/optify/optify/ruby/optify/vendor/bundle/ruby/3.4.0/gems/json-2.19.9/ext/json/ext/parser
+make DESTDIR\= sitearchdir\=./.gem.20260804-2442-s526cy sitelibdir\=./.gem.20260804-2442-s526cy
+compiling parser.c
+linking shared-object json/ext/parser.so
+
+current directory: /home/runner/work/optify/optify/ruby/optify/vendor/bundle/ruby/3.4.0/gems/json-2.19.9/ext/json/ext/parser
+make DESTDIR\= sitearchdir\=./.gem.20260804-2442-s526cy sitelibdir\=./.gem.20260804-2442-s526cy install
+/usr/bin/install -c -m 0755 parser.so ./.gem.20260804-2442-s526cy/json/ext
+
+current directory: /home/runner/work/optify/optify/ruby/optify/vendor/bundle/ruby/3.4.0/gems/json-2.19.9/ext/json/ext/parser
+make DESTDIR\= sitearchdir\=./.gem.20260804-2442-s526cy sitelibdir\=./.gem.20260804-2442-s526cy clean

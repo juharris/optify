@@ -1,0 +1,773 @@
+#include "graph.h"
+#include "declaration.h"
+#include "diagnostic.h"
+#include "document.h"
+#include "location.h"
+#include "reference.h"
+#include "ruby/internal/globals.h"
+#include "rustbindings.h"
+#include "utils.h"
+
+static VALUE cGraph;
+static VALUE mRubydex;
+static VALUE cKeyword;
+static VALUE cKeywordParameter;
+
+// Interned once in `rdxi_initialize_graph` to avoid repeated symbol-table lookups on hot completion paths.
+static ID id_self_receiver;
+
+// Extracts the optional `self_receiver:` kwarg from `opts`. Returns NULL when the kwarg is
+// absent or nil; raises ArgumentError when the value is the wrong type or empty.
+static const char *extract_self_receiver(VALUE opts) {
+    if (NIL_P(opts)) {
+        return NULL;
+    }
+
+    VALUE kwarg_val;
+    rb_get_kwargs(opts, &id_self_receiver, 0, 1, &kwarg_val);
+
+    if (kwarg_val == Qundef || NIL_P(kwarg_val)) {
+        return NULL;
+    }
+
+    Check_Type(kwarg_val, T_STRING);
+    if (RSTRING_LEN(kwarg_val) == 0) {
+        rb_raise(rb_eArgError, "self_receiver cannot be empty");
+    }
+
+    return StringValueCStr(kwarg_val);
+}
+
+// Free function for the custom Graph allocator. We always have to call into Rust to free data allocated by it
+static void graph_free(void *ptr) {
+    if (ptr) {
+        rdx_graph_free(ptr);
+    }
+}
+
+const rb_data_type_t graph_type = {"Graph", {0, graph_free, 0}, 0, 0, RUBY_TYPED_FREE_IMMEDIATELY};
+
+// Custom allocator for the Graph class. Calls into Rust to create a new `Arc<Mutex<Graph>>` that gets stored internally
+// as a void pointer
+static VALUE rdxr_graph_alloc(VALUE klass) {
+    void *graph = rdx_graph_new();
+    return TypedData_Wrap_Struct(klass, &graph_type, graph);
+}
+
+// Graph#index_all: (Array[String] file_paths) -> Array[String]
+// Returns an array of IO error messages encountered during indexing
+static VALUE rdxr_graph_index_all(VALUE self, VALUE file_paths) {
+    rdxi_check_array_of_strings(file_paths);
+
+    // Convert the given file paths into a char** array, so that we can pass to Rust
+    size_t length = RARRAY_LEN(file_paths);
+    char **converted_file_paths = rdxi_str_array_to_char(file_paths, length);
+
+    // Get the underlying graph pointer and then invoke the Rust index all implementation
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    size_t error_count = 0;
+    const char *const *errors = rdx_index_all(graph, (const char **)converted_file_paths, length, &error_count);
+
+    rdxi_free_str_array(converted_file_paths, length);
+
+    if (errors == NULL) {
+        return rb_ary_new();
+    }
+
+    VALUE array = rb_ary_new_capa((long)error_count);
+    for (size_t i = 0; i < error_count; i++) {
+        rb_ary_push(array, rb_utf8_str_new_cstr(errors[i]));
+    }
+
+    free_c_string_array(errors, error_count);
+    return array;
+}
+
+// Indexes a single source string in memory, dispatching to the appropriate indexer based on language_id
+//
+// Graph#index_source: (String uri, String source, String language_id) -> void
+static VALUE rdxr_graph_index_source(VALUE self, VALUE uri, VALUE source, VALUE language_id) {
+    Check_Type(uri, T_STRING);
+    Check_Type(source, T_STRING);
+    Check_Type(language_id, T_STRING);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    const char *uri_str = StringValueCStr(uri);
+    const char *language_id_str = StringValueCStr(language_id);
+    const char *source_str = RSTRING_PTR(source);
+    size_t source_len = RSTRING_LEN(source);
+
+    enum IndexSourceResult result = rdx_index_source(graph, uri_str, source_str, source_len, language_id_str);
+    switch (result) {
+    case IndexSourceResult_Success:
+        break;
+    case IndexSourceResult_InvalidUri:
+        rb_raise(rb_eArgError, "invalid URI (not valid UTF-8)");
+        break;
+    case IndexSourceResult_InvalidSource:
+        rb_raise(rb_eArgError, "source is not valid UTF-8");
+        break;
+    case IndexSourceResult_InvalidLanguageId:
+        rb_raise(rb_eArgError, "invalid language_id (not valid UTF-8)");
+        break;
+    case IndexSourceResult_UnsupportedLanguageId:
+        rb_raise(rb_eArgError, "unsupported language_id `%s`", language_id_str);
+        break;
+    }
+
+    return Qnil;
+}
+
+// Size function for the declarations enumerator
+static VALUE graph_declarations_size(VALUE self, VALUE _args, VALUE _eobj) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    DeclarationsIter *iter = rdx_graph_declarations_iter_new(graph);
+    size_t len = rdx_graph_declarations_iter_len(iter);
+    rdx_graph_declarations_iter_free(iter);
+
+    return SIZET2NUM(len);
+}
+
+// Graph#declarations: () -> Enumerator[Declaration]
+// Returns an enumerator that yields all declarations lazily
+static VALUE rdxr_graph_declarations(VALUE self) {
+    if (!rb_block_given_p()) {
+        return rb_enumeratorize_with_size(self, rb_str_new2("declarations"), 0, NULL, graph_declarations_size);
+    }
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    void *iter = rdx_graph_declarations_iter_new(graph);
+    VALUE args = rb_ary_new_from_args(2, self, ULL2NUM((uintptr_t)iter));
+    rb_ensure(rdxi_declarations_yield, args, rdxi_declarations_ensure, args);
+
+    return self;
+}
+
+static VALUE rdxr_graph_yield_search_results(VALUE self, void *iter) {
+    if (iter == NULL) {
+        // The only case where the iterator will be NULL instead of a list is if the query cannot be converted to a Rust
+        // string
+        rb_raise(rb_eRuntimeError, "Converting query to Rust string failed");
+    }
+
+    VALUE args = rb_ary_new_from_args(2, self, ULL2NUM((uintptr_t)iter));
+    rb_ensure(rdxi_declarations_yield, args, rdxi_declarations_ensure, args);
+
+    return self;
+}
+
+// Graph#search: (String query) -> Enumerator[Declaration]
+// Returns an enumerator that yields declarations matching the query exactly (substring match)
+static VALUE rdxr_graph_search(VALUE self, VALUE query) {
+    Check_Type(query, T_STRING);
+
+    if (!rb_block_given_p()) {
+        return rb_enumeratorize(self, rb_str_new2("search"), 1, &query);
+    }
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    return rdxr_graph_yield_search_results(self, rdx_graph_declarations_search(graph, StringValueCStr(query)));
+}
+
+// Graph#fuzzy_search: (String query) -> Enumerator[Declaration]
+// Returns an enumerator that yields declarations matching the query fuzzily
+static VALUE rdxr_graph_fuzzy_search(VALUE self, VALUE query) {
+    Check_Type(query, T_STRING);
+
+    if (!rb_block_given_p()) {
+        return rb_enumeratorize(self, rb_str_new2("fuzzy_search"), 1, &query);
+    }
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    return rdxr_graph_yield_search_results(self, rdx_graph_declarations_fuzzy_search(graph, StringValueCStr(query)));
+}
+
+// Body function for rb_ensure in Graph#documents
+static VALUE graph_documents_yield(VALUE args) {
+    VALUE self = rb_ary_entry(args, 0);
+    void *iter = (void *)(uintptr_t)NUM2ULL(rb_ary_entry(args, 1));
+
+    uint64_t id = 0;
+    while (rdx_graph_documents_iter_next(iter, &id)) {
+        VALUE argv[] = {self, ULL2NUM(id)};
+        VALUE handle = rb_class_new_instance(2, argv, cDocument);
+        rb_yield(handle);
+    }
+
+    return Qnil;
+}
+
+// Ensure function for rb_ensure in Graph#documents to always free the iterator
+static VALUE graph_documents_ensure(VALUE args) {
+    void *iter = (void *)(uintptr_t)NUM2ULL(rb_ary_entry(args, 1));
+    rdx_graph_documents_iter_free(iter);
+
+    return Qnil;
+}
+
+// Size function for the documents enumerator
+static VALUE graph_documents_size(VALUE self, VALUE _args, VALUE _eobj) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    DocumentsIter *iter = rdx_graph_documents_iter_new(graph);
+    size_t len = rdx_graph_documents_iter_len(iter);
+    rdx_graph_documents_iter_free(iter);
+
+    return SIZET2NUM(len);
+}
+
+// Graph#documents: () -> Enumerator[Document]
+// Returns an enumerator that yields all documents lazily
+static VALUE rdxr_graph_documents(VALUE self) {
+    if (!rb_block_given_p()) {
+        return rb_enumeratorize_with_size(self, rb_str_new2("documents"), 0, NULL, graph_documents_size);
+    }
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    void *iter = rdx_graph_documents_iter_new(graph);
+    VALUE args = rb_ary_new_from_args(2, self, ULL2NUM((uintptr_t)iter));
+    rb_ensure(graph_documents_yield, args, graph_documents_ensure, args);
+
+    return self;
+}
+
+// Graph#[]: (String fully_qualified_name) -> Declaration
+// Returns a declaration handle for the given ID
+static VALUE rdxr_graph_aref(VALUE self, VALUE key) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    if (TYPE(key) != T_STRING) {
+        rb_raise(rb_eTypeError, "expected String");
+    }
+
+    const CDeclaration *decl = rdx_graph_get_declaration(graph, StringValueCStr(key));
+    if (decl == NULL) {
+        return Qnil;
+    }
+
+    VALUE decl_class = rdxi_declaration_class_for_kind(decl->kind);
+    VALUE argv[] = {self, ULL2NUM(decl->id)};
+    free_c_declaration(decl);
+
+    return rb_class_new_instance(2, argv, decl_class);
+}
+
+// Size function for the constant_references enumerator
+static VALUE graph_constant_references_size(VALUE self, VALUE _args, VALUE _eobj) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    struct ConstantReferencesIter *iter = rdx_graph_constant_references_iter_new(graph);
+    size_t len = rdx_constant_references_iter_len(iter);
+    rdx_constant_references_iter_free(iter);
+
+    return SIZET2NUM(len);
+}
+
+// Graph#constant_references: () -> Enumerator[ConstantReference]
+// Returns an enumerator that yields constant references lazily
+static VALUE rdxr_graph_constant_references(VALUE self) {
+    if (!rb_block_given_p()) {
+        return rb_enumeratorize_with_size(self, rb_str_new2("constant_references"), 0, NULL,
+                                          graph_constant_references_size);
+    }
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    void *iter = rdx_graph_constant_references_iter_new(graph);
+    VALUE args = rb_ary_new_from_args(2, self, ULL2NUM((uintptr_t)iter));
+    rb_ensure(rdxi_constant_references_yield, args, rdxi_constant_references_ensure, args);
+
+    return self;
+}
+
+// Size function for the method_references enumerator
+static VALUE graph_method_references_size(VALUE self, VALUE _args, VALUE _eobj) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    struct MethodReferencesIter *iter = rdx_graph_method_references_iter_new(graph);
+    size_t len = rdx_method_references_iter_len(iter);
+    rdx_method_references_iter_free(iter);
+
+    return SIZET2NUM(len);
+}
+
+// Graph#method_references: () -> Enumerator[MethodReference]
+// Returns an enumerator that yields method references lazily
+static VALUE rdxr_graph_method_references(VALUE self) {
+    if (!rb_block_given_p()) {
+        return rb_enumeratorize_with_size(self, rb_str_new2("method_references"), 0, NULL,
+                                          graph_method_references_size);
+    }
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    void *iter = rdx_graph_method_references_iter_new(graph);
+    VALUE args = rb_ary_new_from_args(2, self, ULL2NUM((uintptr_t)iter));
+    rb_ensure(rdxi_method_references_yield, args, rdxi_method_references_ensure, args);
+
+    return self;
+}
+
+// Graph#document: (String uri) -> Document?
+// Returns the Document for the given URI, or nil if it doesn't exist.
+static VALUE rdxr_graph_document(VALUE self, VALUE uri) {
+    Check_Type(uri, T_STRING);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+    const uint64_t *uri_id = rdx_graph_get_document(graph, StringValueCStr(uri));
+
+    if (uri_id == NULL) {
+        return Qnil;
+    }
+
+    VALUE argv[] = {self, ULL2NUM(*uri_id)};
+    free_u64(uri_id);
+    return rb_class_new_instance(2, argv, cDocument);
+}
+
+// Graph#delete_document: (String uri) -> Document?
+// Deletes a document and all of its definitions from the graph.
+// Returns the removed Document or nil if it doesn't exist.
+static VALUE rdxr_graph_delete_document(VALUE self, VALUE uri) {
+    Check_Type(uri, T_STRING);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+    const uint64_t *uri_id = rdx_graph_delete_document(graph, StringValueCStr(uri));
+
+    if (uri_id == NULL) {
+        return Qnil;
+    }
+
+    VALUE argv[] = {self, ULL2NUM(*uri_id)};
+    free_u64(uri_id);
+    return rb_class_new_instance(2, argv, cDocument);
+}
+
+// Graph#resolve: () -> self
+// Runs the resolver to compute declarations and ownership
+static VALUE rdxr_graph_resolve(VALUE self) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+    rdx_graph_resolve(graph);
+    return self;
+}
+
+// Graph#encoding=: (String) -> void
+// Sets the encoding used for transforming byte offsets into LSP code unit line/column positions
+static VALUE rdxr_graph_set_encoding(VALUE self, VALUE encoding) {
+    Check_Type(encoding, T_STRING);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    char *encoding_string = StringValueCStr(encoding);
+    if (!rdx_graph_set_encoding(graph, encoding_string)) {
+        rb_raise(rb_eArgError, "invalid encoding `%s` (should be utf8, utf16 or utf32)", encoding_string);
+    }
+
+    return Qnil;
+}
+
+// Graph#resolve_constant: (String, Array[String]) -> Declaration?
+// Runs the resolver on a single constant reference to determine what it points to
+static VALUE rdxr_graph_resolve_constant(VALUE self, VALUE const_name, VALUE nesting) {
+    Check_Type(const_name, T_STRING);
+    rdxi_check_array_of_strings(nesting);
+
+    // Convert the given file paths into a char** array, so that we can pass to Rust
+    size_t length = RARRAY_LEN(nesting);
+    char **converted_file_paths = rdxi_str_array_to_char(nesting, length);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    const CDeclaration *decl =
+        rdx_graph_resolve_constant(graph, StringValueCStr(const_name), (const char **)converted_file_paths, length);
+
+    rdxi_free_str_array(converted_file_paths, length);
+
+    if (decl == NULL) {
+        return Qnil;
+    }
+
+    VALUE decl_class = rdxi_declaration_class_for_kind(decl->kind);
+    VALUE argv[] = {self, ULL2NUM(decl->id)};
+    free_c_declaration(decl);
+
+    return rb_class_new_instance(2, argv, decl_class);
+}
+
+// Graph#resolve_require_path: (String require_path, Array[String] load_paths) -> Document?
+// Resolves a require path to its Document.
+static VALUE rdxr_graph_resolve_require_path(VALUE self, VALUE require_path, VALUE load_paths) {
+    Check_Type(require_path, T_STRING);
+    rdxi_check_array_of_strings(load_paths);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+    const char *path_str = StringValueCStr(require_path);
+
+    size_t paths_len = RARRAY_LEN(load_paths);
+    char **converted_paths = rdxi_str_array_to_char(load_paths, paths_len);
+
+    const uint64_t *uri_id = rdx_resolve_require_path(graph, path_str, (const char **)converted_paths, paths_len);
+
+    rdxi_free_str_array(converted_paths, paths_len);
+
+    if (uri_id == NULL) {
+        return Qnil;
+    }
+
+    VALUE argv[] = {self, ULL2NUM(*uri_id)};
+    free_u64(uri_id);
+    return rb_class_new_instance(2, argv, cDocument);
+}
+
+// Graph#require_paths: (Array[String] load_path) -> Array[String]
+// Returns all require paths for completion.
+static VALUE rdxr_graph_require_paths(VALUE self, VALUE load_path) {
+    rdxi_check_array_of_strings(load_path);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    size_t paths_len = RARRAY_LEN(load_path);
+    char **converted_paths = rdxi_str_array_to_char(load_path, paths_len);
+
+    size_t out_count = 0;
+    const char *const *results = rdx_require_paths(graph, (const char **)converted_paths, paths_len, &out_count);
+
+    rdxi_free_str_array(converted_paths, paths_len);
+
+    if (results == NULL) {
+        return rb_ary_new();
+    }
+
+    VALUE array = rb_ary_new_capa((long)out_count);
+    for (size_t i = 0; i < out_count; i++) {
+        rb_ary_push(array, rb_utf8_str_new_cstr(results[i]));
+    }
+
+    free_c_string_array(results, out_count);
+    return array;
+}
+
+// Graph#check_integrity: () -> Array[Rubydex::IntegrityFailure]
+// Returns an array of IntegrityFailure objects, empty if no issues found
+static VALUE rdxr_graph_check_integrity(VALUE self) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    size_t error_count = 0;
+    const char *const *errors = rdx_check_integrity(graph, &error_count);
+
+    if (errors == NULL) {
+        return rb_ary_new();
+    }
+
+    VALUE cIntegrityError = rb_const_get(mRubydex, rb_intern("IntegrityFailure"));
+    VALUE array = rb_ary_new_capa((long)error_count);
+
+    for (size_t i = 0; i < error_count; i++) {
+        VALUE argv[] = {rb_utf8_str_new_cstr(errors[i])};
+        VALUE error = rb_class_new_instance(1, argv, cIntegrityError);
+        rb_ary_push(array, error);
+    }
+
+    free_c_string_array(errors, error_count);
+    return array;
+}
+
+// Graph#diagnostics -> Array[Rubydex::Diagnostic]
+static VALUE rdxr_graph_diagnostics(VALUE self) {
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    DiagnosticArray *array = rdx_graph_diagnostics(graph);
+    if (array == NULL || array->len == 0) {
+        if (array != NULL) {
+            rdx_diagnostics_free(array);
+        }
+        return rb_ary_new();
+    }
+
+    VALUE diagnostics = rb_ary_new_capa((long)array->len);
+    for (size_t i = 0; i < array->len; i++) {
+        DiagnosticEntry entry = array->items[i];
+        VALUE message = entry.message == NULL ? Qnil : rb_utf8_str_new_cstr(entry.message);
+        VALUE rule = rb_str_new2(entry.rule);
+        VALUE location = rdxi_build_location_value(entry.location);
+
+        VALUE kwargs = rb_hash_new();
+        rb_hash_aset(kwargs, ID2SYM(rb_intern("rule")), rule);
+        rb_hash_aset(kwargs, ID2SYM(rb_intern("message")), message);
+        rb_hash_aset(kwargs, ID2SYM(rb_intern("location")), location);
+
+        VALUE diagnostic = rb_class_new_instance_kw(1, &kwargs, cDiagnostic, RB_PASS_KEYWORDS);
+        rb_ary_push(diagnostics, diagnostic);
+    }
+
+    rdx_diagnostics_free(array);
+    return diagnostics;
+}
+
+// Helper: convert a CompletionResult into a Ruby array, raising ArgumentError on error.
+static VALUE completion_result_to_ruby_array(struct CompletionResult result, VALUE graph_obj) {
+    if (result.error != NULL) {
+        VALUE msg = rb_utf8_str_new_cstr(result.error);
+        free_c_string(result.error);
+        rb_raise(rb_eArgError, "%s", StringValueCStr(msg));
+    }
+
+    CompletionCandidateArray *array = result.candidates;
+    if (array == NULL) {
+        return rb_ary_new();
+    }
+
+    if (array->len == 0) {
+        rdx_completion_candidates_free(array);
+        return rb_ary_new();
+    }
+
+    VALUE ruby_array = rb_ary_new_capa((long)array->len);
+
+    for (size_t i = 0; i < array->len; i++) {
+        CCompletionCandidate item = array->items[i];
+        VALUE obj;
+
+        switch (item.kind) {
+        case CCompletionCandidateKind_Declaration: {
+            VALUE decl_class = rdxi_declaration_class_for_kind(item.declaration->kind);
+            VALUE argv[] = {graph_obj, ULL2NUM(item.declaration->id)};
+            obj = rb_class_new_instance(2, argv, decl_class);
+            break;
+        }
+        case CCompletionCandidateKind_Keyword: {
+            VALUE argv[2] = {
+                rb_utf8_str_new_cstr(item.name),
+                rb_utf8_str_new_cstr(item.documentation),
+            };
+            obj = rb_class_new_instance(2, argv, cKeyword);
+            break;
+        }
+        case CCompletionCandidateKind_KeywordParameter: {
+            VALUE argv[1] = { rb_utf8_str_new_cstr(item.name) };
+            obj = rb_class_new_instance(1, argv, cKeywordParameter);
+            break;
+        }
+        default:
+            rdx_completion_candidates_free(array);
+            rb_raise(rb_eRuntimeError, "Unknown CCompletionCandidateKind: %d", item.kind);
+        }
+
+        rb_ary_push(ruby_array, obj);
+    }
+
+    rdx_completion_candidates_free(array);
+    return ruby_array;
+}
+
+// Graph#complete_expression: (Array[String] nesting, self_receiver: nil) -> Array[Declaration | Keyword]
+// Returns completion candidates for an expression context.
+// The nesting array represents the lexical scope stack. The optional self_receiver keyword argument
+// overrides the self-type (e.g., "Foo::<Foo>" for `def Foo.bar`); when nil, self is derived from
+// the innermost nesting element.
+static VALUE rdxr_graph_complete_expression(int argc, VALUE *argv, VALUE self) {
+    VALUE nesting, opts;
+    rb_scan_args(argc, argv, "1:", &nesting, &opts);
+    rdxi_check_array_of_strings(nesting);
+
+    const char *self_receiver = extract_self_receiver(opts);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    size_t nesting_count = RARRAY_LEN(nesting);
+    char **converted_nesting = rdxi_str_array_to_char(nesting, nesting_count);
+
+    struct CompletionResult result =
+        rdx_graph_complete_expression(graph, (const char *const *)converted_nesting, nesting_count, self_receiver);
+
+    rdxi_free_str_array(converted_nesting, nesting_count);
+    return completion_result_to_ruby_array(result, self);
+}
+
+// Graph#complete_namespace_access: (String name, self_receiver: nil) -> Array[Declaration]
+// Returns completion candidates after a namespace access operator (e.g., `Foo::`).
+// The optional self_receiver kwarg is the caller's runtime self type, used to filter
+// visibility-restricted singleton methods (e.g., `private_class_method`).
+static VALUE rdxr_graph_complete_namespace_access(int argc, VALUE *argv, VALUE self) {
+    VALUE name, opts;
+    rb_scan_args(argc, argv, "1:", &name, &opts);
+    Check_Type(name, T_STRING);
+
+    const char *self_receiver = extract_self_receiver(opts);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    struct CompletionResult result =
+        rdx_graph_complete_namespace_access(graph, StringValueCStr(name), self_receiver);
+    return completion_result_to_ruby_array(result, self);
+}
+
+// Graph#complete_method_call: (String name, self_receiver: nil) -> Array[Declaration]
+// Returns completion candidates after a method call operator (e.g., `foo.`).
+// The optional self_receiver kwarg is the caller's runtime self type, used for MRI-style
+// visibility checks (private/protected).
+static VALUE rdxr_graph_complete_method_call(int argc, VALUE *argv, VALUE self) {
+    VALUE name, opts;
+    rb_scan_args(argc, argv, "1:", &name, &opts);
+    Check_Type(name, T_STRING);
+
+    const char *self_receiver = extract_self_receiver(opts);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    struct CompletionResult result =
+        rdx_graph_complete_method_call(graph, StringValueCStr(name), self_receiver);
+    return completion_result_to_ruby_array(result, self);
+}
+
+// Graph#complete_method_argument: (String name, Array[String] nesting, self_receiver: nil) -> Array[Declaration | Keyword | KeywordParameter]
+// Returns completion candidates inside a method call's argument list (e.g., `foo.bar(|)`).
+// See complete_expression for semantics of self_receiver.
+static VALUE rdxr_graph_complete_method_argument(int argc, VALUE *argv, VALUE self) {
+    VALUE name, nesting, opts;
+    rb_scan_args(argc, argv, "2:", &name, &nesting, &opts);
+
+    Check_Type(name, T_STRING);
+    rdxi_check_array_of_strings(nesting);
+
+    const char *self_receiver = extract_self_receiver(opts);
+
+    void *graph;
+    TypedData_Get_Struct(self, void *, &graph_type, graph);
+
+    size_t nesting_count = RARRAY_LEN(nesting);
+    char **converted_nesting = rdxi_str_array_to_char(nesting, nesting_count);
+
+    struct CompletionResult result = rdx_graph_complete_method_argument(
+        graph, StringValueCStr(name), (const char *const *)converted_nesting, nesting_count, self_receiver);
+
+    rdxi_free_str_array(converted_nesting, nesting_count);
+    return completion_result_to_ruby_array(result, self);
+}
+
+// Graph#exclude_paths: (Array[String] paths) -> void
+// Excludes the given paths from file discovery during indexing.
+static VALUE rdxr_graph_exclude_paths(VALUE self, VALUE paths) {
+    Check_Type(paths, T_ARRAY);
+    rdxi_check_array_of_strings(paths);
+
+    size_t length = RARRAY_LEN(paths);
+    char **converted_paths = rdxi_str_array_to_char(paths, length);
+
+    void *graph;
+    TypedData_Get_Struct(self, void*, &graph_type, graph);
+
+    rdx_graph_exclude_paths(graph, (const char **)converted_paths, length);
+    rdxi_free_str_array(converted_paths, length);
+
+    return Qnil;
+}
+
+// Graph#excluded_paths: () -> Array[String]
+// Returns the list of paths currently excluded from file discovery.
+static VALUE rdxr_graph_excluded_paths(VALUE self) {
+    void *graph;
+    TypedData_Get_Struct(self, void*, &graph_type, graph);
+
+    size_t out_count = 0;
+    const char *const *results = rdx_graph_excluded_paths(graph, &out_count);
+
+    if (results == NULL) {
+        return rb_ary_new();
+    }
+
+    VALUE array = rb_ary_new_capa((long)out_count);
+    for (size_t i = 0; i < out_count; i++) {
+        rb_ary_push(array, rb_utf8_str_new_cstr(results[i]));
+    }
+
+    free_c_string_array(results, out_count);
+    return array;
+}
+
+// Graph#keyword: (String name) -> Keyword?
+// Returns a Keyword object for the given keyword name, or nil if it is not a keyword.
+static VALUE rdxr_graph_keyword(VALUE self, VALUE name) {
+    Check_Type(name, T_STRING);
+
+    const CKeyword *kw = rdx_keyword_get(StringValueCStr(name));
+    if (kw == NULL) {
+        return Qnil;
+    }
+
+    VALUE argv[2] = {
+        rb_utf8_str_new_cstr(kw->name),
+        rb_utf8_str_new_cstr(kw->documentation),
+    };
+
+    rdx_keyword_free(kw);
+    return rb_class_new_instance(2, argv, cKeyword);
+}
+
+void rdxi_initialize_graph(VALUE moduleRubydex) {
+    mRubydex = moduleRubydex;
+    cGraph = rb_define_class_under(mRubydex, "Graph", rb_cObject);
+    cKeyword = rb_define_class_under(mRubydex, "Keyword", rb_cObject);
+    cKeywordParameter = rb_define_class_under(mRubydex, "KeywordParameter", rb_cObject);
+
+    id_self_receiver = rb_intern("self_receiver");
+
+    rb_define_alloc_func(cGraph, rdxr_graph_alloc);
+    rb_define_method(cGraph, "index_all", rdxr_graph_index_all, 1);
+    rb_define_method(cGraph, "index_source", rdxr_graph_index_source, 3);
+    rb_define_method(cGraph, "document", rdxr_graph_document, 1);
+    rb_define_method(cGraph, "delete_document", rdxr_graph_delete_document, 1);
+    rb_define_method(cGraph, "resolve", rdxr_graph_resolve, 0);
+    rb_define_method(cGraph, "resolve_constant", rdxr_graph_resolve_constant, 2);
+    rb_define_method(cGraph, "declarations", rdxr_graph_declarations, 0);
+    rb_define_method(cGraph, "documents", rdxr_graph_documents, 0);
+    rb_define_method(cGraph, "constant_references", rdxr_graph_constant_references, 0);
+    rb_define_method(cGraph, "method_references", rdxr_graph_method_references, 0);
+    rb_define_method(cGraph, "diagnostics", rdxr_graph_diagnostics, 0);
+    rb_define_method(cGraph, "check_integrity", rdxr_graph_check_integrity, 0);
+    rb_define_method(cGraph, "[]", rdxr_graph_aref, 1);
+    rb_define_method(cGraph, "search", rdxr_graph_search, 1);
+    rb_define_method(cGraph, "fuzzy_search", rdxr_graph_fuzzy_search, 1);
+    rb_define_method(cGraph, "encoding=", rdxr_graph_set_encoding, 1);
+    rb_define_method(cGraph, "resolve_require_path", rdxr_graph_resolve_require_path, 2);
+    rb_define_method(cGraph, "require_paths", rdxr_graph_require_paths, 1);
+    rb_define_method(cGraph, "complete_expression", rdxr_graph_complete_expression, -1);
+    rb_define_method(cGraph, "complete_namespace_access", rdxr_graph_complete_namespace_access, -1);
+    rb_define_method(cGraph, "complete_method_call", rdxr_graph_complete_method_call, -1);
+    rb_define_method(cGraph, "complete_method_argument", rdxr_graph_complete_method_argument, -1);
+    rb_define_method(cGraph, "exclude_paths", rdxr_graph_exclude_paths, 1);
+    rb_define_method(cGraph, "excluded_paths", rdxr_graph_excluded_paths, 0);
+    rb_define_method(cGraph, "keyword", rdxr_graph_keyword, 1);
+}
