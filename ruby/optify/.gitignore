@@ -6,6 +6,7 @@ tmp/
 # but ignoring is cause issues with `bundle exec tapioca gem --verify`.
 # Gemfile.lock
 
+vendor/bundle/
 *.bundle
 
 # Rust
