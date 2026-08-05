@@ -7,7 +7,7 @@ PATH
 PATH
   remote: .
   specs:
-    optify-config (1.23.1)
+    optify-config (1.23.2)
       optify-from_hash (~> 0.3.2)
       rb_sys (~> 0.9.128)
       sin_lru_redux (~> 2.5.2)
@@ -107,6 +107,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-23
+  arm64-darwin-24
   arm64-darwin-25
   x86_64-linux
 
