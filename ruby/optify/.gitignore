@@ -1,6 +1,7 @@
 *.gem
 tmp/
 /pkg/
+vendor/bundle/
 
 # It is advised to ignore the Gemfile.lock because we can build for multiple versions,
 # but ignoring is cause issues with `bundle exec tapioca gem --verify`.
