@@ -64,6 +64,7 @@ jobs:
         run: bash --login ./scripts/bump_versions.sh "${{ github.event.inputs.strategy }}"
 
       - name: "Create bump PR"
+        id: create-pr
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore: bump versions (${{ github.event.inputs.strategy }})"
@@ -72,3 +73,8 @@ jobs:
             Bump versions using `scripts/bump_versions.sh`
           branch: "bump-versions-${{ github.event.inputs.strategy }}-${{ github.run_number }}"
           draft: true
+
+      - name: "Write PR link to job summary"
+        run: |
+          echo "## Created PR" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.create-pr.outputs.pull-request-url }}" >> $GITHUB_STEP_SUMMARY
