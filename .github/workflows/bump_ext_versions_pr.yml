@@ -1,0 +1,60 @@
+name: "🤜Bump VS Code Extension Version: Create PR"
+
+on:
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: "Version bump strategy"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: minor
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-and-pr:
+    name: "Bump Version and Open Draft PR"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: "Setup node"
+        uses: actions/setup-node@v6
+        with:
+          cache: npm
+          cache-dependency-path: ./vscode/extension/package-lock.json
+          node-version: 22
+
+      - name: "Install dependencies"
+        run: npm ci
+        working-directory: ./vscode/extension
+
+      - name: "Run bump script"
+        shell: bash
+        run: bash --login ./scripts/bump_ext_versions.sh "${{ github.event.inputs.strategy }}"
+
+      - name: "Create bump PR"
+        id: create-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore: bump ext version (${{ github.event.inputs.strategy }})"
+          title: "chore: Bump Extension Version (${{ github.event.inputs.strategy }})"
+          body: |
+            Bump version using `scripts/bump_ext_versions.sh`
+          branch: "bump-ext-version-${{ github.event.inputs.strategy }}-${{ github.run_number }}"
+          draft: true
+
+      - name: "Write PR link to job summary"
+        run: |
+          echo "PR: ${{ steps.create-pr.outputs.pull-request-url }}" >> $GITHUB_STEP_SUMMARY
