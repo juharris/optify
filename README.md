@@ -298,7 +298,7 @@ It is also recommended to install the [extension][vsc-extension] to get help wit
 
 ### Recommended Extensions
 
-In `./vscode/extensions.json`, add:
+In `.vscode/extensions.json`, add:
 ```JSON
 {
     "recommendations": [
