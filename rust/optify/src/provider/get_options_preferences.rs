@@ -21,6 +21,12 @@ pub struct GetOptionsPreferences {
     /// Only trusted internal callers that are not subject to requester policies should omit this field.
     /// For all external or user-facing requests, always set this to the requester's identifier.
     pub requester: Option<String>,
+    /// Whether to raise an error if a feature's policies deny the requester.
+    ///
+    /// When `true` and `requester` is set, any feature denied by its policies will cause an error.
+    /// When `false` (the default), denied features are silently filtered out, matching the behaviour
+    /// of condition-based filtering.
+    pub raise_if_policy_denied: bool,
     /// Determines if the feature names should be converted to canonical feature names.
     /// Defaults to false: given features names will be converted to canonical feature names before looking for features or options.
     pub skip_feature_name_conversion: bool,
@@ -39,6 +45,7 @@ impl GetOptionsPreferences {
             are_configurable_values_enabled: false,
             constraints: None,
             overrides: None,
+            raise_if_policy_denied: false,
             requester: None,
             skip_feature_name_conversion: false,
         }

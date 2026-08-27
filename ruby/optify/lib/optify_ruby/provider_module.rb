@@ -7,7 +7,7 @@ require 'sorbet-runtime'
 
 module Optify
   # @!visibility private
-  module ProviderModule
+  module ProviderModule # rubocop:disable Metrics/ModuleLength
     #: [T] (LruRedux::Cache | Hash[Array[untyped], T], Array[untyped], (^(Array[untyped] key, T value, bool is_cache_hit) -> void)?) { -> T } -> T
     def self._cache_getset(cache, cache_key, on_cache_event, &block)
       is_cache_hit = true #: bool
@@ -67,6 +67,14 @@ module Optify
       return nil if metadata_json.nil?
 
       OptionsMetadata.from_hash(JSON.parse(metadata_json))
+    end
+
+    #: (String canonical_feature_name) -> Hash[String, untyped]?
+    def get_policies(canonical_feature_name)
+      policies_json = get_policies_json(canonical_feature_name)
+      return nil if policies_json.nil?
+
+      JSON.parse(policies_json)
     end
 
     private

@@ -80,4 +80,13 @@ impl MutGetOptionsPreferences {
     pub fn get_requester(&self) -> Option<String> {
         self.0.borrow().requester.clone()
     }
+
+    // Policy Section
+    pub fn set_raise_if_policy_denied(&self, value: bool) {
+        self.0.borrow_mut().raise_if_policy_denied = value;
+    }
+
+    pub fn get_raise_if_policy_denied(&self) -> bool {
+        self.0.borrow().raise_if_policy_denied
+    }
 }

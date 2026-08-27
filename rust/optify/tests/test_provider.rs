@@ -41,9 +41,7 @@ fn get_provider_with_conditions() -> &'static OptionsProvider {
 fn get_policies_provider() -> &'static OptionsProvider {
     POLICIES_PROVIDER.get_or_init(|| {
         let path = std::path::Path::new("../../tests/test_suites/policies/configs");
-        let mut builder = OptionsProviderBuilder::new();
-        builder.add_directory(path).unwrap();
-        builder.build().unwrap()
+        OptionsProvider::build(path).unwrap()
     })
 }
 
@@ -539,6 +537,66 @@ fn test_get_policies_blocked() -> Result<(), Box<dyn std::error::Error>> {
         RequesterPolicy::Blocked { blocked } => assert_eq!(blocked, expected),
         other => panic!("expected Blocked, got {other:?}"),
     }
+
+    Ok(())
+}
+
+#[test]
+fn test_policy_filtering_silently_filters_denied() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_policies_provider();
+
+    // Without requester: both features pass through.
+    let result = provider.get_filtered_feature_names(
+        &["feature_allowed", "feature_blocked"],
+        None,
+    )?;
+    assert_eq!(result, vec!["feature_allowed", "feature_blocked"]);
+
+    // Requester not in the allowed list: feature_allowed is silently filtered out,
+    // but feature_blocked is kept (requester is not in the blocked list).
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.requester = Some("unknown_service".to_owned());
+    let result = provider.get_filtered_feature_names(
+        &["feature_allowed", "feature_blocked"],
+        Some(&preferences),
+    )?;
+    assert_eq!(result, vec!["feature_blocked"]);
+
+    // Requester in the blocked list: feature_blocked is also silently filtered out.
+    preferences.requester = Some("untrusted_service".to_owned());
+    let result = provider.get_filtered_feature_names(
+        &["feature_blocked"],
+        Some(&preferences),
+    )?;
+    assert!(result.is_empty());
+
+    // Allowed requester: feature_allowed is kept.
+    preferences.requester = Some("service_a".to_owned());
+    let result = provider.get_filtered_feature_names(
+        &["feature_allowed", "feature_blocked"],
+        Some(&preferences),
+    )?;
+    assert_eq!(result, vec!["feature_allowed", "feature_blocked"]);
+
+    Ok(())
+}
+
+#[test]
+fn test_policy_filtering_raises_when_requested() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_policies_provider();
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.requester = Some("untrusted_service".to_owned());
+    preferences.raise_if_policy_denied = true;
+
+    // Denied feature with raise_if_policy_denied=true returns an error.
+    let result = provider.get_filtered_feature_names(
+        &["feature_allowed"],
+        Some(&preferences),
+    );
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(err.contains("untrusted_service"), "Error should contain requester: {err}");
+    assert!(err.contains("feature_allowed"), "Error should contain feature name: {err}");
 
     Ok(())
 }

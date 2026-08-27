@@ -9,7 +9,9 @@ use crate::{
     json::merge::{merge_json_with_defaults, FrozenPaths},
     provider::GetOptionsPreferences,
     schema::{
-        conditions::ConditionExpression, metadata::OptionsMetadata, policies::Policies,
+        conditions::ConditionExpression,
+        metadata::OptionsMetadata,
+        policies::{Policies, PolicyDeniedError},
     },
 };
 
@@ -545,9 +547,13 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<Vec<String>, String> {
         let mut skip_feature_name_conversion = false;
         let mut constraints = None;
+        let mut requester: Option<&str> = None;
+        let mut raise_if_policy_denied = false;
         if let Some(preferences) = preferences {
             skip_feature_name_conversion = preferences.skip_feature_name_conversion;
             constraints = preferences.constraints.as_ref();
+            requester = preferences.requester.as_deref();
+            raise_if_policy_denied = preferences.raise_if_policy_denied;
         }
 
         let mut result = Vec::new();
@@ -568,6 +574,19 @@ impl OptionsRegistry for OptionsProvider {
                     continue;
                 }
             }
+
+            if let Some(requester) = requester {
+                if let Some(policies) = self.policies.get(&canonical_feature_name) {
+                    if !policies.is_requester_permitted(requester) {
+                        if raise_if_policy_denied {
+                            return Err(PolicyDeniedError::new(&canonical_feature_name, requester)
+                                .to_string());
+                        }
+                        continue;
+                    }
+                }
+            }
+
             result.push(canonical_feature_name);
         }
 
@@ -643,9 +662,13 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<Vec<Option<String>>, String> {
         let mut skip_feature_name_conversion = false;
         let mut constraints = None;
+        let mut requester: Option<&str> = None;
+        let mut raise_if_policy_denied = false;
         if let Some(preferences) = preferences {
             skip_feature_name_conversion = preferences.skip_feature_name_conversion;
             constraints = preferences.constraints.as_ref();
+            requester = preferences.requester.as_deref();
+            raise_if_policy_denied = preferences.raise_if_policy_denied;
         }
 
         let mut result = Vec::new();
@@ -667,6 +690,20 @@ impl OptionsRegistry for OptionsProvider {
                     continue;
                 }
             }
+
+            if let Some(requester) = requester {
+                if let Some(policies) = self.policies.get(&canonical_feature_name) {
+                    if !policies.is_requester_permitted(requester) {
+                        if raise_if_policy_denied {
+                            return Err(PolicyDeniedError::new(&canonical_feature_name, requester)
+                                .to_string());
+                        }
+                        result.push(None);
+                        continue;
+                    }
+                }
+            }
+
             result.push(Some(canonical_feature_name));
         }
 

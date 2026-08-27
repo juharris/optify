@@ -17,15 +17,26 @@ use crate::preferences::MutGetOptionsPreferences;
 mod preferences;
 
 const UNKNOWN_FEATURE_PATTERN: &str = "is not a known feature.";
+const POLICY_DENIED_PATTERN: &str = "is not permitted to use feature";
 
 fn get_unknown_feature_error(ruby: &Ruby) -> Result<ExceptionClass, magnus::Error> {
     let module: RModule = ruby.class_object().const_get("Optify")?;
     module.const_get("UnknownFeatureError")
 }
 
+fn get_policy_denied_error(ruby: &Ruby) -> Result<ExceptionClass, magnus::Error> {
+    let module: RModule = ruby.class_object().const_get("Optify")?;
+    module.const_get("PolicyDeniedError")
+}
+
 fn map_feature_error(ruby: &Ruby, error: String) -> magnus::Error {
     if error.contains(UNKNOWN_FEATURE_PATTERN) {
         match get_unknown_feature_error(ruby) {
+            Ok(exception_class) => magnus::Error::new(exception_class, error),
+            Err(_) => magnus::Error::new(ruby.exception_runtime_error(), error),
+        }
+    } else if error.contains(POLICY_DENIED_PATTERN) {
+        match get_policy_denied_error(ruby) {
             Ok(exception_class) => magnus::Error::new(exception_class, error),
             Err(_) => magnus::Error::new(ruby.exception_runtime_error(), error),
         }
@@ -621,6 +632,7 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let module = ruby.define_module("Optify")?;
 
     module.define_error("UnknownFeatureError", ruby.exception_standard_error())?;
+    module.define_error("PolicyDeniedError", ruby.exception_standard_error())?;
 
     let builder_class = module.define_class("OptionsProviderBuilder", ruby.class_object())?;
 
@@ -692,10 +704,6 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         method!(WrappedOptionsProvider::has_conditions, 1),
     )?;
     provider_class.define_method(
-        "get_policies_json",
-        method!(WrappedOptionsProvider::get_policies_json, 1),
-    )?;
-    provider_class.define_method(
         "map_feature_names",
         method!(WrappedOptionsProvider::map_feature_names, 2),
     )?;
@@ -712,6 +720,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     provider_class.define_private_method(
         "get_feature_metadata_json",
         method!(WrappedOptionsProvider::get_feature_metadata_json, 1),
+    )?;
+    provider_class.define_private_method(
+        "get_policies_json",
+        method!(WrappedOptionsProvider::get_policies_json, 1),
     )?;
 
     let get_options_preferences_class =
@@ -783,6 +795,14 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         "requester",
         method!(MutGetOptionsPreferences::get_requester, 0),
     )?;
+    get_options_preferences_class.define_method(
+        "raise_if_policy_denied=",
+        method!(MutGetOptionsPreferences::set_raise_if_policy_denied, 1),
+    )?;
+    get_options_preferences_class.define_method(
+        "raise_if_policy_denied",
+        method!(MutGetOptionsPreferences::get_raise_if_policy_denied, 0),
+    )?;
 
     let watcher_builder_class =
         module.define_class("OptionsWatcherBuilder", ruby.class_object())?;
@@ -852,10 +872,6 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         method!(WrappedOptionsWatcher::has_conditions, 1),
     )?;
     watcher_class.define_method(
-        "get_policies_json",
-        method!(WrappedOptionsWatcher::get_policies_json, 1),
-    )?;
-    watcher_class.define_method(
         "last_modified",
         method!(WrappedOptionsWatcher::last_modified, 0),
     )?;
@@ -876,6 +892,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_private_method(
         "get_feature_metadata_json",
         method!(WrappedOptionsWatcher::get_feature_metadata_json, 1),
+    )?;
+    watcher_class.define_private_method(
+        "get_policies_json",
+        method!(WrappedOptionsWatcher::get_policies_json, 1),
     )?;
 
     Ok(())

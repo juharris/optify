@@ -565,10 +565,11 @@ A feature file with the follow conditions will be applied:
 ```
 
 # Policies
-Policies restrict which requesters may use a feature.
-They are checked for the **top-level features** explicitly given in a request and should be enforced early — if a requester is not permitted, it should be an error.
+Similar to conditions, policies restrict which requesters may use a feature.
+They are checked for the **top-level features** explicitly given in a request and should be enforced early.
+If a requester is not permitted, it should be an error because the requester could think that their feature was applied which makes testing difficult.
 
-Unlike conditions, policies are **not** evaluated on imported features.
+Unlike conditions, imported features can have policies.
 A feature may freely import another feature that has policies without those policies being enforced on the import.
 
 ## Policies vs. Conditions
