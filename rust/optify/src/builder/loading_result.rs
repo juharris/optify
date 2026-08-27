@@ -1,7 +1,7 @@
 use crate::{
     configurable_values::locator::ConfigurableValuePointers,
     provider::SourceValue,
-    schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
+    schema::{conditions::ConditionExpression, metadata::OptionsMetadata, policies::Policies},
 };
 
 #[allow(clippy::large_enum_variant)]
@@ -20,6 +20,7 @@ pub(crate) struct FeatureLoadingResult {
     pub configurable_value_pointers: ConfigurableValuePointers,
     pub imports: Option<Vec<String>>,
     pub metadata: OptionsMetadata,
+    pub policies: Option<Policies>,
     pub source: SourceValue,
 }
 

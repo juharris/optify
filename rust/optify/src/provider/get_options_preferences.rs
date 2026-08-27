@@ -12,6 +12,11 @@ pub struct GetOptionsPreferences {
     pub constraints: Option<Constraints>,
     /// Overrides to apply after the built configuration.
     pub overrides: Option<SourceValue>,
+    /// The identifier of the requester making this request.
+    ///
+    /// Used to enforce `policies.requester` on features.
+    /// If `None`, requester-based policies are not checked.
+    pub requester: Option<String>,
     /// Determines if the feature names should be converted to canonical feature names.
     /// Defaults to false: given features names will be converted to canonical feature names before looking for features or options.
     pub skip_feature_name_conversion: bool,
@@ -30,6 +35,7 @@ impl GetOptionsPreferences {
             are_configurable_values_enabled: false,
             constraints: None,
             overrides: None,
+            requester: None,
             skip_feature_name_conversion: false,
         }
     }

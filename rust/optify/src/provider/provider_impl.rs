@@ -8,7 +8,9 @@ use crate::{
     configurable_string::LoadedFiles,
     json::merge::{merge_json_with_defaults, FrozenPaths},
     provider::GetOptionsPreferences,
-    schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
+    schema::{
+        conditions::ConditionExpression, metadata::OptionsMetadata, policies::Policies,
+    },
 };
 
 use super::OptionsRegistry;
@@ -22,6 +24,7 @@ pub(crate) type SourceValue = serde_json::Value;
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
+pub(crate) type PoliciesMap = HashMap<String, Policies>;
 pub(crate) type ReferencedFileToFeatureNames = HashMap<String, Vec<String>>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -40,6 +43,7 @@ pub struct OptionsProvider {
     aliases: Aliases,
     conditions: Conditions,
     features: Features,
+    policies: PoliciesMap,
     /// A map of files to their referencing features.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This allows fast lookup of features when a specific file is modified.
@@ -63,6 +67,7 @@ impl OptionsProvider {
         keyed_configurable_string_pointers: HashMap<String, Vec<String>>,
         conditions: Conditions,
         features: Features,
+        policies: PoliciesMap,
         referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
         loaded_files: LoadedFiles,
         sources: Sources,
@@ -75,6 +80,7 @@ impl OptionsProvider {
             aliases,
             conditions,
             features,
+            policies,
             referenced_file_to_feature_names,
             loaded_files,
             sources,
@@ -624,6 +630,14 @@ impl OptionsRegistry for OptionsProvider {
 
     fn has_conditions(&self, canonical_feature_name: &str) -> bool {
         self.conditions.contains_key(canonical_feature_name)
+    }
+
+    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
+        self.policies.get(canonical_feature_name).cloned()
+    }
+
+    fn has_policies(&self, canonical_feature_name: &str) -> bool {
+        self.policies.contains_key(canonical_feature_name)
     }
 
     fn map_feature_names(

@@ -6,7 +6,7 @@ use crate::builder::builder_options::BuilderOptions;
 
 use crate::{
     provider::{CacheOptions, Features, GetOptionsPreferences},
-    schema::metadata::OptionsMetadata,
+    schema::{metadata::OptionsMetadata, policies::Policies},
 };
 
 /// Trait defining the core functionality for an options provider
@@ -124,6 +124,16 @@ pub trait OptionsRegistry {
 
     /// Indicates if the feature has conditions.
     fn has_conditions(&self, canonical_feature_name: &str) -> bool;
+
+    /// Returns the policies for the given canonical feature name, if any.
+    ///
+    /// Policies are only checked for top-level features in a request.
+    /// Features that are imported by other features may have policies, but those policies
+    /// are not checked when the feature is used as an import.
+    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies>;
+
+    /// Indicates if the feature has policies.
+    fn has_policies(&self, canonical_feature_name: &str) -> bool;
 
     /// Filters `feature_names` based on the preferences,
     /// such as the `preferences.constraints`.
