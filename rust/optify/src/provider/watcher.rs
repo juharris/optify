@@ -343,13 +343,6 @@ impl OptionsRegistry for OptionsWatcher {
             .get_policies(canonical_feature_name)
     }
 
-    fn has_policies(&self, canonical_feature_name: &str) -> bool {
-        self.current_provider
-            .read()
-            .unwrap()
-            .has_policies(canonical_feature_name)
-    }
-
     fn map_feature_names(
         &self,
         feature_names: &[impl AsRef<str>],

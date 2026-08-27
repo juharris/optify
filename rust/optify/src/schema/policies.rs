@@ -1,31 +1,34 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 
-/// The policy for a specific string field in the request's preferences
-/// (e.g. the requester identifier).
+/// The policy for the requester identifier passed via preferences.
 ///
 /// Either `allowed` or `blocked` must be specified, not both.
 ///
-/// - `allowed`: Only the listed values may use the feature.
-///   An empty list means no value is currently allowed.
-/// - `blocked`: The listed values may not use the feature.
-///   All other values are allowed. Must contain at least one entry.
+/// - `allowed`: Only the listed requesters may use this feature.
+///   An empty set means no requester is currently allowed.
+/// - `blocked`: The listed requesters may not use this feature.
+///   All other requesters are allowed.
+///
+/// See https://github.com/juharris/optify#policies for more information.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
-pub enum StringPolicy {
+pub enum RequesterPolicy {
     Allowed {
-        allowed: Vec<String>,
+        allowed: HashSet<String>,
     },
     Blocked {
-        blocked: Vec<String>,
+        blocked: HashSet<String>,
     },
 }
 
-impl StringPolicy {
-    /// Returns `true` if the given value is permitted by this policy.
+impl RequesterPolicy {
+    /// Returns `true` if the given requester is permitted by this policy.
     pub fn is_permitted(&self, value: &str) -> bool {
         match self {
-            Self::Allowed { allowed } => allowed.iter().any(|s| s == value),
-            Self::Blocked { blocked } => !blocked.iter().any(|s| s == value),
+            Self::Allowed { allowed } => allowed.contains(value),
+            Self::Blocked { blocked } => !blocked.contains(value),
         }
     }
 }
@@ -34,18 +37,9 @@ impl StringPolicy {
 ///
 /// Policies are checked for the **top-level features** in a request.
 /// Unlike conditions, policies are **not** evaluated on imported features — a feature may
-/// freely import another feature that has policies without triggering those policies.
+/// freely import another feature that has policies without those policies being enforced.
 ///
-/// See the comparison table below for the key differences between policies and conditions.
-///
-/// | Aspect | Conditions | Policies |
-/// |---|---|---|
-/// | Purpose | Silently filter out features based on request constraints | Restrict access to a feature; violations should surface as errors |
-/// | When evaluated | During filtering — the feature is quietly excluded if conditions are not met | At the start of a request — a violation should be reported to the caller |
-/// | Effect | Feature is silently omitted from the result | Feature is rejected; the requester is not permitted to use it |
-/// | Applied to | Top-level features in the request | Top-level features in the request only |
-/// | Imported features | **Not allowed**: a feature with conditions cannot be imported | **Allowed**: a feature with policies can be imported freely; policies are not inherited |
-/// | Data source | `constraints` on the request | `requester` (or other fields) in `preferences` |
+/// See https://github.com/juharris/optify#policies for details and a comparison with conditions.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Policies {
@@ -54,7 +48,7 @@ pub struct Policies {
     /// Use `allowed` to specify an allowlist (only those requesters may use this feature).
     /// Use `blocked` to specify a denylist (all requesters except those listed may use this feature).
     /// `allowed` and `blocked` are mutually exclusive.
-    pub requester: Option<StringPolicy>,
+    pub requester: Option<RequesterPolicy>,
 }
 
 impl Policies {

@@ -636,10 +636,6 @@ impl OptionsRegistry for OptionsProvider {
         self.policies.get(canonical_feature_name).cloned()
     }
 
-    fn has_policies(&self, canonical_feature_name: &str) -> bool {
-        self.policies.contains_key(canonical_feature_name)
-    }
-
     fn map_feature_names(
         &self,
         feature_names: &[impl AsRef<str>],

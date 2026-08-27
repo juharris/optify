@@ -132,9 +132,6 @@ pub trait OptionsRegistry {
     /// are not checked when the feature is used as an import.
     fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies>;
 
-    /// Indicates if the feature has policies.
-    fn has_policies(&self, canonical_feature_name: &str) -> bool;
-
     /// Filters `feature_names` based on the preferences,
     /// such as the `preferences.constraints`.
     /// Returns a Vec of optional strings matching the input order.
