@@ -5,6 +5,8 @@ require 'json'
 require 'lru_redux'
 require 'sorbet-runtime'
 
+require_relative './policies'
+
 module Optify
   # @!visibility private
   module ProviderModule # rubocop:disable Metrics/ModuleLength
@@ -69,12 +71,12 @@ module Optify
       OptionsMetadata.from_hash(JSON.parse(metadata_json))
     end
 
-    #: (String canonical_feature_name) -> Hash[String, untyped]?
+    #: (String canonical_feature_name) -> Optify::Policies?
     def get_policies(canonical_feature_name)
       policies_json = get_policies_json(canonical_feature_name)
       return nil if policies_json.nil?
 
-      JSON.parse(policies_json)
+      Policies.from_hash(JSON.parse(policies_json))
     end
 
     private

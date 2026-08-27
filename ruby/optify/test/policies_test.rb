@@ -14,10 +14,12 @@ class PoliciesTest < Test::Unit::TestCase
       provider = klass.build(POLICIES_DIR)
       result = provider.get_policies('feature_allowed')
       assert_not_nil(result, "Expected policies for feature_allowed from #{klass}")
-      requester = result['requester']
-      requester['allowed']&.sort!
-      assert_equal({ 'allowed' => %w[service_a service_b] }, requester,
-                   "feature_allowed requester policies mismatch for #{klass}")
+      assert_instance_of(Optify::Policies, result)
+      requester = result.requester
+      assert_not_nil(requester)
+      assert_equal(%w[service_a service_b], requester.allowed&.sort,
+                   "feature_allowed requester allowed mismatch for #{klass}")
+      assert_nil(requester.blocked)
     end
   end
 
@@ -26,8 +28,12 @@ class PoliciesTest < Test::Unit::TestCase
       provider = klass.build(POLICIES_DIR)
       result = provider.get_policies('feature_blocked')
       assert_not_nil(result, "Expected policies for feature_blocked from #{klass}")
-      assert_equal({ 'blocked' => ['untrusted_service'] }, result['requester'],
-                   "feature_blocked requester policies mismatch for #{klass}")
+      assert_instance_of(Optify::Policies, result)
+      requester = result.requester
+      assert_not_nil(requester)
+      assert_equal(['untrusted_service'], requester.blocked,
+                   "feature_blocked requester blocked mismatch for #{klass}")
+      assert_nil(requester.allowed)
     end
   end
 
