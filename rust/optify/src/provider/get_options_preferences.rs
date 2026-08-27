@@ -15,7 +15,11 @@ pub struct GetOptionsPreferences {
     /// The identifier of the requester making this request.
     ///
     /// Used to enforce `policies.requester` on features.
-    /// If `None`, requester-based policies are not checked.
+    ///
+    /// **Important**: If `None`, requester-based policies are **not** checked, meaning callers
+    /// that do not set this field bypass requester policy enforcement entirely.
+    /// Only trusted internal callers that are not subject to requester policies should omit this field.
+    /// For all external or user-facing requests, always set this to the requester's identifier.
     pub requester: Option<String>,
     /// Determines if the feature names should be converted to canonical feature names.
     /// Defaults to false: given features names will be converted to canonical feature names before looking for features or options.
