@@ -71,4 +71,13 @@ impl MutGetOptionsPreferences {
     pub fn skip_feature_name_conversion(&self) -> bool {
         self.0.borrow().skip_feature_name_conversion
     }
+
+    // Requester Section
+    pub fn set_requester(&self, requester: Option<String>) {
+        self.0.borrow_mut().requester = requester;
+    }
+
+    pub fn get_requester(&self) -> Option<String> {
+        self.0.borrow().requester.clone()
+    }
 }

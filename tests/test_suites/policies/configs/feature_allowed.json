@@ -1,0 +1,12 @@
+{
+	"policies": {
+		"requester": {
+			"allowed": ["service_a", "service_b"]
+		}
+	},
+	"options": {
+		"config": {
+			"key": "from feature_allowed"
+		}
+	}
+}

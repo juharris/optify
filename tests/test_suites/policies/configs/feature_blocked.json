@@ -1,0 +1,12 @@
+{
+	"policies": {
+		"requester": {
+			"blocked": ["untrusted_service"]
+		}
+	},
+	"options": {
+		"config": {
+			"key": "from feature_blocked"
+		}
+	}
+}

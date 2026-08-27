@@ -1,0 +1,8 @@
+{
+	"features": ["feature_allowed"],
+	"options": {
+		"config": {
+			"key": "from feature_allowed"
+		}
+	}
+}

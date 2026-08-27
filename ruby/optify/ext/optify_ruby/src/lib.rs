@@ -291,6 +291,13 @@ impl WrappedOptionsProvider {
         self.0.borrow().has_conditions(&canonical_feature_name)
     }
 
+    fn get_policies_json(&self, canonical_feature_name: String) -> Option<String> {
+        self.0
+            .borrow()
+            .get_policies(&canonical_feature_name)
+            .map(|p| serde_json::to_string(&p).unwrap())
+    }
+
     fn map_feature_names(
         ruby: &Ruby,
         rb_self: &Self,
@@ -552,6 +559,13 @@ impl WrappedOptionsWatcher {
         self.0.borrow().has_conditions(&canonical_feature_name)
     }
 
+    fn get_policies_json(&self, canonical_feature_name: String) -> Option<String> {
+        self.0
+            .borrow()
+            .get_policies(&canonical_feature_name)
+            .map(|p| serde_json::to_string(&p).unwrap())
+    }
+
     fn last_modified(&self) -> std::time::SystemTime {
         self.0.borrow().last_modified()
     }
@@ -678,6 +692,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         method!(WrappedOptionsProvider::has_conditions, 1),
     )?;
     provider_class.define_method(
+        "get_policies_json",
+        method!(WrappedOptionsProvider::get_policies_json, 1),
+    )?;
+    provider_class.define_method(
         "map_feature_names",
         method!(WrappedOptionsProvider::map_feature_names, 2),
     )?;
@@ -757,6 +775,14 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         "skip_feature_name_conversion",
         method!(MutGetOptionsPreferences::skip_feature_name_conversion, 0),
     )?;
+    get_options_preferences_class.define_method(
+        "requester=",
+        method!(MutGetOptionsPreferences::set_requester, 1),
+    )?;
+    get_options_preferences_class.define_method(
+        "requester",
+        method!(MutGetOptionsPreferences::get_requester, 0),
+    )?;
 
     let watcher_builder_class =
         module.define_class("OptionsWatcherBuilder", ruby.class_object())?;
@@ -824,6 +850,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_method(
         "conditions?",
         method!(WrappedOptionsWatcher::has_conditions, 1),
+    )?;
+    watcher_class.define_method(
+        "get_policies_json",
+        method!(WrappedOptionsWatcher::get_policies_json, 1),
     )?;
     watcher_class.define_method(
         "last_modified",
