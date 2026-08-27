@@ -436,23 +436,25 @@ impl OptionsProvider {
 
     /// Checks whether the requester is permitted for the given feature.
     ///
-    /// Returns `Ok(true)` if permitted or no policy is set.
+    /// Returns `Ok(true)` if permitted, no policy is set, or no requester is given.
     /// Returns `Ok(false)` if denied and `raise_if_policy_denied` is false.
     /// Returns `Err(message)` if denied and `raise_if_policy_denied` is true.
     fn is_feature_permitted_for_requester(
         &self,
         canonical_feature_name: &str,
-        requester: &str,
+        requester: Option<&str>,
         raise_if_policy_denied: bool,
     ) -> Result<bool, String> {
-        if let Some(policies) = self.policies.get(canonical_feature_name) {
-            if !policies.is_requester_permitted(requester) {
-                if raise_if_policy_denied {
-                    return Err(
-                        PolicyDeniedError::new(canonical_feature_name, requester).to_string()
-                    );
+        if let Some(requester) = requester {
+            if let Some(policies) = self.policies.get(canonical_feature_name) {
+                if !policies.is_requester_permitted(requester) {
+                    if raise_if_policy_denied {
+                        return Err(
+                            PolicyDeniedError::new(canonical_feature_name, requester).to_string()
+                        );
+                    }
+                    return Ok(false);
                 }
-                return Ok(false);
             }
         }
         Ok(true)
@@ -599,14 +601,12 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if let Some(requester) = requester {
-                if !self.is_feature_permitted_for_requester(
-                    &canonical_feature_name,
-                    requester,
-                    raise_if_policy_denied,
-                )? {
-                    continue;
-                }
+            if !self.is_feature_permitted_for_requester(
+                &canonical_feature_name,
+                requester,
+                raise_if_policy_denied,
+            )? {
+                continue;
             }
 
             result.push(canonical_feature_name);
@@ -713,15 +713,13 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if let Some(requester) = requester {
-                if !self.is_feature_permitted_for_requester(
-                    &canonical_feature_name,
-                    requester,
-                    raise_if_policy_denied,
-                )? {
-                    result.push(None);
-                    continue;
-                }
+            if !self.is_feature_permitted_for_requester(
+                &canonical_feature_name,
+                requester,
+                raise_if_policy_denied,
+            )? {
+                result.push(None);
+                continue;
             }
 
             result.push(Some(canonical_feature_name));
