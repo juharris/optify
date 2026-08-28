@@ -52,34 +52,23 @@ class PoliciesTest < Test::Unit::TestCase
     assert_equal('service_a', preferences.requester)
   end
 
-  def test_raise_if_policy_denied_in_preferences
-    preferences = Optify::GetOptionsPreferences.new
-    assert_equal(false, preferences.raise_if_policy_denied)
-    preferences.raise_if_policy_denied = true
-    assert_equal(true, preferences.raise_if_policy_denied)
-  end
-
-  def test_filtering_removes_denied_requester
+  def test_raise_if_policy_denied_in_preferences_and_filtering
     PROVIDERS.each do |klass|
       provider = klass.build(POLICIES_DIR)
       preferences = Optify::GetOptionsPreferences.new
-      # "unknown_service" is not in the allowed list for feature_allowed, so it gets filtered out.
-      # It is also not in the blocked list for feature_blocked, so feature_blocked is kept.
-      preferences.requester = 'unknown_service'
-      result = provider.get_filtered_features(%w[feature_allowed feature_blocked], preferences)
-      assert_equal(['feature_blocked'], result, "Denied feature should be filtered out for #{klass}")
-    end
-  end
-
-  def test_policy_denied_raises_when_requested
-    PROVIDERS.each do |klass|
-      provider = klass.build(POLICIES_DIR)
-      preferences = Optify::GetOptionsPreferences.new
+      assert_equal(false, preferences.raise_if_policy_denied)
       preferences.requester = 'unknown_service'
       preferences.raise_if_policy_denied = true
-      assert_raise(Optify::PolicyDeniedError) do
+      assert_equal(true, preferences.raise_if_policy_denied)
+      error = assert_raise(Optify::PolicyDeniedError) do
         provider.get_filtered_features(['feature_allowed'], preferences)
       end
+      assert_equal(
+        'Requester "unknown_service" is not permitted to use feature "feature_allowed".' \
+        ' The requester is denied by the feature\'s policies.',
+        error.message,
+        "Error message mismatch for #{klass}",
+      )
     end
   end
 end

@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 
-require_relative './base_config'
+require 'optify-from_hash'
 
 module Optify
   # The policy for the requester identifier passed via preferences.

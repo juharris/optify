@@ -593,10 +593,11 @@ fn test_policy_filtering_raises_when_requested() -> Result<(), Box<dyn std::erro
         &["feature_allowed"],
         Some(&preferences),
     );
-    assert!(result.is_err());
-    let err = result.unwrap_err();
-    assert!(err.contains("untrusted_service"), "Error should contain requester: {err}");
-    assert!(err.contains("feature_allowed"), "Error should contain feature name: {err}");
+    assert_eq!(
+        result.unwrap_err(),
+        "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\". \
+         The requester is denied by the feature's policies."
+    );
 
     Ok(())
 }
