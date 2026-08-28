@@ -8,13 +8,6 @@
     "fmt": "prettier --write \"**/*.md\"",
     "fmt:check": "prettier --check \"**/*.md\""
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "11.24.0",
-      "onFail": "download"
-    }
-  },
   "packageManager": "pnpm@11.24.0",
   "type": "module",
   "devDependencies": {

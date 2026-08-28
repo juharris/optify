@@ -29,12 +29,11 @@ Configurable values must also be enabled in the preferences given when getting o
 
 ## List Entries
 
-| Property                                    | Description                                                                                   |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `$value`                                    | **Required** The value of the entry.<br/> A `$value: null` yields a `null` entry in the list. |
-| `$order`                                    | (Optional) Sorting preference for the entry.                                                  |
-| Higher values are sorted later in the list. |
-| Default is `0`.                             |
+<!-- prettier-ignore -->
+| Property | Description |
+| --- | --- |
+| `$value` | **Required** The value of the entry.<br/> A `$value: null` yields a `null` entry in the list. |
+| `$order` | (Optional) Sorting preference for the entry.<br/> Higher values are sorted later in the list.<br/> Default is `0`. |
 
 `$value` is required because if another feature just wants to change the order of an entry, then setting `$order` using an object would override a value that is not an object and special custom logic would be needed to handle merging such special cases across features.
 
