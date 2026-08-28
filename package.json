@@ -11,6 +11,7 @@
   "packageManager": "pnpm@11.24.0",
   "type": "module",
   "devDependencies": {
+    "@dvyio/prettier-plugin-collapse-markdown-tables": "^0.2.1",
     "prettier": "^3.9.6",
     "prettier-plugin-sentences-per-line": "^0.2.4"
   }

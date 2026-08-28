@@ -1,3 +1,4 @@
 {
-	"plugins": ["prettier-plugin-sentences-per-line"]
+	"plugins": ["prettier-plugin-sentences-per-line", "@dvyio/prettier-plugin-collapse-markdown-tables"],
+	"markdownTableStyle": "spaced"
 }

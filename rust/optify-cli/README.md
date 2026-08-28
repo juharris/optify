@@ -31,10 +31,10 @@ optify --dir ./configs get-options -k myConfig -f A | jq
 
 ### Global Options
 
-| Option            | Description                                                                  |
-| ----------------- | ---------------------------------------------------------------------------- |
+| Option | Description |
+| --- | --- |
 | `-d, --dir <DIR>` | Path to a configuration directory; repeat to load from multiple directories. |
-| `--schema <PATH>` | Optional path to a JSON schema file for validating configurations.           |
+| `--schema <PATH>` | Optional path to a JSON schema file for validating configurations. |
 
 ---
 
