@@ -83,6 +83,6 @@ impl Policies {
     pub fn is_requester_permitted(&self, requester: &str) -> bool {
         self.requester
             .as_ref()
-            .map_or(true, |p| p.is_permitted(requester))
+            .is_none_or(|p| p.is_permitted(requester))
     }
 }
