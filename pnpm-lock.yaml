@@ -8,9 +8,6 @@ importers:
 
   .:
     devDependencies:
-      '@dvyio/prettier-plugin-collapse-markdown-tables':
-        specifier: ^0.2.1
-        version: 0.2.1(prettier@3.9.6)
       prettier:
         specifier: ^3.9.6
         version: 3.9.6
@@ -19,12 +16,6 @@ importers:
         version: 0.2.4(prettier@3.9.6)
 
 packages:
-
-  '@dvyio/prettier-plugin-collapse-markdown-tables@0.2.1':
-    resolution: {integrity: sha512-Go5oXSwg6NSn95J0VbNVSo0JdALR/178HtZU7Yj8zeoDy2oc1WKQ1oK5DuIfISrNyz9nSl+RtuE34oaZsFv1/g==}
-    engines: {node: '>=20.19.0'}
-    peerDependencies:
-      prettier: ^3.0.0
 
   prettier-plugin-sentences-per-line@0.2.4:
     resolution: {integrity: sha512-1SSPJxwvekA6wVb4VqJYcVZw39Ak7Oy/IKd4qCGG48hO7oWg/DF0EWPo4PrEROy2LWLl3/U570NM7SurMKQNSA==}
@@ -41,10 +32,6 @@ packages:
     engines: {node: '>=22.14.0'}
 
 snapshots:
-
-  '@dvyio/prettier-plugin-collapse-markdown-tables@0.2.1(prettier@3.9.6)':
-    dependencies:
-      prettier: 3.9.6
 
   prettier-plugin-sentences-per-line@0.2.4(prettier@3.9.6):
     dependencies:

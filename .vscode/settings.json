@@ -36,6 +36,10 @@
 			"url": "./tests/test_suites/inheritance/configs/.optify/schema.json"
 		}
 	],
+	"[markdown]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
 	"yaml.schemas": {
 		"./schemas/feature_file.json": [
 			"rust/optify/tests/**/*.{yaml,yml}",
