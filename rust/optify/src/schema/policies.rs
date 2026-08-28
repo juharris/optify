@@ -44,12 +44,8 @@ impl std::error::Error for PolicyDeniedError {}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum RequesterPolicy {
-    Allow {
-        allow: HashSet<String>,
-    },
-    Block {
-        block: HashSet<String>,
-    },
+    Allow { allow: HashSet<String> },
+    Block { block: HashSet<String> },
 }
 
 impl RequesterPolicy {

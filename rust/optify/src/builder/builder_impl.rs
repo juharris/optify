@@ -17,7 +17,8 @@ use crate::configurable_values::locator::{find_configurable_values, Configurable
 use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
 use crate::provider::{
-    Aliases, Conditions, Features, OptionsProvider, PoliciesMap, ReferencedFileToFeatureNames, Sources,
+    Aliases, Conditions, Features, OptionsProvider, PoliciesMap, ReferencedFileToFeatureNames,
+    Sources,
 };
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
