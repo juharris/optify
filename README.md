@@ -588,7 +588,7 @@ A feature may freely import another feature that has policies without those poli
 {
     "policies": {
         "requester": {
-            "allowed": ["service_a", "service_b"]
+            "allow": ["service_a", "service_b"]
         }
     }
 }
@@ -600,14 +600,14 @@ Or with a denylist:
 {
     "policies": {
         "requester": {
-            "blocked": ["untrusted_service"]
+            "block": ["untrusted_service"]
         }
     }
 }
 ```
 
-`allowed` and `blocked` are mutually exclusive.
-An empty `allowed` list means no requester is currently permitted (useful when preparing a feature before it is opened up).
+`allow` and `block` are mutually exclusive.
+An empty `allow` list means no requester is currently permitted (useful when preparing a feature before it is opened up).
 
 # Configurable Strings
 

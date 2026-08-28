@@ -8,17 +8,17 @@ require 'optify-from_hash'
 module Optify
   # The policy for the requester identifier passed via preferences.
   #
-  # Either `allowed` or `blocked` will be set, not both.
-  # - `allowed`: only the listed requesters may use the feature; can be empty.
-  # - `blocked`: the listed requesters may not use the feature; all others are allowed.
+  # Either `allow` or `block` will be set, not both.
+  # - `allow`: only the listed requesters may use the feature; can be empty.
+  # - `block`: the listed requesters may not use the feature; all others are allowed.
   class RequesterPolicy < FromHashable
     extend T::Sig
 
     sig { returns(T.nilable(T::Set[String])) }
-    attr_reader :allowed
+    attr_reader :allow
 
     sig { returns(T.nilable(T::Set[String])) }
-    attr_reader :blocked
+    attr_reader :block
   end
 
   # Policies that restrict access to a feature based on values in the request's preferences.

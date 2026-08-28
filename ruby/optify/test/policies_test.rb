@@ -17,9 +17,9 @@ class PoliciesTest < Test::Unit::TestCase
       assert_instance_of(Optify::Policies, result)
       requester = result.requester
       assert_not_nil(requester)
-      assert_equal(Set.new(%w[service_a service_b]), requester.allowed,
-                   "feature_allowed requester allowed mismatch for #{klass}")
-      assert_nil(requester.blocked)
+      assert_equal(Set.new(%w[service_a service_b]), requester.allow,
+                   "feature_allowed requester allow mismatch for #{klass}")
+      assert_nil(requester.block)
     end
   end
 
@@ -31,9 +31,9 @@ class PoliciesTest < Test::Unit::TestCase
       assert_instance_of(Optify::Policies, result)
       requester = result.requester
       assert_not_nil(requester)
-      assert_equal(Set.new(['untrusted_service']), requester.blocked,
-                   "feature_blocked requester blocked mismatch for #{klass}")
-      assert_nil(requester.allowed)
+      assert_equal(Set.new(['untrusted_service']), requester.block,
+                   "feature_blocked requester block mismatch for #{klass}")
+      assert_nil(requester.allow)
     end
   end
 

@@ -1,7 +1,7 @@
 {
 	"policies": {
 		"requester": {
-			"blocked": ["untrusted_service"]
+			"block": ["untrusted_service"]
 		}
 	},
 	"options": {

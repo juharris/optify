@@ -504,15 +504,15 @@ fn test_get_policies_allowed() -> Result<(), Box<dyn std::error::Error>> {
 
     assert!(policies.is_requester_permitted("service_a"));
     assert!(policies.is_requester_permitted("service_b"));
-    // Requester not in the allowed list is not permitted.
+    // Requester not in the allow list is not permitted.
     assert!(!policies.is_requester_permitted("service_c"));
     assert!(!policies.is_requester_permitted("untrusted_service"));
 
     // Verify the policy variant and set contents.
     let expected: HashSet<String> = ["service_a", "service_b"].iter().map(|s| s.to_string()).collect();
     match policies.requester.expect("requester policy should be set") {
-        RequesterPolicy::Allowed { allowed } => assert_eq!(allowed, expected),
-        other => panic!("expected Allowed, got {other:?}"),
+        RequesterPolicy::Allow { allow } => assert_eq!(allow, expected),
+        other => panic!("expected Allow, got {other:?}"),
     }
 
     Ok(())
@@ -534,8 +534,8 @@ fn test_get_policies_blocked() -> Result<(), Box<dyn std::error::Error>> {
     // Verify the policy variant and set contents.
     let expected: HashSet<String> = ["untrusted_service"].iter().map(|s| s.to_string()).collect();
     match policies.requester.expect("requester policy should be set") {
-        RequesterPolicy::Blocked { blocked } => assert_eq!(blocked, expected),
-        other => panic!("expected Blocked, got {other:?}"),
+        RequesterPolicy::Block { block } => assert_eq!(block, expected),
+        other => panic!("expected Block, got {other:?}"),
     }
 
     Ok(())
@@ -552,8 +552,8 @@ fn test_policy_filtering_silently_filters_denied() -> Result<(), Box<dyn std::er
     )?;
     assert_eq!(result, vec!["feature_allowed", "feature_blocked"]);
 
-    // Requester not in the allowed list: feature_allowed is silently filtered out,
-    // but feature_blocked is kept (requester is not in the blocked list).
+    // Requester not in the allow list: feature_allowed is silently filtered out,
+    // but feature_blocked is kept (requester is not in the block list).
     let mut preferences = GetOptionsPreferences::new();
     preferences.requester = Some("unknown_service".to_owned());
     let result = provider.get_filtered_feature_names(
@@ -562,7 +562,7 @@ fn test_policy_filtering_silently_filters_denied() -> Result<(), Box<dyn std::er
     )?;
     assert_eq!(result, vec!["feature_blocked"]);
 
-    // Requester in the blocked list: feature_blocked is also silently filtered out.
+    // Requester in the block list: feature_blocked is also silently filtered out.
     preferences.requester = Some("untrusted_service".to_owned());
     let result = provider.get_filtered_feature_names(
         &["feature_blocked"],

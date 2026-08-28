@@ -291,12 +291,12 @@
 			"description": "Security policies that restrict which requesters may use this feature.\n\nPolicies are checked for the top-level features explicitly given in a request. Unlike conditions, policies are not evaluated on imported features.\n\nSee https://github.com/juharris/optify#policies for more information and a comparison with conditions.",
 			"properties": {
 				"requester": {
-					"description": "Restrictions based on the requester identifier passed via preferences.\n\nExactly one of `allowed` or `blocked` must be specified.\n\n- `allowed`: Only the listed requester identifiers may use this feature. An empty array means no requester is currently permitted.\n- `blocked`: The listed requester identifiers may not use this feature. All other requesters are allowed.",
+					"description": "Restrictions based on the requester identifier passed via preferences.\n\nExactly one of `allow` or `block` must be specified.\n\n- `allow`: Only the listed requester identifiers may use this feature. An empty array means no requester is currently permitted.\n- `block`: The listed requester identifiers may not use this feature. All other requesters are allowed.",
 					"oneOf": [
 						{
 							"type": "object",
 							"properties": {
-								"allowed": {
+								"allow": {
 									"type": "array",
 									"description": "Only these requester identifiers may use this feature. An empty array means no requester is currently permitted.",
 									"items": {
@@ -307,13 +307,13 @@
 									"default": ["<requester_id>"]
 								}
 							},
-							"required": ["allowed"],
+							"required": ["allow"],
 							"additionalProperties": false
 						},
 						{
 							"type": "object",
 							"properties": {
-								"blocked": {
+								"block": {
 									"type": "array",
 									"description": "These requester identifiers may not use this feature. All other requesters are allowed.",
 									"items": {
@@ -325,7 +325,7 @@
 									"default": ["<requester_id>"]
 								}
 							},
-							"required": ["blocked"],
+							"required": ["block"],
 							"additionalProperties": false
 						}
 					]

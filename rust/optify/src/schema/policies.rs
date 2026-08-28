@@ -33,22 +33,22 @@ impl std::error::Error for PolicyDeniedError {}
 
 /// The policy for the requester identifier passed via preferences.
 ///
-/// Either `allowed` or `blocked` must be specified, not both.
+/// Either `allow` or `block` must be specified, not both.
 ///
-/// - `allowed`: Only the listed requesters may use this feature.
+/// - `allow`: Only the listed requesters may use this feature.
 ///   An empty set means no requester is currently allowed.
-/// - `blocked`: The listed requesters may not use this feature.
+/// - `block`: The listed requesters may not use this feature.
 ///   All other requesters are allowed.
 ///
 /// See https://github.com/juharris/optify#policies for more information.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum RequesterPolicy {
-    Allowed {
-        allowed: HashSet<String>,
+    Allow {
+        allow: HashSet<String>,
     },
-    Blocked {
-        blocked: HashSet<String>,
+    Block {
+        block: HashSet<String>,
     },
 }
 
@@ -56,8 +56,8 @@ impl RequesterPolicy {
     /// Returns `true` if the given requester is permitted by this policy.
     pub fn is_permitted(&self, value: &str) -> bool {
         match self {
-            Self::Allowed { allowed } => allowed.contains(value),
-            Self::Blocked { blocked } => !blocked.contains(value),
+            Self::Allow { allow } => allow.contains(value),
+            Self::Block { block } => !block.contains(value),
         }
     }
 }
@@ -74,9 +74,9 @@ impl RequesterPolicy {
 pub struct Policies {
     /// Restrictions based on the requester identifier passed via preferences.
     ///
-    /// Use `allowed` to specify an allowlist (only those requesters may use this feature).
-    /// Use `blocked` to specify a denylist (all requesters except those listed may use this feature).
-    /// `allowed` and `blocked` are mutually exclusive.
+    /// Use `allow` to specify an allowlist (only those requesters may use this feature).
+    /// Use `block` to specify a denylist (all requesters except those listed may use this feature).
+    /// `allow` and `block` are mutually exclusive.
     pub requester: Option<RequesterPolicy>,
 }
 
