@@ -10,6 +10,7 @@ This is just meant to be minimal to get started and help build a Python library.
 See the [homepage] for details about how feature files are combined to build the options to process at runtime.
 
 ## Usage
+
 ```Python
 import json
 from optify import OptionsProvider
@@ -20,6 +21,7 @@ print(config)
 ```
 
 Outputs:
+
 ```JSON
 {
   "myArray": [
@@ -154,12 +156,15 @@ pytest
 ```
 
 ### Formatting
+
 To automatically change the Rust code, run:
+
 ```shell
 cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 ```
 
 # Publishing
+
 A GitHub Action will automatically publish new versions: https://github.com/juharris/optify/actions/workflows/python_publish.yml
 
 [homepage]: https://github.com/juharris/optify

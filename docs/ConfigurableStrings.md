@@ -6,6 +6,7 @@ This encourages reusing common substrings and sharing them amongst features whil
 `"base"` and values in `"arguments"` can be strings, or objects that reference a file or a [Liquid][Liquid] template.
 
 Simple example:
+
 ```JSON
 {
   "options": {
@@ -31,6 +32,7 @@ speeding up your runtime for subsequent requests.
 ## Overview
 
 Configurable strings provide:
+
 - **Template-based string generation** using Liquid syntax
 - **Variable substitution** with configurable arguments in Liquid templates
 - **File-based templates** for longer or reusable content in the base or arguments
@@ -52,6 +54,7 @@ Configurable values must also be enabled in the preferences given when getting o
 ## Basic Structure
 
 A configurable string is defined using the special type `Optify.ConfigurableString` with two main components:
+
 1. **base**: The template string or source
 2. **arguments**: Optional variables to substitute in the template
 
@@ -108,6 +111,7 @@ Load templates from external files:
 ```
 
 Where `templates/greeting.txt` contains:
+
 ```
 Hello from template file!
 ```
@@ -136,11 +140,13 @@ Combine file loading with Liquid templates:
 ```
 
 Where `templates/message.liquid` contains:
+
 ```liquid
 Welcome to {{ app_name }}! {{ message_from_file }}
 ```
 
 Where `templates/message.txt` contains:
+
 ```
 This message is from a file.
 ```
@@ -154,6 +160,7 @@ One of the most powerful features of configurable strings is the ability to over
 ### Example: Base Configuration
 
 `feature_A.json`:
+
 ```JSON
 {
   "options": {
@@ -173,6 +180,7 @@ One of the most powerful features of configurable strings is the ability to over
 ### Example: Override Arguments
 
 `feature_B.yaml`:
+
 ```YAML
 options:
   welcome_message:
@@ -181,6 +189,7 @@ options:
 ```
 
 When features `["feature_A", "feature_B"]` are applied, the result is:
+
 ```JSON
 {
   "welcome_message": "Hello, Justin!"
@@ -217,6 +226,7 @@ Result: `"Welcome to Optify, Developer! Enjoy your stay!"`
 ## Use Cases
 
 ### 1. Environment-Specific Messages
+
 Different messages for different environments without changing code:
 
 ```JSON
@@ -235,6 +245,7 @@ Different messages for different environments without changing code:
 ```
 
 ### 2. Dynamic Error Messages
+
 Provide context-aware error messages:
 
 ```JSON
@@ -294,6 +305,7 @@ For full Liquid syntax documentation, see the [Liquid template language document
 For more comprehensive examples and test cases, see the [test suite for configurable values](../tests/test_suites/configurable_values/).
 
 The test suite includes:
+
 - Simple string configurations
 - Template overrides
 - File-based templates

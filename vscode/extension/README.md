@@ -6,18 +6,18 @@ Helps manage and develop [Optify] feature files.
 
 ## Features
 
-* Show a preview of the built feature file or show the error in the preview window.
-* Click on an import or use Go to Definition (F12) to open the file.
-* Validate imports.
-* Completions for imports.
-* Suggest the canonical name for an alias.
-* See features that import the current file.
+- Show a preview of the built feature file or show the error in the preview window.
+- Click on an import or use Go to Definition (F12) to open the file.
+- Validate imports.
+- Completions for imports.
+- Suggest the canonical name for an alias.
+- See features that import the current file.
 
 ### Future Plans
 
-* Build a configuration for multiple features.
-* Suggest keys in options based on other files.
-* Email owners.
+- Build a configuration for multiple features.
+- Suggest keys in options based on other files.
+- Email owners.
 
 ## Recommended Setup
 

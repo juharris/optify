@@ -72,18 +72,23 @@ Optionally, when working locally, there is support to watch for changes to the c
 ## Testing
 
 Run:
+
 ```shell
 cargo test
 ```
 
 ## Formatting
+
 To automatically change code, run:
+
 ```shell
 cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 ```
 
 ## Benchmarking
+
 Run:
+
 ```shell
 cargo build --release
 cargo bench
@@ -97,6 +102,7 @@ open target/criterion/*/report/index.html
 ```
 
 ## Publishing
+
 ```shell
 cargo login
 cargo publish

@@ -99,12 +99,14 @@ mix test
 ### Formatting
 
 Elixir:
+
 ```shell
 mix format
 mix format --check-formatted
 ```
 
 Rust (NIF code):
+
 ```shell
 cd native/optify_nif
 cargo fmt

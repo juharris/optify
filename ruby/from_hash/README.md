@@ -11,6 +11,7 @@ gem install optify-from_hash
 ```
 
 Define your immutable classes:
+
 ```ruby
 require 'optify-from_hash'
 
@@ -49,15 +50,18 @@ puts config.objects[1].number # 2
 ```
 
 > Note that RBS style comments instead of Sorbet `sig`s are not supported
-and may never be supported because RBS is only for static analysis and it is not used at runtime.
+> and may never be supported because RBS is only for static analysis and it is not used at runtime.
 
 ## Setup
+
 Use Ruby 3.4+., for example, run:
+
 ```shell
 chruby 3.4.4
 ```
 
 Run:
+
 ```shell
 bundle install
 ```
@@ -65,12 +69,15 @@ bundle install
 ## Testing
 
 Run:
+
 ```shell
 bundle exec rake test
 ```
 
 ## Style
+
 To check for issues, run:
+
 ```shell
 bundle exec tapioca gem --verify
 bundle exec rubocop --cache true
@@ -78,6 +85,7 @@ bundle exec srb tc
 ```
 
 To automatically change code and address issues, run:
+
 ```shell
 bundle exec rubocop --autocorrect --cache true
 bin/tapioca annotations
@@ -89,17 +97,21 @@ bin/tapioca todo
 ```
 
 All in one line:
+
 ```shell
 bundle exec rubocop --autocorrect --cache true && bin/tapioca annotations && bundle exec tapioca gem && bin/tapioca todo
 ```
 
 Verify the changes with:
+
 ```shell
 bundle exec srb tc
 ```
 
 ## Typing
+
 To automatically convert Sorbet style to RBS:
+
 ```shell
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
@@ -111,9 +123,11 @@ We may investigate supporting RBS in the future.
 ## Benchmarks
 
 Run:
+
 ```shell
 ruby benchmarks/load.rb
 ```
 
 ## Publishing
+
 A GitHub Action is setup to publish the gem as needed.

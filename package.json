@@ -1,0 +1,24 @@
+{
+  "name": "optify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root tooling for the optify monorepo, e.g. formatting Markdown files.",
+  "license": "MIT",
+  "scripts": {
+    "fmt": "prettier --write \"**/*.md\"",
+    "fmt:check": "prettier --check \"**/*.md\""
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.24.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@11.24.0",
+  "type": "module",
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "prettier-plugin-sentences-per-line": "^0.2.4"
+  }
+}

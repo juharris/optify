@@ -2,3 +2,5 @@
 tmp/
 
 *.so
+
+node_modules/

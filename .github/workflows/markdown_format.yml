@@ -1,0 +1,46 @@
+name: "📝Markdown Format"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/markdown_format.yml"
+      - "**/*.md"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".prettierrc.json"
+      - ".prettierignore"
+  pull_request:
+    branches: [ "main" ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
+    paths:
+      - ".github/workflows/markdown_format.yml"
+      - "**/*.md"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".prettierrc.json"
+      - ".prettierignore"
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format-check:
+    name: "🔎Check Markdown Formatting"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check Markdown formatting
+        run: pnpm run fmt:check

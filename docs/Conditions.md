@@ -1,4 +1,5 @@
 # Conditions
+
 Conditions can be used to enable a feature file when it is requested and when constraints are given in the request.
 Conditions are meant for temporary experimental features that should only be enabled in some requests.
 
@@ -12,9 +13,11 @@ Instead, keep each feature file as granular and self-contained as possible, then
 The [recommended extensions](../README.md#recommended-extensions) can help you construct and validate conditions in feature files.
 
 ## Examples
+
 See this [tests folder](../tests/test_suites/conditions) for more examples.
 
 Suppose that a feature file has the following conditions:
+
 ```JSON
 {
     "conditions": {
@@ -50,6 +53,7 @@ or
 ```
 
 ❌ A request to get options with the following constraints **will not** enable the feature file:
+
 ```JSON
 {
     "page": "https://anothersite.com/slug"
@@ -61,6 +65,7 @@ or
 To apply the feature for multiple values of a constraint and achieve something like a "list contains" check,
 use either a regex or `or`.
 For example, with the following constraints:
+
 ```JSON
 {
     "page": "https://mysite.com/page",
@@ -68,6 +73,7 @@ For example, with the following constraints:
 ```
 
 Either of these conditions will match:
+
 ```JSON
 {
     "conditions": {
@@ -78,6 +84,7 @@ Either of these conditions will match:
 ```
 
 or use `or`:
+
 ```JSON
 {
     "conditions": {
@@ -98,6 +105,7 @@ or use `or`:
 ## Condition Types
 
 A condition expression can be:
+
 - `{ "and": [ <condition expression>, ...] }`
 - `{ "or": [ <condition expression>, ...] }`
 - `{ "not": <condition expression> }`
@@ -117,6 +125,7 @@ See the [schema file](../schemas/feature_file.json) for more details.
 Constraints are passed when getting options.
 
 For example, in Ruby:
+
 ```Ruby
 provider = Optify::OptionsProvider.build('path/to/configs')
 cache_options = Optify::CacheOptions.new

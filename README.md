@@ -26,7 +26,9 @@ Supporting deep configurations with many types of properties instead of simple e
 See [AI Example](./docs/AI_Example.md) for an example of using Optify to manage the configuration for using an LLM with customizing the system instructions and enabled tools.
 
 ## Motivation
+
 Instead of working with feature flags like this:
+
 ```Python
 if Settings.is_feature_A_enabled:
     handle_A(params)
@@ -39,6 +41,7 @@ else:
 ```
 
 You can ensure your code effortlessly scales to new scenarios working with a list of enabled features:
+
 ```Python
 features = ['feature_A', 'feature_B']
 handler_options = provider.get_options('handler', features)
@@ -54,22 +57,27 @@ Instead we can convert each enabled flag to a string and then build the merged c
 See [tests](./tests/) for examples and tests for different variations of this paradigm for managing options.
 
 ## Core Features
-* **Each *feature flag* can be represented by a JSON or YAML file** which contains options to override default configuration values when processing feature names or experiment names in a request.
-* Each file is a granular **partial** representation of the overall configuration.
+
+- **Each _feature flag_ can be represented by a JSON or YAML file** which contains options to override default configuration values when processing feature names or experiment names in a request.
+- Each file is a granular **partial** representation of the overall configuration.
   Features are intended to be combined to build the final configuration.
-* **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. **Order of features matters**. Features are applied in the order they are given. Dictionaries are merged with the last feature taking precedence. Key values, including lists are overwritten.
-* Supports clear file names and **aliases** for feature names.
-* Feature names are **case insensitive**. `"feature_A"` and `"FeaTurE_a"` are the same.
-* **Reads files in parallel** when loading your configurations.
-* **Caching**: Configurations for a key and enabled features are cached to avoid rebuilding objects.
+- **Multiple features** can be enabled for the same request to support overlapping or intersecting experiments which are ideally mutually exclusive. **Order of features matters**.
+  Features are applied in the order they are given.
+  Dictionaries are merged with the last feature taking precedence.
+  Key values, including lists are overwritten.
+- Supports clear file names and **aliases** for feature names.
+- Feature names are **case insensitive**. `"feature_A"` and `"FeaTurE_a"` are the same.
+- **Reads files in parallel** when loading your configurations.
+- **Caching**: Configurations for a key and enabled features are cached to avoid rebuilding objects.
   Caching is only implemented in Ruby for now.
-* Files are only read once when the `OptionsProvider` is built.
+- Files are only read once when the `OptionsProvider` is built.
   This should be done when your application starts to ensure that files are only read once and issues are found early.
-* **Inheritance**: Features can import or depend on other features.
+- **Inheritance**: Features can import or depend on other features.
   This keeps your list of enabled features smaller at runtime by allowing you to group related configurations while keeping most files small, focused, and like granular building blocks.
-* **Conditions**: Features can be enabled or disabled based on conditions defined in feature files and constraints given when requesting configuration options.
+- **Conditions**: Features can be enabled or disabled based on conditions defined in feature files and constraints given when requesting configuration options.
 
 # Ethos
+
 The main idea behind Optify is **configuration driven development**.
 
 > The configuration should declare **what** to do, but **not how** to do it.
@@ -97,6 +105,7 @@ The usual pitch for cloud configuration is speed: change a value, have it live i
 That pitch falls apart the first time a cloud config change causes an incident.
 
 The moment a value affects how the product behaves, the team needs:
+
 - **History** — who changed the value, **when**, and **why**.
 - **Review** — a second pair of eyes, with owners, before the change goes out.
 - **Rollback** — one command that restores a known-good state and records that it happened.
@@ -124,12 +133,18 @@ That is a real problem.
 It is not a configuration-storage problem.
 
 The fix is, in this order:
+
 1. Make configuration deploys fast, so shipping a configuration change is faster than shipping a code change.
-2. Back genuinely operational levers — swap provider, change region endpoint, drain traffic, disable a feature — with the feature flag or experiment platform you already use. Those platforms are built for runtime overrides with targeted cohorts, kill switches, gradual rollout, and an audit trail. Use toggles provided by your experimentation platform to enable or disable Optify features, and use Optify to manage the configuration for those features in your codebase. Optify feature files are in the internal view for what a feature controls; your experimentation platform is the external view and can control which features are enabled for a request. This way, you can have the best of both worlds: the s**afety and clarity of configuration files** in your codebase and the speed and targeting of your experimentation platform.
+2. Back genuinely operational levers — swap provider, change region endpoint, drain traffic, disable a feature — with the feature flag or experiment platform you already use.
+   Those platforms are built for runtime overrides with targeted cohorts, kill switches, gradual rollout, and an audit trail.
+   Use toggles provided by your experimentation platform to enable or disable Optify features, and use Optify to manage the configuration for those features in your codebase.
+   Optify feature files are in the internal view for what a feature controls; your experimentation platform is the external view and can control which features are enabled for a request.
+   This way, you can have the best of both worlds: the s**afety and clarity of configuration files** in your codebase and the speed and targeting of your experimentation platform.
 
 Everything else, such as specific string values, belong in files next to the code that reads it, so a reviewer sees both at once and a revert restores a coherent state.
 
 # Merging Configuration Files
+
 Objects are merged with the last feature taking precedence.
 **All values, including arrays/lists, but not objects/dictionaries, are overwritten.**
 I.e., all types override previous values except for objects/dictionaries which are merged recursively.
@@ -142,7 +157,9 @@ It enables using an object with consistent keys and `null` values will be remove
 As explained below, the .NET version works a little differently than the versions in this repository which are backed by the Rust implementation.
 
 ## Example
+
 Suppose you have a class that you want to use to configure your logic at runtime:
+
 ```csharp
 class MyConfiguration
 {
@@ -159,6 +176,7 @@ All `*.json`, `*.yaml`, and `*.yml` files in `configurations` and any of its sub
 Markdown files (ending in `.md`) are ignored.
 
 Create `configurations/feature_A.json`:
+
 ```JSON
 {
     "metadata": {
@@ -189,6 +207,7 @@ Create `configurations/feature_A.json`:
 ```
 
 Create `configurations/feature_B/initial.yaml`:
+
 ```YAML
 metadata:
     aliases:
@@ -214,6 +233,7 @@ The exact class names and methods may vary slightly depending on the language yo
 See below for links to implementations in different languages.
 
 The result of using features: `["A", "B"]` will be:
+
 ```JSON
 {
   // "myArray" from B overrides "myArray" from A.
@@ -232,6 +252,7 @@ The result of using features: `["A", "B"]` will be:
 ```
 
 The result of using features: `["B", "A"]` will be:
+
 ```JSON
 {
   // "myArray" from A overrides "myArray" from B.
@@ -249,17 +270,21 @@ The result of using features: `["B", "A"]` will be:
 ```
 
 # Configuration Classes
+
 There are several aspects to consider when defining the classes that are used to represent the built configuration of combined features.
 
 ## Immutability
+
 Classes will often be shared and passed around throughout your codebase.
 In particular, configuration classes can be cached, so they can be shared across requests so no request should change the state of a configuration class.
 Classes should be reusable without side effects.
 
 ## Documentation
+
 Having clear documentation for classes and properties helps developers understand how to use the class and its properties when reading the codebase and writing business logic.
 
 ## Scope of a Configuration Class
+
 Each configuration class should be scoped to a specific component or aspect of the system.
 Consider the [Single Responsibility Principle](https://wikipedia.org/wiki/Single-responsibility_principle) and [Law of Demeter](https://wikipedia.org/wiki/Law_of_Demeter).
 Using minimal classes helps developers understand the logic because as soon as they see the class, they know what behavior might change.
@@ -268,6 +293,7 @@ Large classes that are passed around too much quickly evolve to [God Objects](ht
 Passing around these God Objects throughout your codebase makes it difficult to understand what a component may do because that component has convenient access to too many properties.
 
 ## Nullability
+
 Summary: **no guidance** because it's a case by case decision.
 
 In theory, every property should be nullable because it's possible to use a combination of features that omits a property or sets that property to `null`.
@@ -279,11 +305,14 @@ If someone sends a request that uses a strange combination of features, then it'
 Eventually we can facilitate validation after a configuration is built.
 
 # File Formats
-| Format | Good For | Caveats |
-| --- | --- | --- |
-| JSON  | **Long files** where built in parentheses checking is important because multiple people may edit the same file. This should normally be avoided by making smaller more granular files that are combined at runtime by giving each as a feature. | **No comments** because comments are not part of the JSON standard. Comments can be given as properties: `"_comment": "blah blah"`.<br/> Multiline strings or strings with escaping are hard to read. |
-| YAML | Short and simple files that are not edited often.<br/> Good support for strings with newlines. <br/> Since JSON is valid YAML, JSON with comments can be used. | Getting the indentation wrong can mean that properties are ignored.<br/> If you try to use JSON, your editor may automatically convert the JSON to simpler YAML depending on your settings or your project might have certain style checks enabled for YAML files. |
-| JSON5 | Good mix of features from JSON and YAML. | Your IDE may require an extension to help with validation. |
+
+| Format                                                                                                                            | Good For                                                                                                                                                       | Caveats                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| JSON                                                                                                                              | **Long files** where built in parentheses checking is important because multiple people may edit the same file.                                                |
+| This should normally be avoided by making smaller more granular files that are combined at runtime by giving each as a feature.   | **No comments** because comments are not part of the JSON standard.                                                                                            |
+| Comments can be given as properties: `"_comment": "blah blah"`.<br/> Multiline strings or strings with escaping are hard to read. |
+| YAML                                                                                                                              | Short and simple files that are not edited often.<br/> Good support for strings with newlines. <br/> Since JSON is valid YAML, JSON with comments can be used. | Getting the indentation wrong can mean that properties are ignored.<br/> If you try to use JSON, your editor may automatically convert the JSON to simpler YAML depending on your settings or your project might have certain style checks enabled for YAML files. |
+| JSON5                                                                                                                             | Good mix of features from JSON and YAML.                                                                                                                       | Your IDE may require an extension to help with validation.                                                                                                                                                                                                         |
 
 Other types are supported as the [config](https://crates.io/crates/config) Rust crate is used to load files (but not merge them anymore), but those other types are not as well known and not as nice for working with deep objects so they are not recommended.
 In most cases, JSON should be preferred to help with some basic static structural validation at load time.
@@ -299,6 +328,7 @@ It is also recommended to install the [extension][vsc-extension] to get help wit
 ### Recommended Extensions
 
 In `.vscode/extensions.json`, add:
+
 ```JSON
 {
     "recommendations": [
@@ -416,6 +446,7 @@ For example,
 See the [here](./tests/test_suites/inheritance/configs/.optify/schema.json) for an example.
 
 # Inheritance
+
 Feature files can list ordered dependencies to declare other files to eagerly import before the options in that files are applied.
 I.e., the configuration for the feature file is built by first applying the imported features in order and then applying the options in the feature file itself.
 See [merging configuration files](#merging-configuration-files) for details on how options are merged.
@@ -430,6 +461,7 @@ Each import must be a canonical feature name, i.e., derived from path to a file 
 For example, if we have:
 
 `configurations/feature_A.json`:
+
 ```JSON
 {
     "options": {
@@ -448,6 +480,7 @@ For example, if we have:
 ```
 
 `configurations/feature_B.yaml`:
+
 ```YAML
 options:
     myConfig:
@@ -459,6 +492,7 @@ options:
 ```
 
 And `configurations/feature_C.yaml`:
+
 ```YAML
 imports:
     - "feature_A"
@@ -470,6 +504,7 @@ options:
 ```
 
 The resulting options for `feature_C` will be as if we included the features in the order `["feature_A", "feature_B", "feature_C"]`:
+
 ```JSON
 {
     "myConfig":{
@@ -494,6 +529,7 @@ Circular imports are not allowed and will result in an error at build time.
 See [tests](./tests/) for more examples.
 
 # Conditions
+
 Conditions can be used to enable a feature file when it is requested and when constraints are given in the request.
 If no constraints are given for a request, then the conditions in a feature file are are ignored.
 Conditions cannot be used in imported features because it would make determining the applied features less clear and less efficient.
@@ -501,7 +537,9 @@ Conditions cannot be used in imported features because it would make determining
 For more details and examples, see [here](./docs/Conditions.md).
 
 ## Conditions Example
+
 Suppose that a request to get options includes the following constraints:
+
 ```JSON
 {
     "page": "https://mysite.com/page",
@@ -510,6 +548,7 @@ Suppose that a request to get options includes the following constraints:
 ```
 
 A feature file with the follow conditions will be applied:
+
 ```JSON
 {
     "conditions": {
@@ -528,10 +567,12 @@ A feature file with the follow conditions will be applied:
 ```
 
 # Configurable Strings
+
 Strings can be configured with a starting base starting template and arguments.
 They are useful for sharing strings amongst features and allowing to override parts of the string.
 
 Example:
+
 ```JSON
 {
     "options": {
@@ -558,10 +599,12 @@ Raw file contents can and files containing liquid templates are supported.
 For more details, how to enable configurable strings, and examples, see [here](./docs/ConfigurableStrings.md).
 
 # Language Support
+
 This repository is mainly for the Rust implementation and that implementation that build off of that Rust implementations.
 Below are implementations for a few languages.
 
 ## CLI
+
 [![Crates.io CLI](https://img.shields.io/crates/v/optify-cli?logo=Rust&label=optify-cli)](https://crates.io/crates/optify-cli)
 
 Install the `optify` command-line tool to inspect and query configurations without writing code:
@@ -585,6 +628,7 @@ optify --dir ./configs get-all-options -f A B
 See [rust/optify-cli](./rust/optify-cli/) for full documentation.
 
 ## .NET
+
 [![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
 
 See [github.com/juharris/dotnet-OptionsProvider][dotnet-OptionsProvider] for a similar library with dependency injection support.
@@ -598,12 +642,14 @@ See the [elixir/optify](./elixir/optify/) folder.
 Built using the Rust implementation via [Rustler](https://github.com/rusterlium/rustler) NIFs.
 
 ## Node.js
+
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
 
 See the [js/optify-config](./js/optify-config/) folder.
 Built using the Rust implementation.
 
 ## Python
+
 [![PyPI - Version](https://img.shields.io/pypi/v/optify?color=%23006dad&logo=Python)
 ](https://pypi.org/project/optify)
 
@@ -611,12 +657,14 @@ See the [python/optify](./python/optify/) folder.
 Built using the Rust implementation.
 
 ## Ruby
+
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 
 See the [ruby/optify](./ruby/optify/) folder.
 Built using the Rust implementation.
 
 ## Rust
+
 [![Crates.io](https://img.shields.io/crates/v/optify?logo=Rust)](https://crates.io/crates/optify)
 
 See the [rust/optify](./rust/optify/) folder.
