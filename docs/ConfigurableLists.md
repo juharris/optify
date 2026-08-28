@@ -29,16 +29,17 @@ Configurable values must also be enabled in the preferences given when getting o
 
 ## List Entries
 
-| Property | Description |
-| --- | --- |
-| `$value` | **Required** The value of the entry.<br/> A `$value: null` yields a `null` entry in the list. |
-| `$order` | (Optional) Sorting preference for the entry. Higher values are sorted later in the list. Default is `0`.
+| Property | Description                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
+| `$value` | **Required** The value of the entry.<br/> A `$value: null` yields a `null` entry in the list.                   |
+| `$order` | (Optional) Sorting preference for the entry: higher values are sorted later in the list, with a default of `0`. |
 
 `$value` is required because if another feature just wants to change the order of an entry, then setting `$order` using an object would override a value that is not an object and special custom logic would be needed to handle merging such special cases across features.
 
 **Delete**: A key with a `null` value means to remove the entry from the list.
 
 ## Example:
+
 _The entire configurable example is merged for simplicity here, but imagine the keys were across several files._
 
 ### List of Objects
@@ -75,6 +76,7 @@ options:
 Use `$value: null` to yield a `null` entry in the array.
 
 becomes:
+
 ```JSONC
 {
   "items": [

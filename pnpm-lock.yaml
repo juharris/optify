@@ -1,0 +1,43 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      prettier:
+        specifier: ^3.9.6
+        version: 3.9.6
+      prettier-plugin-sentences-per-line:
+        specifier: ^0.2.4
+        version: 0.2.4(prettier@3.9.6)
+
+packages:
+
+  prettier-plugin-sentences-per-line@0.2.4:
+    resolution: {integrity: sha512-1SSPJxwvekA6wVb4VqJYcVZw39Ak7Oy/IKd4qCGG48hO7oWg/DF0EWPo4PrEROy2LWLl3/U570NM7SurMKQNSA==}
+    peerDependencies:
+      prettier: ^3
+
+  prettier@3.9.6:
+    resolution: {integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==}
+    engines: {node: '>=14'}
+    hasBin: true
+
+  sentences-per-line@0.5.3:
+    resolution: {integrity: sha512-pXuRJ4bKjxEaRVi7ZbwJBF2THPShuLHvWjw9yCtyn5qNqgAfZ/sqPHJu9HS72TffLQwIFX+aSP61HuGGz+7Aww==}
+    engines: {node: '>=22.14.0'}
+
+snapshots:
+
+  prettier-plugin-sentences-per-line@0.2.4(prettier@3.9.6):
+    dependencies:
+      prettier: 3.9.6
+      sentences-per-line: 0.5.3
+
+  prettier@3.9.6: {}
+
+  sentences-per-line@0.5.3: {}

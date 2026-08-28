@@ -31,10 +31,10 @@ optify --dir ./configs get-options -k myConfig -f A | jq
 
 ### Global Options
 
-| Option | Description |
-|--------|-------------|
-| `-d, --dir <DIR>` | Path to a configuration directory. Repeat to load from multiple directories. |
-| `--schema <PATH>` | Optional path to a JSON schema file for validating configurations. |
+| Option            | Description                                                                  |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `-d, --dir <DIR>` | Path to a configuration directory; repeat to load from multiple directories. |
+| `--schema <PATH>` | Optional path to a JSON schema file for validating configurations.           |
 
 ---
 
@@ -130,5 +130,3 @@ cargo test
 ```shell
 cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 ```
-
-

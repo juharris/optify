@@ -1,4 +1,5 @@
 # Optify Rust Bindings for Ruby
+
 [![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
 
 ## Usage
@@ -13,6 +14,7 @@ gem install optify-config
 ```
 
 Define your immutable configuration classes:
+
 ```ruby
 require 'optify'
 
@@ -37,9 +39,10 @@ end
 ```
 
 > Note that RBS style comments instead of Sorbet `sig`s are not supported
-and may never be supported because RBS is only for static analysis and it is not used at runtime.
+> and may never be supported because RBS is only for static analysis and it is not used at runtime.
 
 Use a provider:
+
 ```ruby
 require 'optify'
 
@@ -55,6 +58,7 @@ puts config.object.number
 ```
 
 To watch for changes and automatically reload those changes into the provider when the configuration files change, use `OptionsWatcherBuilder` to create an `OptionsWatcher` which has the same interface as `OptionsProvider`:
+
 ```Ruby
 provider = Optify::OptionsWatcher.build('path/to/configs')
 ```
@@ -62,25 +66,31 @@ provider = Optify::OptionsWatcher.build('path/to/configs')
 See [optify_test.rb](test/optify_test.rb) for more examples.
 
 ## Setup
+
 <!-- Some tips in https://github.com/matsadler/magnus/issues/77 -->
 
 Use Ruby 3.4+., for example, run:
+
 ```shell
 chruby 3.4.4
 ```
 
 Run:
+
 ```shell
 bundle install
 ```
 
 ## Building
+
 Run:
+
 ```shell
 rake compile
 ```
 
 To make a release build, run:
+
 ```shell
 RB_SYS_CARGO_PROFILE='release' rake compile
 ```
@@ -88,12 +98,15 @@ RB_SYS_CARGO_PROFILE='release' rake compile
 ## Testing
 
 Run:
+
 ```shell
 bundle exec rake test
 ```
 
 ## Typing
+
 To automatically convert Sorbet style to RBS:
+
 ```shell
 bundle exec spoom srb sigs translate --from=rbi --to=rbs lib
 ```
@@ -102,18 +115,22 @@ Note that classes that inherit from `Optify:FromHashable` such as `OptionsMetada
 So some classes will need Sorbet signatures.
 
 ## Formatting
+
 To automatically change the Rust code, run:
+
 ```shell
 cargo fmt && cargo clippy --fix --allow-dirty --allow-staged
 ```
 
 To check for issues in Ruby code, run:
+
 ```shell
 bundle exec rubocop
 bundle exec srb tc
 ```
 
 To automatically change code and address issues, run:
+
 ```shell
 bundle update
 bundle exec rubocop --autocorrect
@@ -126,31 +143,37 @@ bin/tapioca todo
 ```
 
 All in one line:
+
 ```shell
 bundle exec rubocop --autocorrect && bin/tapioca annotations && bundle exec tapioca gem && bin/tapioca todo
 ```
 
 Verify the changes with:
+
 ```shell
 bundle exec srb tc
 bundle exec tapioca gem --verify
 ```
 
 ## Publishing
+
 A GitHub Action is setup to publish the gem as needed.
 To publish manually, run the following with the correct version and architecture:
+
 ```shell
 RB_SYS_CARGO_PROFILE='release' RB_SYS_CROSS_COMPILE=true rake native gem
 gem push pkg/optify-config-<version>-<architecture>.gem
 ```
 
 To build a source gem:
+
 ```shell
 mkdir -p pkg
 gem build optify.gemspec --output pkg/optify-config.gem
 ```
 
 To check metadata for the gem file:
+
 ```shell
 tar -xf pkg/optify-config-<version>-<architecture>.gem
 gzip -d metadata.gz
@@ -158,12 +181,14 @@ less metadata
 ```
 
 To inspect the contents of the gem:
+
 ```shell
 gem unpack optify-config-<version>-<architecture>.gem
 ```
 
 To see credentials to get the API key to update a GitHub Action, run:
 For Mac:
+
 ```shell
 cat ~/.local/share/gem/credentials
 ```

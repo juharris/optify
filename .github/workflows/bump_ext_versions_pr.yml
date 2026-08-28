@@ -1,4 +1,4 @@
-name: "🤜Bump VS Code Extension Version: Create PR"
+name: "🟦🤜[VS Code Ext] Bump Version: Create PR"
 
 on:
   workflow_dispatch:

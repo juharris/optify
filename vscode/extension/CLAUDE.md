@@ -11,12 +11,15 @@ nvm use || nvm use `cat .nvmrc`
 ```
 
 ### Linting
+
 - Run linting: `npm run lint`
 - Fix linting issues automatically: `npm run lint:fix`
 
 ### Testing
+
 - Run tests: `npm test`
 
 ### Building
+
 - Compile TypeScript: `npm run compile`
 - Watch mode: `npm run watch`

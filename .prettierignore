@@ -1,0 +1,12 @@
+node_modules/
+**/node_modules/
+**/dist/
+**/target/
+
+# Test fixture files whose exact bytes are asserted on in tests.
+tests/test_suites/**/templates/**
+
+.pytest_cache/
+.vscode-test/
+
+elixir/optify/deps/
