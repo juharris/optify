@@ -1,0 +1,8 @@
+{
+	"features": ["feature_blocked"],
+	"options": {
+		"config": {
+			"key": "from feature_blocked"
+		}
+	}
+}

@@ -8,7 +8,7 @@ use crate::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::provider::{
     CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry, WatcherOptions,
 };
-use crate::schema::metadata::OptionsMetadata;
+use crate::schema::{metadata::OptionsMetadata, policies::Policies};
 
 pub type OptionsWatcherListener = Arc<dyn Fn(&HashSet<PathBuf>) + Send + Sync>;
 
@@ -334,6 +334,13 @@ impl OptionsRegistry for OptionsWatcher {
             .read()
             .unwrap()
             .has_conditions(canonical_feature_name)
+    }
+
+    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_policies(canonical_feature_name)
     }
 
     fn map_feature_names(

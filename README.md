@@ -564,6 +564,52 @@ A feature file with the follow conditions will be applied:
 }
 ```
 
+# Policies
+
+Similar to conditions, policies restrict which requesters may use a feature.
+They are checked for the **top-level features** explicitly given in a request and should be enforced early.
+If a requester is not permitted, it should be an error because the requester could think that their feature was applied which makes testing difficult.
+
+Unlike conditions, imported features can have policies.
+A feature may freely import another feature that has policies without those policies being enforced on the import.
+
+## Policies vs. Conditions
+
+| Aspect                    | Conditions                                                   | Policies                                                                                               |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Purpose                   | Silently filter out a feature based on request constraints   | Restrict access; violations should surface as errors                                                   |
+| Effect when not satisfied | Feature is quietly omitted from the result                   | Feature is rejected; an error should be raised                                                         |
+| Applied to                | Top-level features in the request                            | Top-level features in the request                                                                      |
+| Imported features         | **Not allowed**: features with conditions cannot be imported | **Allowed**: features with policies can be imported freely; policies are not inherited by the importer |
+| Data source               | `constraints` object in the request                          | `requester` (or other fields) in preferences                                                           |
+
+## Policies Example
+
+```JSON
+{
+    "policies": {
+        "requester": {
+            "allow": ["service_a", "service_b"]
+        }
+    }
+}
+```
+
+Or with a denylist:
+
+```JSON
+{
+    "policies": {
+        "requester": {
+            "block": ["untrusted_service"]
+        }
+    }
+}
+```
+
+`allow` and `block` are mutually exclusive.
+An empty `allow` list means no requester is currently permitted (useful when preparing a feature before it is opened up).
+
 # Configurable Strings
 
 Strings can be configured with a starting base starting template and arguments.

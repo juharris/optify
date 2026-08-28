@@ -16,6 +16,9 @@
 		},
 		"options": {
 			"$ref": "#/definitions/options"
+		},
+		"policies": {
+			"$ref": "#/definitions/policies"
 		}
 	},
 	"minProperties": 1,
@@ -282,6 +285,54 @@
 			"minProperties": 1,
 			"description": "The actual configuration options. The value for each key can be any of the following: object, array, string, number, boolean, or null.",
 			"type": "object"
+		},
+		"policies": {
+			"type": "object",
+			"description": "Security policies that restrict which requesters may use this feature.\n\nPolicies are checked for the top-level features explicitly given in a request. Unlike conditions, policies are not evaluated on imported features.\n\nSee https://github.com/juharris/optify#policies for more information and a comparison with conditions.",
+			"properties": {
+				"requester": {
+					"description": "Restrictions based on the requester identifier passed via preferences.\n\nExactly one of `allow` or `block` must be specified.\n\n- `allow`: Only the listed requester identifiers may use this feature. An empty array means no requester is currently permitted.\n- `block`: The listed requester identifiers may not use this feature. All other requesters are allowed.",
+					"oneOf": [
+						{
+							"type": "object",
+							"properties": {
+								"allow": {
+									"type": "array",
+									"description": "Only these requester identifiers may use this feature. An empty array means no requester is currently permitted.",
+									"items": {
+										"type": "string",
+										"minLength": 1
+									},
+									"uniqueItems": true,
+									"default": ["<requester_id>"]
+								}
+							},
+							"required": ["allow"],
+							"additionalProperties": false
+						},
+						{
+							"type": "object",
+							"properties": {
+								"block": {
+									"type": "array",
+									"description": "These requester identifiers may not use this feature. All other requesters are allowed.",
+									"items": {
+										"type": "string",
+										"minLength": 1
+									},
+									"uniqueItems": true,
+									"minItems": 1,
+									"default": ["<requester_id>"]
+								}
+							},
+							"required": ["block"],
+							"additionalProperties": false
+						}
+					]
+				}
+			},
+			"additionalProperties": false,
+			"minProperties": 1
 		}
 	}
 }

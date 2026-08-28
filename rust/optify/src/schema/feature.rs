@@ -1,9 +1,8 @@
-// Similar to https://github.com/juharris/dotnet-OptionsProvider/blob/main/src/OptionsProvider/OptionsProvider/FeatureConfiguration.cs
-
 use serde::Deserialize;
 
 use super::conditions::ConditionExpression;
 use super::metadata::OptionsMetadata;
+use super::policies::Policies;
 
 pub(crate) type ConfigurationOptions = serde_json::Value;
 
@@ -16,5 +15,9 @@ pub(crate) struct FeatureConfiguration {
     ///
     /// More details in the JSON schema.
     pub conditions: Option<ConditionExpression>,
+    /// Policies that restrict which requesters may use this feature.
+    ///
+    /// More details in the JSON schema.
+    pub policies: Option<Policies>,
     pub options: Option<ConfigurationOptions>,
 }

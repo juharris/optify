@@ -7,6 +7,31 @@ module Optify
   class UnknownFeatureError < StandardError
   end
 
+  # The policy for the requester identifier passed via preferences.
+  #
+  # Either `allow` or `block` will be set, not both.
+  # - `allow`: only the listed requesters may use the feature; can be empty.
+  # - `block`: the listed requesters may not use the feature; all others are allowed.
+  class RequesterPolicy < FromHashable
+    sig { returns(T.nilable(T::Set[String])) }
+    attr_reader :allow
+
+    sig { returns(T.nilable(T::Set[String])) }
+    attr_reader :block
+  end
+
+  # Policies that restrict access to a feature based on values in the request's preferences.
+  #
+  # See https://github.com/juharris/optify#policies for details.
+  class Policies < FromHashable
+    sig { returns(T.nilable(RequesterPolicy)) }
+    attr_reader :requester
+  end
+
+  # Raised when a requester is not permitted to use a feature due to its policies.
+  class PolicyDeniedError < StandardError
+  end
+
   # DEPRECATED: Use `Optify::FromHashable` instead.
   # A base class for classes from configuration files.
   # Classes that derive from this can easily be used with `Optify::OptionsProvider.get_options`
@@ -162,6 +187,22 @@ module Optify
 
     sig { returns(T::Boolean) }
     def skip_feature_name_conversion; end
+
+    # The requester identifier to use for policy enforcement.
+    # If not set, policy checks are bypassed.
+    sig { params(value: T.nilable(String)).void }
+    def requester=(value); end
+
+    sig { returns(T.nilable(String)) }
+    def requester; end
+
+    # When `true`, raises `PolicyDeniedError` if a feature is not permitted for the requester.
+    # When `false` (default), denied features are silently filtered out.
+    sig { params(value: T::Boolean).void }
+    def raise_if_policy_denied=(value); end
+
+    sig { returns(T::Boolean) }
+    def raise_if_policy_denied; end
   end
 
   # A registry of features that provides configurations.
@@ -358,6 +399,10 @@ module Optify
     end
     def map_feature_names(feature_names, preferences); end
 
+    # @return The policies for the feature, or `nil` if the feature has no policies.
+    sig { params(canonical_feature_name: String).returns(T.nilable(Optify::Policies)) }
+    def get_policies(canonical_feature_name); end
+
     private
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
@@ -372,6 +417,10 @@ module Optify
     # @return The metadata for the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
     def get_feature_metadata_json(canonical_feature_name); end
+
+    # @return The policies for the feature as JSON, or `nil` if the feature has no policies.
+    sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
+    def get_policies_json(canonical_feature_name); end
   end
 
   # Provides configurations based on keys and enabled feature names.

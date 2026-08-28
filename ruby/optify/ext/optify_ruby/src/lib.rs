@@ -17,15 +17,26 @@ use crate::preferences::MutGetOptionsPreferences;
 mod preferences;
 
 const UNKNOWN_FEATURE_PATTERN: &str = "is not a known feature.";
+const POLICY_DENIED_PATTERN: &str = "is not permitted to use feature";
 
 fn get_unknown_feature_error(ruby: &Ruby) -> Result<ExceptionClass, magnus::Error> {
     let module: RModule = ruby.class_object().const_get("Optify")?;
     module.const_get("UnknownFeatureError")
 }
 
+fn get_policy_denied_error(ruby: &Ruby) -> Result<ExceptionClass, magnus::Error> {
+    let module: RModule = ruby.class_object().const_get("Optify")?;
+    module.const_get("PolicyDeniedError")
+}
+
 fn map_feature_error(ruby: &Ruby, error: String) -> magnus::Error {
     if error.contains(UNKNOWN_FEATURE_PATTERN) {
         match get_unknown_feature_error(ruby) {
+            Ok(exception_class) => magnus::Error::new(exception_class, error),
+            Err(_) => magnus::Error::new(ruby.exception_runtime_error(), error),
+        }
+    } else if error.contains(POLICY_DENIED_PATTERN) {
+        match get_policy_denied_error(ruby) {
             Ok(exception_class) => magnus::Error::new(exception_class, error),
             Err(_) => magnus::Error::new(ruby.exception_runtime_error(), error),
         }
@@ -291,6 +302,13 @@ impl WrappedOptionsProvider {
         self.0.borrow().has_conditions(&canonical_feature_name)
     }
 
+    fn get_policies_json(&self, canonical_feature_name: String) -> Option<String> {
+        self.0
+            .borrow()
+            .get_policies(&canonical_feature_name)
+            .map(|p| serde_json::to_string(&p).unwrap())
+    }
+
     fn map_feature_names(
         ruby: &Ruby,
         rb_self: &Self,
@@ -552,6 +570,13 @@ impl WrappedOptionsWatcher {
         self.0.borrow().has_conditions(&canonical_feature_name)
     }
 
+    fn get_policies_json(&self, canonical_feature_name: String) -> Option<String> {
+        self.0
+            .borrow()
+            .get_policies(&canonical_feature_name)
+            .map(|p| serde_json::to_string(&p).unwrap())
+    }
+
     fn last_modified(&self) -> std::time::SystemTime {
         self.0.borrow().last_modified()
     }
@@ -607,6 +632,7 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let module = ruby.define_module("Optify")?;
 
     module.define_error("UnknownFeatureError", ruby.exception_standard_error())?;
+    module.define_error("PolicyDeniedError", ruby.exception_standard_error())?;
 
     let builder_class = module.define_class("OptionsProviderBuilder", ruby.class_object())?;
 
@@ -695,6 +721,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         "get_feature_metadata_json",
         method!(WrappedOptionsProvider::get_feature_metadata_json, 1),
     )?;
+    provider_class.define_private_method(
+        "get_policies_json",
+        method!(WrappedOptionsProvider::get_policies_json, 1),
+    )?;
 
     let get_options_preferences_class =
         module.define_class("GetOptionsPreferences", ruby.class_object())?;
@@ -756,6 +786,22 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     get_options_preferences_class.define_method(
         "skip_feature_name_conversion",
         method!(MutGetOptionsPreferences::skip_feature_name_conversion, 0),
+    )?;
+    get_options_preferences_class.define_method(
+        "requester=",
+        method!(MutGetOptionsPreferences::set_requester, 1),
+    )?;
+    get_options_preferences_class.define_method(
+        "requester",
+        method!(MutGetOptionsPreferences::get_requester, 0),
+    )?;
+    get_options_preferences_class.define_method(
+        "raise_if_policy_denied=",
+        method!(MutGetOptionsPreferences::set_raise_if_policy_denied, 1),
+    )?;
+    get_options_preferences_class.define_method(
+        "raise_if_policy_denied",
+        method!(MutGetOptionsPreferences::get_raise_if_policy_denied, 0),
     )?;
 
     let watcher_builder_class =
@@ -846,6 +892,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     watcher_class.define_private_method(
         "get_feature_metadata_json",
         method!(WrappedOptionsWatcher::get_feature_metadata_json, 1),
+    )?;
+    watcher_class.define_private_method(
+        "get_policies_json",
+        method!(WrappedOptionsWatcher::get_policies_json, 1),
     )?;
 
     Ok(())

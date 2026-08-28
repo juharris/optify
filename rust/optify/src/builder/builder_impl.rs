@@ -17,7 +17,8 @@ use crate::configurable_values::locator::{find_configurable_values, Configurable
 use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
 use crate::provider::{
-    Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
+    Aliases, Conditions, Features, OptionsProvider, PoliciesMap, ReferencedFileToFeatureNames,
+    Sources,
 };
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
@@ -39,6 +40,7 @@ pub struct OptionsProviderBuilder {
     features: Features,
     imports: Imports,
     loaded_files: LoadedFiles,
+    policies: PoliciesMap,
     /// A map of files to the features that reference them.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This is only populated if the `BuilderOptions` enable file reference tracking.
@@ -197,6 +199,7 @@ impl OptionsProviderBuilder {
             features: Features::new(),
             imports: HashMap::new(),
             loaded_files: LoadedFiles::new(),
+            policies: PoliciesMap::new(),
             referenced_file_to_feature_names: HashMap::new(),
             schema: None,
             sources: Sources::new(),
@@ -237,6 +240,7 @@ impl OptionsProviderBuilder {
             keyed_configurable_string_pointers,
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
+            std::mem::take(&mut self.policies),
             referenced_file_to_feature_names,
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
@@ -338,6 +342,10 @@ impl OptionsProviderBuilder {
         if let Some(conditions) = info.conditions {
             self.conditions
                 .insert(canonical_feature_name.clone(), conditions);
+        }
+        if let Some(policies) = info.policies {
+            self.policies
+                .insert(canonical_feature_name.clone(), policies);
         }
         if let Some(imports) = info.imports {
             self.imports.insert(canonical_feature_name.clone(), imports);
@@ -525,6 +533,7 @@ fn process_config_file_entry(
         configurable_value_pointers,
         imports: feature_config.imports,
         metadata,
+        policies: feature_config.policies,
         source,
     }))
 }
@@ -685,6 +694,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             keyed_configurable_string_pointers,
             self.conditions.clone(),
             self.features.clone(),
+            self.policies.clone(),
             referenced_file_to_feature_names,
             self.loaded_files.clone(),
             self.sources.clone(),

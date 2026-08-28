@@ -8,7 +8,11 @@ use crate::{
     configurable_string::LoadedFiles,
     json::merge::{merge_json_with_defaults, FrozenPaths},
     provider::GetOptionsPreferences,
-    schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
+    schema::{
+        conditions::ConditionExpression,
+        metadata::OptionsMetadata,
+        policies::{Policies, PolicyDeniedError},
+    },
 };
 
 use super::OptionsRegistry;
@@ -22,6 +26,7 @@ pub(crate) type SourceValue = serde_json::Value;
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
+pub(crate) type PoliciesMap = HashMap<String, Policies>;
 pub(crate) type ReferencedFileToFeatureNames = HashMap<String, Vec<String>>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -40,6 +45,7 @@ pub struct OptionsProvider {
     aliases: Aliases,
     conditions: Conditions,
     features: Features,
+    policies: PoliciesMap,
     /// A map of files to their referencing features.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This allows fast lookup of features when a specific file is modified.
@@ -63,6 +69,7 @@ impl OptionsProvider {
         keyed_configurable_string_pointers: HashMap<String, Vec<String>>,
         conditions: Conditions,
         features: Features,
+        policies: PoliciesMap,
         referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
         loaded_files: LoadedFiles,
         sources: Sources,
@@ -75,6 +82,7 @@ impl OptionsProvider {
             aliases,
             conditions,
             features,
+            policies,
             referenced_file_to_feature_names,
             loaded_files,
             sources,
@@ -425,6 +433,32 @@ impl OptionsProvider {
         }
         Ok(())
     }
+
+    /// Checks whether the requester is permitted for the given feature.
+    ///
+    /// Returns `Ok(true)` if permitted, no policy is set, or no requester is given.
+    /// Returns `Ok(false)` if denied and `raise_if_policy_denied` is false.
+    /// Returns `Err(message)` if denied and `raise_if_policy_denied` is true.
+    fn is_feature_permitted_for_requester(
+        &self,
+        canonical_feature_name: &str,
+        requester: Option<&str>,
+        raise_if_policy_denied: bool,
+    ) -> Result<bool, String> {
+        if let Some(requester) = requester {
+            if let Some(policies) = self.policies.get(canonical_feature_name) {
+                if !policies.is_requester_permitted(requester) {
+                    if raise_if_policy_denied {
+                        return Err(
+                            PolicyDeniedError::new(canonical_feature_name, requester).to_string()
+                        );
+                    }
+                    return Ok(false);
+                }
+            }
+        }
+        Ok(true)
+    }
 }
 
 impl OptionsRegistry for OptionsProvider {
@@ -539,9 +573,13 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<Vec<String>, String> {
         let mut skip_feature_name_conversion = false;
         let mut constraints = None;
+        let mut requester: Option<&str> = None;
+        let mut raise_if_policy_denied = false;
         if let Some(preferences) = preferences {
             skip_feature_name_conversion = preferences.skip_feature_name_conversion;
             constraints = preferences.constraints.as_ref();
+            requester = preferences.requester.as_deref();
+            raise_if_policy_denied = preferences.raise_if_policy_denied;
         }
 
         let mut result = Vec::new();
@@ -562,6 +600,15 @@ impl OptionsRegistry for OptionsProvider {
                     continue;
                 }
             }
+
+            if !self.is_feature_permitted_for_requester(
+                &canonical_feature_name,
+                requester,
+                raise_if_policy_denied,
+            )? {
+                continue;
+            }
+
             result.push(canonical_feature_name);
         }
 
@@ -626,6 +673,10 @@ impl OptionsRegistry for OptionsProvider {
         self.conditions.contains_key(canonical_feature_name)
     }
 
+    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
+        self.policies.get(canonical_feature_name).cloned()
+    }
+
     fn map_feature_names(
         &self,
         feature_names: &[impl AsRef<str>],
@@ -633,9 +684,13 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<Vec<Option<String>>, String> {
         let mut skip_feature_name_conversion = false;
         let mut constraints = None;
+        let mut requester: Option<&str> = None;
+        let mut raise_if_policy_denied = false;
         if let Some(preferences) = preferences {
             skip_feature_name_conversion = preferences.skip_feature_name_conversion;
             constraints = preferences.constraints.as_ref();
+            requester = preferences.requester.as_deref();
+            raise_if_policy_denied = preferences.raise_if_policy_denied;
         }
 
         let mut result = Vec::new();
@@ -657,6 +712,16 @@ impl OptionsRegistry for OptionsProvider {
                     continue;
                 }
             }
+
+            if !self.is_feature_permitted_for_requester(
+                &canonical_feature_name,
+                requester,
+                raise_if_policy_denied,
+            )? {
+                result.push(None);
+                continue;
+            }
+
             result.push(Some(canonical_feature_name));
         }
 
