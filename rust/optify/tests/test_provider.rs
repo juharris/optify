@@ -604,6 +604,16 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     let check = provider.check_policies("service_a", &["feature_allowed", "feature_blocked"]);
     assert_eq!(check, Ok(()));
 
+    // With alias
+    let check = provider.check_policies("service_a", &["feat_allow"]);
+    assert_eq!(check, Ok(()));
+
+    let check = provider.check_policies("untrusted_service", &["not a feature"]);
+    assert_eq!(
+        check,
+        Err("Feature name \"not a feature\" is not a known feature.".to_owned())
+    );
+
     // Disallowed requester on feature_allowed returns error string.
     let check = provider.check_policies("untrusted_service", &["feature_allowed"]);
     assert_eq!(
@@ -637,10 +647,6 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
                 .to_owned()
         )
     );
-
-    // Nonexistent feature has no policies, so it returns Ok(()).
-    let check = provider.check_policies("untrusted_service", &["nonexistent_feature"]);
-    assert_eq!(check, Ok(()));
 
     Ok(())
 }

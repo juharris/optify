@@ -679,13 +679,12 @@ impl OptionsRegistry for OptionsProvider {
         feature_names: &[impl AsRef<str>],
     ) -> Result<(), String> {
         for feature_name in feature_names {
-            let canonical_name = match self.get_canonical_feature_name(feature_name.as_ref()) {
-                Ok(name) => name,
-                Err(_) => feature_name.as_ref().to_owned(),
-            };
-            if let Some(policies) = self.policies.get(&canonical_name) {
+            let canonical_feature_name = self.get_canonical_feature_name(feature_name.as_ref())?;
+            if let Some(policies) = self.policies.get(&canonical_feature_name) {
                 if !policies.is_requester_permitted(requester) {
-                    return Err(PolicyDeniedError::new(&canonical_name, requester).to_string());
+                    return Err(
+                        PolicyDeniedError::new(&canonical_feature_name, requester).to_string()
+                    );
                 }
             }
         }

@@ -4,6 +4,8 @@ set -e
 # Go to the root directory of the project.
 cd "$(dirname "$0")/.."
 
+pnpm run fmt
+
 pushd js/optify-config
 cargo fmt
 yarn lint:fix
