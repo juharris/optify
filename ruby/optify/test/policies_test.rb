@@ -114,8 +114,8 @@ class PoliciesTest < Test::Unit::TestCase
       )
 
       # Nonexistent feature returns nil (no policies defined)
-      result = provider.check_policies('untrusted_service', ['nonexistent_feature'])
-      assert_nil(result, "Expected nil for nonexistent feature from #{klass}")
+      result = provider.check_policies('untrusted_service', ['not a feature'])
+      assert_equal('Feature name "not a feature" is not a known feature.', result, "Error message mismatch for #{klass}")
     end
   end
 end
