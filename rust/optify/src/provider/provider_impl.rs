@@ -433,32 +433,6 @@ impl OptionsProvider {
         }
         Ok(())
     }
-
-    /// Checks whether the requester is permitted for the given feature.
-    ///
-    /// Returns `Ok(true)` if permitted, no policy is set, or no requester is given.
-    /// Returns `Ok(false)` if denied and `raise_if_policy_denied` is false.
-    /// Returns `Err(message)` if denied and `raise_if_policy_denied` is true.
-    fn is_feature_permitted_for_requester(
-        &self,
-        canonical_feature_name: &str,
-        requester: Option<&str>,
-        raise_if_policy_denied: bool,
-    ) -> Result<bool, String> {
-        if let Some(requester) = requester {
-            if let Some(policies) = self.policies.get(canonical_feature_name) {
-                if !policies.is_requester_permitted(requester) {
-                    if raise_if_policy_denied {
-                        return Err(
-                            PolicyDeniedError::new(canonical_feature_name, requester).to_string()
-                        );
-                    }
-                    return Ok(false);
-                }
-            }
-        }
-        Ok(true)
-    }
 }
 
 impl OptionsRegistry for OptionsProvider {
@@ -582,6 +556,14 @@ impl OptionsRegistry for OptionsProvider {
             raise_if_policy_denied = preferences.raise_if_policy_denied;
         }
 
+        if let Some(requester) = requester {
+            if raise_if_policy_denied {
+                if let Some(err_msg) = self.check_policies(requester, feature_names) {
+                    return Err(err_msg);
+                }
+            }
+        }
+
         let mut result = Vec::new();
         for feature_name in feature_names {
             // Check for an alias.
@@ -601,12 +583,12 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if !self.is_feature_permitted_for_requester(
-                &canonical_feature_name,
-                requester,
-                raise_if_policy_denied,
-            )? {
-                continue;
+            if let Some(requester) = requester {
+                if let Some(policies) = self.policies.get(&canonical_feature_name) {
+                    if !policies.is_requester_permitted(requester) {
+                        continue;
+                    }
+                }
             }
 
             result.push(canonical_feature_name);
@@ -673,6 +655,21 @@ impl OptionsRegistry for OptionsProvider {
         self.conditions.contains_key(canonical_feature_name)
     }
 
+    fn check_policies(&self, requester: &str, feature_names: &[impl AsRef<str>]) -> Option<String> {
+        for feature_name in feature_names {
+            let canonical_name = match self.get_canonical_feature_name(feature_name.as_ref()) {
+                Ok(name) => name,
+                Err(_) => feature_name.as_ref().to_owned(),
+            };
+            if let Some(policies) = self.policies.get(&canonical_name) {
+                if !policies.is_requester_permitted(requester) {
+                    return Some(PolicyDeniedError::new(&canonical_name, requester).to_string());
+                }
+            }
+        }
+        None
+    }
+
     fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
         self.policies.get(canonical_feature_name).cloned()
     }
@@ -691,6 +688,14 @@ impl OptionsRegistry for OptionsProvider {
             constraints = preferences.constraints.as_ref();
             requester = preferences.requester.as_deref();
             raise_if_policy_denied = preferences.raise_if_policy_denied;
+        }
+
+        if let Some(requester) = requester {
+            if raise_if_policy_denied {
+                if let Some(err_msg) = self.check_policies(requester, feature_names) {
+                    return Err(err_msg);
+                }
+            }
         }
 
         let mut result = Vec::new();
@@ -713,13 +718,13 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if !self.is_feature_permitted_for_requester(
-                &canonical_feature_name,
-                requester,
-                raise_if_policy_denied,
-            )? {
-                result.push(None);
-                continue;
+            if let Some(requester) = requester {
+                if let Some(policies) = self.policies.get(&canonical_feature_name) {
+                    if !policies.is_requester_permitted(requester) {
+                        result.push(None);
+                        continue;
+                    }
+                }
             }
 
             result.push(Some(canonical_feature_name));

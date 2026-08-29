@@ -76,4 +76,46 @@ class PoliciesTest < Test::Unit::TestCase
       )
     end
   end
+
+  #: -> void
+  def test_check_policies
+    PROVIDERS.each do |klass|
+      provider = klass.build(POLICIES_DIR)
+
+      # Allowed requester returns nil
+      result = provider.check_policies('service_a', %w[feature_allowed feature_blocked])
+      assert_nil(result, "Expected nil for allowed requester from #{klass}")
+
+      # Disallowed requester on feature_allowed returns error string
+      result = provider.check_policies('untrusted_service', ['feature_allowed'])
+      assert_equal(
+        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".' \
+        ' The requester is denied by the feature\'s policies.',
+        result,
+        "Error message mismatch for #{klass}",
+      )
+
+      # Disallowed requester on feature_blocked returns error string
+      result = provider.check_policies('untrusted_service', ['feature_blocked'])
+      assert_equal(
+        'Requester "untrusted_service" is not permitted to use feature "feature_blocked".' \
+        ' The requester is denied by the feature\'s policies.',
+        result,
+        "Error message mismatch for #{klass}",
+      )
+
+      # Disallowed requester with multiple features returns error for first disallowed feature
+      result = provider.check_policies('untrusted_service', %w[feature_allowed feature_blocked])
+      assert_equal(
+        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".' \
+        ' The requester is denied by the feature\'s policies.',
+        result,
+        "Error message mismatch for #{klass}",
+      )
+
+      # Nonexistent feature returns nil (no policies defined)
+      result = provider.check_policies('untrusted_service', ['nonexistent_feature'])
+      assert_nil(result, "Expected nil for nonexistent feature from #{klass}")
+    end
+  end
 end
