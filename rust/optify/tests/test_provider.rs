@@ -600,15 +600,15 @@ fn test_policy_filtering_raises_when_requested() -> Result<(), Box<dyn std::erro
 fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_policies_provider();
 
-    // Allowed requester returns None.
+    // Allowed requester returns Ok(()).
     let check = provider.check_policies("service_a", &["feature_allowed", "feature_blocked"]);
-    assert_eq!(check, None);
+    assert_eq!(check, Ok(()));
 
     // Disallowed requester on feature_allowed returns error string.
     let check = provider.check_policies("untrusted_service", &["feature_allowed"]);
     assert_eq!(
         check,
-        Some(
+        Err(
             "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\". \
              The requester is denied by the feature's policies."
                 .to_owned()
@@ -619,7 +619,7 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     let check = provider.check_policies("untrusted_service", &["feature_blocked"]);
     assert_eq!(
         check,
-        Some(
+        Err(
             "Requester \"untrusted_service\" is not permitted to use feature \"feature_blocked\". \
              The requester is denied by the feature's policies."
                 .to_owned()
@@ -631,16 +631,16 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
         provider.check_policies("untrusted_service", &["feature_allowed", "feature_blocked"]);
     assert_eq!(
         check,
-        Some(
+        Err(
             "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\". \
              The requester is denied by the feature's policies."
                 .to_owned()
         )
     );
 
-    // Nonexistent feature has no policies, so it returns None.
+    // Nonexistent feature has no policies, so it returns Ok(()).
     let check = provider.check_policies("untrusted_service", &["nonexistent_feature"]);
-    assert_eq!(check, None);
+    assert_eq!(check, Ok(()));
 
     Ok(())
 }

@@ -127,7 +127,10 @@ impl WrappedOptionsProvider {
     }
 
     fn check_policies(&self, requester: String, feature_names: Vec<String>) -> Option<String> {
-        self.0.borrow().check_policies(&requester, &feature_names)
+        match self.0.borrow().check_policies(&requester, &feature_names) {
+            Ok(()) => None,
+            Err(e) => Some(e),
+        }
     }
 
     fn get_aliases(&self) -> Vec<String> {
@@ -403,7 +406,10 @@ impl WrappedOptionsWatcher {
     }
 
     fn check_policies(&self, requester: String, feature_names: Vec<String>) -> Option<String> {
-        self.0.borrow().check_policies(&requester, &feature_names)
+        match self.0.borrow().check_policies(&requester, &feature_names) {
+            Ok(()) => None,
+            Err(e) => Some(e),
+        }
     }
 
     fn get_aliases(&self) -> Vec<String> {

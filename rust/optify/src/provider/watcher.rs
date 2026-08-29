@@ -329,7 +329,11 @@ impl OptionsRegistry for OptionsWatcher {
             .get_options_with_preferences(key, feature_names, cache_options, preferences)
     }
 
-    fn check_policies(&self, requester: &str, feature_names: &[impl AsRef<str>]) -> Option<String> {
+    fn check_policies(
+        &self,
+        requester: &str,
+        feature_names: &[impl AsRef<str>],
+    ) -> Result<(), String> {
         self.current_provider
             .read()
             .unwrap()
