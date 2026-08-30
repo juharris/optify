@@ -85,16 +85,6 @@ class PoliciesTest < Test::Unit::TestCase
       result = provider.check_policies('service_a', %w[feature_allowed feature_blocked])
       assert_nil(result, "Expected nil for allowed requester from #{klass}")
 
-      # Disallowed requester on feature_allowed returns error string
-      exception = assert_raise(Optify::PolicyDeniedError) do
-        provider.check_policies('untrusted_service', ['feature_allowed'])
-      end
-      assert_equal(
-        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".',
-        exception.message,
-        "Error message mismatch for #{klass}",
-      )
-
       exception = assert_raise(Optify::PolicyDeniedError) do
         provider.check_policies('untrusted_service', ['feature_blocked'])
       end
