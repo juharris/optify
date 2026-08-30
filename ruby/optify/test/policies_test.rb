@@ -86,32 +86,37 @@ class PoliciesTest < Test::Unit::TestCase
       assert_nil(result, "Expected nil for allowed requester from #{klass}")
 
       # Disallowed requester on feature_allowed returns error string
-      result = provider.check_policies('untrusted_service', ['feature_allowed'])
+      exception = assert_raise(Optify::PolicyDeniedError) do
+        provider.check_policies('untrusted_service', ['feature_allowed'])
+      end
       assert_equal(
         'Requester "untrusted_service" is not permitted to use feature "feature_allowed".',
-        result,
+        exception.message,
         "Error message mismatch for #{klass}",
       )
 
-      # Disallowed requester on feature_blocked returns error string
-      result = provider.check_policies('untrusted_service', ['feature_blocked'])
+      exception = assert_raise(Optify::PolicyDeniedError) do
+        provider.check_policies('untrusted_service', ['feature_blocked'])
+      end
       assert_equal(
         'Requester "untrusted_service" is not permitted to use feature "feature_blocked".',
-        result,
+        exception.message,
         "Error message mismatch for #{klass}",
       )
 
-      # Disallowed requester with multiple features returns error for first disallowed feature
-      result = provider.check_policies('untrusted_service', %w[feature_allowed feature_blocked])
+      exception = assert_raise(Optify::PolicyDeniedError) do
+        provider.check_policies('untrusted_service', %w[feature_allowed feature_blocked])
+      end
       assert_equal(
         'Requester "untrusted_service" is not permitted to use feature "feature_allowed".',
-        result,
+        exception.message,
         "Error message mismatch for #{klass}",
       )
 
-      # Nonexistent feature returns nil (no policies defined)
-      result = provider.check_policies('untrusted_service', ['not a feature'])
-      assert_equal('Feature name "not a feature" is not a known feature.', result, "Error message mismatch for #{klass}")
+      exception = assert_raise(Optify::UnknownFeatureError) do
+        provider.check_policies('untrusted_service', ['not a feature'])
+      end
+      assert_equal('Feature name "not a feature" is not a known feature.', exception.message, "Error message mismatch for #{klass}")
     end
   end
 end

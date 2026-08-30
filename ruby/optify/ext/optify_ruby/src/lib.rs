@@ -126,11 +126,17 @@ impl WrappedOptionsProvider {
         }
     }
 
-    fn check_policies(&self, requester: String, feature_names: Vec<String>) -> Option<String> {
-        self.0
+    fn check_policies(
+        ruby: &Ruby,
+        rb_self: &Self,
+        requester: String,
+        feature_names: Vec<String>,
+    ) -> Result<(), magnus::Error> {
+        rb_self
+            .0
             .borrow()
             .check_policies(&requester, &feature_names)
-            .err()
+            .map_err(|e| map_feature_error(ruby, e))
     }
 
     fn get_aliases(&self) -> Vec<String> {
@@ -405,11 +411,17 @@ impl WrappedOptionsWatcher {
         }
     }
 
-    fn check_policies(&self, requester: String, feature_names: Vec<String>) -> Option<String> {
-        self.0
+    fn check_policies(
+        ruby: &Ruby,
+        rb_self: &Self,
+        requester: String,
+        feature_names: Vec<String>,
+    ) -> Result<(), magnus::Error> {
+        rb_self
+            .0
             .borrow()
             .check_policies(&requester, &feature_names)
-            .err()
+            .map_err(|e| map_feature_error(ruby, e))
     }
 
     fn get_aliases(&self) -> Vec<String> {
