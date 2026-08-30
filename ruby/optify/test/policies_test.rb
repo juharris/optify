@@ -69,8 +69,7 @@ class PoliciesTest < Test::Unit::TestCase
         provider.get_filtered_features(['feature_allowed'], preferences)
       end
       assert_equal(
-        'Requester "unknown_service" is not permitted to use feature "feature_allowed".' \
-        ' The requester is denied by the feature\'s policies.',
+        'Requester "unknown_service" is not permitted to use feature "feature_allowed".',
         error.message,
         "Error message mismatch for #{klass}",
       )
@@ -89,8 +88,7 @@ class PoliciesTest < Test::Unit::TestCase
       # Disallowed requester on feature_allowed returns error string
       result = provider.check_policies('untrusted_service', ['feature_allowed'])
       assert_equal(
-        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".' \
-        ' The requester is denied by the feature\'s policies.',
+        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".',
         result,
         "Error message mismatch for #{klass}",
       )
@@ -98,8 +96,7 @@ class PoliciesTest < Test::Unit::TestCase
       # Disallowed requester on feature_blocked returns error string
       result = provider.check_policies('untrusted_service', ['feature_blocked'])
       assert_equal(
-        'Requester "untrusted_service" is not permitted to use feature "feature_blocked".' \
-        ' The requester is denied by the feature\'s policies.',
+        'Requester "untrusted_service" is not permitted to use feature "feature_blocked".',
         result,
         "Error message mismatch for #{klass}",
       )
@@ -107,8 +104,7 @@ class PoliciesTest < Test::Unit::TestCase
       # Disallowed requester with multiple features returns error for first disallowed feature
       result = provider.check_policies('untrusted_service', %w[feature_allowed feature_blocked])
       assert_equal(
-        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".' \
-        ' The requester is denied by the feature\'s policies.',
+        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".',
         result,
         "Error message mismatch for #{klass}",
       )

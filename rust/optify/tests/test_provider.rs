@@ -589,8 +589,7 @@ fn test_policy_filtering_raises_when_requested() -> Result<(), Box<dyn std::erro
     let result = provider.get_filtered_feature_names(&["feature_allowed"], Some(&preferences));
     assert_eq!(
         result.unwrap_err(),
-        "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\". \
-         The requester is denied by the feature's policies."
+        "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\"."
     );
 
     Ok(())
@@ -619,8 +618,7 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
         check,
         Err(
-            "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\". \
-             The requester is denied by the feature's policies."
+            "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\"."
                 .to_owned()
         )
     );
@@ -630,8 +628,7 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
         check,
         Err(
-            "Requester \"untrusted_service\" is not permitted to use feature \"feature_blocked\". \
-             The requester is denied by the feature's policies."
+            "Requester \"untrusted_service\" is not permitted to use feature \"feature_blocked\"."
                 .to_owned()
         )
     );
@@ -642,8 +639,7 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
         check,
         Err(
-            "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\". \
-             The requester is denied by the feature's policies."
+            "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\"."
                 .to_owned()
         )
     );
