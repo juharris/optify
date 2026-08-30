@@ -607,7 +607,16 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     let check = provider.check_policies("service_a", &["feat_allow"]);
     assert_eq!(check, Ok(()));
 
-    let check = provider.check_policies("untrusted_service", &["not a feature"]);
+    let check = provider.check_policies("untrusted service", &["feat_allow"]);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"untrusted service\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
+    );
+
+    let check = provider.check_policies("untrusted service", &["not a feature"]);
     assert_eq!(
         check,
         Err("Feature name \"not a feature\" is not a known feature.".to_owned())
