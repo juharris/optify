@@ -673,6 +673,24 @@ impl OptionsRegistry for OptionsProvider {
         self.conditions.contains_key(canonical_feature_name)
     }
 
+    fn check_policies(
+        &self,
+        requester: &str,
+        feature_names: &[impl AsRef<str>],
+    ) -> Result<(), String> {
+        for feature_name in feature_names {
+            let canonical_feature_name = self.get_canonical_feature_name(feature_name.as_ref())?;
+            if let Some(policies) = self.policies.get(&canonical_feature_name) {
+                if !policies.is_requester_permitted(requester) {
+                    return Err(
+                        PolicyDeniedError::new(&canonical_feature_name, requester).to_string()
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
         self.policies.get(canonical_feature_name).cloned()
     }

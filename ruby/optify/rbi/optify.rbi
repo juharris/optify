@@ -274,6 +274,18 @@ module Optify
   # Some of the methods shown within this module are implemented in Rust
   # and are declared in this common module to avoid duplicate declarations in different classes.
   module ProviderModule
+    # Checks policies for a list of features for the given requester.
+    # Returns `nil` if there are no policy issues (or no policies defined).
+    # Returns an error string for the first feature that is not allowed.
+    sig do
+      params(
+        requester: String,
+        feature_names: T::Array[String],
+      )
+        .returns(T.nilable(String))
+    end
+    def check_policies(requester, feature_names); end
+
     # @param canonical_feature_name [String] A canonical feature name
     # @return Whether the feature has conditions.
     sig { params(canonical_feature_name: String).returns(T::Boolean) }

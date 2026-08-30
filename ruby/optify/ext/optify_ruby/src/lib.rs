@@ -126,6 +126,19 @@ impl WrappedOptionsProvider {
         }
     }
 
+    fn check_policies(
+        ruby: &Ruby,
+        rb_self: &Self,
+        requester: String,
+        feature_names: Vec<String>,
+    ) -> Result<(), magnus::Error> {
+        rb_self
+            .0
+            .borrow()
+            .check_policies(&requester, &feature_names)
+            .map_err(|e| map_feature_error(ruby, e))
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.0.borrow().get_aliases()
     }
@@ -398,6 +411,19 @@ impl WrappedOptionsWatcher {
         }
     }
 
+    fn check_policies(
+        ruby: &Ruby,
+        rb_self: &Self,
+        requester: String,
+        feature_names: Vec<String>,
+    ) -> Result<(), magnus::Error> {
+        rb_self
+            .0
+            .borrow()
+            .check_policies(&requester, &feature_names)
+            .map_err(|e| map_feature_error(ruby, e))
+    }
+
     fn get_aliases(&self) -> Vec<String> {
         self.0.borrow().get_aliases()
     }
@@ -662,6 +688,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         ),
     )?;
     provider_class.define_method("aliases", method!(WrappedOptionsProvider::get_aliases, 0))?;
+    provider_class.define_method(
+        "check_policies",
+        method!(WrappedOptionsProvider::check_policies, 2),
+    )?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
     provider_class.define_method(
         "features_and_aliases",
@@ -830,6 +860,10 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         function!(WrappedOptionsWatcher::build_from_directories_with_schema, 2),
     )?;
     watcher_class.define_method("aliases", method!(WrappedOptionsWatcher::get_aliases, 0))?;
+    watcher_class.define_method(
+        "check_policies",
+        method!(WrappedOptionsWatcher::check_policies, 2),
+    )?;
     watcher_class.define_method("features", method!(WrappedOptionsWatcher::get_features, 0))?;
     watcher_class.define_method(
         "features_and_aliases",

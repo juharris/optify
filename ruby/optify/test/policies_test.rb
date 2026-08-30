@@ -69,11 +69,44 @@ class PoliciesTest < Test::Unit::TestCase
         provider.get_filtered_features(['feature_allowed'], preferences)
       end
       assert_equal(
-        'Requester "unknown_service" is not permitted to use feature "feature_allowed".' \
-        ' The requester is denied by the feature\'s policies.',
+        'Requester "unknown_service" is not permitted to use feature "feature_allowed".',
         error.message,
         "Error message mismatch for #{klass}",
       )
+    end
+  end
+
+  #: -> void
+  def test_check_policies
+    PROVIDERS.each do |klass|
+      provider = klass.build(POLICIES_DIR)
+
+      # Allowed requester returns nil
+      result = provider.check_policies('service_a', %w[feature_allowed feature_blocked])
+      assert_nil(result, "Expected nil for allowed requester from #{klass}")
+
+      exception = assert_raise(Optify::PolicyDeniedError) do
+        provider.check_policies('untrusted_service', ['feature_blocked'])
+      end
+      assert_equal(
+        'Requester "untrusted_service" is not permitted to use feature "feature_blocked".',
+        exception.message,
+        "Error message mismatch for #{klass}",
+      )
+
+      exception = assert_raise(Optify::PolicyDeniedError) do
+        provider.check_policies('untrusted_service', %w[feature_allowed feature_blocked])
+      end
+      assert_equal(
+        'Requester "untrusted_service" is not permitted to use feature "feature_allowed".',
+        exception.message,
+        "Error message mismatch for #{klass}",
+      )
+
+      exception = assert_raise(Optify::UnknownFeatureError) do
+        provider.check_policies('untrusted_service', ['not a feature'])
+      end
+      assert_equal('Feature name "not a feature" is not a known feature.', exception.message, "Error message mismatch for #{klass}")
     end
   end
 end

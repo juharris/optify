@@ -23,7 +23,7 @@ impl fmt::Display for PolicyDeniedError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Requester \"{}\" is not permitted to use feature \"{}\". The requester is denied by the feature's policies.",
+            "Requester \"{}\" is not permitted to use feature \"{}\".",
             self.requester, self.feature_name
         )
     }

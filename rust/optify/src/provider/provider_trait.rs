@@ -125,6 +125,16 @@ pub trait OptionsRegistry {
     /// Indicates if the feature has conditions.
     fn has_conditions(&self, canonical_feature_name: &str) -> bool;
 
+    /// Checks policies for a list of features for the given requester.
+    ///
+    /// Returns `Ok(())` if there are no policy issues (or no policies defined).
+    /// Returns `Err(String)` with an error message for the first feature that is not allowed.
+    fn check_policies(
+        &self,
+        requester: &str,
+        feature_names: &[impl AsRef<str>],
+    ) -> Result<(), String>;
+
     /// Returns the policies for the given canonical feature name, if any.
     ///
     /// Policies are only checked for top-level features in a request.

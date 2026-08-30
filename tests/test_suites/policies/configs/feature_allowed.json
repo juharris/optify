@@ -1,4 +1,9 @@
 {
+	"metadata": {
+		"aliases": [
+			"feat_allow"
+		]
+	},
 	"policies": {
 		"requester": {
 			"allow": ["service_a", "service_b"]

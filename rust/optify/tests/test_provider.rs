@@ -589,8 +589,68 @@ fn test_policy_filtering_raises_when_requested() -> Result<(), Box<dyn std::erro
     let result = provider.get_filtered_feature_names(&["feature_allowed"], Some(&preferences));
     assert_eq!(
         result.unwrap_err(),
-        "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\". \
-         The requester is denied by the feature's policies."
+        "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\"."
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_policies_provider();
+
+    // Allowed requester returns Ok(()).
+    let check = provider.check_policies("service_a", &["feature_allowed", "feature_blocked"]);
+    assert_eq!(check, Ok(()));
+
+    // With alias
+    let check = provider.check_policies("service_a", &["feat_allow"]);
+    assert_eq!(check, Ok(()));
+
+    let check = provider.check_policies("untrusted service", &["feat_allow"]);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"untrusted service\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
+    );
+
+    let check = provider.check_policies("untrusted service", &["not a feature"]);
+    assert_eq!(
+        check,
+        Err("Feature name \"not a feature\" is not a known feature.".to_owned())
+    );
+
+    // Disallowed requester on feature_allowed returns error string.
+    let check = provider.check_policies("untrusted_service", &["feature_allowed"]);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
+    );
+
+    // Disallowed requester on feature_blocked returns error string.
+    let check = provider.check_policies("untrusted_service", &["feature_blocked"]);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"untrusted_service\" is not permitted to use feature \"feature_blocked\"."
+                .to_owned()
+        )
+    );
+
+    // Multiple features: returns error for the first disallowed feature.
+    let check =
+        provider.check_policies("untrusted_service", &["feature_allowed", "feature_blocked"]);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
     );
 
     Ok(())
