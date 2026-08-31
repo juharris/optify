@@ -677,6 +677,7 @@ impl OptionsRegistry for OptionsProvider {
         &self,
         requester: &str,
         feature_names: &[impl AsRef<str>],
+        _cache_options: Option<&CacheOptions>,
     ) -> Result<(), String> {
         for feature_name in feature_names {
             let canonical_feature_name = self.get_canonical_feature_name(feature_name.as_ref())?;

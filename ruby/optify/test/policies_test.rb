@@ -109,4 +109,41 @@ class PoliciesTest < Test::Unit::TestCase
       assert_equal('Feature name "not a feature" is not a known feature.', exception.message, "Error message mismatch for #{klass}")
     end
   end
+
+  #: -> void
+  def test_check_policies_with_cache
+    PROVIDERS.each do |klass|
+      provider = klass.build(POLICIES_DIR)
+      cache_events = []
+      cache_options = Optify::CacheOptions.new(on_cache_event: lambda { |key, value, is_cache_hit|
+        cache_events << { key: key, value: value, is_cache_hit: is_cache_hit }
+      })
+
+      # Allowed requester returns nil
+      result = provider.check_policies('service_a', %w[feature_allowed feature_blocked], cache_options)
+      assert_nil(result, "Expected nil for allowed requester from #{klass}")
+      result2 = provider.check_policies('service_a', %w[feature_allowed feature_blocked], cache_options)
+      assert_equal(result, result2)
+      assert_equal(2, cache_events.length)
+
+      cache_events = []
+
+      exception = assert_raise(Optify::PolicyDeniedError) do
+        provider.check_policies('untrusted_service', ['feature_blocked'], cache_options)
+      end
+      assert_equal(
+        'Requester "untrusted_service" is not permitted to use feature "feature_blocked".',
+        exception.message,
+        "Error message mismatch for #{klass}",
+      )
+      exception2 = assert_raise(Optify::PolicyDeniedError) do
+        provider.check_policies('untrusted_service', ['feature_blocked'], cache_options)
+      end
+
+      # Don't cache exception because the stacktrace could be different
+      # and we should only help in the happy path.
+      assert_equal(exception.message, exception2.message)
+      assert_not_same(exception, exception2)
+    end
+  end
 end

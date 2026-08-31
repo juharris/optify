@@ -126,6 +126,7 @@ pub trait OptionsRegistry {
     fn has_conditions(&self, canonical_feature_name: &str) -> bool;
 
     /// Checks policies for a list of features for the given requester.
+    /// `CacheOptions` is not used yet.
     ///
     /// Returns `Ok(())` if there are no policy issues (or no policies defined).
     /// Returns `Err(String)` with an error message for the first feature that is not allowed.
@@ -133,6 +134,7 @@ pub trait OptionsRegistry {
         &self,
         requester: &str,
         feature_names: &[impl AsRef<str>],
+        cache_options: Option<&CacheOptions>,
     ) -> Result<(), String>;
 
     /// Returns the policies for the given canonical feature name, if any.

@@ -10,6 +10,22 @@ require_relative './policies'
 module Optify
   # @!visibility private
   module ProviderModule # rubocop:disable Metrics/ModuleLength
+    #: (String, Array[String], ?CacheOptions?) -> void
+    def check_policies(requester, feature_names, cache_options = nil)
+      if cache_options
+        init unless @cache
+        ProviderModule._cache_getset(
+          @cache, #: as !nil
+          [:check_policiies, requester, feature_names],
+          cache_options.on_cache_event,
+        ) do
+          _check_policies(requester, feature_names)
+        end
+      else
+        _check_policies(requester, feature_names)
+      end
+    end
+
     #: [T] (LruRedux::Cache | Hash[Array[untyped], T], Array[untyped], (^(Array[untyped] key, T value, bool is_cache_hit) -> void)?) { -> T } -> T
     def self._cache_getset(cache, cache_key, on_cache_event, &block)
       is_cache_hit = true #: bool

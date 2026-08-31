@@ -135,7 +135,7 @@ impl WrappedOptionsProvider {
         rb_self
             .0
             .borrow()
-            .check_policies(&requester, &feature_names)
+            .check_policies(&requester, &feature_names, None)
             .map_err(|e| map_feature_error(ruby, e))
     }
 
@@ -420,7 +420,7 @@ impl WrappedOptionsWatcher {
         rb_self
             .0
             .borrow()
-            .check_policies(&requester, &feature_names)
+            .check_policies(&requester, &feature_names, None)
             .map_err(|e| map_feature_error(ruby, e))
     }
 
@@ -688,8 +688,8 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         ),
     )?;
     provider_class.define_method("aliases", method!(WrappedOptionsProvider::get_aliases, 0))?;
-    provider_class.define_method(
-        "check_policies",
+    provider_class.define_private_method(
+        "_check_policies",
         method!(WrappedOptionsProvider::check_policies, 2),
     )?;
     provider_class.define_method("features", method!(WrappedOptionsProvider::get_features, 0))?;
@@ -860,8 +860,8 @@ fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
         function!(WrappedOptionsWatcher::build_from_directories_with_schema, 2),
     )?;
     watcher_class.define_method("aliases", method!(WrappedOptionsWatcher::get_aliases, 0))?;
-    watcher_class.define_method(
-        "check_policies",
+    watcher_class.define_private_method(
+        "_check_policies",
         method!(WrappedOptionsWatcher::check_policies, 2),
     )?;
     watcher_class.define_method("features", method!(WrappedOptionsWatcher::get_features, 0))?;
