@@ -598,16 +598,21 @@ fn test_policy_filtering_raises_when_requested() -> Result<(), Box<dyn std::erro
 #[test]
 fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_policies_provider();
+    let cache_options = None;
 
     // Allowed requester returns Ok(()).
-    let check = provider.check_policies("service_a", &["feature_allowed", "feature_blocked"]);
+    let check = provider.check_policies(
+        "service_a",
+        &["feature_allowed", "feature_blocked"],
+        cache_options,
+    );
     assert_eq!(check, Ok(()));
 
     // With alias
-    let check = provider.check_policies("service_a", &["feat_allow"]);
+    let check = provider.check_policies("service_a", &["feat_allow"], cache_options);
     assert_eq!(check, Ok(()));
 
-    let check = provider.check_policies("untrusted service", &["feat_allow"]);
+    let check = provider.check_policies("untrusted service", &["feat_allow"], cache_options);
     assert_eq!(
         check,
         Err(
@@ -616,14 +621,14 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
         )
     );
 
-    let check = provider.check_policies("untrusted service", &["not a feature"]);
+    let check = provider.check_policies("untrusted service", &["not a feature"], cache_options);
     assert_eq!(
         check,
         Err("Feature name \"not a feature\" is not a known feature.".to_owned())
     );
 
     // Disallowed requester on feature_allowed returns error string.
-    let check = provider.check_policies("untrusted_service", &["feature_allowed"]);
+    let check = provider.check_policies("untrusted_service", &["feature_allowed"], cache_options);
     assert_eq!(
         check,
         Err(
@@ -633,7 +638,7 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Disallowed requester on feature_blocked returns error string.
-    let check = provider.check_policies("untrusted_service", &["feature_blocked"]);
+    let check = provider.check_policies("untrusted_service", &["feature_blocked"], cache_options);
     assert_eq!(
         check,
         Err(
@@ -643,8 +648,11 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Multiple features: returns error for the first disallowed feature.
-    let check =
-        provider.check_policies("untrusted_service", &["feature_allowed", "feature_blocked"]);
+    let check = provider.check_policies(
+        "untrusted_service",
+        &["feature_allowed", "feature_blocked"],
+        cache_options,
+    );
     assert_eq!(
         check,
         Err(

@@ -276,15 +276,16 @@ module Optify
   module ProviderModule
     # Checks policies for a list of features for the given requester.
     # Returns `nil` if there are no policy issues (or no policies defined).
-    # Returns an error string for the first feature that is not allowed.
+    # Raises `Optify::PolicyDeniedError` if any of the features are not allowed for the requester.
     sig do
       params(
         requester: String,
         feature_names: T::Array[String],
+        cache_options: T.nilable(CacheOptions),
       )
         .returns(T.nilable(String))
     end
-    def check_policies(requester, feature_names); end
+    def check_policies(requester, feature_names, cache_options = nil); end
 
     # @param canonical_feature_name [String] A canonical feature name
     # @return Whether the feature has conditions.
@@ -416,6 +417,16 @@ module Optify
     def get_policies(canonical_feature_name); end
 
     private
+
+    # Rust implementation.
+    sig do
+      params(
+        requester: String,
+        feature_names: T::Array[String],
+      )
+        .returns(T.nilable(String))
+    end
+    def _check_policies(requester, feature_names); end
 
     # Map aliases or canonical feature names (perhaps derived from a file names) to the canonical feature names.
     # Canonical feature names map to themselves.
