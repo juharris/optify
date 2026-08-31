@@ -111,7 +111,7 @@ class PoliciesTest < Test::Unit::TestCase
   end
 
   #: -> void
-  def test_check_policies_with_cache
+  def test_check_policies_with_cache_allowed
     PROVIDERS.each do |klass|
       provider = klass.build(POLICIES_DIR)
       cache_events = []
@@ -125,8 +125,27 @@ class PoliciesTest < Test::Unit::TestCase
       result2 = provider.check_policies('service_a', %w[feature_allowed feature_blocked], cache_options)
       assert_equal(result, result2)
       assert_equal(2, cache_events.length)
+      assert_equal(
+        { key: [:check_policies, %w[feature_allowed feature_blocked], 'service_a'], value: nil, is_cache_hit: false },
+        cache_events[0],
+        "Cache event mismatch for #{klass}",
+      )
+      assert_equal(
+        { key: [:check_policies, %w[feature_allowed feature_blocked], 'service_a'], value: nil, is_cache_hit: true },
+        cache_events[1],
+        "Cache event mismatch for #{klass}",
+      )
+    end
+  end
 
+  #: -> void
+  def test_check_policies_with_cache_denied
+    PROVIDERS.each do |klass|
+      provider = klass.build(POLICIES_DIR)
       cache_events = []
+      cache_options = Optify::CacheOptions.new(on_cache_event: lambda { |key, value, is_cache_hit|
+        cache_events << { key: key, value: value, is_cache_hit: is_cache_hit }
+      })
 
       exception = assert_raise(Optify::PolicyDeniedError) do
         provider.check_policies('untrusted_service', ['feature_blocked'], cache_options)
@@ -142,6 +161,7 @@ class PoliciesTest < Test::Unit::TestCase
 
       # Don't cache exception because the stacktrace could be different
       # and we should only help in the happy path.
+      assert_equal(0, cache_events.length)
       assert_equal(exception.message, exception2.message)
       assert_not_same(exception, exception2)
     end

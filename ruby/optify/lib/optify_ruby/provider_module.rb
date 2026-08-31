@@ -16,7 +16,7 @@ module Optify
         init unless @cache
         ProviderModule._cache_getset(
           @cache, #: as !nil
-          [:check_policiies, requester, feature_names],
+          [:check_policies, feature_names, requester],
           cache_options.on_cache_event,
         ) do
           _check_policies(requester, feature_names)

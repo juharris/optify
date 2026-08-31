@@ -276,7 +276,7 @@ module Optify
   module ProviderModule
     # Checks policies for a list of features for the given requester.
     # Returns `nil` if there are no policy issues (or no policies defined).
-    # Returns an error string for the first feature that is not allowed.
+    # Raises `Optify::PolicyDeniedError` if any of the features are not allowed for the requester.
     sig do
       params(
         requester: String,
