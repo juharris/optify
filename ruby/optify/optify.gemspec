@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-OPTIFY_VERSION = '1.23.2'
+OPTIFY_VERSION = '1.24.0'
 FROM_HASH_DEP_VERSION = '0.3.2'
 
 Gem::Specification.new do |spec|
