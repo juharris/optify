@@ -10,7 +10,7 @@ PATH
     optify-config (1.24.0)
       optify-from_hash (~> 0.3.2)
       rb_sys (~> 0.9.128)
-      sin_lru_redux (~> 2.5.2)
+      sin_lru_redux (~> 2.5.3)
       sorbet-runtime (>= 0.5, < 1)
 
 GEM
@@ -68,7 +68,7 @@ GEM
     ruby-progressbar (1.13.0)
     rubydex (0.2.5-arm64-darwin)
     rubydex (0.2.5-x86_64-linux)
-    sin_lru_redux (2.5.2)
+    sin_lru_redux (2.5.3)
     sorbet (0.6.13308)
       sorbet-static (= 0.6.13308)
     sorbet-runtime (0.6.13308)
