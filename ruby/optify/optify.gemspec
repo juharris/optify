@@ -38,7 +38,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rb_sys', '~> 0.9.128'
 
   spec.add_dependency 'optify-from_hash', "~> #{FROM_HASH_DEP_VERSION}"
-  spec.add_dependency 'sin_lru_redux', '~> 2.5.2'
+  spec.add_dependency 'sin_lru_redux', '~> 2.5.3'
 
   sorbet_version = '>= 0.5'
   sorbet_version_upper_bound = '< 1'
