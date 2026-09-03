@@ -663,3 +663,68 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_requester_feature_policy_allow_from_policies_json() -> Result<(), Box<dyn std::error::Error>>
+{
+    let provider = get_policies_provider();
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.raise_if_policy_denied = true;
+
+    // `requester_x` is only allowed to use `feature_neutral` per `.optify/policies.json`.
+    preferences.requester = Some("requester_x".to_owned());
+    let result = provider.get_filtered_feature_names(&["feature_neutral"], Some(&preferences))?;
+    assert_eq!(result, vec!["feature_neutral"]);
+
+    let result = provider.get_filtered_feature_names(&["feature_blocked"], Some(&preferences));
+    assert_eq!(
+        result.unwrap_err(),
+        "Requester \"requester_x\" is not permitted to use feature \"feature_blocked\"."
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_requester_feature_policy_block_from_policies_json() -> Result<(), Box<dyn std::error::Error>>
+{
+    let provider = get_policies_provider();
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.raise_if_policy_denied = true;
+
+    // `requester_y` may not use `feature_neutral` per `.optify/policies.json`, but any other
+    // feature is allowed by the requester-feature policy (feature-level policies still apply
+    // separately).
+    preferences.requester = Some("requester_y".to_owned());
+    let result = provider.get_filtered_feature_names(&["feature_blocked"], Some(&preferences))?;
+    assert_eq!(result, vec!["feature_blocked"]);
+
+    let result = provider.get_filtered_feature_names(&["feature_neutral"], Some(&preferences));
+    assert_eq!(
+        result.unwrap_err(),
+        "Requester \"requester_y\" is not permitted to use feature \"feature_neutral\"."
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_requester_feature_policy_combines_with_feature_policy(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_policies_provider();
+    let cache_options = None;
+
+    // `requester_z` is allowed by its own `.optify/policies.json` entry to use `feature_allowed`,
+    // but `feature_allowed`'s own `policies.requester` only allows `service_a`/`service_b`,
+    // so the request is still denied: both policies must permit the requester.
+    let check = provider.check_policies("requester_z", &["feature_allowed"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"requester_z\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
+    );
+
+    Ok(())
+}

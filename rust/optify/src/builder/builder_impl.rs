@@ -18,7 +18,7 @@ use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
 use crate::provider::{
     Aliases, Conditions, Features, OptionsProvider, PoliciesMap, ReferencedFileToFeatureNames,
-    Sources,
+    RequesterPoliciesMap, Sources,
 };
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
@@ -41,6 +41,9 @@ pub struct OptionsProviderBuilder {
     imports: Imports,
     loaded_files: LoadedFiles,
     policies: PoliciesMap,
+    /// Policies that restrict which canonical feature names each requester may use,
+    /// loaded from `.optify/policies.json` files.
+    requester_policies: RequesterPoliciesMap,
     /// A map of files to the features that reference them.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This is only populated if the `BuilderOptions` enable file reference tracking.
@@ -201,6 +204,7 @@ impl OptionsProviderBuilder {
             loaded_files: LoadedFiles::new(),
             policies: PoliciesMap::new(),
             referenced_file_to_feature_names: HashMap::new(),
+            requester_policies: RequesterPoliciesMap::new(),
             schema: None,
             sources: Sources::new(),
         }
@@ -241,6 +245,7 @@ impl OptionsProviderBuilder {
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
             std::mem::take(&mut self.policies),
+            std::mem::take(&mut self.requester_policies),
             referenced_file_to_feature_names,
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
@@ -275,6 +280,32 @@ impl OptionsProviderBuilder {
                 .get_mut(canonical_feature_name)
                 .unwrap()
                 .dependents = Some(sorted_dependents);
+        }
+
+        self.validate_requester_policies()?;
+
+        Ok(())
+    }
+
+    /// Ensures that every feature name referenced in `.optify/policies.json` files is a
+    /// canonical feature name.
+    /// Aliases and names that do not correspond to any loaded feature cause an error.
+    fn validate_requester_policies(&self) -> Result<(), String> {
+        for (requester, policy) in &self.requester_policies {
+            for feature_name in policy.feature_names() {
+                if self.features.contains_key(feature_name) {
+                    continue;
+                }
+                let uni_case_feature_name = unicase::UniCase::new(feature_name.clone());
+                if let Some(canonical_feature_name) = self.aliases.get(&uni_case_feature_name) {
+                    return Err(format!(
+                        "Error validating policies for requester '{requester}': '{feature_name}' is an alias for canonical feature name '{canonical_feature_name}'. Policies must use canonical feature names."
+                    ));
+                }
+                return Err(format!(
+                    "Error validating policies for requester '{requester}': feature '{feature_name}' does not exist."
+                ));
+            }
         }
 
         Ok(())
@@ -570,6 +601,33 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.builder_options.clone()
         };
 
+        // Look for .optify/policies.json which declares the canonical feature names that each
+        // requester is permitted to use.
+        // Feature names are validated as canonical feature names once all directories are added,
+        // in `prepare_build`.
+        let policies_path = directory.join(".optify").join("policies.json");
+        if policies_path.is_file() {
+            let requester_policies = read_json_from_file_as::<RequesterPoliciesMap>(&policies_path)
+                .map_err(|e| {
+                    format!(
+                        "Error loading policies from {}: {e}",
+                        policies_path.display()
+                    )
+                })?;
+            for (requester, policy) in requester_policies {
+                if self
+                    .requester_policies
+                    .insert(requester.clone(), policy)
+                    .is_some()
+                {
+                    return Err(format!(
+                        "Error loading policies from {}: policies for requester '{requester}' were already defined.",
+                        policies_path.display()
+                    ));
+                }
+            }
+        }
+
         let supported_extensions = get_supported_extensions();
 
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
@@ -695,6 +753,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.conditions.clone(),
             self.features.clone(),
             self.policies.clone(),
+            self.requester_policies.clone(),
             referenced_file_to_feature_names,
             self.loaded_files.clone(),
             self.sources.clone(),

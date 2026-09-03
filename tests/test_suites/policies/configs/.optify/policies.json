@@ -1,0 +1,11 @@
+{
+	"requester_x": {
+		"allow": ["feature_neutral"]
+	},
+	"requester_y": {
+		"block": ["feature_neutral"]
+	},
+	"requester_z": {
+		"allow": ["feature_allowed"]
+	}
+}

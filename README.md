@@ -610,6 +610,30 @@ Or with a denylist:
 `allow` and `block` are mutually exclusive.
 An empty `allow` list means no requester is currently permitted (useful when preparing a feature before it is opened up).
 
+## Requester Feature Policies (`.optify/policies.json`)
+
+While a feature's `policies.requester` declares which requesters may use *that* feature, sometimes it's easier to declare, for a given requester, the small set of features it is allowed to use.
+Declare this in a `.optify/policies.json` file in a features directory.
+
+The top-level keys are requester identifiers.
+Each value is a policy with `allow` or `block` (mutually exclusive), listing **canonical feature names** that the requester may or may not use:
+
+```JSON
+{
+    "service_a": {
+        "allow": ["feature1", "feature2"]
+    },
+    "untrusted_service": {
+        "block": ["restricted_feature"]
+    }
+}
+```
+
+Feature names in `.optify/policies.json` must be canonical feature names.
+Using an alias or a name that does not match any loaded feature causes the build to fail.
+
+A requester must be permitted by **both** `.optify/policies.json` and a feature's own `policies.requester` (if set) to use the feature: the two mechanisms combine with AND semantics so one cannot be used to bypass the other.
+
 # Configurable Strings
 
 Strings can be configured with a starting base starting template and arguments.

@@ -11,7 +11,7 @@ use crate::{
     schema::{
         conditions::ConditionExpression,
         metadata::OptionsMetadata,
-        policies::{Policies, PolicyDeniedError},
+        policies::{FeaturePolicy, Policies, PolicyDeniedError},
     },
 };
 
@@ -27,6 +27,9 @@ pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
 pub(crate) type PoliciesMap = HashMap<String, Policies>;
+/// Maps a requester identifier to the policy that determines which canonical feature names
+/// the requester is permitted to use, declared in `.optify/policies.json`.
+pub(crate) type RequesterPoliciesMap = HashMap<String, FeaturePolicy>;
 pub(crate) type ReferencedFileToFeatureNames = HashMap<String, Vec<String>>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -46,6 +49,9 @@ pub struct OptionsProvider {
     conditions: Conditions,
     features: Features,
     policies: PoliciesMap,
+    /// Policies that restrict which canonical feature names each requester may use,
+    /// loaded from `.optify/policies.json`.
+    requester_policies: RequesterPoliciesMap,
     /// A map of files to their referencing features.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This allows fast lookup of features when a specific file is modified.
@@ -70,6 +76,7 @@ impl OptionsProvider {
         conditions: Conditions,
         features: Features,
         policies: PoliciesMap,
+        requester_policies: RequesterPoliciesMap,
         referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
         loaded_files: LoadedFiles,
         sources: Sources,
@@ -83,6 +90,7 @@ impl OptionsProvider {
             conditions,
             features,
             policies,
+            requester_policies,
             referenced_file_to_feature_names,
             loaded_files,
             sources,
@@ -446,6 +454,16 @@ impl OptionsProvider {
         raise_if_policy_denied: bool,
     ) -> Result<bool, String> {
         if let Some(requester) = requester {
+            if let Some(requester_policy) = self.requester_policies.get(requester) {
+                if !requester_policy.is_permitted(canonical_feature_name) {
+                    if raise_if_policy_denied {
+                        return Err(
+                            PolicyDeniedError::new(canonical_feature_name, requester).to_string()
+                        );
+                    }
+                    return Ok(false);
+                }
+            }
             if let Some(policies) = self.policies.get(canonical_feature_name) {
                 if !policies.is_requester_permitted(requester) {
                     if raise_if_policy_denied {
@@ -681,6 +699,13 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<(), String> {
         for feature_name in feature_names {
             let canonical_feature_name = self.get_canonical_feature_name(feature_name.as_ref())?;
+            if let Some(requester_policy) = self.requester_policies.get(requester) {
+                if !requester_policy.is_permitted(&canonical_feature_name) {
+                    return Err(
+                        PolicyDeniedError::new(&canonical_feature_name, requester).to_string()
+                    );
+                }
+            }
             if let Some(policies) = self.policies.get(&canonical_feature_name) {
                 if !policies.is_requester_permitted(requester) {
                     return Err(

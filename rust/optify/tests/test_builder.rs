@@ -271,3 +271,34 @@ fn test_track_file_references_by_key_name_for_arguments_feature(
     assert_eq!(referenced_features, vec!["arguments", "feature_with_cs"]);
     Ok(())
 }
+
+#[test]
+fn test_builder_policies_json_alias_fails_build() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_alias");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("'alias_a' is an alias for canonical feature name 'a'"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_policies_json_nonexistent_feature_fails_build(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_nonexistent");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("feature 'nonexistent_feature' does not exist"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}

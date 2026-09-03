@@ -21,9 +21,16 @@
 	"json.schemas": [
 		{
 			"fileMatch": [
-				"optify/tests/**/*.json"
+				"optify/tests/**/*.json",
+				"!optify/tests/**/.optify/policies.json"
 			],
 			"url": "../schemas/feature_file.json"
+		},
+		{
+			"fileMatch": [
+				"optify/tests/**/.optify/policies.json"
+			],
+			"url": "../schemas/policies_file.json"
 		}
 	],
 	"yaml.schemas": {

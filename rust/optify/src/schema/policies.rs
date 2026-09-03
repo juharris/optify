@@ -58,6 +58,45 @@ impl RequesterPolicy {
     }
 }
 
+/// The policy for the canonical feature names that a requester is permitted to use, declared
+/// per-requester in `.optify/policies.json`.
+///
+/// Either `allow` or `block` must be specified, not both.
+///
+/// - `allow`: Only the listed features may be used by the requester.
+///   An empty set means no feature is currently allowed.
+/// - `block`: The listed features may not be used by the requester.
+///   All other features are allowed.
+///
+/// Feature names must be canonical feature names. Aliases and non-existent feature names
+/// are not permitted and will cause the build to fail.
+///
+/// See https://github.com/juharris/optify#policies for more information.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum FeaturePolicy {
+    Allow { allow: HashSet<String> },
+    Block { block: HashSet<String> },
+}
+
+impl FeaturePolicy {
+    /// Returns `true` if the given canonical feature name is permitted by this policy.
+    pub fn is_permitted(&self, canonical_feature_name: &str) -> bool {
+        match self {
+            Self::Allow { allow } => allow.contains(canonical_feature_name),
+            Self::Block { block } => !block.contains(canonical_feature_name),
+        }
+    }
+
+    /// Returns an iterator over the feature names referenced by this policy.
+    pub fn feature_names(&self) -> impl Iterator<Item = &String> {
+        match self {
+            Self::Allow { allow } => allow.iter(),
+            Self::Block { block } => block.iter(),
+        }
+    }
+}
+
 /// Policies that restrict access to a feature based on values in the request's preferences.
 ///
 /// Policies are checked for the **top-level features** in a request.
