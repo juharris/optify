@@ -534,8 +534,13 @@ fn test_get_policies_blocked() -> Result<(), Box<dyn std::error::Error>> {
     assert!(policies.is_requester_permitted("service_a"));
     assert!(policies.is_requester_permitted("any_other_service"));
 
+    // `requester_x` and `requester_z` are each restricted by `.optify/policies.json` to a
+    // single other feature, so they are merged in here as additionally blocked requesters.
+    assert!(!policies.is_requester_permitted("requester_x"));
+    assert!(!policies.is_requester_permitted("requester_z"));
+
     // Verify the policy variant and set contents.
-    let expected: HashSet<String> = ["untrusted_service"]
+    let expected: HashSet<String> = ["untrusted_service", "requester_x", "requester_z"]
         .iter()
         .map(|s| s.to_string())
         .collect();

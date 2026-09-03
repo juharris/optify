@@ -1,0 +1,10 @@
+{
+	"policies": {
+		"requester": {
+			"block": ["service_a"]
+		}
+	},
+	"options": {
+		"key": "value"
+	}
+}

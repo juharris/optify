@@ -302,3 +302,20 @@ fn test_builder_policies_json_nonexistent_feature_fails_build(
         }
     }
 }
+
+#[test]
+fn test_builder_policies_json_conflict_fails_build() -> Result<(), Box<dyn std::error::Error>> {
+    // `.optify/policies.json` explicitly allows `service_a` to use feature `a`, but `a`'s own
+    // `policies.requester` explicitly blocks `service_a`. This contradiction must fail the build.
+    let path = std::path::Path::new("tests/policies_conflict");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}

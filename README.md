@@ -349,9 +349,16 @@ To get help with many files, add the following to your `.vscode/settings.json` f
     "json.schemas": [
         {
             "fileMatch": [
-                "path/**/configs/**/*.json"
+                "path/**/configs/**/*.json",
+                "!path/**/configs/.optify/**"
             ],
             "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
+        },
+        {
+            "fileMatch": [
+                "path/**/configs/.optify/policies.json"
+            ],
+            "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/policies_file.json"
         }
     ],
     "yaml.schemas": {
@@ -361,6 +368,8 @@ To get help with many files, add the following to your `.vscode/settings.json` f
     }
 }
 ```
+
+Ignore everything in `.optify` folders (such as `config.json` and `schema.json`) when matching the general feature file schema, since those files have their own purpose and are not feature files.
 
 ### Directly in JSON
 

@@ -22,7 +22,7 @@
 		{
 			"fileMatch": [
 				"optify/tests/**/*.json",
-				"!optify/tests/**/.optify/policies.json"
+				"!optify/tests/**/.optify/**"
 			],
 			"url": "../schemas/feature_file.json"
 		},
