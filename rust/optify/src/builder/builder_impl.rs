@@ -27,6 +27,19 @@ use crate::schema::policies::{Policies, RequesterFeaturePolicy, RequesterPolicy}
 type Dependents = HashMap<String, Vec<String>>;
 type Imports = HashMap<String, Vec<String>>;
 
+/// Deserializable form of `.optify/policies.json` (or the file referenced by `policiesPath` in
+/// `.optify/config.json`). The `$schema` property (used for editor tooling) is captured
+/// separately via `#[serde(flatten)]` so that the remaining entries can be deserialized directly
+/// as requester policies in a single pass, without needing a second, more lenient parse.
+#[derive(serde::Deserialize)]
+struct PoliciesFileContents {
+    #[serde(rename = "$schema")]
+    #[allow(dead_code)]
+    schema: Option<String>,
+    #[serde(flatten)]
+    requesters: RequesterPoliciesMap,
+}
+
 /// A builder to use in production to create an `OptionsProvider`.
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
@@ -283,13 +296,13 @@ impl OptionsProviderBuilder {
                 .dependents = Some(sorted_dependents);
         }
 
-        self.validate_requester_policies()?;
+        self.finalize_requester_policies()?;
 
         Ok(())
     }
 
     /// Validates the requester policies declared in `.optify/policies.json` files against the
-    /// features loaded so far.
+    /// features loaded so far, then finalizes them for efficient lookup at runtime.
     ///
     /// - Every feature name referenced must be a canonical feature name.
     ///   Aliases and names that do not correspond to any loaded feature cause an error, given for
@@ -301,10 +314,21 @@ impl OptionsProviderBuilder {
     /// - A requester policy that explicitly blocks a requester from a feature while the
     ///   feature's own `policies.requester` explicitly allows that requester is also a conflict.
     ///
-    /// The two policy sources are kept separate (not merged) so that lookups at runtime remain
-    /// simple, compact set-membership checks instead of a pre-computed, expanded structure.
-    fn validate_requester_policies(&self) -> Result<(), String> {
+    /// For a requester with an `allow`-type policy, the listed features are already guaranteed
+    /// (by the conflict check above) to be consistent with each feature's own policy, and any
+    /// feature not listed is implicitly blocked regardless of that feature's own policy, so the
+    /// `allow` list alone is already authoritative: nothing needs to be merged in.
+    ///
+    /// For a requester with a `block`-type policy, a feature not in the `block` list could still
+    /// independently deny the requester via its own `policies.requester`. To keep the runtime
+    /// check down to a single lookup (in `requester_policies`, without also having to check the
+    /// feature-keyed `policies`), any such feature is merged into the `block` set here, once, at
+    /// build time.
+    fn finalize_requester_policies(&mut self) -> Result<(), String> {
+        let mut additional_blocks: HashMap<String, HashSet<String>> = HashMap::new();
         for (requester, policy) in &self.requester_policies {
+            // Require canonical feature names (not aliases) so that build errors can point
+            // directly at the offending name, for clarity and easier navigation.
             for feature_name in policy.feature_names() {
                 if self.features.contains_key(feature_name) {
                     continue;
@@ -345,7 +369,29 @@ impl OptionsProviderBuilder {
                             }
                         }
                     }
+
+                    // Merge in any other feature that independently denies this requester via
+                    // its own `policies.requester`, so that only `requester_policies` needs to
+                    // be checked for this requester at runtime.
+                    for (feature_name, policies) in &self.policies {
+                        if !block.contains(feature_name)
+                            && !policies.is_requester_permitted(requester)
+                        {
+                            additional_blocks
+                                .entry(requester.clone())
+                                .or_default()
+                                .insert(feature_name.clone());
+                        }
+                    }
                 }
+            }
+        }
+
+        for (requester, additions) in additional_blocks {
+            if let Some(RequesterFeaturePolicy::Block { block }) =
+                self.requester_policies.get_mut(&requester)
+            {
+                block.extend(additions);
             }
         }
 
@@ -642,19 +688,22 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.builder_options.clone()
         };
 
-        // Look for the requester policies file (`.optify/policies.json` by default, or the path
-        // declared via `policiesPath` in `.optify/config.json`) which declares the canonical
-        // feature names that each requester is permitted to use.
+        // The requester policies file is opt-in: it is only loaded when `policiesPath` is set in
+        // this directory's `.optify/config.json` (there is no default file name/location).
+        // The path is always resolved relative to the directory being added.
         // The `config` crate is used so that JSON, YAML, or other supported formats can be used,
         // consistent with how feature files are loaded.
         // Feature names are validated as canonical feature names once all directories are added,
         // in `prepare_build`.
-        let policies_path = match &builder_options.policies_path {
-            Some(path) if path.is_absolute() => path.clone(),
-            Some(path) => directory.join(path),
-            None => directory.join(".optify").join("policies.json"),
-        };
-        if policies_path.is_file() {
+        if let Some(policies_path) = &builder_options.policies_path {
+            let policies_path = directory.join(policies_path);
+            if !policies_path.is_file() {
+                return Err(format!(
+                    "Error loading policies: '{}' declared via 'policiesPath' in {} is not a file.",
+                    policies_path.display(),
+                    config_path.display()
+                ));
+            }
             let file = config::File::from(policies_path.as_path());
             let policies_config =
                 config::Config::builder()
@@ -666,27 +715,14 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                             policies_path.display()
                         )
                     })?;
-            // Deserialize as a generic JSON value first so that a `$schema` property (used for
-            // editor tooling, e.g. IDE schema association) can be dropped before parsing the
-            // remaining entries as requester policies.
-            let mut raw_policies: serde_json::Value =
+            let policies_file: PoliciesFileContents =
                 policies_config.try_deserialize().map_err(|e| {
                     format!(
                         "Error deserializing policies from {}: {e}",
                         policies_path.display()
                     )
                 })?;
-            if let Some(object) = raw_policies.as_object_mut() {
-                object.remove("$schema");
-            }
-            let requester_policies: RequesterPoliciesMap = serde_json::from_value(raw_policies)
-                .map_err(|e| {
-                    format!(
-                        "Error deserializing policies from {}: {e}",
-                        policies_path.display()
-                    )
-                })?;
-            for (requester, policy) in requester_policies {
+            for (requester, policy) in policies_file.requesters {
                 if self
                     .requester_policies
                     .insert(requester.clone(), policy)

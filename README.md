@@ -614,7 +614,15 @@ An empty `allow` list means no requester is currently permitted (useful when pre
 ## Requester Feature Policies (`.optify/policies.json`)
 
 While a feature's `policies.requester` declares which requesters may use *that* feature, sometimes it's easier to declare, for a given requester, the small set of features it is allowed to use.
-Declare this in a `.optify/policies.json` file in a features directory.
+This file is opt-in: it is only loaded when its path is declared via `policiesPath` in `.optify/config.json` for a features directory (there is no default file name/location), and it is an error if the declared path is not a file.
+The path is always relative to the directory containing `.optify/config.json`, for example:
+
+```JSON
+// .optify/config.json
+{
+    "policiesPath": ".optify/policies.json"
+}
+```
 
 The top-level keys are requester identifiers.
 Each value is a policy with `allow` or `block` (mutually exclusive), listing **canonical feature names** that the requester may or may not use:

@@ -29,9 +29,10 @@ pub(crate) struct BuilderOptionsConfig {
     pub schema_path: Option<PathBuf>,
     #[serde(default)]
     pub track_file_references: Option<TrackReferenceMode>,
-    /// Path (relative to the directory containing this config file, unless absolute) to the
-    /// file declaring requester feature policies. Defaults to `.optify/policies.json` when unset.
-    /// May be JSON, YAML, or any other format supported by the `config` crate.
+    /// Path, always relative to the directory containing this config file, to the file
+    /// declaring requester feature policies. There is no default: requester feature policies
+    /// are only loaded when this is explicitly set, and it is an error if the resolved path is
+    /// not a file. May be JSON, YAML, or any other format supported by the `config` crate.
     #[serde(default)]
     pub policies_path: Option<PathBuf>,
 }
