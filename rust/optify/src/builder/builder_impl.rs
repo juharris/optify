@@ -16,48 +16,31 @@ use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
 use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
+use crate::policies::{PoliciesFileContents, PolicyStore};
 use crate::provider::{
-    Aliases, Conditions, Features, OptionsProvider, PoliciesMap, ReferencedFileToFeatureNames,
-    RequesterPoliciesMap, Sources,
+    Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
 };
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
-use crate::schema::policies::{Policies, RequesterFeaturePolicy, RequesterPolicy};
 
 type Dependents = HashMap<String, Vec<String>>;
 type Imports = HashMap<String, Vec<String>>;
-
-/// Deserializable form of `.optify/policies.json` (or the file referenced by `policiesPath` in
-/// `.optify/config.json`). The `$schema` property (used for editor tooling) is captured
-/// separately via `#[serde(flatten)]` so that the remaining entries can be deserialized directly
-/// as requester policies in a single pass, without needing a second, more lenient parse.
-#[derive(serde::Deserialize)]
-struct PoliciesFileContents {
-    #[serde(rename = "$schema")]
-    #[allow(dead_code)]
-    schema: Option<String>,
-    #[serde(flatten)]
-    requesters: RequesterPoliciesMap,
-}
 
 /// A builder to use in production to create an `OptionsProvider`.
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
-    all_configurable_string_pointers: HashSet<String>,
     all_configurable_list_pointers: HashSet<String>,
-    keyed_configurable_list_pointers: HashMap<String, HashSet<String>>,
-    keyed_configurable_string_pointers: HashMap<String, HashSet<String>>,
+    all_configurable_string_pointers: HashSet<String>,
     builder_options: BuilderOptions,
     conditions: Conditions,
     dependents: Dependents,
     features: Features,
     imports: Imports,
+    keyed_configurable_list_pointers: HashMap<String, HashSet<String>>,
+    keyed_configurable_string_pointers: HashMap<String, HashSet<String>>,
     loaded_files: LoadedFiles,
-    policies: PoliciesMap,
-    /// Policies that restrict which canonical feature names each requester may use,
-    /// loaded from `.optify/policies.json` files.
-    requester_policies: RequesterPoliciesMap,
+    policy_store: PolicyStore,
     /// A map of files to the features that reference them.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This is only populated if the `BuilderOptions` enable file reference tracking.
@@ -206,19 +189,18 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
-            all_configurable_string_pointers: HashSet::new(),
             all_configurable_list_pointers: HashSet::new(),
-            keyed_configurable_list_pointers: HashMap::new(),
-            keyed_configurable_string_pointers: HashMap::new(),
+            all_configurable_string_pointers: HashSet::new(),
             builder_options: BuilderOptions::default(),
             conditions: Conditions::new(),
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
+            keyed_configurable_list_pointers: HashMap::new(),
+            keyed_configurable_string_pointers: HashMap::new(),
             loaded_files: LoadedFiles::new(),
-            policies: PoliciesMap::new(),
+            policy_store: PolicyStore::default(),
             referenced_file_to_feature_names: HashMap::new(),
-            requester_policies: RequesterPoliciesMap::new(),
             schema: None,
             sources: Sources::new(),
         }
@@ -258,8 +240,7 @@ impl OptionsProviderBuilder {
             keyed_configurable_string_pointers,
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
-            std::mem::take(&mut self.policies),
-            std::mem::take(&mut self.requester_policies),
+            std::mem::take(&mut self.policy_store),
             referenced_file_to_feature_names,
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
@@ -303,70 +284,9 @@ impl OptionsProviderBuilder {
 
     /// Validates the requester policies declared in `.optify/policies.json` files against the
     /// features loaded so far.
-    ///
-    /// - Every feature name referenced must be a canonical feature name.
-    ///   Aliases and names that do not correspond to any loaded feature cause an error, given for
-    ///   clarity and easier navigation to the offending feature name.
-    /// - A requester policy that explicitly grants a requester access to a feature while the
-    ///   feature's own `policies.requester` does not permit that requester (whether the feature
-    ///   explicitly blocks the requester or only explicitly allows other requesters) is a
-    ///   conflict and causes an error, since it is likely a mistake.
-    /// - A requester policy that explicitly blocks a requester from a feature while the
-    ///   feature's own `policies.requester` explicitly allows that requester is also a conflict.
-    ///
-    /// Both `.optify/policies.json` and each feature's own `policies.requester` are
-    /// independently configurable and are both checked at runtime (see
-    /// `OptionsProvider::is_requester_permitted_for_feature`); this only validates that they
-    /// don't explicitly contradict each other. Nothing is merged here.
     fn validate_requester_policies(&self) -> Result<(), String> {
-        for (requester, policy) in &self.requester_policies {
-            // Require canonical feature names (not aliases) so that build errors can point
-            // directly at the offending name, for clarity and easier navigation.
-            for feature_name in policy.feature_names() {
-                if self.features.contains_key(feature_name) {
-                    continue;
-                }
-                let uni_case_feature_name = unicase::UniCase::new(feature_name.clone());
-                if let Some(canonical_feature_name) = self.aliases.get(&uni_case_feature_name) {
-                    return Err(format!(
-                        "Error validating policies for requester '{requester}': '{feature_name}' is an alias for canonical feature name '{canonical_feature_name}'. Policies must use canonical feature names."
-                    ));
-                }
-                return Err(format!(
-                    "Error validating policies for requester '{requester}': feature '{feature_name}' does not exist."
-                ));
-            }
-
-            match policy {
-                RequesterFeaturePolicy::Allow { allow } => {
-                    for feature_name in allow {
-                        if let Some(policies) = self.policies.get(feature_name) {
-                            if !policies.is_requester_permitted(requester) {
-                                return Err(format!(
-                                    "Conflicting policies for requester '{requester}' and feature '{feature_name}': '.optify/policies.json' allows it, but the feature's own policies do not permit this requester."
-                                ));
-                            }
-                        }
-                    }
-                }
-                RequesterFeaturePolicy::Block { block } => {
-                    for feature_name in block {
-                        if let Some(Policies {
-                            requester: Some(RequesterPolicy::Allow { allow }),
-                        }) = self.policies.get(feature_name)
-                        {
-                            if allow.contains(requester) {
-                                return Err(format!(
-                                    "Conflicting policies for requester '{requester}' and feature '{feature_name}': '.optify/policies.json' blocks it, but the feature's own policies explicitly allow it."
-                                ));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
+        self.policy_store
+            .validate_requester_policies(&self.features, &self.aliases)
     }
 
     fn process_path(
@@ -433,8 +353,8 @@ impl OptionsProviderBuilder {
                 .insert(canonical_feature_name.clone(), conditions);
         }
         if let Some(policies) = info.policies {
-            self.policies
-                .insert(canonical_feature_name.clone(), policies);
+            self.policy_store
+                .insert_policy(canonical_feature_name.clone(), policies);
         }
         if let Some(imports) = info.imports {
             self.imports.insert(canonical_feature_name.clone(), imports);
@@ -695,8 +615,8 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                 })?;
             for (requester, policy) in policies_file.requesters {
                 if self
-                    .requester_policies
-                    .insert(requester.clone(), policy)
+                    .policy_store
+                    .insert_requester_policy(requester.clone(), policy)
                     .is_some()
                 {
                     return Err(format!(
@@ -831,8 +751,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             keyed_configurable_string_pointers,
             self.conditions.clone(),
             self.features.clone(),
-            self.policies.clone(),
-            self.requester_policies.clone(),
+            self.policy_store.clone(),
             referenced_file_to_feature_names,
             self.loaded_files.clone(),
             self.sources.clone(),

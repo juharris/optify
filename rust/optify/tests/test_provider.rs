@@ -1,9 +1,8 @@
 use optify::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
-    schema::policies::RequesterPolicy,
 };
-use std::{collections::HashSet, fs, sync::OnceLock};
+use std::{fs, sync::OnceLock};
 
 static CONDITIONS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 static CONFIGURABLE_STRINGS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
@@ -488,66 +487,6 @@ fn test_configurable_values_get_all_options_with_overrides(
 }
 
 #[test]
-fn test_get_policies_no_policy() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = get_policies_provider();
-    // A feature that doesn't exist returns None.
-    assert!(provider.get_policies("nonexistent_feature").is_none());
-    Ok(())
-}
-
-#[test]
-fn test_get_policies_allowed() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = get_policies_provider();
-    let policies = provider
-        .get_policies("feature_allowed")
-        .expect("feature_allowed should have policies");
-
-    assert!(policies.is_requester_permitted("service_a"));
-    assert!(policies.is_requester_permitted("service_b"));
-    // Requester not in the allow list is not permitted.
-    assert!(!policies.is_requester_permitted("service_c"));
-    assert!(!policies.is_requester_permitted("untrusted_service"));
-
-    // Verify the policy variant and set contents.
-    let expected: HashSet<String> = ["service_a", "service_b", "service_d"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-    match policies.requester.expect("requester policy should be set") {
-        RequesterPolicy::Allow { allow } => assert_eq!(allow, expected),
-        other => panic!("expected Allow, got {other:?}"),
-    }
-
-    Ok(())
-}
-
-#[test]
-fn test_get_policies_blocked() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = get_policies_provider();
-    let policies = provider
-        .get_policies("feature_blocked")
-        .expect("feature_blocked should have policies");
-
-    // Blocked requester is not permitted.
-    assert!(!policies.is_requester_permitted("untrusted_service"));
-    // Any other requester is permitted.
-    assert!(policies.is_requester_permitted("service_a"));
-    assert!(policies.is_requester_permitted("any_other_service"));
-
-    // Verify the policy variant and set contents.
-    let expected: HashSet<String> = ["untrusted_service", "service_f"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-    match policies.requester.expect("requester policy should be set") {
-        RequesterPolicy::Block { block } => assert_eq!(block, expected),
-        other => panic!("expected Block, got {other:?}"),
-    }
-
-    Ok(())
-}
-
-#[test]
 fn test_policy_filtering_silently_filters_denied() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_policies_provider();
 
@@ -760,9 +699,8 @@ fn test_requester_feature_policy_all_combinations() -> Result<(), Box<dyn std::e
         Ok(())
     );
 
-    // Global: none. Feature: allow (requester listed). -> permitted. (test_get_policies_allowed
-    // and test_get_policies_blocked cover the "requester not listed"/"requester blocked" cases
-    // for feature-only policies.)
+    // Global: none. Feature: allow (requester listed). -> permitted. (test_check_policies
+    // covers the "requester not listed" and "requester blocked" cases for feature-only policies.)
 
     // Global: allow (includes the feature). Feature: none. -> permitted.
     assert_eq!(
