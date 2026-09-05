@@ -444,10 +444,10 @@ impl OptionsProvider {
 
     /// Checks whether the requester is permitted for the given feature.
     ///
-    /// If the requester has its own entry in `requester_policies` (from `.optify/policies.json`),
-    /// that entry alone is authoritative: it is built to already account for any relevant
-    /// feature-level `policies.requester` (see `finalize_requester_policies` in the builder), so
-    /// only one lookup is needed. Otherwise, the feature's own `policies` are checked.
+    /// Both the requester's own entry in `requester_policies` (from `.optify/policies.json`, if
+    /// any) and the feature's own `policies.requester` (if any) are checked: both are
+    /// independently configurable, so the requester must be permitted by both (AND semantics)
+    /// for the feature to be permitted. Neither mechanism can be used to bypass the other.
     ///
     /// Returns `Ok(true)` if permitted, no policy is set, or no requester is given.
     /// Returns `Ok(false)` if denied and `raise_if_policy_denied` is false.
@@ -473,21 +473,25 @@ impl OptionsProvider {
         Ok(true)
     }
 
-    /// The single, efficient check combining both ways a requester may be restricted: the
-    /// requester's own entry in `requester_policies` (`.optify/policies.json`) if present, or
-    /// otherwise the feature's own `policies`.
+    /// Checks both ways a requester may be restricted: the requester's own entry in
+    /// `requester_policies` (`.optify/policies.json`) and the feature's own `policies`. Both are
+    /// independently configurable, so both must permit the requester.
     fn is_requester_permitted_for_feature(
         &self,
         canonical_feature_name: &str,
         requester: &str,
     ) -> bool {
-        match self.requester_policies.get(requester) {
-            Some(requester_policy) => requester_policy.is_permitted(canonical_feature_name),
-            None => self
-                .policies
-                .get(canonical_feature_name)
-                .is_none_or(|policies| policies.is_requester_permitted(requester)),
+        if let Some(requester_policy) = self.requester_policies.get(requester) {
+            if !requester_policy.is_permitted(canonical_feature_name) {
+                return false;
+            }
         }
+        if let Some(policies) = self.policies.get(canonical_feature_name) {
+            if !policies.is_requester_permitted(requester) {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -709,20 +713,25 @@ impl OptionsRegistry for OptionsProvider {
         feature_names: &[impl AsRef<str>],
         _cache_options: Option<&CacheOptions>,
     ) -> Result<(), String> {
-        // Look up the requester's own policy once instead of once per feature. If present, it is
-        // already authoritative (see `is_requester_permitted_for_feature`).
+        // Look up the requester's own policy once instead of once per feature. Both this and the
+        // feature's own `policies` (checked per feature below) are independently configurable, so
+        // both must permit the requester.
         let requester_policy = self.requester_policies.get(requester);
         for feature_name in feature_names {
             let canonical_feature_name = self.get_canonical_feature_name(feature_name.as_ref())?;
-            let permitted = match requester_policy {
-                Some(requester_policy) => requester_policy.is_permitted(&canonical_feature_name),
-                None => self
-                    .policies
-                    .get(&canonical_feature_name)
-                    .is_none_or(|policies| policies.is_requester_permitted(requester)),
-            };
-            if !permitted {
-                return Err(PolicyDeniedError::new(&canonical_feature_name, requester).to_string());
+            if let Some(requester_policy) = requester_policy {
+                if !requester_policy.is_permitted(&canonical_feature_name) {
+                    return Err(
+                        PolicyDeniedError::new(&canonical_feature_name, requester).to_string()
+                    );
+                }
+            }
+            if let Some(policies) = self.policies.get(&canonical_feature_name) {
+                if !policies.is_requester_permitted(requester) {
+                    return Err(
+                        PolicyDeniedError::new(&canonical_feature_name, requester).to_string()
+                    );
+                }
             }
         }
         Ok(())

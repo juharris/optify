@@ -296,13 +296,13 @@ impl OptionsProviderBuilder {
                 .dependents = Some(sorted_dependents);
         }
 
-        self.finalize_requester_policies()?;
+        self.validate_requester_policies()?;
 
         Ok(())
     }
 
     /// Validates the requester policies declared in `.optify/policies.json` files against the
-    /// features loaded so far, then finalizes them for efficient lookup at runtime.
+    /// features loaded so far.
     ///
     /// - Every feature name referenced must be a canonical feature name.
     ///   Aliases and names that do not correspond to any loaded feature cause an error, given for
@@ -314,18 +314,11 @@ impl OptionsProviderBuilder {
     /// - A requester policy that explicitly blocks a requester from a feature while the
     ///   feature's own `policies.requester` explicitly allows that requester is also a conflict.
     ///
-    /// For a requester with an `allow`-type policy, the listed features are already guaranteed
-    /// (by the conflict check above) to be consistent with each feature's own policy, and any
-    /// feature not listed is implicitly blocked regardless of that feature's own policy, so the
-    /// `allow` list alone is already authoritative: nothing needs to be merged in.
-    ///
-    /// For a requester with a `block`-type policy, a feature not in the `block` list could still
-    /// independently deny the requester via its own `policies.requester`. To keep the runtime
-    /// check down to a single lookup (in `requester_policies`, without also having to check the
-    /// feature-keyed `policies`), any such feature is merged into the `block` set here, once, at
-    /// build time.
-    fn finalize_requester_policies(&mut self) -> Result<(), String> {
-        let mut additional_blocks: HashMap<String, HashSet<String>> = HashMap::new();
+    /// Both `.optify/policies.json` and each feature's own `policies.requester` are
+    /// independently configurable and are both checked at runtime (see
+    /// `OptionsProvider::is_requester_permitted_for_feature`); this only validates that they
+    /// don't explicitly contradict each other. Nothing is merged here.
+    fn validate_requester_policies(&self) -> Result<(), String> {
         for (requester, policy) in &self.requester_policies {
             // Require canonical feature names (not aliases) so that build errors can point
             // directly at the offending name, for clarity and easier navigation.
@@ -369,29 +362,7 @@ impl OptionsProviderBuilder {
                             }
                         }
                     }
-
-                    // Merge in any other feature that independently denies this requester via
-                    // its own `policies.requester`, so that only `requester_policies` needs to
-                    // be checked for this requester at runtime.
-                    for (feature_name, policies) in &self.policies {
-                        if !block.contains(feature_name)
-                            && !policies.is_requester_permitted(requester)
-                        {
-                            additional_blocks
-                                .entry(requester.clone())
-                                .or_default()
-                                .insert(feature_name.clone());
-                        }
-                    }
                 }
-            }
-        }
-
-        for (requester, additions) in additional_blocks {
-            if let Some(RequesterFeaturePolicy::Block { block }) =
-                self.requester_policies.get_mut(&requester)
-            {
-                block.extend(additions);
             }
         }
 
