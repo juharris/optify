@@ -16,7 +16,7 @@ use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
 use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
-use crate::policies::{PoliciesFileContents, PolicyStore};
+use crate::policies::PolicyStore;
 use crate::provider::{
     Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
 };
@@ -277,16 +277,10 @@ impl OptionsProviderBuilder {
                 .dependents = Some(sorted_dependents);
         }
 
-        self.validate_requester_policies()?;
+        self.policy_store
+            .validate_requester_policies(&self.features, &self.aliases)?;
 
         Ok(())
-    }
-
-    /// Validates the requester policies declared in `.optify/policies.json` files against the
-    /// features loaded so far.
-    fn validate_requester_policies(&self) -> Result<(), String> {
-        self.policy_store
-            .validate_requester_policies(&self.features, &self.aliases)
     }
 
     fn process_path(
@@ -579,52 +573,9 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.builder_options.clone()
         };
 
-        // The requester policies file is opt-in: it is only loaded when `policiesPath` is set in
-        // this directory's `.optify/config.json` (there is no default file name/location).
-        // The path is always resolved relative to the directory being added.
-        // The `config` crate is used so that JSON, YAML, or other supported formats can be used,
-        // consistent with how feature files are loaded.
-        // Feature names are validated as canonical feature names once all directories are added,
-        // in `prepare_build`.
         if let Some(policies_path) = &builder_options.policies_path {
-            let policies_path = directory.join(policies_path);
-            if !policies_path.is_file() {
-                return Err(format!(
-                    "Error loading policies: '{}' declared via 'policiesPath' in {} is not a file.",
-                    policies_path.display(),
-                    config_path.display()
-                ));
-            }
-            let file = config::File::from(policies_path.as_path());
-            let policies_config =
-                config::Config::builder()
-                    .add_source(file)
-                    .build()
-                    .map_err(|e| {
-                        format!(
-                            "Error loading policies from {}: {e}",
-                            policies_path.display()
-                        )
-                    })?;
-            let policies_file: PoliciesFileContents =
-                policies_config.try_deserialize().map_err(|e| {
-                    format!(
-                        "Error deserializing policies from {}: {e}",
-                        policies_path.display()
-                    )
-                })?;
-            for (requester, policy) in policies_file.requesters {
-                if self
-                    .policy_store
-                    .insert_requester_policy(requester.clone(), policy)
-                    .is_some()
-                {
-                    return Err(format!(
-                        "Error loading policies from {}: policies for requester '{requester}' were already defined.",
-                        policies_path.display()
-                    ));
-                }
-            }
+            self.policy_store
+                .load_policies_from_file(directory, policies_path, &config_path)?;
         }
 
         let supported_extensions = get_supported_extensions();

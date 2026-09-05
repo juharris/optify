@@ -430,19 +430,6 @@ impl OptionsProvider {
         }
         Ok(())
     }
-
-    fn is_feature_permitted_for_requester(
-        &self,
-        canonical_feature_name: &str,
-        requester: Option<&str>,
-        raise_if_policy_denied: bool,
-    ) -> Result<bool, String> {
-        self.policy_store.is_feature_permitted_for_requester(
-            canonical_feature_name,
-            requester,
-            raise_if_policy_denied,
-        )
-    }
 }
 
 impl OptionsRegistry for OptionsProvider {
@@ -585,7 +572,7 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if !self.is_feature_permitted_for_requester(
+            if !self.policy_store.is_feature_permitted_for_requester(
                 &canonical_feature_name,
                 requester,
                 raise_if_policy_denied,
@@ -707,7 +694,7 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if !self.is_feature_permitted_for_requester(
+            if !self.policy_store.is_feature_permitted_for_requester(
                 &canonical_feature_name,
                 requester,
                 raise_if_policy_denied,

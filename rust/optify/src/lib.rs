@@ -2,7 +2,7 @@ pub mod builder;
 pub mod configurable_string;
 pub(crate) mod configurable_values;
 pub(crate) mod json;
-pub mod policies;
+pub(crate) mod policies;
 pub mod provider;
 pub mod schema;
 

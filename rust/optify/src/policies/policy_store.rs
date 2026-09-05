@@ -1,6 +1,9 @@
+use std::path::Path;
+
 use crate::provider::{Aliases, Features};
 
 use super::feature_policies::{Policies, PoliciesMap};
+use super::policies_file_contents::PoliciesFileContents;
 use super::policy_denied_error::PolicyDeniedError;
 use super::requester_feature_policy::{RequesterFeaturePolicy, RequesterPoliciesMap};
 use super::validate_requester_policies::validate_requester_policies;
@@ -8,13 +11,14 @@ use super::validate_requester_policies::validate_requester_policies;
 /// A policy store holding feature policies and requester policies.
 /// Responsible for all policy-related logic in the provider and builder.
 #[derive(Clone, Debug, Default)]
-pub struct PolicyStore {
+pub(crate) struct PolicyStore {
     policies: PoliciesMap,
     requester_policies: RequesterPoliciesMap,
 }
 
 impl PolicyStore {
-    pub fn new(policies: PoliciesMap, requester_policies: RequesterPoliciesMap) -> Self {
+    #[allow(dead_code)]
+    pub(crate) fn new(policies: PoliciesMap, requester_policies: RequesterPoliciesMap) -> Self {
         Self {
             policies,
             requester_policies,
@@ -22,7 +26,7 @@ impl PolicyStore {
     }
 
     /// Checks policies for a list of features for the given requester.
-    pub fn check_policies(
+    pub(crate) fn check_policies(
         &self,
         requester: &str,
         canonical_feature_names: &[impl AsRef<str>],
@@ -44,16 +48,62 @@ impl PolicyStore {
         Ok(())
     }
 
-    pub fn insert_policy(&mut self, canonical_feature_name: String, policies: Policies) {
+    pub(crate) fn insert_policy(&mut self, canonical_feature_name: String, policies: Policies) {
         self.policies.insert(canonical_feature_name, policies);
     }
 
-    pub fn insert_requester_policy(
+    pub(crate) fn insert_requester_policy(
         &mut self,
         requester: String,
         policy: RequesterFeaturePolicy,
     ) -> Option<RequesterFeaturePolicy> {
         self.requester_policies.insert(requester, policy)
+    }
+
+    /// Loads policies from the given file and inserts them into the store.
+    pub(crate) fn load_policies_from_file(
+        &mut self,
+        directory: &Path,
+        policies_path: &Path,
+        config_path: &Path,
+    ) -> Result<(), String> {
+        let resolved_policies_path = directory.join(policies_path);
+        if !resolved_policies_path.is_file() {
+            return Err(format!(
+                "Error loading policies: '{}' declared via 'policiesPath' in {} is not a file.",
+                resolved_policies_path.display(),
+                config_path.display()
+            ));
+        }
+        let file = config::File::from(resolved_policies_path.as_path());
+        let policies_config = config::Config::builder()
+            .add_source(file)
+            .build()
+            .map_err(|e| {
+                format!(
+                    "Error loading policies from {}: {e}",
+                    resolved_policies_path.display()
+                )
+            })?;
+        let policies_file: PoliciesFileContents =
+            policies_config.try_deserialize().map_err(|e| {
+                format!(
+                    "Error deserializing policies from {}: {e}",
+                    resolved_policies_path.display()
+                )
+            })?;
+        for (requester, policy) in policies_file.requesters {
+            if self
+                .insert_requester_policy(requester.clone(), policy)
+                .is_some()
+            {
+                return Err(format!(
+                    "Error loading policies from {}: policies for requester '{requester}' were already defined.",
+                    resolved_policies_path.display()
+                ));
+            }
+        }
+        Ok(())
     }
 
     /// Checks whether the requester is permitted for the given feature.
@@ -63,7 +113,7 @@ impl PolicyStore {
     /// Returns `Ok(true)` if permitted, no policy is set, or no requester is given.
     /// Returns `Ok(false)` if denied and `raise_if_policy_denied` is false.
     /// Returns `Err(message)` if denied and `raise_if_policy_denied` is true.
-    pub fn is_feature_permitted_for_requester(
+    pub(crate) fn is_feature_permitted_for_requester(
         &self,
         canonical_feature_name: &str,
         requester: Option<&str>,
@@ -86,7 +136,7 @@ impl PolicyStore {
 
     /// Checks whether the requester is permitted for the given feature.
     /// Both `requester_policies` and feature `policies` must permit the requester.
-    pub fn is_requester_permitted_for_feature(
+    pub(crate) fn is_requester_permitted_for_feature(
         &self,
         canonical_feature_name: &str,
         requester: &str,
@@ -104,16 +154,18 @@ impl PolicyStore {
         true
     }
 
-    pub fn policies(&self) -> &PoliciesMap {
+    #[allow(dead_code)]
+    pub(crate) fn policies(&self) -> &PoliciesMap {
         &self.policies
     }
 
-    pub fn requester_policies(&self) -> &RequesterPoliciesMap {
+    #[allow(dead_code)]
+    pub(crate) fn requester_policies(&self) -> &RequesterPoliciesMap {
         &self.requester_policies
     }
 
     /// Validates the requester policies against features and aliases loaded so far.
-    pub fn validate_requester_policies(
+    pub(crate) fn validate_requester_policies(
         &self,
         features: &Features,
         aliases: &Aliases,
