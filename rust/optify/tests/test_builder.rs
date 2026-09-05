@@ -271,3 +271,72 @@ fn test_track_file_references_by_key_name_for_arguments_feature(
     assert_eq!(referenced_features, vec!["arguments", "feature_with_cs"]);
     Ok(())
 }
+
+#[test]
+fn test_builder_policies_json_alias_fails_build() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_invalid_alias");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("'alias_a' is an alias for canonical feature name 'a'"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_policies_json_nonexistent_feature_fails_build(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_invalid_nonexistent");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("feature 'nonexistent_feature' does not exist"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_policies_json_conflict_block_fails_build() -> Result<(), Box<dyn std::error::Error>>
+{
+    // `.optify/policies.json` explicitly allows `service_a` to use feature `a`, but `a`'s own
+    // `policies.requester` explicitly blocks `service_a`. This contradiction must fail the build.
+    let path = std::path::Path::new("tests/policies_invalid_conflict_block");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_policies_json_conflict_allow_fails_build() -> Result<(), Box<dyn std::error::Error>>
+{
+    // `.optify/policies.json` explicitly allows `service_a` to use feature `a`, but `a`'s own
+    // `policies.requester` only explicitly allows `service_b`, not `service_a`. This
+    // contradiction must fail the build too: if the feature specifies an allow list, the
+    // requester must be in it.
+    let path = std::path::Path::new("tests/policies_invalid_conflict_allow");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}

@@ -1,0 +1,5 @@
+{
+	"service_a": {
+		"allow": ["alias_a"]
+	}
+}

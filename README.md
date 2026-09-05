@@ -349,7 +349,8 @@ To get help with many files, add the following to your `.vscode/settings.json` f
     "json.schemas": [
         {
             "fileMatch": [
-                "path/**/configs/**/*.json"
+                "path/**/configs/**/*.json",
+                "!path/**/configs/.optify/**"
             ],
             "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
         }
@@ -609,6 +610,38 @@ Or with a denylist:
 
 `allow` and `block` are mutually exclusive.
 An empty `allow` list means no requester is currently permitted (useful when preparing a feature before it is opened up).
+
+## Requester Feature Policies (`.optify/policies.json`)
+
+While a feature's `policies.requester` declares which requesters may use *that* feature, sometimes it's easier to declare, for a given requester, the small set of features it is allowed to use.
+This file is opt-in: it is only loaded when its path is declared via `policiesPath` in `.optify/config.json` for a features directory (there is no default file name/location), and it is an error if the declared path is not a file.
+The path is always relative to the directory containing `.optify/config.json`, for example:
+
+```JSON
+// .optify/config.json
+{
+    "policiesPath": ".optify/policies.json"
+}
+```
+
+The top-level keys are requester identifiers.
+Each value is a policy with `allow` or `block` (mutually exclusive), listing **canonical feature names** that the requester may or may not use:
+
+```JSON
+{
+    "$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/policies_file.json",
+    "service_a": {
+        "allow": ["feature1", "feature2"]
+    },
+    "untrusted_service": {
+        "block": ["restricted_feature"]
+    }
+}
+```
+
+Feature names in `.optify/policies.json` must be canonical feature names.
+
+A requester must be permitted by **both** `.optify/policies.json` and a feature's own `policies.requester` (if set) to use the feature: the two mechanisms combine with AND semantics so one cannot be used to bypass the other.
 
 # Configurable Strings
 

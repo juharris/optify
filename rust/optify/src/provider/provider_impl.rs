@@ -3,16 +3,13 @@ use std::{collections::HashMap, path::Path, sync::RwLock};
 use crate::builder::builder_options::BuilderOptions;
 use crate::configurable_values::configurable_list_impl::ConfigurableList;
 
+use crate::policies::PolicyStore;
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
     json::merge::{merge_json_with_defaults, FrozenPaths},
     provider::GetOptionsPreferences,
-    schema::{
-        conditions::ConditionExpression,
-        metadata::OptionsMetadata,
-        policies::{Policies, PolicyDeniedError},
-    },
+    schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
 use super::OptionsRegistry;
@@ -26,7 +23,6 @@ pub(crate) type SourceValue = serde_json::Value;
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
-pub(crate) type PoliciesMap = HashMap<String, Policies>;
 pub(crate) type ReferencedFileToFeatureNames = HashMap<String, Vec<String>>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -45,13 +41,13 @@ pub struct OptionsProvider {
     aliases: Aliases,
     conditions: Conditions,
     features: Features,
-    policies: PoliciesMap,
+    loaded_files: LoadedFiles,
+    policy_store: PolicyStore,
     /// A map of files to their referencing features.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This allows fast lookup of features when a specific file is modified.
     /// This is only populated if the `BuilderOptions` enable file reference tracking.
     referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
-    loaded_files: LoadedFiles,
     sources: Sources,
 
     // Caches - using RwLock for thread-safe interior mutability
@@ -69,7 +65,7 @@ impl OptionsProvider {
         keyed_configurable_string_pointers: HashMap<String, Vec<String>>,
         conditions: Conditions,
         features: Features,
-        policies: PoliciesMap,
+        policy_store: PolicyStore,
         referenced_file_to_feature_names: Option<ReferencedFileToFeatureNames>,
         loaded_files: LoadedFiles,
         sources: Sources,
@@ -82,9 +78,9 @@ impl OptionsProvider {
             aliases,
             conditions,
             features,
-            policies,
-            referenced_file_to_feature_names,
             loaded_files,
+            policy_store,
+            referenced_file_to_feature_names,
             sources,
             entire_config_cache: RwLock::new(EntireConfigCache::new()),
             options_cache: RwLock::new(OptionsCache::new()),
@@ -192,7 +188,8 @@ impl OptionsProvider {
                     source.get(key).cloned()
                 }
                 (None, _) => {
-                    // No override. Find first source with key (iterating in reverse = highest priority first).
+                    // No override.
+                    // Find first source with key (iterating in reverse = highest priority first).
                     // Use the last source with the key to avoid merging to an empty object.
                     let mut result = None;
                     let mut frozen_paths = FrozenPaths::new();
@@ -433,32 +430,6 @@ impl OptionsProvider {
         }
         Ok(())
     }
-
-    /// Checks whether the requester is permitted for the given feature.
-    ///
-    /// Returns `Ok(true)` if permitted, no policy is set, or no requester is given.
-    /// Returns `Ok(false)` if denied and `raise_if_policy_denied` is false.
-    /// Returns `Err(message)` if denied and `raise_if_policy_denied` is true.
-    fn is_feature_permitted_for_requester(
-        &self,
-        canonical_feature_name: &str,
-        requester: Option<&str>,
-        raise_if_policy_denied: bool,
-    ) -> Result<bool, String> {
-        if let Some(requester) = requester {
-            if let Some(policies) = self.policies.get(canonical_feature_name) {
-                if !policies.is_requester_permitted(requester) {
-                    if raise_if_policy_denied {
-                        return Err(
-                            PolicyDeniedError::new(canonical_feature_name, requester).to_string()
-                        );
-                    }
-                    return Ok(false);
-                }
-            }
-        }
-        Ok(true)
-    }
 }
 
 impl OptionsRegistry for OptionsProvider {
@@ -601,7 +572,7 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if !self.is_feature_permitted_for_requester(
+            if !self.policy_store.is_feature_permitted_for_requester(
                 &canonical_feature_name,
                 requester,
                 raise_if_policy_denied,
@@ -679,21 +650,12 @@ impl OptionsRegistry for OptionsProvider {
         feature_names: &[impl AsRef<str>],
         _cache_options: Option<&CacheOptions>,
     ) -> Result<(), String> {
-        for feature_name in feature_names {
-            let canonical_feature_name = self.get_canonical_feature_name(feature_name.as_ref())?;
-            if let Some(policies) = self.policies.get(&canonical_feature_name) {
-                if !policies.is_requester_permitted(requester) {
-                    return Err(
-                        PolicyDeniedError::new(&canonical_feature_name, requester).to_string()
-                    );
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
-        self.policies.get(canonical_feature_name).cloned()
+        let canonical_feature_names = feature_names
+            .iter()
+            .map(|f| self.get_canonical_feature_name(f.as_ref()))
+            .collect::<Result<Vec<_>, _>>()?;
+        self.policy_store
+            .check_policies(requester, &canonical_feature_names)
     }
 
     fn map_feature_names(
@@ -732,7 +694,7 @@ impl OptionsRegistry for OptionsProvider {
                 }
             }
 
-            if !self.is_feature_permitted_for_requester(
+            if !self.policy_store.is_feature_permitted_for_requester(
                 &canonical_feature_name,
                 requester,
                 raise_if_policy_denied,

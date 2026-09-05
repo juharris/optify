@@ -1,9 +1,8 @@
 use optify::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
-    schema::policies::RequesterPolicy,
 };
-use std::{collections::HashSet, fs, sync::OnceLock};
+use std::{fs, sync::OnceLock};
 
 static CONDITIONS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
 static CONFIGURABLE_STRINGS_PROVIDER: OnceLock<OptionsProvider> = OnceLock::new();
@@ -488,66 +487,6 @@ fn test_configurable_values_get_all_options_with_overrides(
 }
 
 #[test]
-fn test_get_policies_no_policy() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = get_policies_provider();
-    // A feature that doesn't exist returns None.
-    assert!(provider.get_policies("nonexistent_feature").is_none());
-    Ok(())
-}
-
-#[test]
-fn test_get_policies_allowed() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = get_policies_provider();
-    let policies = provider
-        .get_policies("feature_allowed")
-        .expect("feature_allowed should have policies");
-
-    assert!(policies.is_requester_permitted("service_a"));
-    assert!(policies.is_requester_permitted("service_b"));
-    // Requester not in the allow list is not permitted.
-    assert!(!policies.is_requester_permitted("service_c"));
-    assert!(!policies.is_requester_permitted("untrusted_service"));
-
-    // Verify the policy variant and set contents.
-    let expected: HashSet<String> = ["service_a", "service_b"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-    match policies.requester.expect("requester policy should be set") {
-        RequesterPolicy::Allow { allow } => assert_eq!(allow, expected),
-        other => panic!("expected Allow, got {other:?}"),
-    }
-
-    Ok(())
-}
-
-#[test]
-fn test_get_policies_blocked() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = get_policies_provider();
-    let policies = provider
-        .get_policies("feature_blocked")
-        .expect("feature_blocked should have policies");
-
-    // Blocked requester is not permitted.
-    assert!(!policies.is_requester_permitted("untrusted_service"));
-    // Any other requester is permitted.
-    assert!(policies.is_requester_permitted("service_a"));
-    assert!(policies.is_requester_permitted("any_other_service"));
-
-    // Verify the policy variant and set contents.
-    let expected: HashSet<String> = ["untrusted_service"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-    match policies.requester.expect("requester policy should be set") {
-        RequesterPolicy::Block { block } => assert_eq!(block, expected),
-        other => panic!("expected Block, got {other:?}"),
-    }
-
-    Ok(())
-}
-
-#[test]
 fn test_policy_filtering_silently_filters_denied() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_policies_provider();
 
@@ -657,6 +596,192 @@ fn test_check_policies() -> Result<(), Box<dyn std::error::Error>> {
         check,
         Err(
             "Requester \"untrusted_service\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_requester_feature_policy_allow_from_policies_json() -> Result<(), Box<dyn std::error::Error>>
+{
+    let provider = get_policies_provider();
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.raise_if_policy_denied = true;
+
+    // `requester_x` is only allowed to use `feature_neutral` per `.optify/policies.json`.
+    preferences.requester = Some("requester_x".to_owned());
+    let result = provider.get_filtered_feature_names(&["feature_neutral"], Some(&preferences))?;
+    assert_eq!(result, vec!["feature_neutral"]);
+
+    let result = provider.get_filtered_feature_names(&["feature_blocked"], Some(&preferences));
+    assert_eq!(
+        result.unwrap_err(),
+        "Requester \"requester_x\" is not permitted to use feature \"feature_blocked\"."
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_requester_feature_policy_block_from_policies_json() -> Result<(), Box<dyn std::error::Error>>
+{
+    let provider = get_policies_provider();
+    let mut preferences = GetOptionsPreferences::new();
+    preferences.raise_if_policy_denied = true;
+
+    // `requester_y` may not use `feature_neutral` per `.optify/policies.json`, but any other
+    // feature is allowed by the requester-feature policy (feature-level policies still apply
+    // separately).
+    preferences.requester = Some("requester_y".to_owned());
+    let result = provider.get_filtered_feature_names(&["feature_blocked"], Some(&preferences))?;
+    assert_eq!(result, vec!["feature_blocked"]);
+
+    let result = provider.get_filtered_feature_names(&["feature_neutral"], Some(&preferences));
+    assert_eq!(
+        result.unwrap_err(),
+        "Requester \"requester_y\" is not permitted to use feature \"feature_neutral\"."
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_requester_feature_policy_combines_with_feature_policy(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_policies_provider();
+    let cache_options = None;
+
+    // `requester_z`'s `.optify/policies.json` entry only blocks `feature_blocked`, so the file
+    // implicitly permits `requester_z` to use `feature_allowed`. However, `feature_allowed`'s own
+    // `policies.requester` only allows `service_a`/`service_b`, so the request is still denied:
+    // both policies must permit the requester.
+    let check = provider.check_policies("requester_z", &["feature_allowed"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"requester_z\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
+    );
+
+    // `feature_blocked` has no `policies.requester` restriction on `requester_z`, but the file
+    // explicitly blocks it, so the request is still denied.
+    let check = provider.check_policies("requester_z", &["feature_blocked"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"requester_z\" is not permitted to use feature \"feature_blocked\"."
+                .to_owned()
+        )
+    );
+
+    Ok(())
+}
+
+/// A requester's `.optify/policies.json` entry (the "global" policy) and a feature's own
+/// `policies.requester` (the "feature" policy) are independently configurable and both checked:
+/// neither can be used to bypass the other. This covers every combination of global/feature
+/// policy shape (none/allow/block) that can coexist without a build-time conflict.
+#[test]
+fn test_requester_feature_policy_all_combinations() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_policies_provider();
+    let cache_options = None;
+
+    // Global: none. Feature: none. -> permitted.
+    assert_eq!(
+        provider.check_policies(
+            "totally_unknown_requester",
+            &["feature_neutral"],
+            cache_options
+        ),
+        Ok(())
+    );
+
+    // Global: none. Feature: allow (requester listed). -> permitted. (test_check_policies
+    // covers the "requester not listed" and "requester blocked" cases for feature-only policies.)
+
+    // Global: allow (includes the feature). Feature: none. -> permitted.
+    assert_eq!(
+        provider.check_policies("requester_x", &["feature_neutral"], cache_options),
+        Ok(())
+    );
+
+    // Global: allow (includes the feature). Feature: allow (requester also listed, consistent).
+    // -> permitted.
+    assert_eq!(
+        provider.check_policies("service_a", &["feature_allowed"], cache_options),
+        Ok(())
+    );
+
+    // Global: allow (includes the feature). Feature: block (requester not listed, consistent).
+    // -> permitted.
+    assert_eq!(
+        provider.check_policies("service_a", &["feature_blocked"], cache_options),
+        Ok(())
+    );
+
+    // Global: allow (excludes the feature). Feature: allow (requester is listed). The global
+    // list is checked independently and denies any feature it doesn't list, even though the
+    // feature's own policy would allow this requester: a feature-level allow cannot bypass a
+    // global list that excludes the feature.
+    let check = provider.check_policies("service_b", &["feature_allowed"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"service_b\" is not permitted to use feature \"feature_allowed\"."
+                .to_owned()
+        )
+    );
+
+    // Global: allow (excludes the feature). Feature: none. -> denied by the global list alone.
+    let check = provider.check_policies("service_b", &["feature_blocked"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"service_b\" is not permitted to use feature \"feature_blocked\"."
+                .to_owned()
+        )
+    );
+
+    // Global: block (excludes the feature, so implicitly permitted by the file). Feature: allow
+    // (requester is listed). -> permitted.
+    assert_eq!(
+        provider.check_policies("service_d", &["feature_allowed"], cache_options),
+        Ok(())
+    );
+
+    // Global: block (excludes the feature, so implicitly permitted by the file). Feature: block
+    // (requester is listed). The feature's own block list is checked independently and denies
+    // this requester even though the global file doesn't mention this feature: a global policy
+    // that is silent on a feature cannot bypass the feature's own block list.
+    let check = provider.check_policies("untrusted_service", &["feature_blocked"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"untrusted_service\" is not permitted to use feature \"feature_blocked\"."
+                .to_owned()
+        )
+    );
+
+    // Global: block (includes the feature). Feature: block (requester also listed, consistent,
+    // redundant). -> denied.
+    let check = provider.check_policies("service_f", &["feature_blocked"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"service_f\" is not permitted to use feature \"feature_blocked\"."
+                .to_owned()
+        )
+    );
+
+    // Global: block (includes the feature). Feature: none. -> denied by the global list alone.
+    let check = provider.check_policies("requester_y", &["feature_neutral"], cache_options);
+    assert_eq!(
+        check,
+        Err(
+            "Requester \"requester_y\" is not permitted to use feature \"feature_neutral\"."
                 .to_owned()
         )
     );

@@ -1,0 +1,5 @@
+{
+	"service_a": {
+		"allow": ["nonexistent_feature"]
+	}
+}

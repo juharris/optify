@@ -1,0 +1,10 @@
+{
+	"policies": {
+		"requester": {
+			"allow": ["service_b"]
+		}
+	},
+	"options": {
+		"key": "value"
+	}
+}

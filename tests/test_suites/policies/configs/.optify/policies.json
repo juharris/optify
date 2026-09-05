@@ -1,0 +1,27 @@
+{
+	"$schema": "../../../../../schemas/policies_file.json",
+	"requester_x": {
+		"allow": ["feature_neutral"]
+	},
+	"requester_y": {
+		"block": ["feature_neutral"]
+	},
+	"requester_z": {
+		"block": ["feature_blocked"]
+	},
+	"service_a": {
+		"allow": ["feature_allowed", "feature_blocked"]
+	},
+	"service_b": {
+		"allow": ["feature_neutral"]
+	},
+	"service_d": {
+		"block": ["feature_neutral"]
+	},
+	"service_f": {
+		"block": ["feature_blocked"]
+	},
+	"untrusted_service": {
+		"block": ["feature_neutral"]
+	}
+}

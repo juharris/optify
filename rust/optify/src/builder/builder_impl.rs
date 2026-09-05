@@ -16,9 +16,9 @@ use crate::configurable_string::LoadedFiles;
 use crate::configurable_values::locator::{find_configurable_values, ConfigurableValuePointers};
 use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
+use crate::policies::PolicyStore;
 use crate::provider::{
-    Aliases, Conditions, Features, OptionsProvider, PoliciesMap, ReferencedFileToFeatureNames,
-    Sources,
+    Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
 };
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
@@ -30,17 +30,17 @@ type Imports = HashMap<String, Vec<String>>;
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
     aliases: Aliases,
-    all_configurable_string_pointers: HashSet<String>,
     all_configurable_list_pointers: HashSet<String>,
-    keyed_configurable_list_pointers: HashMap<String, HashSet<String>>,
-    keyed_configurable_string_pointers: HashMap<String, HashSet<String>>,
+    all_configurable_string_pointers: HashSet<String>,
     builder_options: BuilderOptions,
     conditions: Conditions,
     dependents: Dependents,
     features: Features,
     imports: Imports,
+    keyed_configurable_list_pointers: HashMap<String, HashSet<String>>,
+    keyed_configurable_string_pointers: HashMap<String, HashSet<String>>,
     loaded_files: LoadedFiles,
-    policies: PoliciesMap,
+    policy_store: PolicyStore,
     /// A map of files to the features that reference them.
     /// The keys are relative file paths and the values are lists of canonical feature names.
     /// This is only populated if the `BuilderOptions` enable file reference tracking.
@@ -189,17 +189,17 @@ impl OptionsProviderBuilder {
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
-            all_configurable_string_pointers: HashSet::new(),
             all_configurable_list_pointers: HashSet::new(),
-            keyed_configurable_list_pointers: HashMap::new(),
-            keyed_configurable_string_pointers: HashMap::new(),
+            all_configurable_string_pointers: HashSet::new(),
             builder_options: BuilderOptions::default(),
             conditions: Conditions::new(),
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
+            keyed_configurable_list_pointers: HashMap::new(),
+            keyed_configurable_string_pointers: HashMap::new(),
             loaded_files: LoadedFiles::new(),
-            policies: PoliciesMap::new(),
+            policy_store: PolicyStore::default(),
             referenced_file_to_feature_names: HashMap::new(),
             schema: None,
             sources: Sources::new(),
@@ -240,7 +240,7 @@ impl OptionsProviderBuilder {
             keyed_configurable_string_pointers,
             std::mem::take(&mut self.conditions),
             std::mem::take(&mut self.features),
-            std::mem::take(&mut self.policies),
+            std::mem::take(&mut self.policy_store),
             referenced_file_to_feature_names,
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
@@ -276,6 +276,9 @@ impl OptionsProviderBuilder {
                 .unwrap()
                 .dependents = Some(sorted_dependents);
         }
+
+        self.policy_store
+            .validate_requester_policies(&self.features, &self.aliases)?;
 
         Ok(())
     }
@@ -344,8 +347,8 @@ impl OptionsProviderBuilder {
                 .insert(canonical_feature_name.clone(), conditions);
         }
         if let Some(policies) = info.policies {
-            self.policies
-                .insert(canonical_feature_name.clone(), policies);
+            self.policy_store
+                .insert_policy(canonical_feature_name.clone(), policies);
         }
         if let Some(imports) = info.imports {
             self.imports.insert(canonical_feature_name.clone(), imports);
@@ -570,6 +573,11 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.builder_options.clone()
         };
 
+        if let Some(policies_path) = &builder_options.policies_path {
+            self.policy_store
+                .load_policies_from_file(directory, policies_path, &config_path)?;
+        }
+
         let supported_extensions = get_supported_extensions();
 
         let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
@@ -694,7 +702,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             keyed_configurable_string_pointers,
             self.conditions.clone(),
             self.features.clone(),
-            self.policies.clone(),
+            self.policy_store.clone(),
             referenced_file_to_feature_names,
             self.loaded_files.clone(),
             self.sources.clone(),
