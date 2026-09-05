@@ -353,12 +353,6 @@ To get help with many files, add the following to your `.vscode/settings.json` f
                 "!path/**/configs/.optify/**"
             ],
             "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/feature_file.json"
-        },
-        {
-            "fileMatch": [
-                "path/**/configs/.optify/policies.json"
-            ],
-            "url": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/policies_file.json"
         }
     ],
     "yaml.schemas": {
@@ -368,8 +362,6 @@ To get help with many files, add the following to your `.vscode/settings.json` f
     }
 }
 ```
-
-Ignore everything in `.optify` folders (such as `config.json` and `schema.json`) when matching the general feature file schema, since those files have their own purpose and are not feature files.
 
 ### Directly in JSON
 
@@ -629,6 +621,7 @@ Each value is a policy with `allow` or `block` (mutually exclusive), listing **c
 
 ```JSON
 {
+    "$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/policies_file.json",
     "service_a": {
         "allow": ["feature1", "feature2"]
     },
@@ -639,7 +632,6 @@ Each value is a policy with `allow` or `block` (mutually exclusive), listing **c
 ```
 
 Feature names in `.optify/policies.json` must be canonical feature names.
-Using an alias or a name that does not match any loaded feature causes the build to fail.
 
 A requester must be permitted by **both** `.optify/policies.json` and a feature's own `policies.requester` (if set) to use the feature: the two mechanisms combine with AND semantics so one cannot be used to bypass the other.
 

@@ -29,6 +29,11 @@ pub(crate) struct BuilderOptionsConfig {
     pub schema_path: Option<PathBuf>,
     #[serde(default)]
     pub track_file_references: Option<TrackReferenceMode>,
+    /// Path (relative to the directory containing this config file, unless absolute) to the
+    /// file declaring requester feature policies. Defaults to `.optify/policies.json` when unset.
+    /// May be JSON, YAML, or any other format supported by the `config` crate.
+    #[serde(default)]
+    pub policies_path: Option<PathBuf>,
 }
 
 impl BuilderOptionsConfig {
@@ -52,6 +57,11 @@ impl BuilderOptionsConfig {
             } else {
                 self.schema_path.or(defaults.schema_path)
             },
+            policies_path: if overrides.policies_path != defaults.policies_path {
+                overrides.policies_path.clone()
+            } else {
+                self.policies_path.or(defaults.policies_path)
+            },
             track_file_references: if overrides.track_file_references
                 != defaults.track_file_references
             {
@@ -71,6 +81,9 @@ pub struct BuilderOptions {
     pub are_configurable_strings_enabled: bool,
     pub are_configurable_values_enabled: bool,
     pub schema_path: Option<PathBuf>,
+    /// Path to the file declaring requester feature policies. Relative to the directory being
+    /// added, unless absolute. Defaults to `.optify/policies.json` when unset.
+    pub policies_path: Option<PathBuf>,
     pub track_file_references: TrackReferenceMode,
 }
 
@@ -85,11 +98,13 @@ mod tests {
             are_configurable_strings_enabled: true,
             are_configurable_values_enabled: true,
             schema_path: Some(PathBuf::from("override_schema.json")),
+            policies_path: None,
             track_file_references: TrackReferenceMode::ConfigurableStrings,
         };
         let config = BuilderOptionsConfig {
             are_configurable_values_enabled: Some(false),
             schema_path: Some(PathBuf::from("config_schema.json")),
+            policies_path: None,
             track_file_references: Some(TrackReferenceMode::None),
         };
 
@@ -114,6 +129,7 @@ mod tests {
         let config = BuilderOptionsConfig {
             are_configurable_values_enabled: Some(true),
             schema_path: Some(PathBuf::from("config_schema.json")),
+            policies_path: None,
             track_file_references: Some(TrackReferenceMode::ConfigurableStrings),
         };
 
@@ -139,11 +155,13 @@ mod tests {
             are_configurable_strings_enabled: false,
             are_configurable_values_enabled: false,
             schema_path: None,
+            policies_path: None,
             track_file_references: TrackReferenceMode::ConfigurableStrings,
         };
         let config = BuilderOptionsConfig {
             are_configurable_values_enabled: Some(true),
             schema_path: Some(PathBuf::from("config_schema.json")),
+            policies_path: None,
             track_file_references: None,
         };
 

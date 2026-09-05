@@ -74,12 +74,12 @@ impl RequesterPolicy {
 /// See https://github.com/juharris/optify#policies for more information.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
-pub enum FeaturePolicy {
+pub enum RequesterFeaturePolicy {
     Allow { allow: HashSet<String> },
     Block { block: HashSet<String> },
 }
 
-impl FeaturePolicy {
+impl RequesterFeaturePolicy {
     /// Returns `true` if the given canonical feature name is permitted by this policy.
     pub fn is_permitted(&self, canonical_feature_name: &str) -> bool {
         match self {

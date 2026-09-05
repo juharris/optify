@@ -1,4 +1,5 @@
 {
+	"$schema": "../../../../../schemas/policies_file.json",
 	"requester_x": {
 		"allow": ["feature_neutral"]
 	},
@@ -6,6 +7,6 @@
 		"block": ["feature_neutral"]
 	},
 	"requester_z": {
-		"allow": ["feature_allowed"]
+		"block": ["feature_blocked"]
 	}
 }

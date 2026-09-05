@@ -4,6 +4,11 @@
 	"title": "Optify Requester Policies",
 	"description": "Schema for `.optify/policies.json` files which declare the canonical feature names that each requester is permitted to use. See https://github.com/juharris/optify#policies for more information.",
 	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		}
+	},
 	"additionalProperties": {
 		"description": "The policy for the canonical feature names that this requester is permitted to use.\n\nExactly one of `allow` or `block` must be specified.\n\n- `allow`: Only the listed canonical feature names may be used by this requester. An empty array means no feature is currently allowed.\n- `block`: The listed canonical feature names may not be used by this requester. All other features are allowed.\n\nFeature names must be canonical feature names. Aliases and names that do not correspond to a loaded feature will cause the build to fail.",
 		"oneOf": [
