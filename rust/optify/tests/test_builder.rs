@@ -306,9 +306,7 @@ fn test_builder_policies_json_nonexistent_feature_fails_build(
 #[test]
 fn test_builder_policies_json_conflict_block_fails_build() -> Result<(), Box<dyn std::error::Error>>
 {
-    // `.optify/policies.json` explicitly allows `service_a` to use feature `a`, but `a`'s own
-    // `policies.requester` explicitly blocks `service_a`. This contradiction must fail the build.
-    let path = std::path::Path::new("tests/policies_invalid_conflict_block");
+    let path = std::path::Path::new("tests/policies_invalid_conflict_block_allow");
     match OptionsProvider::build(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
@@ -322,13 +320,24 @@ fn test_builder_policies_json_conflict_block_fails_build() -> Result<(), Box<dyn
 }
 
 #[test]
-fn test_builder_policies_json_conflict_allow_fails_build() -> Result<(), Box<dyn std::error::Error>>
-{
-    // `.optify/policies.json` explicitly allows `service_a` to use feature `a`, but `a`'s own
-    // `policies.requester` only explicitly allows `service_b`, not `service_a`. This
-    // contradiction must fail the build too: if the feature specifies an allow list, the
-    // requester must be in it.
-    let path = std::path::Path::new("tests/policies_invalid_conflict_allow");
+fn test_builder_policies_not_in_feature() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_invalid_not_in_feature_allow");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_policies_json_conflict_allow_block_fails_build(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_invalid_conflict_allow_block");
     match OptionsProvider::build(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {

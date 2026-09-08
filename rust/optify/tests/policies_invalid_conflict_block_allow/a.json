@@ -1,7 +1,7 @@
 {
 	"policies": {
 		"requester": {
-			"allow": ["service_b"]
+			"allow": ["service_a"]
 		}
 	},
 	"options": {
