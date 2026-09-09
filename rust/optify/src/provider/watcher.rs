@@ -5,6 +5,7 @@ use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
 use crate::builder::builder_options::BuilderOptions;
 use crate::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
+use crate::policies::Policies;
 use crate::provider::{
     CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry, WatcherOptions,
 };
@@ -340,6 +341,13 @@ impl OptionsRegistry for OptionsWatcher {
             feature_names,
             cache_options,
         )
+    }
+
+    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .get_policies(canonical_feature_name)
     }
 
     fn has_conditions(&self, canonical_feature_name: &str) -> bool {

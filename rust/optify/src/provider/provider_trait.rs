@@ -4,6 +4,7 @@ use serde_json::Value;
 
 use crate::builder::builder_options::BuilderOptions;
 
+use crate::policies::Policies;
 use crate::{
     provider::{CacheOptions, Features, GetOptionsPreferences},
     schema::metadata::OptionsMetadata,
@@ -136,6 +137,13 @@ pub trait OptionsRegistry {
         feature_names: &[impl AsRef<str>],
         cache_options: Option<&CacheOptions>,
     ) -> Result<(), String>;
+
+    /// Returns the policies for the given canonical feature name, if any.
+    ///
+    /// Policies are only checked for top-level features in a request.
+    /// Features that are imported by other features may have policies, but those policies
+    /// are not checked when the feature is used as an import.
+    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies>;
 
     /// Filters `feature_names` based on the preferences,
     /// such as the `preferences.constraints`.

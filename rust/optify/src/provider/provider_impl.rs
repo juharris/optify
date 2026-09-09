@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::Path, sync::RwLock};
 use crate::builder::builder_options::BuilderOptions;
 use crate::configurable_values::configurable_list_impl::ConfigurableList;
 
-use crate::policies::PolicyStore;
+use crate::policies::{Policies, PolicyStore};
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
@@ -656,6 +656,12 @@ impl OptionsRegistry for OptionsProvider {
             .collect::<Result<Vec<_>, _>>()?;
         self.policy_store
             .check_policies(requester, &canonical_feature_names)
+    }
+
+    fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
+        self.policy_store
+            .get_policies(canonical_feature_name)
+            .cloned()
     }
 
     fn map_feature_names(

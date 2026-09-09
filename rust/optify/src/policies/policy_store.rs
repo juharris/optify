@@ -48,6 +48,10 @@ impl PolicyStore {
         Ok(())
     }
 
+    pub(crate) fn get_policies(&self, canonical_feature_name: &str) -> Option<&Policies> {
+        self.policies.get(canonical_feature_name)
+    }
+
     pub(crate) fn insert_policy(&mut self, canonical_feature_name: String, policies: Policies) {
         self.policies.insert(canonical_feature_name, policies);
     }
@@ -152,16 +156,6 @@ impl PolicyStore {
             }
         }
         true
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn policies(&self) -> &PoliciesMap {
-        &self.policies
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn requester_policies(&self) -> &RequesterPoliciesMap {
-        &self.requester_policies
     }
 
     /// Validates the requester policies against features and aliases loaded so far.
