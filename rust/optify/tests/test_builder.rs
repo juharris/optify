@@ -304,8 +304,7 @@ fn test_builder_policies_json_nonexistent_feature_fails_build(
 }
 
 #[test]
-fn test_builder_policies_json_conflict_matrix_fails_build() -> Result<(), Box<dyn std::error::Error>>
-{
+fn test_builder_policies_json_conflicts_fail_build() -> Result<(), Box<dyn std::error::Error>> {
     let invalid_policy_paths = [
         "tests/policies_invalid_feature_allow_listed_policies_allow_unlisted",
         "tests/policies_invalid_feature_allow_listed_policies_block_listed",
@@ -313,69 +312,44 @@ fn test_builder_policies_json_conflict_matrix_fails_build() -> Result<(), Box<dy
         "tests/policies_invalid_feature_block_listed_policies_allow_listed",
         "tests/policies_invalid_feature_block_listed_policies_block_unlisted",
         "tests/policies_invalid_feature_block_unlisted_policies_block_listed",
-        "tests/policies_invalid_policies_allow_unlisted_feature_allow_listed",
-        "tests/policies_invalid_policies_block_unlisted_feature_block_listed",
     ];
 
     for invalid_policy_path in invalid_policy_paths {
-        let path = std::path::Path::new(invalid_policy_path);
-        match OptionsProvider::build(path) {
-            Ok(_) => panic!("Expected an error for {invalid_policy_path}."),
-            Err(e) => {
-                assert!(
-                    e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
-                    "Got for {invalid_policy_path}: {e}"
-                );
-            }
-        }
+        let error = match OptionsProvider::build(invalid_policy_path) {
+            Ok(_) => panic!("Expected {invalid_policy_path} to fail."),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error,
+            "Conflicting policies for requester 'service_a' and feature 'a': '.optify/policies.json' and the feature's own policies disagree.",
+            "Unexpected error for {invalid_policy_path}"
+        );
     }
 
     Ok(())
 }
 
 #[test]
-fn test_builder_policies_json_conflict_block_fails_build() -> Result<(), Box<dyn std::error::Error>>
-{
-    let path = std::path::Path::new("tests/policies_invalid_conflict_block_allow");
-    match OptionsProvider::build(path) {
-        Ok(_) => panic!("Expected an error."),
-        Err(e) => {
-            assert!(
-                e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
-                "Got: {e}"
-            );
-            Ok(())
-        }
-    }
-}
+fn test_builder_policies_json_valid_combinations_build() -> Result<(), Box<dyn std::error::Error>> {
+    let valid_policy_paths = [
+        "tests/policies_valid_feature_allow_listed_policies_allow_listed",
+        "tests/policies_valid_feature_allow_listed_policies_block_unlisted",
+        "tests/policies_valid_feature_allow_unlisted_policies_allow_unlisted",
+        "tests/policies_valid_feature_allow_unlisted_policies_block_listed",
+        "tests/policies_valid_feature_allow_unlisted_policies_block_unlisted",
+        "tests/policies_valid_feature_block_listed_policies_allow_unlisted",
+        "tests/policies_valid_feature_block_listed_policies_block_listed",
+        "tests/policies_valid_feature_block_unlisted_policies_allow_listed",
+        "tests/policies_valid_feature_block_unlisted_policies_allow_unlisted",
+        "tests/policies_valid_feature_block_unlisted_policies_block_unlisted",
+    ];
 
-#[test]
-fn test_builder_policies_not_in_feature() -> Result<(), Box<dyn std::error::Error>> {
-    let path = std::path::Path::new("tests/policies_invalid_not_in_feature_allow");
-    match OptionsProvider::build(path) {
-        Ok(_) => panic!("Expected an error."),
-        Err(e) => {
-            assert!(
-                e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
-                "Got: {e}"
-            );
-            Ok(())
-        }
+    for valid_policy_path in valid_policy_paths {
+        assert!(
+            OptionsProvider::build(valid_policy_path).is_ok(),
+            "Expected {valid_policy_path} to build."
+        );
     }
-}
 
-#[test]
-fn test_builder_policies_json_conflict_allow_block_fails_build(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let path = std::path::Path::new("tests/policies_invalid_conflict_allow_block");
-    match OptionsProvider::build(path) {
-        Ok(_) => panic!("Expected an error."),
-        Err(e) => {
-            assert!(
-                e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
-                "Got: {e}"
-            );
-            Ok(())
-        }
-    }
+    Ok(())
 }
