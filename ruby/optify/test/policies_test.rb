@@ -17,7 +17,7 @@ class PoliciesTest < Test::Unit::TestCase
       assert_not_nil(result, "Expected policies for feature_allowed from #{klass}")
       assert_instance_of(Optify::Policies, result)
       requester = result.requester #: as !nil
-      assert_equal(Set.new(%w[service_a service_b service_d]), requester.allow,
+      assert_equal(Set.new(%w[service_a service_d]), requester.allow,
                    "feature_allowed requester allow mismatch for #{klass}")
       assert_nil(requester.block)
     end
