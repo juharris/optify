@@ -304,10 +304,14 @@
 										"minLength": 1
 									},
 									"uniqueItems": true,
-									"default": ["<requester_id>"]
+									"default": [
+										"<requester_id>"
+									]
 								}
 							},
-							"required": ["allow"],
+							"required": [
+								"allow"
+							],
 							"additionalProperties": false
 						},
 						{
@@ -322,17 +326,23 @@
 									},
 									"uniqueItems": true,
 									"minItems": 1,
-									"default": ["<requester_id>"]
+									"default": [
+										"<requester_id>"
+									]
 								}
 							},
-							"required": ["block"],
+							"required": [
+								"block"
+							],
 							"additionalProperties": false
 						}
 					]
 				}
 			},
 			"additionalProperties": false,
-			"minProperties": 1
+			"required": [
+				"requester"
+			]
 		}
 	}
 }

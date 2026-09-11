@@ -15,8 +15,8 @@
 				"tests/{invalid_suites,test_suites}/**/configs/**/*.json",
 				"!tests/test_suites/configurable_values/configs/**/*.json",
 				"!tests/test_suites/inheritance/configs/**/*.json",
-				"!tests/**/configs/.optify/config.json",
-				"!tests/**/configs/.optify/schema.json"
+				"!tests/**/configs/.optify/**",
+				"!rust/optify/tests/**/.optify/**"
 			],
 			"url": "./schemas/feature_file.json"
 		},
@@ -34,6 +34,13 @@
 				"!tests/test_suites/inheritance/configs/.optify/schema.json"
 			],
 			"url": "./tests/test_suites/inheritance/configs/.optify/schema.json"
+		},
+		{
+			"fileMatch": [
+				"tests/**/configs/.optify/policies.json",
+				"rust/optify/tests/**/.optify/policies.json"
+			],
+			"url": "./schemas/policies_file.json"
 		}
 	],
 	"[markdown]": {
