@@ -1,7 +1,7 @@
 {
 	"policies": {
 		"requester": {
-			"block": [
+			"allow": [
 				"service_a"
 			]
 		}

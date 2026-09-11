@@ -1,19 +1,15 @@
 use crate::provider::{Aliases, Features};
 
-use super::feature_policies::{Policies, PoliciesMap};
-use super::requester_feature_policy::{RequesterFeaturePolicy, RequesterPoliciesMap};
-use super::requester_policy::RequesterPolicy;
+use super::feature_policies::PoliciesMap;
+use super::requester_feature_policy::RequesterPoliciesMap;
 
 /// Validates the requester policies declared in `.optify/policies.json` files against the
 /// features loaded so far.
 ///
 /// - Every feature name referenced must be a canonical feature name.
-/// - A requester policy that explicitly grants a requester access to a feature while the
-///   feature's own `policies.requester` does not permit that requester (whether the feature
-///   explicitly blocks the requester or only explicitly allows other requesters) is a
-///   conflict and causes an error, since it is likely a mistake.
-/// - A requester policy that explicitly blocks a requester from a feature while the
-///   feature's own `policies.requester` explicitly allows that requester is also a conflict.
+/// - When either `.optify/policies.json` explicitly names a feature or a feature's own
+///   `policies.requester` explicitly names a requester, the two policies must agree for
+///   that requester/feature pair.
 ///
 /// Both `.optify/policies.json` and each feature's own `policies.requester` are
 /// independently configurable and are both checked at runtime (see
@@ -27,6 +23,7 @@ pub(crate) fn validate_requester_policies(
     policies: &PoliciesMap,
 ) -> Result<(), String> {
     for (requester, policy) in requester_policies {
+        // Make sure feature names in `requester_policies` are canonical and exist.
         for feature_name in policy.feature_names() {
             if features.contains_key(feature_name) {
                 continue;
@@ -42,31 +39,15 @@ pub(crate) fn validate_requester_policies(
             ));
         }
 
-        match policy {
-            RequesterFeaturePolicy::Allow { allow } => {
-                for feature_name in allow {
-                    if let Some(policies) = policies.get(feature_name) {
-                        if !policies.is_requester_permitted(requester) {
-                            return Err(format!(
-                                "Conflicting policies for requester '{requester}' and feature '{feature_name}': '.optify/policies.json' allows it, but the feature's own policies do not permit this requester."
-                            ));
-                        }
-                    }
-                }
-            }
-            RequesterFeaturePolicy::Block { block } => {
-                for feature_name in block {
-                    if let Some(Policies {
-                        requester: Some(RequesterPolicy::Allow { allow }),
-                    }) = policies.get(feature_name)
-                    {
-                        if allow.contains(requester) {
-                            return Err(format!(
-                                "Conflicting policies for requester '{requester}' and feature '{feature_name}': '.optify/policies.json' blocks it, but the feature's own policies explicitly allow it."
-                            ));
-                        }
-                    }
-                }
+        for (feature_name, policies) in policies {
+            let feature_policy = &policies.requester;
+            if (policy.mentions_feature(feature_name)
+                || feature_policy.mentions_requester(requester))
+                && policy.is_permitted(feature_name) != feature_policy.is_permitted(requester)
+            {
+                return Err(format!(
+                    "Conflicting policies for requester '{requester}' and feature '{feature_name}': '.optify/policies.json' and the feature's own policies disagree."
+                ));
             }
         }
     }

@@ -6,7 +6,10 @@
 	},
 	"policies": {
 		"requester": {
-			"allow": ["service_a", "service_b", "service_d"]
+			"allow": [
+				"service_a",
+				"service_d"
+			]
 		}
 	},
 	"options": {

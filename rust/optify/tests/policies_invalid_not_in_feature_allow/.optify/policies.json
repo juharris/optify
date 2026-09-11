@@ -1,5 +1,9 @@
 {
-	"service_a": {
-		"allow": ["a"]
+	"requesters": {
+		"service_a": {
+			"allow": [
+				"a"
+			]
+		}
 	}
 }

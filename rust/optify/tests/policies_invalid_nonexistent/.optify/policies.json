@@ -1,5 +1,9 @@
 {
-	"service_a": {
-		"allow": ["nonexistent_feature"]
+	"requesters": {
+		"service_a": {
+			"allow": [
+				"nonexistent_feature"
+			]
+		}
 	}
 }

@@ -1,8 +1,8 @@
 {
 	"requesters": {
 		"service_a": {
-			"allow": [
-				"alias_a"
+			"block": [
+				"b"
 			]
 		}
 	}

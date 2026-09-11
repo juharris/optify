@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 /// the requester is permitted to use, declared in `.optify/policies.json`.
 pub(crate) type RequesterPoliciesMap = HashMap<String, RequesterFeaturePolicy>;
 
-/// The policy for the canonical feature names that a requester is permitted to use, declared
-/// per-requester in `.optify/policies.json`.
+/// The policy for the canonical feature names that a requester is permitted to use.
 ///
 /// Either `allow` or `block` must be specified, not both.
 ///
@@ -17,7 +16,6 @@ pub(crate) type RequesterPoliciesMap = HashMap<String, RequesterFeaturePolicy>;
 ///   All other features are allowed.
 ///
 /// Feature names must be canonical feature names.
-/// Aliases and non-existent feature names are not permitted and will cause the build to fail.
 ///
 /// See https://github.com/juharris/optify#policies for more information.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -33,6 +31,14 @@ impl RequesterFeaturePolicy {
         match self {
             Self::Allow { allow } => allow.contains(canonical_feature_name),
             Self::Block { block } => !block.contains(canonical_feature_name),
+        }
+    }
+
+    /// Returns `true` if this policy explicitly names the given canonical feature name.
+    pub fn mentions_feature(&self, canonical_feature_name: &str) -> bool {
+        match self {
+            Self::Allow { allow } => allow.contains(canonical_feature_name),
+            Self::Block { block } => block.contains(canonical_feature_name),
         }
     }
 

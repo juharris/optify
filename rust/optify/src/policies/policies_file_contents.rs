@@ -8,6 +8,5 @@ pub(crate) struct PoliciesFileContents {
     #[serde(rename = "$schema")]
     #[allow(dead_code)]
     pub(crate) schema: Option<String>,
-    #[serde(flatten)]
     pub(crate) requesters: RequesterPoliciesMap,
 }

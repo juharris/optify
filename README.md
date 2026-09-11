@@ -624,17 +624,19 @@ The path is always relative to the directory containing `.optify/config.json`, f
 }
 ```
 
-The top-level keys are requester identifiers.
-Each value is a policy with `allow` or `block` (mutually exclusive), listing **canonical feature names** that the requester may or may not use:
+Requester identifiers are declared under the top-level `requesters` key.
+Each requester value is a policy with `allow` or `block` (mutually exclusive), listing **canonical feature names** that the requester may or may not use:
 
 ```JSON
 {
     "$schema": "https://raw.githubusercontent.com/juharris/optify/refs/heads/main/schemas/policies_file.json",
-    "service_a": {
-        "allow": ["feature1", "feature2"]
-    },
-    "untrusted_service": {
-        "block": ["restricted_feature"]
+	"requesters": {
+        "service_a": {
+            "allow": ["feature1", "feature2"]
+        },
+        "untrusted_service": {
+            "block": ["restricted_feature"]
+        }
     }
 }
 ```

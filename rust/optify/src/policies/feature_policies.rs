@@ -21,16 +21,12 @@ pub struct Policies {
     /// Use `allow` to specify an allowlist (only those requesters may use this feature).
     /// Use `block` to specify a denylist (all requesters except those listed may use this feature).
     /// `allow` and `block` are mutually exclusive.
-    pub requester: Option<RequesterPolicy>,
+    pub requester: RequesterPolicy,
 }
 
 impl Policies {
     /// Returns `true` if the given requester is permitted to use the feature.
-    ///
-    /// If no `requester` policy is set, all requesters are permitted.
     pub fn is_requester_permitted(&self, requester: &str) -> bool {
-        self.requester
-            .as_ref()
-            .is_none_or(|p| p.is_permitted(requester))
+        self.requester.is_permitted(requester)
     }
 }

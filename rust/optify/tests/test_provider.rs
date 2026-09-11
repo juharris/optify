@@ -653,26 +653,25 @@ fn test_requester_feature_policy_combines_with_feature_policy(
     let provider = get_policies_provider();
     let cache_options = None;
 
-    // `requester_z`'s `.optify/policies.json` entry only blocks `feature_blocked`, so the file
-    // implicitly permits `requester_z` to use `feature_allowed`. However, `feature_allowed`'s own
-    // `policies.requester` only allows `service_a`/`service_b`, so the request is still denied:
+    // `requester_y`'s `.optify/policies.json` entry only blocks `feature_neutral`, so the file implicitly permits `requester_y` to use `feature_allowed`.
+    // However, `feature_allowed`'s own `policies.requester` only allows `service_a`/`service_d`, so the request is still denied:
     // both policies must permit the requester.
-    let check = provider.check_policies("requester_z", &["feature_allowed"], cache_options);
+    let check = provider.check_policies("requester_y", &["feature_allowed"], cache_options);
     assert_eq!(
         check,
         Err(
-            "Requester \"requester_z\" is not permitted to use feature \"feature_allowed\"."
+            "Requester \"requester_y\" is not permitted to use feature \"feature_allowed\"."
                 .to_owned()
         )
     );
 
-    // `feature_blocked` has no `policies.requester` restriction on `requester_z`, but the file
-    // explicitly blocks it, so the request is still denied.
-    let check = provider.check_policies("requester_z", &["feature_blocked"], cache_options);
+    // `feature_blocked` has no `policies.requester` restriction on `requester_x`, but the file
+    // only allows `feature_neutral`, so the request is still denied.
+    let check = provider.check_policies("requester_x", &["feature_blocked"], cache_options);
     assert_eq!(
         check,
         Err(
-            "Requester \"requester_z\" is not permitted to use feature \"feature_blocked\"."
+            "Requester \"requester_x\" is not permitted to use feature \"feature_blocked\"."
                 .to_owned()
         )
     );
@@ -722,10 +721,7 @@ fn test_requester_feature_policy_all_combinations() -> Result<(), Box<dyn std::e
         Ok(())
     );
 
-    // Global: allow (excludes the feature). Feature: allow (requester is listed). The global
-    // list is checked independently and denies any feature it doesn't list, even though the
-    // feature's own policy would allow this requester: a feature-level allow cannot bypass a
-    // global list that excludes the feature.
+    // Global: allow (excludes the feature). Feature: allow (requester not listed). -> denied.
     let check = provider.check_policies("service_b", &["feature_allowed"], cache_options);
     assert_eq!(
         check,
@@ -752,10 +748,7 @@ fn test_requester_feature_policy_all_combinations() -> Result<(), Box<dyn std::e
         Ok(())
     );
 
-    // Global: block (excludes the feature, so implicitly permitted by the file). Feature: block
-    // (requester is listed). The feature's own block list is checked independently and denies
-    // this requester even though the global file doesn't mention this feature: a global policy
-    // that is silent on a feature cannot bypass the feature's own block list.
+    // Global: none. Feature: block (requester is listed). -> denied.
     let check = provider.check_policies("untrusted_service", &["feature_blocked"], cache_options);
     assert_eq!(
         check,

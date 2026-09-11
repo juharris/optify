@@ -2,7 +2,7 @@
 	"policies": {
 		"requester": {
 			"block": [
-				"service_a"
+				"service_b"
 			]
 		}
 	},

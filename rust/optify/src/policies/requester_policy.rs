@@ -27,4 +27,12 @@ impl RequesterPolicy {
             Self::Block { block } => !block.contains(value),
         }
     }
+
+    /// Returns `true` if this policy explicitly names the given requester.
+    pub fn mentions_requester(&self, requester: &str) -> bool {
+        match self {
+            Self::Allow { allow } => allow.contains(requester),
+            Self::Block { block } => block.contains(requester),
+        }
+    }
 }

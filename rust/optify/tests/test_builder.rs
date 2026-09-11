@@ -304,6 +304,36 @@ fn test_builder_policies_json_nonexistent_feature_fails_build(
 }
 
 #[test]
+fn test_builder_policies_json_conflict_matrix_fails_build() -> Result<(), Box<dyn std::error::Error>>
+{
+    let invalid_policy_paths = [
+        "tests/policies_invalid_feature_allow_listed_policies_allow_unlisted",
+        "tests/policies_invalid_feature_allow_listed_policies_block_listed",
+        "tests/policies_invalid_feature_allow_unlisted_policies_allow_listed",
+        "tests/policies_invalid_feature_block_listed_policies_allow_listed",
+        "tests/policies_invalid_feature_block_listed_policies_block_unlisted",
+        "tests/policies_invalid_feature_block_unlisted_policies_block_listed",
+        "tests/policies_invalid_policies_allow_unlisted_feature_allow_listed",
+        "tests/policies_invalid_policies_block_unlisted_feature_block_listed",
+    ];
+
+    for invalid_policy_path in invalid_policy_paths {
+        let path = std::path::Path::new(invalid_policy_path);
+        match OptionsProvider::build(path) {
+            Ok(_) => panic!("Expected an error for {invalid_policy_path}."),
+            Err(e) => {
+                assert!(
+                    e.contains("Conflicting policies for requester 'service_a' and feature 'a'"),
+                    "Got for {invalid_policy_path}: {e}"
+                );
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[test]
 fn test_builder_policies_json_conflict_block_fails_build() -> Result<(), Box<dyn std::error::Error>>
 {
     let path = std::path::Path::new("tests/policies_invalid_conflict_block_allow");
