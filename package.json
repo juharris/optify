@@ -5,7 +5,7 @@
   "description": "Root tooling for the optify monorepo, e.g. formatting Markdown files.",
   "license": "MIT",
   "scripts": {
-    "fmt": "prettier --write \"**/*.md\"",
+    "fmt": "prettier  --list-different --write \"**/*.md\"",
     "fmt:check": "prettier --check \"**/*.md\""
   },
   "packageManager": "pnpm@11.24.0",

@@ -533,6 +533,8 @@ Conditions can be used to enable a feature file when it is requested and when co
 If no constraints are given for a request, then the conditions in a feature file are are ignored.
 Conditions cannot be used in imported features because it would make determining the applied features less clear and less efficient.
 
+See [Policies](#policies) to yield errors when a requester is not permitted to use a feature.
+
 For more details and examples, see [here](./docs/Conditions.md).
 
 ## Conditions Example
@@ -567,7 +569,7 @@ A feature file with the follow conditions will be applied:
 
 # Policies
 
-Similar to conditions, policies restrict which requesters may use a feature.
+Similar to [conditions](#conditions), policies restrict which requesters may use a feature.
 They are checked for the **top-level features** explicitly given in a request and should be enforced early.
 If a requester is not permitted, it should be an error because the requester could think that their feature was applied which makes testing difficult.
 
@@ -576,13 +578,13 @@ A feature may freely import another feature that has policies without those poli
 
 ## Policies vs. Conditions
 
-| Aspect                    | Conditions                                                   | Policies                                                                                               |
+| Aspect                    | [Conditions](#conditions)                                    | Policies                                                                                               |
 | ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | Purpose                   | Silently filter out a feature based on request constraints   | Restrict access; violations should surface as errors                                                   |
 | Effect when not satisfied | Feature is quietly omitted from the result                   | Feature is rejected; an error should be raised                                                         |
 | Applied to                | Top-level features in the request                            | Top-level features in the request                                                                      |
 | Imported features         | **Not allowed**: features with conditions cannot be imported | **Allowed**: features with policies can be imported freely; policies are not inherited by the importer |
-| Data source               | `constraints` object in the request                          | `requester` (or other fields) in preferences                                                           |
+| Data source               | `constraints` object in the request                          | `requester` in preferences                                                                             |
 
 ## Policies Example
 
@@ -611,7 +613,7 @@ Or with a denylist:
 `allow` and `block` are mutually exclusive.
 An empty `allow` list means no requester is currently permitted (useful when preparing a feature before it is opened up).
 
-## Requester Feature Policies (`.optify/policies.json`)
+## Requester Feature Policies
 
 While a feature's `policies.requester` declares which requesters may use _that_ feature, sometimes it's easier to declare, for a given requester, the small set of features it is allowed to use.
 This file is opt-in: it is only loaded when its path is declared via `policiesPath` in `.optify/config.json` for a features directory (there is no default file name/location), and it is an error if the declared path is not a file.
@@ -643,7 +645,8 @@ Each requester value is a policy with `allow` or `block` (mutually exclusive), l
 
 Feature names in `.optify/policies.json` must be canonical feature names.
 
-A requester must be permitted by **both** `.optify/policies.json` and a feature's own `policies.requester` (if set) to use the feature: the two mechanisms combine with AND semantics so one cannot be used to bypass the other.
+A requester must be permitted by **both** `.optify/policies.json` and a feature's own `policies` (if set) to use the feature: the two mechanisms combine with AND semantics so one cannot be used to bypass the other.
+It's fine to omit declaring policies in one place, but they cannot conflict with each other.
 
 # Configurable Strings
 
