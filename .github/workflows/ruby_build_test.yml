@@ -1,4 +1,4 @@
-name: "💎[Ruby] Build & Test"
+name: "🔻[Ruby] Build & Test"
 
 on:
   push:
