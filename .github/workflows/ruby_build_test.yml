@@ -88,10 +88,10 @@ jobs:
       with:
         bundler-cache: true
         working-directory: ./ruby/from_hash
-    - name: "[from_hash] Check Gemfile.lock is up to date"
+    - name: "🔻[from_hash] Check Gemfile.lock is up to date"
       run: bundle check
       working-directory: ./ruby/from_hash
-    - name: "[from_hash] Lint"
+    - name: "🔻[from_hash] Lint"
       shell: bash
       run: |
         set -ex
@@ -177,7 +177,7 @@ jobs:
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
-    - name: "[Rust] Build"
+    - name: "🦀[Rust] Build"
       run: cargo build --release
       working-directory: ./rust/optify
 
@@ -255,7 +255,7 @@ jobs:
         name: optify.rbs
         path: ./ruby/optify/sig
 
-    - name: "[Rust] Setup cache"
+    - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: |
