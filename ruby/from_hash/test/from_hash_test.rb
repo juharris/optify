@@ -2,12 +2,18 @@
 # typed: true
 
 require 'test/unit'
+require 'enummify'
 require_relative '../lib/optify-from_hash'
 require_relative 'hash_utils'
 require_relative 'my_config'
 
 # Ensures that we can convert hashes to objects.
 module FromHashTest
+  class TestEnum < Enummify::Enum
+    ACTIVE = new
+    INACTIVE = new
+  end
+
   class TestObject < Optify::FromHashable
     sig { returns(Integer) }
     attr_reader :num
@@ -64,6 +70,9 @@ module FromHashTest
 
     sig { returns(T::Hash[String, T.untyped]) }
     attr_reader :hash_with_untyped_values
+
+    sig { returns(T::Hash[String, TestEnum]) }
+    attr_reader :hash_with_enum_values
 
     sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
     attr_reader :nilable_hashes_of_objects
@@ -190,6 +199,13 @@ module FromHashTest
     def test_hash_with_untyped_values
       m = TestConfig.from_hash({ hash_with_untyped_values: { 'key' => 'value', 'key2' => { 'num' => 4 }, 'num' => 5 } })
       assert_equal({ 'key' => 'value', 'key2' => { 'num' => 4 }, 'num' => 5 }, m.hash_with_untyped_values)
+    end
+
+    def test_hash_with_enum_values
+      hash = { hash_with_enum_values: { 'john' => 'ACTIVE', 'jane' => 'INACTIVE' } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ 'john' => TestEnum::ACTIVE, 'jane' => TestEnum::INACTIVE }, m.hash_with_enum_values)
+      assert_equal(hash[:hash_with_enum_values], m.to_h[:hash_with_enum_values].transform_values(&:serialize))
     end
 
     def test_hash_with_no_types

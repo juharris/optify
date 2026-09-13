@@ -32,5 +32,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'tapioca', '~> 0.19.1'
 
   # Tests
+  spec.add_development_dependency 'enummify', '~> 0.1.0'
   spec.add_development_dependency 'test-unit', '~> 3.6.8'
 end

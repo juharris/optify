@@ -99,6 +99,12 @@ module Optify
       end
 
       unwrapped_type = _unwrap_nilable(type)
+      if value.is_a?(String) && unwrapped_type.respond_to?(:raw_type)
+        value_type = unwrapped_type.raw_type #: as untyped
+        if value_type != String && value_type.respond_to?(:deserialize)
+          return value_type.deserialize(value)
+        end
+      end
       return value&.to_sym if unwrapped_type.is_a?(T::Types::Simple) && unwrapped_type.raw_type == Symbol
 
       case value
