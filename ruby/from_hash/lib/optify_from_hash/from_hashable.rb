@@ -138,8 +138,11 @@ module Optify
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
         type_for_values = type.values
+        type_for_values_allows_string = _type_allows_string?(type_for_values)
 
-        result = hash.transform_values { |v| _convert_typed_hash_value(v, type_for_values) }
+        result = hash.transform_values do |v|
+          _convert_typed_hash_value(v, type_for_values, type_for_values_allows_string)
+        end
 
         return result.transform_keys!(&:to_sym) if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
 
@@ -149,31 +152,27 @@ module Optify
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
     end
 
-    #: (untyped, T::Types::Base) -> untyped
-    private_class_method def self._convert_typed_hash_value(value, type)
-      if value.is_a?(String) && !_type_allows_string?(type)
-        if type.respond_to?(:raw_type)
-          value_type = type.raw_type #: as untyped
-          return value.to_sym if value_type == Symbol
-        end
+    #: (untyped, T::Types::Base, bool) -> untyped
+    private_class_method def self._convert_typed_hash_value(value, type, type_allows_string)
+      return _convert_value(value, type) unless value.is_a?(String)
+      return _convert_value(value, type) if type_allows_string
 
-        if type.respond_to?(:types)
-          type #: as untyped
-            .types.each do |value_type|
-            begin
-              return _convert_typed_hash_value(value, value_type)
-            rescue TypeError, ArgumentError
-              # Ignore and try the next type.
-            end
+      value_type = type.raw_type if type.respond_to?(:raw_type)
+      return value.to_sym if value_type == Symbol
+
+      if type.respond_to?(:types)
+        type #: as untyped
+          .types.each do |inner_type|
+          begin
+            return _convert_typed_hash_value(value, inner_type, _type_allows_string?(inner_type))
+          rescue TypeError, ArgumentError
+            # Ignore and try the next type.
           end
         end
+      end
 
-        if type.respond_to?(:raw_type)
-          value_type = type.raw_type #: as untyped
-          if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
-            return value_type.deserialize(value)
-          end
-        end
+      if value_type && value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
+        return value_type.deserialize(value)
       end
 
       _convert_value(value, type)
