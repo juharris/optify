@@ -161,17 +161,13 @@ module Optify
       if type.respond_to?(:types)
         type #: as untyped
           .types.each do |inner_type|
-          begin
-            return _convert_typed_hash_value(value, inner_type, _type_allows_string?(inner_type))
-          rescue TypeError, ArgumentError
-            # Ignore and try the next type.
-          end
+          return _convert_typed_hash_value(value, inner_type, _type_allows_string?(inner_type))
+        rescue TypeError, ArgumentError
+          # Ignore and try the next type.
         end
       end
 
-      if value_type && value_type != String && value_type.respond_to?(:deserialize)
-        return value_type.deserialize(value)
-      end
+      return value_type.deserialize(value) if value_type && value_type != String && value_type.respond_to?(:deserialize)
 
       _convert_value(value, type)
     end
