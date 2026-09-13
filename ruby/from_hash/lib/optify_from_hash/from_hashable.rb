@@ -138,15 +138,11 @@ module Optify
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
         type_for_values = type.values
+        deserialize_type = _find_deserialize_type(type_for_values) unless _type_allows_string?(type_for_values)
 
         result = hash.transform_values do |v|
-          if v.is_a?(String)
-            deserialize_type = _find_deserialize_type(type_for_values)
-            if deserialize_type
-              deserialize_type.deserialize(v)
-            else
-              _convert_value(v, type_for_values)
-            end
+          if v.is_a?(String) && deserialize_type
+            deserialize_type.deserialize(v)
           else
             _convert_value(v, type_for_values)
           end
@@ -162,17 +158,15 @@ module Optify
 
     #: (T::Types::Base) -> untyped
     private_class_method def self._find_deserialize_type(type)
-      unwrapped_type = _unwrap_nilable(type)
-
-      if unwrapped_type.respond_to?(:raw_type)
-        value_type = unwrapped_type.raw_type #: as untyped
+      if type.respond_to?(:raw_type)
+        value_type = type.raw_type #: as untyped
         if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
           return value_type
         end
       end
 
-      if unwrapped_type.respond_to?(:types)
-        unwrapped_type #: as untyped
+      if type.respond_to?(:types)
+        type #: as untyped
           .types.each do |value_type|
           deserialized_type = _find_deserialize_type(value_type)
           return deserialized_type if deserialized_type
@@ -180,6 +174,23 @@ module Optify
       end
 
       nil
+    end
+
+    #: (T::Types::Base) -> bool
+    private_class_method def self._type_allows_string?(type)
+      if type.respond_to?(:raw_type)
+        value_type = type.raw_type #: as untyped
+        return true if value_type == String
+      end
+
+      if type.respond_to?(:types)
+        type #: as untyped
+          .types.each do |value_type|
+          return true if _type_allows_string?(value_type)
+        end
+      end
+
+      false
     end
 
     # Unwrap `T.nilable(...)` to get the inner type, or return the type as-is.

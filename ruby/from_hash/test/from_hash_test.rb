@@ -77,6 +77,12 @@ module FromHashTest
     sig { returns(T::Hash[String, T.nilable(TestEnum)]) }
     attr_reader :hash_with_nilable_enum_values
 
+    sig { returns(T::Hash[String, T.any(TestEnum, Integer)]) }
+    attr_reader :hash_with_enum_or_integer_values
+
+    sig { returns(T::Hash[String, T.any(String, TestEnum)]) }
+    attr_reader :hash_with_string_or_enum_values
+
     sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
     attr_reader :nilable_hashes_of_objects
 
@@ -219,6 +225,23 @@ module FromHashTest
         hash[:hash_with_nilable_enum_values],
         m.to_h[:hash_with_nilable_enum_values].transform_values { |v| v&.serialize }
       )
+    end
+
+    def test_hash_with_enum_or_integer_values
+      hash = { hash_with_enum_or_integer_values: { 'john' => 'ACTIVE', 'age' => 42 } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ 'john' => TestEnum::ACTIVE, 'age' => 42 }, m.hash_with_enum_or_integer_values)
+      assert_equal(
+        hash[:hash_with_enum_or_integer_values],
+        m.to_h[:hash_with_enum_or_integer_values].transform_values { |v| v.respond_to?(:serialize) ? v.serialize : v }
+      )
+    end
+
+    def test_hash_with_string_or_enum_values
+      hash = { hash_with_string_or_enum_values: { 'john' => 'ACTIVE' } }
+      m = TestConfig.from_hash(hash)
+      assert_equal(hash[:hash_with_string_or_enum_values], m.hash_with_string_or_enum_values)
+      assert_equal(hash[:hash_with_string_or_enum_values], m.to_h[:hash_with_string_or_enum_values])
     end
 
     def test_hash_with_no_types
