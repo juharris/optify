@@ -171,7 +171,7 @@ module Optify
         end
       end
 
-      if value_type && value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
+      if value_type && value_type != String && value_type.respond_to?(:deserialize)
         return value_type.deserialize(value)
       end
 
