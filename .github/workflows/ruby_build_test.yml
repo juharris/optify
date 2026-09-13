@@ -74,7 +74,7 @@ jobs:
       id-token: write
       # This permission is required for `rake release` to push the release tag.
       contents: write
-    
+
     steps:
     - uses: actions/checkout@v7
 
@@ -84,7 +84,7 @@ jobs:
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
     - uses: ruby/setup-ruby@v1
-      name: "Setup"
+      name: "🔻[Ruby] Setup"
       with:
         bundler-cache: true
         working-directory: ./ruby/from_hash
@@ -149,14 +149,14 @@ jobs:
       id-token: write
       # This permission is required for `rake release` to push the release tag.
       contents: write
-    
+
     steps:
     - uses: actions/checkout@v7
 
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
     - uses: ruby/setup-ruby@v1
-      name: "[Ruby] Setup"
+      name: "🔻[Ruby] Setup"
       with:
         bundler-cache: true
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -168,7 +168,7 @@ jobs:
     # Rust
     # Required for the main Ruby gem.
     # We will soon make a new version of the main Ruby gem that doesn't require Rust.
-    - name: "[Rust] Setup cache"
+    - name: "🦀[Rust]Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: |
@@ -189,7 +189,7 @@ jobs:
         diff -u .ruby-version ../from_hash/.ruby-version
       working-directory: ${{ env.WORKING_DIRECTORY }}
 
-    - name: "Lint"
+    - name: "🔻[Ruby]Lint"
       shell: bash
       run: |
         set -ex
@@ -215,13 +215,13 @@ jobs:
         name: optify.rbs
         path: ./ruby/optify/sig/optify.rbs
         if-no-files-found: error
-    - name: "[Rust] Lint"
+    - name: "🦀[Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ${{ env.WORKING_DIRECTORY }}
-    - name: "[Rust] Clippy"
+    - name: "🦀[Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ${{ env.WORKING_DIRECTORY }}
-    - name: "Test"
+    - name: "🔻[Ruby] Test"
       run: bundle exec rake test
       working-directory: ${{ env.WORKING_DIRECTORY }}
 
@@ -274,7 +274,7 @@ jobs:
       working-directory: ./ruby/optify
 
     - uses: ruby/setup-ruby@v1
-      name: "[Ruby] Setup"
+      name: "🔻[Ruby] Setup"
       with:
         bundler-cache: true
         # The version to use to run rb-sys, but the cross-gem step will use a Docker container with its own Ruby version, I think.
@@ -284,7 +284,7 @@ jobs:
     # Initialize some Rust resources
     # such as ensuring that /home/runner/.cargo/registry is created.
     # Otherwise, we get "docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /home/runner/.cargo/registry."
-    - name: "[Rust] Build"
+    - name: "🦀[Rust] Build"
       run: cargo check --release
       working-directory: ./rust/optify
 
@@ -292,7 +292,7 @@ jobs:
     # Outputs: gem-path
     - uses: oxidize-rb/actions/cross-gem@main
       id: cross-build
-      name: "[Ruby] Cross-Build"
+      name: "🔻[Ruby] Cross-Build"
       with:
         # Temporarily disable cache to avoid issues with setting up the dependencies.
         cargo-cache-clean: false
@@ -331,7 +331,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       uses: rubygems/configure-rubygems-credentials@v1.0.0
 
-    - name: "[Ruby] Publish"
+    - name: "🔻[Ruby] Publish"
       if: github.ref == 'refs/heads/main'
       shell: bash
       # It probably just fails if the gem is already published.
@@ -347,7 +347,7 @@ jobs:
   # Publish a gem with the Rust source code so that versions of Ruby and platforms that aren't built by this action can compile the Rust code when they build.
   # This allows future versions of Ruby to be used that aren't explicitly supported by this action.
   source-gem:
-    name: "Source Gem"
+    name: "🔻[Ruby] Source Gem"
     needs:
       - build_optify
     runs-on: ubuntu-latest
@@ -365,7 +365,7 @@ jobs:
         name: optify.rbs
         path: ./ruby/optify/sig
 
-    - name: "[Rust] Setup cache"
+    - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: |
@@ -377,23 +377,23 @@ jobs:
     # setup-ruby also runs `bundle install`.
     # It uses the Ruby version from .ruby-version.
     - uses: ruby/setup-ruby@v1
-      name: "Setup"
+      name: "🔻[Ruby] Setup"
       with:
         bundler-cache: true
         working-directory: ./ruby/optify
 
-    - name: Build gem
+    - name: "🔻[Ruby] Build gem"
       run: |
         set -ex
         mkdir --parents pkg
         gem build optify.gemspec --output pkg/optify-config.gem
       working-directory: ./ruby/optify
 
-    - name: "Configure RubyGems credentials"
+    - name: "🔻[Ruby] Configure RubyGems credentials"
       if: github.ref == 'refs/heads/main'
       uses: rubygems/configure-rubygems-credentials@v1.0.0
 
-    - name: "Publish"
+    - name: "🔻[Ruby] Publish"
       if: github.ref == 'refs/heads/main'
       shell: bash
       # It probably just fails if the gem is already published.
