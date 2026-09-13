@@ -8,13 +8,13 @@
 # frozen_string_literal: true
 # typed: strong
 
-# pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:9
+# pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:8
 # Tools for working with configurations declared in files.
 module Optify; end
 
 # A base class for classes that can be created from a hash.
 #
-# pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:11
+# pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:10
 class Optify::FromHashable
   extend T::Sig
   extend T::Helpers
@@ -25,19 +25,19 @@ class Optify::FromHashable
   # @param other The object to compare.
   # @return [Boolean] true if the objects are equal; otherwise, false.
   #
-  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:169
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:210
   sig { params(other: T.untyped).returns(T::Boolean) }
   def ==(other); end
 
   # Support equality by value so that instances can be used in Sets and as Hash keys.
   #
-  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:180
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:221
   sig { params(other: T.untyped).returns(T::Boolean) }
   def eql?(other); end
 
   # @return [Integer] a hash value based on the object's class and instance variables.
   #
-  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:191
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:232
   sig { returns(::Integer) }
   def hash; end
 
@@ -47,13 +47,13 @@ class Optify::FromHashable
   # and `from_hash` will convert strings to symbols if that's how the attribute is declared.
   # @return [Hash] The hash representation of this object.
   #
-  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:207
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:248
   sig { returns(T::Hash[::Symbol, T.untyped]) }
   def to_h; end
 
   # Convert this object to a JSON string.
   #
-  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:197
+  # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:238
   sig { params(state: T.nilable(::JSON::Ext::Generator::State)).returns(::String) }
   def to_json(state = T.unsafe(nil)); end
 
@@ -63,22 +63,22 @@ class Optify::FromHashable
     # @param hash The hash to create the instance from.
     # @return The new instance.
     #
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:56
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:55
     # Create a new instance of the class from a hash.
     sig { params(hash: T::Hash[T.untyped, T.untyped]).returns(T.attached_class) }
     def from_hash(hash); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:24
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:23
     sig { type_parameters(:T).params(subclass: T::Class[T.type_parameter(:T)]).void }
     def inherited(subclass); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:20
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:19
     sig { returns(T::Hash[::Symbol, ::T::Types::Base]) }
     def key_to_type; end
 
     private
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:37
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:36
     sig do
       type_parameters(:Type)
         .params(
@@ -87,7 +87,7 @@ class Optify::FromHashable
     end
     def _build_key_to_type(subclass); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:88
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:87
     sig do
       params(
         value: T::Array[T.untyped],
@@ -96,23 +96,31 @@ class Optify::FromHashable
     end
     def _convert_array(value, unwrapped_type); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:131
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:130
     sig { params(hash: T::Hash[T.untyped, T.untyped], type: ::T::Types::Base).returns(T.untyped) }
     def _convert_hash(hash, type); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:96
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:154
+    sig { params(value: T.untyped, type: ::T::Types::Base, type_allows_string: T::Boolean).returns(T.untyped) }
+    def _convert_typed_hash_value(value, type, type_allows_string); end
+
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:95
     sig { params(value: T.untyped, type: ::T::Types::Base).returns(T.untyped) }
     def _convert_value(value, type); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:221
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:262
     sig { params(value: T.untyped).returns(T.untyped) }
     def _convert_value_for_to_h(value); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:69
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:68
     sig { params(key: T.untyped).returns(::T::Types::Base) }
     def _get_value_type(key); end
 
-    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:156
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:178
+    sig { params(type: ::T::Types::Base).returns(T::Boolean) }
+    def _type_allows_string?(type); end
+
+    # pkg:gem/optify-from_hash#lib/optify_from_hash/from_hashable.rb:197
     sig { params(type: ::T::Types::Base).returns(::T::Types::Base) }
     def _unwrap_nilable(type); end
   end
