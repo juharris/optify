@@ -155,7 +155,7 @@ module Optify
       return _convert_value(value, type) unless value.is_a?(String)
       return _convert_value(value, type) if type_allows_string
 
-      value_type = type.raw_type if type.respond_to?(:raw_type)
+      value_type = type.respond_to?(:raw_type) ? T.unsafe(type).raw_type : nil
       return value.to_sym if value_type == Symbol
 
       if type.respond_to?(:types)
@@ -175,7 +175,7 @@ module Optify
     #: (T::Types::Base) -> bool
     private_class_method def self._type_allows_string?(type)
       if type.respond_to?(:raw_type)
-        value_type = type.raw_type #: as untyped
+        value_type = T.unsafe(type).raw_type
         return true if value_type == String
       end
 
