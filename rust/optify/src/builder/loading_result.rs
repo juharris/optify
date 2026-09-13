@@ -1,7 +1,8 @@
 use crate::{
     configurable_values::locator::ConfigurableValuePointers,
+    policies::Policies,
     provider::SourceValue,
-    schema::{conditions::ConditionExpression, metadata::OptionsMetadata, policies::Policies},
+    schema::{conditions::ConditionExpression, metadata::OptionsMetadata},
 };
 
 #[allow(clippy::large_enum_variant)]

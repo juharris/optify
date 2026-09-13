@@ -1,7 +1,7 @@
 {
 	"policies": {
 		"requester": {
-			"block": ["untrusted_service"]
+			"block": ["untrusted_service", "service_f"]
 		}
 	},
 	"options": {

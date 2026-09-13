@@ -271,3 +271,85 @@ fn test_track_file_references_by_key_name_for_arguments_feature(
     assert_eq!(referenced_features, vec!["arguments", "feature_with_cs"]);
     Ok(())
 }
+
+#[test]
+fn test_builder_policies_json_alias_fails_build() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_invalid_alias");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("'alias_a' is an alias for canonical feature name 'a'"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_policies_json_nonexistent_feature_fails_build(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::path::Path::new("tests/policies_invalid_nonexistent");
+    match OptionsProvider::build(path) {
+        Ok(_) => panic!("Expected an error."),
+        Err(e) => {
+            assert!(
+                e.contains("feature 'nonexistent_feature' does not exist"),
+                "Got: {e}"
+            );
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_builder_policies_json_conflicts_fail_build() -> Result<(), Box<dyn std::error::Error>> {
+    let invalid_policy_paths = [
+        "tests/policies_invalid_feature_allow_listed_policies_allow_unlisted",
+        "tests/policies_invalid_feature_allow_listed_policies_block_listed",
+        "tests/policies_invalid_feature_allow_unlisted_policies_allow_listed",
+        "tests/policies_invalid_feature_block_listed_policies_allow_listed",
+        "tests/policies_invalid_feature_block_listed_policies_block_unlisted",
+        "tests/policies_invalid_feature_block_unlisted_policies_block_listed",
+    ];
+
+    for invalid_policy_path in invalid_policy_paths {
+        let error = match OptionsProvider::build(invalid_policy_path) {
+            Ok(_) => panic!("Expected {invalid_policy_path} to fail."),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error,
+            "Conflicting policies for requester 'service_a' and feature 'a': '.optify/policies.json' and the feature's own policies disagree.",
+            "Unexpected error for {invalid_policy_path}"
+        );
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_builder_policies_json_valid_combinations_build() -> Result<(), Box<dyn std::error::Error>> {
+    let valid_policy_paths = [
+        "tests/policies_valid_feature_allow_listed_policies_allow_listed",
+        "tests/policies_valid_feature_allow_listed_policies_block_unlisted",
+        "tests/policies_valid_feature_allow_unlisted_policies_allow_unlisted",
+        "tests/policies_valid_feature_allow_unlisted_policies_block_listed",
+        "tests/policies_valid_feature_allow_unlisted_policies_block_unlisted",
+        "tests/policies_valid_feature_block_listed_policies_allow_unlisted",
+        "tests/policies_valid_feature_block_listed_policies_block_listed",
+        "tests/policies_valid_feature_block_unlisted_policies_allow_listed",
+        "tests/policies_valid_feature_block_unlisted_policies_allow_unlisted",
+        "tests/policies_valid_feature_block_unlisted_policies_block_unlisted",
+    ];
+
+    for valid_policy_path in valid_policy_paths {
+        assert!(
+            OptionsProvider::build(valid_policy_path).is_ok(),
+            "Expected {valid_policy_path} to build."
+        );
+    }
+
+    Ok(())
+}

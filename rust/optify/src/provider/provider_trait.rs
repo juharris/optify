@@ -4,9 +4,10 @@ use serde_json::Value;
 
 use crate::builder::builder_options::BuilderOptions;
 
+use crate::policies::Policies;
 use crate::{
     provider::{CacheOptions, Features, GetOptionsPreferences},
-    schema::{metadata::OptionsMetadata, policies::Policies},
+    schema::metadata::OptionsMetadata,
 };
 
 /// Trait defining the core functionality for an options provider

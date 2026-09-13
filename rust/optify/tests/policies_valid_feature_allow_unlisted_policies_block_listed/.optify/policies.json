@@ -1,0 +1,9 @@
+{
+    "requesters": {
+        "service_a": {
+            "block": [
+                "a"
+            ]
+        }
+    }
+}

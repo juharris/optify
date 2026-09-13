@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use super::conditions::ConditionExpression;
 use super::metadata::OptionsMetadata;
-use super::policies::Policies;
+use crate::policies::Policies;
 
 pub(crate) type ConfigurationOptions = serde_json::Value;
 
