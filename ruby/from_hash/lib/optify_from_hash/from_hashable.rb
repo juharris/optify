@@ -152,6 +152,11 @@ module Optify
     #: (untyped, T::Types::Base) -> untyped
     private_class_method def self._convert_typed_hash_value(value, type)
       if value.is_a?(String) && !_type_allows_string?(type)
+        if type.respond_to?(:raw_type)
+          value_type = type.raw_type #: as untyped
+          return value.to_sym if value_type == Symbol
+        end
+
         if type.respond_to?(:types)
           type #: as untyped
             .types.each do |value_type|
