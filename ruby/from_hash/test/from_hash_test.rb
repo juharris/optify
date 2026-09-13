@@ -242,6 +242,11 @@ module FromHashTest
       m = TestConfig.from_hash(hash)
       assert_equal(hash[:hash_with_string_or_enum_values], m.hash_with_string_or_enum_values)
       assert_equal(hash[:hash_with_string_or_enum_values], m.to_h[:hash_with_string_or_enum_values])
+
+      hash = { hash_with_string_or_enum_values: { 'john' => TestEnum::ACTIVE } }
+      m = TestConfig.from_hash(hash)
+      assert_equal(hash[:hash_with_string_or_enum_values], m.hash_with_string_or_enum_values)
+      assert_equal(hash[:hash_with_string_or_enum_values], m.to_h[:hash_with_string_or_enum_values])
     end
 
     def test_hash_with_no_types

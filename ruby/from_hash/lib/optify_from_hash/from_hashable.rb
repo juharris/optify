@@ -157,7 +157,7 @@ module Optify
             .types.each do |value_type|
             begin
               return _convert_typed_hash_value(value, value_type)
-            rescue StandardError
+            rescue TypeError, ArgumentError
               # Ignore and try the next type.
             end
           end
