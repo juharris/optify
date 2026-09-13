@@ -138,15 +138,13 @@ module Optify
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
         type_for_values = type.values
+        type_for_keys_allows_string = _type_allows_string?(type_for_keys)
         type_for_values_allows_string = _type_allows_string?(type_for_values)
 
-        result = hash.transform_values do |v|
-          _convert_typed_hash_value(v, type_for_values, type_for_values_allows_string)
+        return hash.each_with_object(Hash.new(capacity: hash.size)) do |(k, v), result|
+          result[_convert_typed_hash_value(k, type_for_keys, type_for_keys_allows_string)] =
+            _convert_typed_hash_value(v, type_for_values, type_for_values_allows_string)
         end
-
-        return result.transform_keys!(&:to_sym) if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
-
-        return result
       end
 
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."

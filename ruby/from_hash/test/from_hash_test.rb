@@ -14,6 +14,12 @@ module FromHashTest
     INACTIVE = new
   end
 
+  class TestKeyEnum < Enummify::Enum
+    JOHN = new
+    JANE = new
+    AGE = new
+  end
+
   class TestObject < Optify::FromHashable
     sig { returns(Integer) }
     attr_reader :num
@@ -82,6 +88,18 @@ module FromHashTest
 
     sig { returns(T::Hash[String, T.any(String, TestEnum)]) }
     attr_reader :hash_with_string_or_enum_values
+
+    sig { returns(T::Hash[TestKeyEnum, TestEnum]) }
+    attr_reader :hash_with_enum_keys_and_enum_values
+
+    sig { returns(T::Hash[TestKeyEnum, T.nilable(TestEnum)]) }
+    attr_reader :hash_with_enum_keys_and_nilable_enum_values
+
+    sig { returns(T::Hash[TestKeyEnum, T.any(TestEnum, Integer)]) }
+    attr_reader :hash_with_enum_keys_and_enum_or_integer_values
+
+    sig { returns(T::Hash[TestKeyEnum, T.any(String, TestEnum)]) }
+    attr_reader :hash_with_enum_keys_and_string_or_enum_values
 
     sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
     attr_reader :nilable_hashes_of_objects
@@ -247,6 +265,58 @@ module FromHashTest
       m = TestConfig.from_hash(hash)
       assert_equal(hash[:hash_with_string_or_enum_values], m.hash_with_string_or_enum_values)
       assert_equal(hash[:hash_with_string_or_enum_values], m.to_h[:hash_with_string_or_enum_values])
+    end
+
+    def test_hash_with_enum_keys_and_enum_values
+      hash = { hash_with_enum_keys_and_enum_values: { 'JOHN' => 'ACTIVE', 'JANE' => 'INACTIVE' } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ TestKeyEnum::JOHN => TestEnum::ACTIVE, TestKeyEnum::JANE => TestEnum::INACTIVE }, m.hash_with_enum_keys_and_enum_values)
+      assert_equal(
+        hash[:hash_with_enum_keys_and_enum_values],
+        m.to_h[:hash_with_enum_keys_and_enum_values].transform_keys(&:serialize).transform_values(&:serialize)
+      )
+    end
+
+    def test_hash_with_enum_keys_and_nilable_enum_values
+      hash = { hash_with_enum_keys_and_nilable_enum_values: { 'JOHN' => 'ACTIVE', 'JANE' => nil } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ TestKeyEnum::JOHN => TestEnum::ACTIVE, TestKeyEnum::JANE => nil }, m.hash_with_enum_keys_and_nilable_enum_values)
+      assert_equal(
+        hash[:hash_with_enum_keys_and_nilable_enum_values],
+        m.to_h[:hash_with_enum_keys_and_nilable_enum_values]
+          .transform_keys(&:serialize)
+          .transform_values { |v| v&.serialize }
+      )
+    end
+
+    def test_hash_with_enum_keys_and_enum_or_integer_values
+      hash = { hash_with_enum_keys_and_enum_or_integer_values: { 'JOHN' => 'ACTIVE', 'AGE' => 42 } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ TestKeyEnum::JOHN => TestEnum::ACTIVE, TestKeyEnum::AGE => 42 }, m.hash_with_enum_keys_and_enum_or_integer_values)
+      assert_equal(
+        hash[:hash_with_enum_keys_and_enum_or_integer_values],
+        m.to_h[:hash_with_enum_keys_and_enum_or_integer_values]
+          .transform_keys(&:serialize)
+          .transform_values { |v| v.respond_to?(:serialize) ? v.serialize : v }
+      )
+    end
+
+    def test_hash_with_enum_keys_and_string_or_enum_values
+      hash = { hash_with_enum_keys_and_string_or_enum_values: { 'JOHN' => 'ACTIVE' } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ TestKeyEnum::JOHN => 'ACTIVE' }, m.hash_with_enum_keys_and_string_or_enum_values)
+      assert_equal(
+        hash[:hash_with_enum_keys_and_string_or_enum_values],
+        m.to_h[:hash_with_enum_keys_and_string_or_enum_values].transform_keys(&:serialize)
+      )
+
+      hash = { hash_with_enum_keys_and_string_or_enum_values: { 'JOHN' => TestEnum::ACTIVE } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ TestKeyEnum::JOHN => TestEnum::ACTIVE }, m.hash_with_enum_keys_and_string_or_enum_values)
+      assert_equal(
+        { 'JOHN' => 'ACTIVE' },
+        m.to_h[:hash_with_enum_keys_and_string_or_enum_values].transform_keys(&:serialize).transform_values(&:serialize)
+      )
     end
 
     def test_hash_with_no_types
