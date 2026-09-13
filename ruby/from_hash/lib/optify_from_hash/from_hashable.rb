@@ -151,9 +151,8 @@ module Optify
     end
 
     #: (untyped, T::Types::Base, bool) -> untyped
-    private_class_method def self._convert_typed_hash_value(value, type, type_allows_string)
-      return _convert_value(value, type) unless value.is_a?(String)
-      return _convert_value(value, type) if type_allows_string
+    private_class_method def self._convert_typed_hash_value(value, type, type_allows_string) # rubocop:disable Metrics/PerceivedComplexity
+      return _convert_value(value, type) if type_allows_string || !value.is_a?(String)
 
       value_type = if type.respond_to?(:raw_type)
                      type #: as untyped
@@ -179,7 +178,7 @@ module Optify
     private_class_method def self._type_allows_string?(type)
       if type.respond_to?(:raw_type)
         value_type = type #: as untyped
-                      .raw_type
+                     .raw_type
         return true if value_type == String
       end
 
