@@ -138,16 +138,58 @@ module Optify
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
         type_for_values = type.values
+        type_for_keys_allows_string = _type_allows_string?(type_for_keys)
+        type_for_values_allows_string = _type_allows_string?(type_for_values)
 
-        result = hash
-                 .transform_values { |v| _convert_value(v, type_for_values) }
-
-        return result.transform_keys!(&:to_sym) if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
-
-        return result
+        return hash.each_with_object(Hash.new(capacity: hash.size)) do |(k, v), result|
+          result[_convert_typed_hash_value(k, type_for_keys, type_for_keys_allows_string)] =
+            _convert_typed_hash_value(v, type_for_values, type_for_values_allows_string)
+        end
       end
 
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
+    end
+
+    #: (untyped, T::Types::Base, bool) -> untyped
+    private_class_method def self._convert_typed_hash_value(value, type, type_allows_string) # rubocop:disable Metrics/PerceivedComplexity
+      return _convert_value(value, type) if type_allows_string || !value.is_a?(String)
+
+      value_type = if type.respond_to?(:raw_type)
+                     type #: as untyped
+                       .raw_type
+                   end
+      return value.to_sym if value_type == Symbol
+
+      if type.respond_to?(:types)
+        type #: as untyped
+          .types.each do |inner_type|
+          return _convert_typed_hash_value(value, inner_type, _type_allows_string?(inner_type))
+        rescue TypeError, ArgumentError
+          # Ignore and try the next type.
+        end
+      end
+
+      return value_type.deserialize(value) if value_type && value_type != String && value_type.respond_to?(:deserialize)
+
+      _convert_value(value, type)
+    end
+
+    #: (T::Types::Base) -> bool
+    private_class_method def self._type_allows_string?(type)
+      if type.respond_to?(:raw_type)
+        value_type = type #: as untyped
+                     .raw_type
+        return true if value_type == String
+      end
+
+      if type.respond_to?(:types)
+        type #: as untyped
+          .types.each do |value_type|
+          return true if _type_allows_string?(value_type)
+        end
+      end
+
+      false
     end
 
     # Unwrap `T.nilable(...)` to get the inner type, or return the type as-is.

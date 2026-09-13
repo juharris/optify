@@ -9,6 +9,7 @@ GEM
   specs:
     ast (2.4.3)
     benchmark (0.5.0)
+    enummify (0.1.0)
     erubi (1.13.1)
     json (2.19.9)
     language_server-protocol (3.17.0.5)
@@ -93,6 +94,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  enummify (~> 0.1.0)
   optify-from_hash!
   rake
   rbs (~> 4.0.3)
