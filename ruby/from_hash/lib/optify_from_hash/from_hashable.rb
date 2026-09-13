@@ -101,7 +101,7 @@ module Optify
       unwrapped_type = _unwrap_nilable(type)
       if value.is_a?(String) && unwrapped_type.respond_to?(:raw_type)
         value_type = unwrapped_type.raw_type #: as untyped
-        if value_type != String && value_type.respond_to?(:deserialize)
+        if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
           return value_type.deserialize(value)
         end
       end
