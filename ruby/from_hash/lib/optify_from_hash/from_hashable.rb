@@ -138,15 +138,8 @@ module Optify
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
         type_for_values = type.values
-        deserialize_type = _find_deserialize_type(type_for_values) unless _type_allows_string?(type_for_values)
 
-        result = hash.transform_values do |v|
-          if v.is_a?(String) && deserialize_type
-            deserialize_type.deserialize(v)
-          else
-            _convert_value(v, type_for_values)
-          end
-        end
+        result = hash.transform_values { |v| _convert_typed_hash_value(v, type_for_values) }
 
         return result.transform_keys!(&:to_sym) if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
 
@@ -156,24 +149,29 @@ module Optify
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
     end
 
-    #: (T::Types::Base) -> untyped
-    private_class_method def self._find_deserialize_type(type)
-      if type.respond_to?(:raw_type)
-        value_type = type.raw_type #: as untyped
-        if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
-          return value_type
+    #: (untyped, T::Types::Base) -> untyped
+    private_class_method def self._convert_typed_hash_value(value, type)
+      if value.is_a?(String) && !_type_allows_string?(type)
+        if type.respond_to?(:types)
+          type #: as untyped
+            .types.each do |value_type|
+            begin
+              return _convert_typed_hash_value(value, value_type)
+            rescue StandardError
+              # Ignore and try the next type.
+            end
+          end
+        end
+
+        if type.respond_to?(:raw_type)
+          value_type = type.raw_type #: as untyped
+          if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
+            return value_type.deserialize(value)
+          end
         end
       end
 
-      if type.respond_to?(:types)
-        type #: as untyped
-          .types.each do |value_type|
-          deserialized_type = _find_deserialize_type(value_type)
-          return deserialized_type if deserialized_type
-        end
-      end
-
-      nil
+      _convert_value(value, type)
     end
 
     #: (T::Types::Base) -> bool
