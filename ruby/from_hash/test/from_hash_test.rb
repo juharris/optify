@@ -74,6 +74,9 @@ module FromHashTest
     sig { returns(T::Hash[String, TestEnum]) }
     attr_reader :hash_with_enum_values
 
+    sig { returns(T::Hash[String, T.nilable(TestEnum)]) }
+    attr_reader :hash_with_nilable_enum_values
+
     sig { returns(T::Array[T.nilable(T::Hash[Symbol, TestObject])]) }
     attr_reader :nilable_hashes_of_objects
 
@@ -206,6 +209,16 @@ module FromHashTest
       m = TestConfig.from_hash(hash)
       assert_equal({ 'john' => TestEnum::ACTIVE, 'jane' => TestEnum::INACTIVE }, m.hash_with_enum_values)
       assert_equal(hash[:hash_with_enum_values], m.to_h[:hash_with_enum_values].transform_values(&:serialize))
+    end
+
+    def test_hash_with_nilable_enum_values
+      hash = { hash_with_nilable_enum_values: { 'john' => 'ACTIVE', 'jane' => nil } }
+      m = TestConfig.from_hash(hash)
+      assert_equal({ 'john' => TestEnum::ACTIVE, 'jane' => nil }, m.hash_with_nilable_enum_values)
+      assert_equal(
+        hash[:hash_with_nilable_enum_values],
+        m.to_h[:hash_with_nilable_enum_values].transform_values { |v| v&.serialize }
+      )
     end
 
     def test_hash_with_no_types

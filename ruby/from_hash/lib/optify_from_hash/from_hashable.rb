@@ -140,10 +140,10 @@ module Optify
         type_for_values = type.values
 
         result = hash.transform_values do |v|
-          if v.is_a?(String) && type_for_values.respond_to?(:raw_type)
-            value_type = type_for_values.raw_type #: as untyped
-            if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
-              value_type.deserialize(v)
+          if v.is_a?(String)
+            deserialize_type = _find_deserialize_type(type_for_values)
+            if deserialize_type
+              deserialize_type.deserialize(v)
             else
               _convert_value(v, type_for_values)
             end
@@ -158,6 +158,28 @@ module Optify
       end
 
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
+    end
+
+    #: (T::Types::Base) -> untyped
+    private_class_method def self._find_deserialize_type(type)
+      unwrapped_type = _unwrap_nilable(type)
+
+      if unwrapped_type.respond_to?(:raw_type)
+        value_type = unwrapped_type.raw_type #: as untyped
+        if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
+          return value_type
+        end
+      end
+
+      if unwrapped_type.respond_to?(:types)
+        unwrapped_type #: as untyped
+          .types.each do |value_type|
+          deserialized_type = _find_deserialize_type(value_type)
+          return deserialized_type if deserialized_type
+        end
+      end
+
+      nil
     end
 
     # Unwrap `T.nilable(...)` to get the inner type, or return the type as-is.
