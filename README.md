@@ -7,7 +7,7 @@ Configurations for different experiments or feature flags are mergeable to suppo
 
 [![Crates.io](https://img.shields.io/crates/v/optify?logo=Rust)](https://crates.io/crates/optify)
 [![Crates.io CLI](https://img.shields.io/crates/v/optify-cli?logo=Rust&label=optify-cli)](https://crates.io/crates/optify-cli)
-[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://rubygems.org/gems/optify-config)
 [![Hex.pm](https://img.shields.io/hexpm/v/optify?color=%234B275F&label=Hex.pm&logo=elixir)][hex]
 [![NPM Version](https://img.shields.io/npm/v/%40optify%2Fconfig?color=bc3433&logo=TypeScript)](https://www.npmjs.com/package/@optify/config)
 [![NuGet Version](https://img.shields.io/nuget/v/OptionsProvider?logo=NuGet)](https://www.nuget.org/packages/OptionsProvider)
@@ -706,7 +706,7 @@ Built using the Rust implementation.
 
 ## Ruby
 
-[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://rubygems.org/gems/optify-config)
 
 See the [ruby/optify](./ruby/optify/) folder.
 Built using the Rust implementation.

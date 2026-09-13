@@ -1,6 +1,6 @@
 # Optify Rust Bindings for Ruby
 
-[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://badge.fury.io/rb/optify-config)
+[![Gem Version](https://badge.fury.io/rb/optify-config.svg?icon=si%3Arubygems&icon_color=%23ec3c3c)](https://rubygems.org/gems/optify-config)
 
 ## Usage
 
