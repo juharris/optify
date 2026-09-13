@@ -99,12 +99,6 @@ module Optify
       end
 
       unwrapped_type = _unwrap_nilable(type)
-      if value.is_a?(String) && unwrapped_type.respond_to?(:raw_type)
-        value_type = unwrapped_type.raw_type #: as untyped
-        if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
-          return value_type.deserialize(value)
-        end
-      end
       return value&.to_sym if unwrapped_type.is_a?(T::Types::Simple) && unwrapped_type.raw_type == Symbol
 
       case value
@@ -145,8 +139,18 @@ module Optify
         type_for_keys = type.keys
         type_for_values = type.values
 
-        result = hash
-                 .transform_values { |v| _convert_value(v, type_for_values) }
+        result = hash.transform_values do |v|
+          if v.is_a?(String) && type_for_values.respond_to?(:raw_type)
+            value_type = type_for_values.raw_type #: as untyped
+            if value_type != String && value_type != Symbol && value_type.respond_to?(:deserialize)
+              value_type.deserialize(v)
+            else
+              _convert_value(v, type_for_values)
+            end
+          else
+            _convert_value(v, type_for_values)
+          end
+        end
 
         return result.transform_keys!(&:to_sym) if type_for_keys.is_a?(T::Types::Simple) && type_for_keys.raw_type == Symbol
 
