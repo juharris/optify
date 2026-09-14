@@ -16,9 +16,9 @@ bundle install
 popd
 
 pushd ruby/optify
-# Bump dependency version in optify.gemspec
+# Bump minimum dependency version in optify.gemspec
 next_version=$(get_next_version $current_version $strategy)
-sed_replace_in_place "optify.gemspec" -E "s/^(FROM_HASH_DEP_VERSION = ')${current_version}(')/\\1${next_version}\\2/"
+sed_replace_in_place "optify.gemspec" -E "s/^(FROM_HASH_MIN_VERSION = ')${current_version}(')/\\1${next_version}\\2/"
 
 # Update Gemfile.lock
 bundle install
