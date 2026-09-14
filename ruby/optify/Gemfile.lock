@@ -8,7 +8,7 @@ PATH
   remote: .
   specs:
     optify-config (1.24.0)
-      optify-from_hash (~> 0.4.0)
+      optify-from_hash (>= 0.4.0, < 1)
       rb_sys (~> 0.9.128)
       sin_lru_redux (~> 2.5.3)
       sorbet-runtime (>= 0.5, < 1)
