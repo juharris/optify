@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-FROM_HASH_VERSION = '0.4.0'
+FROM_HASH_VERSION = '0.5.0'
 
 Gem::Specification.new do |spec|
   spec.name = 'optify-from_hash'
