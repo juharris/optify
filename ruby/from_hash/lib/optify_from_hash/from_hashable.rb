@@ -101,6 +101,8 @@ module Optify
       unwrapped_type = _unwrap_nilable(type)
       return value&.to_sym if unwrapped_type.is_a?(T::Types::Simple) && unwrapped_type.raw_type == Symbol
 
+      value = _convert_string(value, unwrapped_type)
+
       case value
       when Array
         return _convert_array(value, unwrapped_type)
@@ -138,21 +140,18 @@ module Optify
         # The hash should be a hash, but the values might be objects to convert.
         type_for_keys = type.keys
         type_for_values = type.values
-        type_for_keys_allows_string = _type_allows_string?(type_for_keys)
-        type_for_values_allows_string = _type_allows_string?(type_for_values)
 
         return hash.each_with_object(Hash.new(capacity: hash.size)) do |(k, v), result|
-          result[_convert_typed_hash_value(k, type_for_keys, type_for_keys_allows_string)] =
-            _convert_typed_hash_value(v, type_for_values, type_for_values_allows_string)
+          result[_convert_value(k, type_for_keys)] = _convert_value(v, type_for_values)
         end
       end
 
       raise TypeError, "Could not convert hash #{hash} to `#{type}`."
     end
 
-    #: (untyped, T::Types::Base, bool) -> untyped
-    private_class_method def self._convert_typed_hash_value(value, type, type_allows_string) # rubocop:disable Metrics/PerceivedComplexity
-      return _convert_value(value, type) if type_allows_string || !value.is_a?(String)
+    #: (untyped, T::Types::Base) -> untyped
+    private_class_method def self._convert_string(value, type) # rubocop:disable Metrics/PerceivedComplexity
+      return value if !value.is_a?(String) || _type_allows_string?(type)
 
       value_type = if type.respond_to?(:raw_type)
                      type #: as untyped
@@ -163,7 +162,7 @@ module Optify
       if type.respond_to?(:types)
         type #: as untyped
           .types.each do |inner_type|
-          return _convert_typed_hash_value(value, inner_type, _type_allows_string?(inner_type))
+          return _convert_string(value, inner_type)
         rescue TypeError, ArgumentError
           # Ignore and try the next type.
         end
@@ -171,7 +170,7 @@ module Optify
 
       return value_type.deserialize(value) if value_type && value_type != String && value_type.respond_to?(:deserialize)
 
-      _convert_value(value, type)
+      value
     end
 
     #: (T::Types::Base) -> bool
@@ -197,7 +196,7 @@ module Optify
     private_class_method def self._unwrap_nilable(type)
       if type.respond_to?(:unwrap_nilable)
         type #: as untyped
-          .unwrap_nilable
+          .unwrap_nilable || type
       else
         type
       end
