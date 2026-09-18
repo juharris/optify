@@ -35,19 +35,21 @@ check "list-features" \
     '[{"aliases":null,"dependents":null,"details":null,"name":"A_with_comments","owners":"a-team@company.com"},{"aliases":["a"],"dependents":null,"details":"The file is for testing.","name":"feature_A","owners":"a-team@company.com"},{"aliases":["b"],"dependents":null,"details":{"description":"This is a description of the feature."},"name":"feature_B/initial","owners":"team-b@company.com"}]' \
     "$(optify --dir "$CONFIGS" list-features | jq -c '[.[] | del(.path)] | sort_by(.name)')"
 
+EXPECTED_A='{"rootString":"root string same","rootString2":"gets overridden","myArray":["example item 1"],"myObject":{"one":1,"two":2,"string":"string","deeper":{"wtv":3,"list":[1,2]}}}'
+
 # get-options outputs compact (single-line) JSON
 check "get-options -k myConfig -f A" \
-    '{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"root string same","rootString2":"gets overridden"}' \
+    "$EXPECTED_A" \
     "$(optify --dir "$CONFIGS" get-options -k myConfig -f A)"
 
 # get-options with multiple features — later feature overrides earlier
 check "get-options -k myConfig -f A B" \
-    '{"myArray":["different item 1","item 2"],"myObject":{"deeper":{"list":[55],"new":"new value","wtv":3333},"one":1,"string":"string","three":3,"two":22},"rootString":"root string same","rootString2":"override"}' \
+    '{"myArray":["different item 1","item 2"],"myObject":{"two":22,"three":3,"deeper":{"wtv":3333,"list":[55],"new":"new value"},"one":1,"string":"string"},"rootString2":"override","rootString":"root string same"}' \
     "$(optify --dir "$CONFIGS" get-options -k myConfig -f A B)"
 
 # get-all-options returns the full merged configuration
 check "get-all-options -f A" \
-    '{"myConfig":{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"root string same","rootString2":"gets overridden"}}' \
+    "{\"myConfig\":$EXPECTED_A}" \
     "$(optify --dir "$CONFIGS" get-all-options -f A)"
 
 # --prefs skip_feature_name_conversion prevents alias resolution, so alias "a" is not found
@@ -61,7 +63,7 @@ fi
 
 # get-all-options with --preferences passes preferences through
 check "get-all-options -f A --preferences" \
-    '{"myConfig":{"myArray":["example item 1"],"myObject":{"deeper":{"list":[1,2],"wtv":3},"one":1,"string":"string","two":2},"rootString":"root string same","rootString2":"gets overridden"}}' \
+    "{\"myConfig\":$EXPECTED_A}" \
     "$(optify --dir "$CONFIGS" get-all-options -f A --preferences '{}')"
 
 ## Preferences tests using the conditions test suite
@@ -69,7 +71,7 @@ COND_CONFIGS="../../tests/test_suites/conditions/configs"
 
 # constraints that match A's conditions include both A and B
 check "get-options with matching constraints" \
-    '{"key":"from B","key_a":"only in A","key_b":"only in B"}' \
+    '{"key":"from B","key_b":"only in B","key_a":"only in A"}' \
     "$(optify --dir "$COND_CONFIGS" get-options -k config -f A B --prefs '{"constraints":{"constraints":{"info":3,"status":"active"}}}')"
 
 # constraints that don't match A's status filter it out, leaving only B
@@ -79,7 +81,7 @@ check "get-options with non-matching constraints filters feature" \
 
 # get-all-options also respects constraints
 check "get-all-options with constraints" \
-    '{"config":{"key":"from B","key_a":"only in A","key_b":"only in B"}}' \
+    '{"config":{"key":"from B","key_b":"only in B","key_a":"only in A"}}' \
     "$(optify --dir "$COND_CONFIGS" get-all-options -f A B --prefs '{"constraints":{"constraints":{"info":3,"status":"active"}}}')"
 
 # overrides are merged with highest priority
