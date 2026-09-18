@@ -44,6 +44,14 @@ regex = "1.12.3"
 criterion = "0.5.1"
 tempfile = "3"
 
+[target.'cfg(unix)'.dev-dependencies]
+libc = "0.2"
+
+[[test]]
+name = "test_fork"
+# Fork from main without inheriting the test harness's worker threads.
+harness = false
+
 [[bench]]
 name = "caching_benchmark"
 harness = false

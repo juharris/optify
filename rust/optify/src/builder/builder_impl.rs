@@ -580,7 +580,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
 
         let supported_extensions = get_supported_extensions();
 
-        let loading_results: Vec<Result<LoadingResult, String>> = walkdir::WalkDir::new(directory)
+        let paths: Vec<_> = walkdir::WalkDir::new(directory)
             .into_iter()
             .filter_map(|entry| {
                 let entry = entry
@@ -600,21 +600,29 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                     return None;
                 }
 
-                Some(Ok(path.to_path_buf()))
-            })
-            .collect::<Vec<_>>()
-            .into_par_iter()
-            .map(|path_result| match path_result {
-                Ok(path) => Self::process_path(
-                    &path,
-                    directory,
-                    &builder_options,
-                    &supported_extensions,
-                    &self.schema,
-                ),
-                Err(e) => Err(e),
+                Some(path.to_path_buf())
             })
             .collect();
+
+        // A global pool inherited across fork has no surviving workers in the child.
+        // Each directory load needs its own pool so children create their own workers.
+        let loading_results: Vec<Result<LoadingResult, String>> = rayon::ThreadPoolBuilder::new()
+            .build()
+            .map_err(|e| format!("Error creating directory loading thread pool: {e}"))?
+            .install(|| {
+                paths
+                    .into_par_iter()
+                    .map(|path| {
+                        Self::process_path(
+                            &path,
+                            directory,
+                            &builder_options,
+                            &supported_extensions,
+                            &self.schema,
+                        )
+                    })
+                    .collect()
+            });
         for loading_result in loading_results {
             self.process_loading_result(loading_result)?;
         }
