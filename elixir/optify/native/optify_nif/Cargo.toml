@@ -1,6 +1,6 @@
 [package]
 name = "optify_nif"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 
 [lib]
@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 [dependencies]
 # Can't put a relative path here because then others can't install the hex package.
 # The workspace Cargo.toml patches this to the local crate during development.
-optify = "1.5.0"
+optify = "1.5.1"
 rustler = { version = "0.38.0", features = ["serde"] }
 serde_json = "1.0.149"
