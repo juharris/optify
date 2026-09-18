@@ -7,7 +7,7 @@ PATH
 PATH
   remote: .
   specs:
-    optify-config (1.25.0)
+    optify-config (1.25.1)
       optify-from_hash (>= 0.5.0, < 1)
       rb_sys (~> 0.9.128)
       sin_lru_redux (~> 2.5.3)
