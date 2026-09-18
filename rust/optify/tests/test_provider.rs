@@ -186,6 +186,29 @@ fn test_provider_get_options_no_features() -> Result<(), Box<dyn std::error::Err
 }
 
 #[test]
+fn test_provider_get_options_preserves_file_key_order() -> Result<(), Box<dyn std::error::Error>> {
+    let provider = get_provider();
+    let cases: [(&str, &[&str]); 3] = [
+        ("feature_A", &["one", "two", "string", "deeper"]),
+        ("A_with_comments", &["one", "two", "string", "deeper"]),
+        ("feature_B/initial", &["two", "three", "deeper"]),
+    ];
+
+    for (feature, expected_keys) in cases {
+        let options = provider.get_options("myConfig", &[feature])?;
+        let keys: Vec<&str> = options["myObject"]
+            .as_object()
+            .expect("myObject should be an object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(keys, expected_keys, "Key order from {feature}");
+    }
+
+    Ok(())
+}
+
+#[test]
 fn test_provider_get_options_with_overrides() -> Result<(), Box<dyn std::error::Error>> {
     let provider = get_provider();
     let mut preferences = GetOptionsPreferences::new();

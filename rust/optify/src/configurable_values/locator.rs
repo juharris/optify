@@ -259,10 +259,10 @@ mod tests {
         assert_eq!(
             pointers.configurable_string_pointers,
             vec![
-                "/array/0".to_string(),
-                "/array/2".to_string(),
                 "/feature".to_string(),
-                "/nested/deep/value".to_string()
+                "/nested/deep/value".to_string(),
+                "/array/0".to_string(),
+                "/array/2".to_string()
             ]
         );
     }
@@ -356,9 +356,9 @@ mod tests {
             pointers.configurable_string_pointers,
             vec![
                 "/level1/level2/level3/level4/level5".to_string(),
+                "/level1/s~0".to_string(),
                 "/level1/s~1c".to_string(),
                 "/level1/s~1c~0".to_string(),
-                "/level1/s~0".to_string(),
             ]
         );
     }
@@ -458,9 +458,9 @@ mod tests {
         assert_eq!(
             pointers.configurable_string_pointers,
             vec![
-                "/array/0".to_string(),
                 "/feature".to_string(),
-                "/nested/deep/value".to_string()
+                "/nested/deep/value".to_string(),
+                "/array/0".to_string()
             ]
         );
     }
