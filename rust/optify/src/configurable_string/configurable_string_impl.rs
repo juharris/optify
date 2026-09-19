@@ -4,8 +4,7 @@ use serde::Deserialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-#[allow(deprecated)]
-type LiquidKStringCow<'a> = liquid::model::KStringCow<'a>;
+type LiquidKStringCow<'a> = kstring::KStringCowBase<'a>;
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
