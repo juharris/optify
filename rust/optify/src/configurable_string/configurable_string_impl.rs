@@ -4,6 +4,8 @@ use serde::Deserialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+type LiquidKStringCow<'a> = kstring::KStringCowBase<'a>;
+
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ReplacementObject {
@@ -138,11 +140,11 @@ impl<'a> ObjectView for DynamicArguments<'a> {
         self.arguments.len() as i64
     }
 
-    fn keys<'k>(&'k self) -> Box<dyn Iterator<Item = liquid::model::KStringCow<'k>> + 'k> {
+    fn keys<'k>(&'k self) -> Box<dyn Iterator<Item = LiquidKStringCow<'k>> + 'k> {
         Box::new(
             self.arguments
                 .keys()
-                .map(|k| liquid::model::KStringCow::from_ref(k.as_str())),
+                .map(|k| LiquidKStringCow::from_ref(k.as_str())),
         )
     }
 
@@ -152,7 +154,7 @@ impl<'a> ObjectView for DynamicArguments<'a> {
 
     fn iter<'k>(
         &'k self,
-    ) -> Box<dyn Iterator<Item = (liquid::model::KStringCow<'k>, &'k dyn ValueView)> + 'k> {
+    ) -> Box<dyn Iterator<Item = (LiquidKStringCow<'k>, &'k dyn ValueView)> + 'k> {
         Box::new(std::iter::empty())
     }
 
@@ -201,8 +203,8 @@ impl<'a> ValueView for DynamicArguments<'a> {
         }
     }
 
-    fn to_kstr(&self) -> liquid::model::KStringCow<'_> {
-        liquid::model::KStringCow::from_ref("DynamicArguments")
+    fn to_kstr(&self) -> LiquidKStringCow<'_> {
+        LiquidKStringCow::from_ref("DynamicArguments")
     }
 
     fn to_value(&self) -> liquid::model::Value {
