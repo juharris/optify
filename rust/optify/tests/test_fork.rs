@@ -21,7 +21,7 @@ mod unix {
             let deadline = Instant::now() + Duration::from_secs(10);
             loop {
                 let mut status = 0;
-                let result = unsafe { libc::waitpid(self.pid, &mut status, libc::WNOHANG) };
+                let result = unsafe { libc::waitpid(self.pid, &raw mut status, libc::WNOHANG) };
                 if result == self.pid {
                     self.reaped = true;
                     return Ok(ExitStatus::from_raw(status));
@@ -86,7 +86,7 @@ mod unix {
         if pid == 0 {
             let success = std::panic::catch_unwind(build_and_verify).is_ok();
             // Avoid running inherited process cleanup in the child.
-            unsafe { libc::_exit(if success { 0 } else { 1 }) };
+            unsafe { libc::_exit(i32::from(!success)) };
         }
 
         let mut child = Child { pid, reaped: false };

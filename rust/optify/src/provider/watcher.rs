@@ -119,7 +119,7 @@ impl OptionsWatcher {
         for dir in watched_directories {
             debouncer_watcher
                 .watch(dir, notify::RecursiveMode::Recursive)
-                .map_err(|e| format!("Failed to watch directory {:?}: {e}", dir.as_ref()))?;
+                .map_err(|e| format!("Failed to watch directory {}: {e}", dir.as_ref().display()))?;
         }
 
         let provider = OptionsProvider::build_from_directories_with_options(
@@ -188,6 +188,7 @@ impl OptionsWatcher {
     }
 
     /// Returns the time when the provider was finished building.
+    #[must_use]
     pub fn last_modified(&self) -> std::time::SystemTime {
         *self.last_modified.lock().unwrap()
     }

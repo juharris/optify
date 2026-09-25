@@ -45,7 +45,7 @@ fn benchmark_get_all_options_breakdown(c: &mut Criterion) {
                     provider
                         .get_all_options(black_box(features), None, None)
                         .unwrap()
-                })
+                });
             },
         );
     }
@@ -74,7 +74,7 @@ fn benchmark_configurable_strings(c: &mut Criterion) {
             provider
                 .get_all_options(black_box(&features_with_files), None, None)
                 .unwrap()
-        })
+        });
     });
 
     // With configurable strings enabled
@@ -86,7 +86,7 @@ fn benchmark_configurable_strings(c: &mut Criterion) {
             provider
                 .get_all_options(black_box(&features_with_files), None, Some(&preferences))
                 .unwrap()
-        })
+        });
     });
 
     group.finish();
@@ -105,7 +105,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
             provider
                 .get_all_options(black_box(&features), None, None)
                 .unwrap()
-        })
+        });
     });
 
     // With small override
@@ -117,7 +117,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
             provider
                 .get_all_options(black_box(&features), None, Some(&preferences))
                 .unwrap()
-        })
+        });
     });
 
     // With larger override
@@ -139,7 +139,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
             provider
                 .get_all_options(black_box(&features), None, Some(&preferences))
                 .unwrap()
-        })
+        });
     });
 
     group.finish();

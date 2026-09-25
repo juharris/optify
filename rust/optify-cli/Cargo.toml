@@ -16,6 +16,9 @@ keywords = ["cli", "configuration", "options"]
 name = "optify"
 path = "src/main.rs"
 
+[lints]
+workspace = true
+
 [dependencies]
 clap = { version = "4.6.0", features = ["derive"] }
 optify = { path = "../optify", version = "1.5.1" }

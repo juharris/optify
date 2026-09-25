@@ -42,34 +42,30 @@ impl BuilderOptionsConfig {
     /// Fields in `overrides` that differ from `BuilderOptions::default()` take priority.
     pub fn merge_with(self, overrides: &BuilderOptions) -> BuilderOptions {
         let defaults = BuilderOptions::default();
-        let are_configurable_values_enabled = if overrides.are_configurable_values_enabled
-            != defaults.are_configurable_values_enabled
-        {
-            overrides.are_configurable_values_enabled
-        } else {
+        let are_configurable_values_enabled = if overrides.are_configurable_values_enabled == defaults.are_configurable_values_enabled {
             self.are_configurable_values_enabled
                 .unwrap_or(defaults.are_configurable_values_enabled)
+        } else {
+            overrides.are_configurable_values_enabled
         };
         BuilderOptions {
             are_configurable_strings_enabled: are_configurable_values_enabled,
             are_configurable_values_enabled,
-            schema_path: if overrides.schema_path != defaults.schema_path {
-                overrides.schema_path.clone()
-            } else {
+            schema_path: if overrides.schema_path == defaults.schema_path {
                 self.schema_path.or(defaults.schema_path)
-            },
-            policies_path: if overrides.policies_path != defaults.policies_path {
-                overrides.policies_path.clone()
             } else {
+                overrides.schema_path.clone()
+            },
+            policies_path: if overrides.policies_path == defaults.policies_path {
                 self.policies_path.or(defaults.policies_path)
-            },
-            track_file_references: if overrides.track_file_references
-                != defaults.track_file_references
-            {
-                overrides.track_file_references
             } else {
+                overrides.policies_path.clone()
+            },
+            track_file_references: if overrides.track_file_references == defaults.track_file_references {
                 self.track_file_references
                     .unwrap_or(defaults.track_file_references)
+            } else {
+                overrides.track_file_references
             },
         }
     }

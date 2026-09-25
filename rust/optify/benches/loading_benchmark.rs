@@ -68,7 +68,7 @@ fn create_test_files(dir: &Path, num_files: usize) {
                 i - 1
             )
         } else {
-            "".to_string()
+            String::new()
         };
 
         let content = format!(
@@ -99,8 +99,8 @@ options:
         let mut file = fs::File::create(&file_path).unwrap();
 
         let content = format!(
-            r#"This is what goes in the file {i}
-            "#
+            r"This is what goes in the file {i}
+            "
         );
         file.write_all(content.as_bytes()).unwrap();
     }
@@ -134,7 +134,7 @@ fn benchmark_loading(c: &mut Criterion) {
                     .unwrap(),
             );
             builder.add_directory(black_box(test_dir)).unwrap();
-        })
+        });
     });
 
     group.finish();

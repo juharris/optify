@@ -61,20 +61,16 @@ impl<'a> DynamicArguments<'a> {
             Some(r) => match r {
                 ReplacementValue::String(s) => Some(s.into()),
                 ReplacementValue::Object(replacement_object) => match replacement_object {
-                    ReplacementObject::File { file } => match self.files.get(file) {
-                        Some(contents) => {
-                            if file.ends_with(".liquid") {
-                                return self.render_liquid(contents);
-                            }
-                            Some(contents.into())
+                    ReplacementObject::File { file } => if let Some(contents) = self.files.get(file) {
+                        if file.ends_with(".liquid") {
+                            return self.render_liquid(contents);
                         }
-
-                        None => {
-                            self.errors
-                                .borrow_mut()
-                                .push(format!("File '{}' not found for key '{}'.", file, key));
-                            None
-                        }
+                        Some(contents.into())
+                    } else {
+                        self.errors
+                            .borrow_mut()
+                            .push(format!("File '{file}' not found for key '{key}'."));
+                        None
                     },
                     ReplacementObject::Liquid { liquid } => self.render_liquid(liquid),
                 },
@@ -89,13 +85,13 @@ impl<'a> DynamicArguments<'a> {
             Ok(template) => match template.render(self) {
                 Ok(result) => Some(result),
                 Err(e) => {
-                    let error_msg = format!("Liquid render error: {}", e);
+                    let error_msg = format!("Liquid render error: {e}");
                     self.errors.borrow_mut().push(error_msg);
                     None
                 }
             },
             Err(e) => {
-                let error_msg = format!("Liquid parse error: {}", e);
+                let error_msg = format!("Liquid parse error: {e}");
                 self.errors.borrow_mut().push(error_msg);
                 None
             }
@@ -131,13 +127,13 @@ impl<'a> DynamicArguments<'a> {
     }
 }
 
-impl<'a> ObjectView for DynamicArguments<'a> {
+impl ObjectView for DynamicArguments<'_> {
     fn as_value(&self) -> &dyn ValueView {
         self
     }
 
     fn size(&self) -> i64 {
-        self.arguments.len() as i64
+        i64::try_from(self.arguments.len()).unwrap_or(i64::MAX)
     }
 
     fn keys<'k>(&'k self) -> Box<dyn Iterator<Item = LiquidKStringCow<'k>> + 'k> {
@@ -177,7 +173,7 @@ impl<'a> ObjectView for DynamicArguments<'a> {
     }
 }
 
-impl<'a> ValueView for DynamicArguments<'a> {
+impl ValueView for DynamicArguments<'_> {
     fn as_debug(&self) -> &dyn std::fmt::Debug {
         self
     }
@@ -197,9 +193,8 @@ impl<'a> ValueView for DynamicArguments<'a> {
     fn query_state(&self, state: liquid::model::State) -> bool {
         match state {
             liquid::model::State::Truthy => true,
-            liquid::model::State::DefaultValue => false,
+            liquid::model::State::DefaultValue | liquid::model::State::Blank => false,
             liquid::model::State::Empty => self.arguments.is_empty(),
-            liquid::model::State::Blank => false,
         }
     }
 
@@ -221,7 +216,7 @@ impl<'a> ValueView for DynamicArguments<'a> {
     }
 }
 
-impl<'a> std::fmt::Debug for DynamicArguments<'a> {
+impl std::fmt::Debug for DynamicArguments<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DynamicArguments")
             .field("arguments", &self.arguments.len())
@@ -231,17 +226,16 @@ impl<'a> std::fmt::Debug for DynamicArguments<'a> {
 }
 
 impl ConfigurableString {
-    fn collect_file_references(&self, value: &ReplacementValue, files: &mut Vec<String>) {
+    fn collect_file_references(value: &ReplacementValue, files: &mut Vec<String>) {
         match value {
-            ReplacementValue::String(_) => {}
             ReplacementValue::Object(ReplacementObject::File { file }) => {
                 files.push(file.clone());
             }
-            ReplacementValue::Object(ReplacementObject::Liquid { .. }) => {}
+            ReplacementValue::String(_) | ReplacementValue::Object(ReplacementObject::Liquid { .. }) => {}
         }
     }
 
-    /// Process a ReplacementValue and return the resulting string.
+    /// Process a `ReplacementValue` and return the resulting string.
     fn process_replacement_value(
         &self,
         value: &ReplacementValue,
@@ -253,7 +247,7 @@ impl ConfigurableString {
         }
     }
 
-    /// Process a ReplacementObject (File or Liquid) and return the resulting string.
+    /// Process a `ReplacementObject` (File or Liquid) and return the resulting string.
     fn process_replacement_object(
         &self,
         obj: &ReplacementObject,
@@ -271,7 +265,7 @@ impl ConfigurableString {
                             Ok(contents.clone())
                         }
                     }
-                    None => Err(format!("File '{}' not found.", file)),
+                    None => Err(format!("File '{file}' not found.")),
                 }
             }
             ReplacementObject::Liquid { liquid } => self.render_liquid_template(liquid, files),
@@ -286,25 +280,22 @@ impl ConfigurableString {
     ) -> Result<String, String> {
         let parser = liquid::ParserBuilder::with_stdlib()
             .build()
-            .map_err(|e| format!("Failed to build liquid parser: {}", e))?;
+            .map_err(|e| format!("Failed to build liquid parser: {e}"))?;
 
         let template = parser
             .parse(template_str)
-            .map_err(|e| format!("Failed to parse template: {}", e))?;
+            .map_err(|e| format!("Failed to parse template: {e}"))?;
 
         let empty_context;
-        let context = match &self.arguments {
-            Some(r) => r,
-            None => {
-                empty_context = HashMap::new();
-                &empty_context
-            }
+        let context = if let Some(r) = &self.arguments { r } else {
+            empty_context = HashMap::new();
+            &empty_context
         };
         let dynamic_arguments = DynamicArguments::new(context, files);
 
         let result = template
             .render(&dynamic_arguments)
-            .map_err(|e| format!("Failed to render template: {}", e))?;
+            .map_err(|e| format!("Failed to render template: {e}"))?;
 
         // Check if there were any errors during file loading or liquid rendering
         if dynamic_arguments.has_errors() {
@@ -323,13 +314,14 @@ impl ConfigurableString {
     }
 
     /// Finds all directly referenced files.
+    #[must_use]
     pub fn get_referenced_files(&self) -> Vec<String> {
         let mut result = Vec::new();
-        self.collect_file_references(&self.base, &mut result);
+        Self::collect_file_references(&self.base, &mut result);
 
         if let Some(args) = &self.arguments {
             for value in args.values() {
-                self.collect_file_references(value, &mut result);
+                Self::collect_file_references(value, &mut result);
             }
         }
 

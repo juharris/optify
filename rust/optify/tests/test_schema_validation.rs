@@ -1,3 +1,5 @@
+#![allow(clippy::manual_let_else, clippy::unnecessary_wraps)]
+
 use optify::{
     builder::{OptionsRegistryBuilder, OptionsWatcherBuilder},
     provider::{OptionsProvider, OptionsRegistry, OptionsWatcher},

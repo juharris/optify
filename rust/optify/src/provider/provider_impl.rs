@@ -99,7 +99,7 @@ impl OptionsProvider {
                 Ok(None) => (),
                 Err(e) => return Err(e),
             }
-        };
+        }
 
         let overrides = preferences.and_then(|p| p.overrides.as_ref());
 
@@ -119,26 +119,23 @@ impl OptionsProvider {
             _ => {
                 // Start with overrides as base (highest priority), or last source if no overrides.
                 // Sources are ordered from lowest to highest priority, so we iterate in reverse.
-                let mut result = match overrides {
-                    Some(overrides) => overrides.clone(),
-                    None => {
-                        let canonical_feature_name = feature_names.last().unwrap();
-                        self.sources
-                            .get(canonical_feature_name)
-                            .ok_or_else(|| {
-                                // Should not happen.
-                                // All canonical feature names are included as keys in the sources map.
-                                // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
-                                format!("Feature name {canonical_feature_name:?} is not a known feature.")
-                            })?
-                            .clone()
-                    }
+                let mut result = if let Some(overrides) = overrides { overrides.clone() } else {
+                    let canonical_feature_name = feature_names.last().unwrap();
+                    self.sources
+                        .get(canonical_feature_name)
+                        .ok_or_else(|| {
+                            // Should not happen.
+                            // All canonical feature names are included as keys in the sources map.
+                            // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
+                            format!("Feature name {canonical_feature_name:?} is not a known feature.")
+                        })?
+                        .clone()
                 };
 
                 // Merge sources as defaults in reverse (highest to lowest priority).
                 // Skip last source if no overrides (already used as base).
                 let mut frozen_paths = FrozenPaths::new();
-                let skip_count = if overrides.is_some() { 0 } else { 1 };
+                let skip_count = usize::from(overrides.is_none());
                 for canonical_feature_name in feature_names.iter().rev().skip(skip_count) {
                     let source = self.sources.get(canonical_feature_name).ok_or_else(|| {
                         // Should not happen.
@@ -239,7 +236,7 @@ impl OptionsProvider {
                 "Error getting options with features {:?}: configuration property \"{}\" not found",
                 original_feature_names
                     .iter()
-                    .map(|f| f.as_ref())
+                    .map(std::convert::AsRef::as_ref)
                     .collect::<Vec<&str>>(),
                 key
             )
@@ -278,8 +275,7 @@ impl OptionsProvider {
     ) -> Result<Option<serde_json::Value>, String> {
         let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         let are_configurable_strings_enabled = preferences
-            .map(|p| p.are_configurable_strings_enabled)
-            .unwrap_or(false);
+            .is_some_and(|p| p.are_configurable_strings_enabled);
         let cache_key = (
             key.to_owned(),
             filtered_feature_names,
@@ -303,20 +299,17 @@ impl OptionsProvider {
         key: Option<&str>,
     ) -> Result<(), String> {
         match key {
-            Some(key) => match self.keyed_configurable_list_pointers.get(key) {
-                Some(pointers) => {
+            Some(key) => {
+                if let Some(pointers) = self.keyed_configurable_list_pointers.get(key) {
                     for pointer in pointers {
-                        self.handle_configurable_list_pointer(value, pointer)?;
+                        Self::handle_configurable_list_pointer(value, pointer)?;
                     }
                 }
-                _ => {
-                    // There are no pointers for the key.
-                }
-            },
+            }
             None => {
                 // There is no key prefix when the entire configuration is requested.
                 for pointer in &self.all_configurable_list_pointers {
-                    self.handle_configurable_list_pointer(value, pointer)?;
+                    Self::handle_configurable_list_pointer(value, pointer)?;
                 }
             }
         }
@@ -325,7 +318,6 @@ impl OptionsProvider {
     }
 
     fn handle_configurable_list_pointer(
-        &self,
         value: &mut serde_json::Value,
         pointer: &String,
     ) -> Result<(), String> {
@@ -350,8 +342,7 @@ impl OptionsProvider {
                     Ok(cl) => cl,
                     Err(e) => {
                         return Err(format!(
-                            "Failed to deserialize ConfigurableList at {}: {}",
-                            pointer, e
+                            "Failed to deserialize ConfigurableList at {pointer}: {e}"
                         ));
                     }
                 };
@@ -371,15 +362,12 @@ impl OptionsProvider {
         key: Option<&str>,
     ) -> Result<(), String> {
         match key {
-            Some(key) => match self.keyed_configurable_string_pointers.get(key) {
-                Some(pointers) => {
-                    for pointer in pointers {
-                        self.handle_configurable_string_pointer(value, pointer)?;
-                    }
+            Some(key) => if let Some(pointers) = self.keyed_configurable_string_pointers.get(key) {
+                for pointer in pointers {
+                    self.handle_configurable_string_pointer(value, pointer)?;
                 }
-                _ => {
-                    // There are no pointers for the key.
-                }
+            } else {
+                // There are no pointers for the key.
             },
             None => {
                 // There is no key prefix when the entire configuration is requested.
@@ -418,8 +406,7 @@ impl OptionsProvider {
                     Ok(cs) => cs,
                     Err(e) => {
                         return Err(format!(
-                            "Failed to deserialize ConfigurableString at {}: {}",
-                            pointer, e
+                            "Failed to deserialize ConfigurableString at {pointer}: {e}"
                         ));
                     }
                 };
@@ -475,7 +462,7 @@ impl OptionsRegistry for OptionsProvider {
     }
 
     fn get_features_and_aliases(&self) -> Vec<String> {
-        self.aliases.keys().map(|k| k.to_string()).collect()
+        self.aliases.keys().map(std::string::ToString::to_string).collect()
     }
 
     fn get_all_options(
@@ -487,9 +474,7 @@ impl OptionsRegistry for OptionsProvider {
         let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         let mut value = self.get_entire_config(&feature_names, cache_options, preferences)?;
         if preferences
-            .map(|p| p.are_configurable_values_enabled())
-            // Configurable strings are disabled by default.
-            .unwrap_or(false)
+            .is_some_and(super::get_options_preferences::GetOptionsPreferences::are_configurable_values_enabled)
         {
             // Strings need to be processed before lists because lists may contain strings.
             self.process_configurable_strings(&mut value, None)?;
@@ -565,8 +550,7 @@ impl OptionsRegistry for OptionsProvider {
             if let Some(constraints) = constraints {
                 let conditions = self.conditions.get(&canonical_feature_name);
                 if !conditions
-                    .map(|conditions| conditions.evaluate(constraints))
-                    .unwrap_or(true)
+                    .is_none_or(|conditions| conditions.evaluate(constraints))
                 {
                     continue;
                 }
@@ -614,9 +598,7 @@ impl OptionsRegistry for OptionsProvider {
             self.get_options_for_key(key, &filtered_feature_names, feature_names, preferences)?;
 
         if preferences
-            .map(|p| p.are_configurable_values_enabled())
-            // Configurable strings are disabled by default.
-            .unwrap_or(false)
+            .is_some_and(super::get_options_preferences::GetOptionsPreferences::are_configurable_values_enabled)
         {
             // Strings need to be processed before lists because lists may contain strings.
             self.process_configurable_strings(&mut value, Some(key))?;
@@ -625,8 +607,7 @@ impl OptionsRegistry for OptionsProvider {
 
         if cache_options.is_some() {
             let are_configurable_strings_enabled = preferences
-                .map(|p| p.are_configurable_strings_enabled)
-                .unwrap_or(false);
+                .is_some_and(|p| p.are_configurable_strings_enabled);
             let cache_key = (
                 key.to_owned(),
                 filtered_feature_names.clone(),
@@ -692,8 +673,7 @@ impl OptionsRegistry for OptionsProvider {
             if let Some(constraints) = constraints {
                 let conditions = self.conditions.get(&canonical_feature_name);
                 if !conditions
-                    .map(|conditions| conditions.evaluate(constraints))
-                    .unwrap_or(true)
+                    .is_none_or(|conditions| conditions.evaluate(constraints))
                 {
                     result.push(None);
                     continue;

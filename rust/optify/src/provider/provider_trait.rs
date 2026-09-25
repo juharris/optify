@@ -96,7 +96,7 @@ pub trait OptionsRegistry {
     /// Returns all of the canonical feature names.
     fn get_features(&self) -> Vec<String>;
 
-    /// Returns a list of canonical feature names that reference the given relative file path via ConfigurableString.
+    /// Returns a list of canonical feature names that reference the given relative file path via `ConfigurableString`.
     fn get_features_referencing_file(&self, relative_path: &str) -> Option<Vec<String>>;
 
     /// Returns a map of all the canonical feature names to their metadata.
