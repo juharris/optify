@@ -435,7 +435,7 @@ fn validate_with_schema(
                 let errors = validator.iter_errors(original_config);
                 let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
                 Err(format!(
-                    "Schema validation failed for {path} : {}",
+                    "Schema validation failed for {path}: {}",
                     error_messages.join(", ")
                 ))
             }

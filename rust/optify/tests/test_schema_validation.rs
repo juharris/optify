@@ -256,6 +256,10 @@ fn test_invalid_file_fails_schema_validation() -> Result<(), String> {
         "Expected error message to mention schema validation, got: {error_message}"
     );
     assert!(
+        error_message.contains(invalid_file_path.to_string_lossy().as_ref()),
+        "Expected error message to include the failing file path, got: {error_message}"
+    );
+    assert!(
         error_message
             .contains("Additional properties are not allowed ('invalidProperty' was unexpected)"),
         "Expected error message to mention banned properties, got: {error_message}"
