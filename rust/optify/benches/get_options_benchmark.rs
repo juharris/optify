@@ -50,7 +50,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
                     provider
                         .get_options(black_box(*key), black_box(*features))
                         .unwrap()
-                })
+                });
             },
         );
 
@@ -69,7 +69,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
                             Some(&preferences),
                         )
                         .unwrap()
-                })
+                });
             },
         );
 
@@ -93,7 +93,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
                             None,
                         )
                         .unwrap()
-                })
+                });
             },
         );
 
@@ -106,7 +106,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
                     provider
                         .get_filtered_feature_names(black_box(features), None)
                         .unwrap()
-                })
+                });
             },
         );
 
@@ -119,7 +119,7 @@ fn benchmark_get_options_with_preferences_breakdown(c: &mut Criterion) {
                     provider
                         .get_canonical_feature_names(black_box(features))
                         .unwrap()
-                })
+                });
             },
         );
     }
@@ -145,7 +145,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
                     None,
                 )
                 .unwrap()
-        })
+        });
     });
 
     // With small override
@@ -162,7 +162,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
                     Some(&preferences),
                 )
                 .unwrap()
-        })
+        });
     });
 
     // With larger override
@@ -189,7 +189,7 @@ fn benchmark_with_overrides(c: &mut Criterion) {
                     Some(&preferences),
                 )
                 .unwrap()
-        })
+        });
     });
 
     group.finish();
@@ -214,7 +214,7 @@ fn benchmark_skip_feature_name_conversion(c: &mut Criterion) {
                     Some(&preferences),
                 )
                 .unwrap()
-        })
+        });
     });
 
     // Without feature name conversion
@@ -231,7 +231,7 @@ fn benchmark_skip_feature_name_conversion(c: &mut Criterion) {
                     Some(&preferences),
                 )
                 .unwrap()
-        })
+        });
     });
 
     group.finish();
@@ -277,7 +277,7 @@ fn benchmark_many_features(c: &mut Criterion) {
                         black_box(preferences),
                     )
                     .unwrap()
-            })
+            });
         });
     }
 

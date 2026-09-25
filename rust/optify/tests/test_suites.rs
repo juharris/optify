@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_debug_formatting)]
+
 use std::fs;
 
 use optify::provider::{GetOptionsPreferences, OptionsRegistry};

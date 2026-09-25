@@ -26,6 +26,9 @@ use crate::schema::metadata::OptionsMetadata;
 type Dependents = HashMap<String, Vec<String>>;
 type Imports = HashMap<String, Vec<String>>;
 
+const EMBEDDED_SCHEMA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/schemas/feature_file.json"));
+
 /// A builder to use in production to create an `OptionsProvider`.
 #[derive(Clone)]
 pub struct OptionsProviderBuilder {
@@ -140,10 +143,8 @@ fn resolve_imports(
 
         // Get the source so that we can build the configuration.
         // Getting the source also ensures the import is a canonical feature name.
-        let mut source = match sources.get(import) {
-            Some(s) => s,
-            // The import is not a canonical feature name.
-            None => match aliases.get(&unicase::UniCase::new(import.clone())) {
+        let Some(mut source) = sources.get(import) else {
+            match aliases.get(&unicase::UniCase::new(import.clone())) {
                 Some(canonical_name_for_import) => {
                     return Err(format!(
                         "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name. Use '{canonical_name_for_import}' instead of '{import}' in order to keep dependencies clear and to help with navigating through files."
@@ -154,18 +155,19 @@ fn resolve_imports(
                         "Error when resolving imports for '{canonical_feature_name}': The import '{import}' is not a canonical feature name and not a recognized alias. Use a canonical feature name in order to keep dependencies clear and to help with navigating through files."
                     ))
                 }
-            },
+            }
         };
 
         if resolved_imports.insert(import.clone()) {
             if let Some(imports_for_import) = all_imports.get(import) {
-                let mut _features_in_resolution_path = features_in_resolution_path.clone();
-                _features_in_resolution_path.insert(import.clone());
+                let mut features_in_resolution_path_for_import =
+                    features_in_resolution_path.clone();
+                features_in_resolution_path_for_import.insert(import.clone());
                 resolve_imports(
                     import,
                     imports_for_import,
                     resolved_imports,
-                    &mut _features_in_resolution_path,
+                    &mut features_in_resolution_path_for_import,
                     aliases,
                     all_dependents,
                     all_imports,
@@ -186,6 +188,7 @@ fn resolve_imports(
 }
 
 impl OptionsProviderBuilder {
+    #[must_use]
     pub fn new() -> Self {
         OptionsProviderBuilder {
             aliases: Aliases::new(),
@@ -288,7 +291,7 @@ impl OptionsProviderBuilder {
         directory: &Path,
         builder_options: &BuilderOptions,
         supported_extensions: &HashSet<&str>,
-        feature_contents_validator: &Option<Arc<Validator>>,
+        feature_contents_validator: Option<&Arc<Validator>>,
     ) -> Result<LoadingResult, String> {
         let is_config_file = match path.extension() {
             Some(ext) => match ext.to_str() {
@@ -420,9 +423,9 @@ impl OptionsProviderBuilder {
 }
 
 fn validate_with_schema(
-    validator: &Option<Arc<Validator>>,
+    validator: Option<&Arc<Validator>>,
     original_config: &serde_json::Value,
-    path: &String,
+    path: &str,
 ) -> Result<(), String> {
     match validator {
         Some(validator) => {
@@ -432,8 +435,7 @@ fn validate_with_schema(
                 let errors = validator.iter_errors(original_config);
                 let error_messages: Vec<String> = errors.map(|e| format!("{e}")).collect();
                 Err(format!(
-                    "Schema validation failed for {:?} : {}",
-                    path,
+                    "Schema validation failed for {path}: {}",
                     error_messages.join(", ")
                 ))
             }
@@ -446,7 +448,7 @@ fn process_config_file_entry(
     path: &Path,
     directory: &Path,
     builder_options: &BuilderOptions,
-    feature_contents_validator: &Option<Arc<Validator>>,
+    feature_contents_validator: Option<&Arc<Validator>>,
 ) -> Result<LoadingResult, String> {
     let absolute_path = dunce::canonicalize(path)
         .expect("path should be valid")
@@ -459,7 +461,7 @@ fn process_config_file_entry(
     let file = config::File::from(path);
     let config_for_path = match config::Config::builder().add_source(file).build() {
         Ok(conf) => conf,
-        Err(e) => return Err(format!("Error loading file '{}': {e}", absolute_path)),
+        Err(e) => return Err(format!("Error loading file '{absolute_path}': {e}")),
     };
 
     // We need the raw JSON for validation.
@@ -467,8 +469,7 @@ fn process_config_file_entry(
         Ok(v) => v,
         Err(e) => {
             return Err(format!(
-                "Error deserializing configuration for file '{}': {e}",
-                absolute_path,
+                "Error deserializing configuration for file '{absolute_path}': {e}",
             ))
         }
     };
@@ -479,8 +480,7 @@ fn process_config_file_entry(
         Ok(v) => v,
         Err(e) => {
             return Err(format!(
-                "Error deserializing configuration for file '{}': {e}",
-                absolute_path,
+                "Error deserializing configuration for file '{absolute_path}': {e}",
             ))
         }
     };
@@ -553,7 +553,8 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         let directory = directory.as_ref();
         if !directory.is_dir() {
             return Err(format!(
-                "Error adding directory: {directory:?} is not a directory"
+                "Error adding directory: {} is not a directory",
+                directory.display()
             ));
         }
 
@@ -618,7 +619,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
                             directory,
                             &builder_options,
                             &supported_extensions,
-                            &self.schema,
+                            self.schema.as_ref(),
                         )
                     })
                     .collect()
@@ -650,9 +651,6 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             )
         })?;
 
-        // Load the embedded schema file (this is resolved at compile time).
-        const EMBEDDED_SCHEMA: &[u8] =
-            include_bytes!(concat!(env!("OUT_DIR"), "/schemas/feature_file.json"));
         let optify_schema_json: serde_json::Value = serde_json::from_slice(EMBEDDED_SCHEMA)
             .map_err(|e| format!("Failed to parse embedded schema: {e}"))?;
         let registry = Registry::new()

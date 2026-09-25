@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_wraps)]
+
 use optify::provider::{CacheOptions, GetOptionsPreferences, OptionsProvider, OptionsRegistry};
 
 fn get_new_provider() -> OptionsProvider {

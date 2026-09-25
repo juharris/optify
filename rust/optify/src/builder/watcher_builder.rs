@@ -22,6 +22,7 @@ impl Default for OptionsWatcherBuilder {
 }
 
 impl OptionsWatcherBuilder {
+    #[must_use]
     pub fn new() -> Self {
         OptionsWatcherBuilder {
             builder_options: BuilderOptions::default(),
@@ -65,7 +66,7 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
     fn build(&mut self) -> Result<OptionsWatcher, String> {
         OptionsWatcher::new(
             &self.watched_directories,
-            self.watcher_options.clone(),
+            self.watcher_options,
             self.builder_options.clone(),
         )
     }

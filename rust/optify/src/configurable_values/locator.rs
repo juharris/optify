@@ -6,6 +6,7 @@ pub(crate) const TYPE_KEY: &str = "$type";
 pub(crate) const STRING_TYPE: &str = "Optify.ConfigurableString";
 pub(crate) const LIST_TYPE: &str = "Optify.ConfigurableList";
 
+#[allow(clippy::struct_field_names)]
 pub(crate) struct ConfigurableValuePointers {
     pub configurable_string_pointers: Vec<String>,
     pub configurable_list_pointers: Vec<String>,
@@ -38,7 +39,7 @@ pub(crate) fn find_configurable_values(
     let mut result = ConfigurableValuePointers::default();
 
     if let Some(value) = options {
-        find_configurable_values_recursive(value, None, "".to_owned(), "".to_owned(), &mut result);
+        find_configurable_values_recursive(value, None, "", "", &mut result);
     }
 
     result
@@ -47,8 +48,8 @@ pub(crate) fn find_configurable_values(
 fn find_configurable_values_recursive<'a>(
     value: &'a serde_json::Value,
     mut top_level_key: Option<&'a str>,
-    current_pointer: String,
-    current_keyed_pointer: String,
+    current_pointer: &str,
+    current_keyed_pointer: &str,
     result: &mut ConfigurableValuePointers,
 ) {
     match value {
@@ -59,13 +60,13 @@ fn find_configurable_values_recursive<'a>(
                     Some(STRING_TYPE) => {
                         result
                             .configurable_string_pointers
-                            .push(current_pointer.to_owned());
+                            .push(current_pointer.to_string());
                         if let Some(key) = top_level_key {
                             result
                                 .keyed_configurable_string_pointers
                                 .entry(key.to_owned())
                                 .or_default()
-                                .push(current_keyed_pointer.to_owned());
+                                .push(current_keyed_pointer.to_string());
                         }
                         // Do not recurse because configurable strings cannot contain nested configurable values.
                         return;
@@ -73,13 +74,13 @@ fn find_configurable_values_recursive<'a>(
                     Some(LIST_TYPE) => {
                         result
                             .configurable_list_pointers
-                            .push(current_pointer.to_owned());
+                            .push(current_pointer.to_string());
                         if let Some(key) = top_level_key {
                             result
                                 .keyed_configurable_list_pointers
                                 .entry(key.to_owned())
                                 .or_default()
-                                .push(current_keyed_pointer.to_owned());
+                                .push(current_keyed_pointer.to_string());
                         }
                         // Continue recursing because configurable lists can contain nested configurable values such as strings.
                     }
@@ -95,17 +96,17 @@ fn find_configurable_values_recursive<'a>(
                     top_level_key = Some(key);
                     escape_json_pointer!(key);
                     next_pointer = format!("/{key}");
-                    next_keyed_pointer = current_keyed_pointer.clone();
+                    next_keyed_pointer = current_keyed_pointer.to_string();
                 } else {
                     escape_json_pointer!(key);
                     next_pointer = format!("{current_pointer}/{key}");
                     next_keyed_pointer = format!("{current_keyed_pointer}/{key}");
-                };
+                }
                 find_configurable_values_recursive(
                     val,
                     top_level_key,
-                    next_pointer,
-                    next_keyed_pointer,
+                    &next_pointer,
+                    &next_keyed_pointer,
                     result,
                 );
             }
@@ -121,16 +122,16 @@ fn find_configurable_values_recursive<'a>(
                     // This is not tested.
                     top_level_key = Some("$");
                     next_pointer = format!("/{index}");
-                    next_keyed_pointer = current_keyed_pointer.clone();
+                    next_keyed_pointer = current_keyed_pointer.to_string();
                 } else {
                     next_pointer = format!("{current_pointer}/{index}");
                     next_keyed_pointer = format!("{current_keyed_pointer}/{index}");
-                };
+                }
                 find_configurable_values_recursive(
                     val,
                     top_level_key,
-                    next_pointer,
-                    next_keyed_pointer,
+                    &next_pointer,
+                    &next_keyed_pointer,
                     result,
                 );
             }
@@ -156,7 +157,7 @@ mod tests {
 
         let pointers = find_configurable_values(Some(&json_value));
 
-        assert_eq!(pointers.configurable_string_pointers, vec!["".to_string()]);
+        assert_eq!(pointers.configurable_string_pointers, vec![String::new()]);
     }
 
     #[test]

@@ -3,6 +3,7 @@ use serde::Deserialize;
 
 #[derive(Clone, Deserialize, Hash, PartialEq, Eq)]
 #[serde(default)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct GetOptionsPreferences {
     /// Allows resolving configurable strings.
     /// Defaults to false: no configurable strings will be resolved.
@@ -39,6 +40,7 @@ impl Default for GetOptionsPreferences {
 }
 
 impl GetOptionsPreferences {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             are_configurable_strings_enabled: false,
@@ -51,6 +53,7 @@ impl GetOptionsPreferences {
         }
     }
 
+    #[must_use]
     pub fn are_configurable_values_enabled(&self) -> bool {
         // Assume that if `are_configurable_strings_enabled` (the legacy value),
         // then they will want configurable lists too.

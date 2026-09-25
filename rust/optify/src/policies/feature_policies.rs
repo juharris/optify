@@ -12,7 +12,7 @@ pub(crate) type PoliciesMap = HashMap<String, Policies>;
 /// Unlike conditions, policies are **not** evaluated on imported features — a feature may
 /// freely import another feature that has policies without those policies being enforced.
 ///
-/// See https://github.com/juharris/optify#policies for details and a comparison with conditions.
+/// See <https://github.com/juharris/optify#policies> for details and a comparison with conditions.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Policies {

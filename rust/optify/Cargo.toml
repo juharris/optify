@@ -17,6 +17,9 @@ exclude = [
     "tests/*",
 ]
 
+[lints]
+workspace = true
+
 [dependencies]
 config = { version = "0.15.25", features = ["preserve_order"] }
 cow-utils = "0.1.3"

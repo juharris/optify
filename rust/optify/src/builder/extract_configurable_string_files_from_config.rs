@@ -5,9 +5,8 @@ pub(crate) fn extract_configurable_string_files_from_config(
     configurable_value_pointers: &[String],
 ) -> Vec<String> {
     let mut configurable_string_files = Vec::new();
-    let options_obj = match raw_config.get("options") {
-        Some(v) => v,
-        None => return configurable_string_files,
+    let Some(options_obj) = raw_config.get("options") else {
+        return configurable_string_files;
     };
 
     for pointer in configurable_value_pointers {
