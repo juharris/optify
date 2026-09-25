@@ -119,7 +119,9 @@ impl OptionsWatcher {
         for dir in watched_directories {
             debouncer_watcher
                 .watch(dir, notify::RecursiveMode::Recursive)
-                .map_err(|e| format!("Failed to watch directory {}: {e}", dir.as_ref().display()))?;
+                .map_err(|e| {
+                    format!("Failed to watch directory {}: {e}", dir.as_ref().display())
+                })?;
         }
 
         let provider = OptionsProvider::build_from_directories_with_options(

@@ -34,7 +34,10 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
     let max_sleep_time = 3000;
     while provider.last_modified() == created_at {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
-        assert!(start_time.elapsed().as_millis() <= max_sleep_time, "Provider did not update after {max_sleep_time}ms.");
+        assert!(
+            start_time.elapsed().as_millis() <= max_sleep_time,
+            "Provider did not update after {max_sleep_time}ms."
+        );
     }
 
     let options = provider.get_options("test", &["modifiable_test"])?;
@@ -79,7 +82,10 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     let max_sleep_time = 3000;
     while provider.last_modified() == created_at {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
-        assert!(start_time.elapsed().as_millis() <= max_sleep_time, "Provider did not update after {max_sleep_time}ms.");
+        assert!(
+            start_time.elapsed().as_millis() <= max_sleep_time,
+            "Provider did not update after {max_sleep_time}ms."
+        );
     }
 
     assert!(provider.last_modified() > created_at);
@@ -99,7 +105,8 @@ fn test_watchable_builder_multiple_directories() -> Result<(), Box<dyn std::erro
     let start_time = std::time::Instant::now();
     while provider.last_modified() == last_modified {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
-        assert!(start_time.elapsed().as_millis() <= max_sleep_time, 
+        assert!(
+            start_time.elapsed().as_millis() <= max_sleep_time,
             "File {} still exists after {}ms.",
             file1.display(),
             max_sleep_time
@@ -156,7 +163,10 @@ fn test_watchable_builder_error_rebuilding_provider() -> Result<(), Box<dyn std:
     let max_sleep_time = 3000;
     while provider.last_modified() == last_modified {
         thread::sleep(Duration::from_millis(SLEEP_TIME));
-        assert!(start_time.elapsed().as_millis() <= max_sleep_time, "Provider did not update after {max_sleep_time}ms.");
+        assert!(
+            start_time.elapsed().as_millis() <= max_sleep_time,
+            "Provider did not update after {max_sleep_time}ms."
+        );
     }
 
     let options = provider.get_options("test", &["test"])?;

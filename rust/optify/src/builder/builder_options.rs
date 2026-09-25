@@ -42,7 +42,9 @@ impl BuilderOptionsConfig {
     /// Fields in `overrides` that differ from `BuilderOptions::default()` take priority.
     pub fn merge_with(self, overrides: &BuilderOptions) -> BuilderOptions {
         let defaults = BuilderOptions::default();
-        let are_configurable_values_enabled = if overrides.are_configurable_values_enabled == defaults.are_configurable_values_enabled {
+        let are_configurable_values_enabled = if overrides.are_configurable_values_enabled
+            == defaults.are_configurable_values_enabled
+        {
             self.are_configurable_values_enabled
                 .unwrap_or(defaults.are_configurable_values_enabled)
         } else {
@@ -61,7 +63,9 @@ impl BuilderOptionsConfig {
             } else {
                 overrides.policies_path.clone()
             },
-            track_file_references: if overrides.track_file_references == defaults.track_file_references {
+            track_file_references: if overrides.track_file_references
+                == defaults.track_file_references
+            {
                 self.track_file_references
                     .unwrap_or(defaults.track_file_references)
             } else {

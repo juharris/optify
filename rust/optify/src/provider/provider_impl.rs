@@ -119,7 +119,9 @@ impl OptionsProvider {
             _ => {
                 // Start with overrides as base (highest priority), or last source if no overrides.
                 // Sources are ordered from lowest to highest priority, so we iterate in reverse.
-                let mut result = if let Some(overrides) = overrides { overrides.clone() } else {
+                let mut result = if let Some(overrides) = overrides {
+                    overrides.clone()
+                } else {
                     let canonical_feature_name = feature_names.last().unwrap();
                     self.sources
                         .get(canonical_feature_name)
@@ -127,7 +129,9 @@ impl OptionsProvider {
                             // Should not happen.
                             // All canonical feature names are included as keys in the sources map.
                             // It could happen in the future if we allow aliases to be added directly, but we should try to validate them when the provider is built.
-                            format!("Feature name {canonical_feature_name:?} is not a known feature.")
+                            format!(
+                                "Feature name {canonical_feature_name:?} is not a known feature."
+                            )
                         })?
                         .clone()
                 };
@@ -274,8 +278,8 @@ impl OptionsProvider {
         preferences: Option<&GetOptionsPreferences>,
     ) -> Result<Option<serde_json::Value>, String> {
         let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
-        let are_configurable_strings_enabled = preferences
-            .is_some_and(|p| p.are_configurable_strings_enabled);
+        let are_configurable_strings_enabled =
+            preferences.is_some_and(|p| p.are_configurable_strings_enabled);
         let cache_key = (
             key.to_owned(),
             filtered_feature_names,
@@ -362,13 +366,15 @@ impl OptionsProvider {
         key: Option<&str>,
     ) -> Result<(), String> {
         match key {
-            Some(key) => if let Some(pointers) = self.keyed_configurable_string_pointers.get(key) {
-                for pointer in pointers {
-                    self.handle_configurable_string_pointer(value, pointer)?;
+            Some(key) => {
+                if let Some(pointers) = self.keyed_configurable_string_pointers.get(key) {
+                    for pointer in pointers {
+                        self.handle_configurable_string_pointer(value, pointer)?;
+                    }
+                } else {
+                    // There are no pointers for the key.
                 }
-            } else {
-                // There are no pointers for the key.
-            },
+            }
             None => {
                 // There is no key prefix when the entire configuration is requested.
                 for pointer in &self.all_configurable_string_pointers {
@@ -462,7 +468,10 @@ impl OptionsRegistry for OptionsProvider {
     }
 
     fn get_features_and_aliases(&self) -> Vec<String> {
-        self.aliases.keys().map(std::string::ToString::to_string).collect()
+        self.aliases
+            .keys()
+            .map(std::string::ToString::to_string)
+            .collect()
     }
 
     fn get_all_options(
@@ -473,9 +482,9 @@ impl OptionsRegistry for OptionsProvider {
     ) -> Result<serde_json::Value, String> {
         let feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
         let mut value = self.get_entire_config(&feature_names, cache_options, preferences)?;
-        if preferences
-            .is_some_and(super::get_options_preferences::GetOptionsPreferences::are_configurable_values_enabled)
-        {
+        if preferences.is_some_and(
+            super::get_options_preferences::GetOptionsPreferences::are_configurable_values_enabled,
+        ) {
             // Strings need to be processed before lists because lists may contain strings.
             self.process_configurable_strings(&mut value, None)?;
             self.process_configurable_lists(&mut value, None)?;
@@ -549,9 +558,7 @@ impl OptionsRegistry for OptionsProvider {
 
             if let Some(constraints) = constraints {
                 let conditions = self.conditions.get(&canonical_feature_name);
-                if !conditions
-                    .is_none_or(|conditions| conditions.evaluate(constraints))
-                {
+                if !conditions.is_none_or(|conditions| conditions.evaluate(constraints)) {
                     continue;
                 }
             }
@@ -597,17 +604,17 @@ impl OptionsRegistry for OptionsProvider {
         let mut value =
             self.get_options_for_key(key, &filtered_feature_names, feature_names, preferences)?;
 
-        if preferences
-            .is_some_and(super::get_options_preferences::GetOptionsPreferences::are_configurable_values_enabled)
-        {
+        if preferences.is_some_and(
+            super::get_options_preferences::GetOptionsPreferences::are_configurable_values_enabled,
+        ) {
             // Strings need to be processed before lists because lists may contain strings.
             self.process_configurable_strings(&mut value, Some(key))?;
             self.process_configurable_lists(&mut value, Some(key))?;
         }
 
         if cache_options.is_some() {
-            let are_configurable_strings_enabled = preferences
-                .is_some_and(|p| p.are_configurable_strings_enabled);
+            let are_configurable_strings_enabled =
+                preferences.is_some_and(|p| p.are_configurable_strings_enabled);
             let cache_key = (
                 key.to_owned(),
                 filtered_feature_names.clone(),
@@ -672,9 +679,7 @@ impl OptionsRegistry for OptionsProvider {
 
             if let Some(constraints) = constraints {
                 let conditions = self.conditions.get(&canonical_feature_name);
-                if !conditions
-                    .is_none_or(|conditions| conditions.evaluate(constraints))
-                {
+                if !conditions.is_none_or(|conditions| conditions.evaluate(constraints)) {
                     result.push(None);
                     continue;
                 }

@@ -61,17 +61,19 @@ impl<'a> DynamicArguments<'a> {
             Some(r) => match r {
                 ReplacementValue::String(s) => Some(s.into()),
                 ReplacementValue::Object(replacement_object) => match replacement_object {
-                    ReplacementObject::File { file } => if let Some(contents) = self.files.get(file) {
-                        if file.ends_with(".liquid") {
-                            return self.render_liquid(contents);
+                    ReplacementObject::File { file } => {
+                        if let Some(contents) = self.files.get(file) {
+                            if file.ends_with(".liquid") {
+                                return self.render_liquid(contents);
+                            }
+                            Some(contents.into())
+                        } else {
+                            self.errors
+                                .borrow_mut()
+                                .push(format!("File '{file}' not found for key '{key}'."));
+                            None
                         }
-                        Some(contents.into())
-                    } else {
-                        self.errors
-                            .borrow_mut()
-                            .push(format!("File '{file}' not found for key '{key}'."));
-                        None
-                    },
+                    }
                     ReplacementObject::Liquid { liquid } => self.render_liquid(liquid),
                 },
             },
@@ -231,7 +233,8 @@ impl ConfigurableString {
             ReplacementValue::Object(ReplacementObject::File { file }) => {
                 files.push(file.clone());
             }
-            ReplacementValue::String(_) | ReplacementValue::Object(ReplacementObject::Liquid { .. }) => {}
+            ReplacementValue::String(_)
+            | ReplacementValue::Object(ReplacementObject::Liquid { .. }) => {}
         }
     }
 
@@ -287,7 +290,9 @@ impl ConfigurableString {
             .map_err(|e| format!("Failed to parse template: {e}"))?;
 
         let empty_context;
-        let context = if let Some(r) = &self.arguments { r } else {
+        let context = if let Some(r) = &self.arguments {
+            r
+        } else {
             empty_context = HashMap::new();
             &empty_context
         };

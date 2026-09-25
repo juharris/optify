@@ -160,7 +160,8 @@ fn resolve_imports(
 
         if resolved_imports.insert(import.clone()) {
             if let Some(imports_for_import) = all_imports.get(import) {
-                let mut features_in_resolution_path_for_import = features_in_resolution_path.clone();
+                let mut features_in_resolution_path_for_import =
+                    features_in_resolution_path.clone();
                 features_in_resolution_path_for_import.insert(import.clone());
                 resolve_imports(
                     import,
