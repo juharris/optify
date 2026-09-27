@@ -120,7 +120,10 @@ impl OptionsWatcher {
             debouncer_watcher
                 .watch(dir, notify::RecursiveMode::Recursive)
                 .map_err(|e| {
-                    format!("Failed to watch directory {}: {e}", dir.as_ref().display())
+                    format!(
+                        "Failed to watch directory \"{}\": {e}",
+                        dir.as_ref().display()
+                    )
                 })?;
         }
 
