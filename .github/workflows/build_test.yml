@@ -74,7 +74,7 @@ jobs:
     - name: "🦀[Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./rust/optify
-    - name: "🦀[Rust] Clippy"
+    - name: "🦀📎[Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./rust/optify
     - name: "🦀[Rust] Test"
@@ -151,7 +151,7 @@ jobs:
     - name: "🦀[Rust CLI] Lint"
       run: cargo fmt -- --check
       working-directory: ./rust/optify-cli
-    - name: "🦀[Rust CLI] Clippy"
+    - name: "🦀📎[Rust CLI] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings
       working-directory: ./rust/optify-cli
     - name: "🦀[Rust CLI] Test"
@@ -279,7 +279,7 @@ jobs:
     - name: "🐍[Python][Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./python/optify
-    - name: "🐍[Python][Rust] Clippy"
+    - name: "🐍📎[Python][Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./python/optify
     - name: "🐍[Python] Test"
