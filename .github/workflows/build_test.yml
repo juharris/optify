@@ -48,7 +48,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   rust:
-    name: "🧪[Rust] Build & Test"
+    name: "🦀🧪[Rust] Build & Test"
     needs: setup
     runs-on: ${{ matrix.os }}
     permissions:
@@ -58,7 +58,7 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     # Rust
     - name: "🦀[Rust] Setup cache"
@@ -82,7 +82,7 @@ jobs:
       working-directory: ./rust/optify
   
   rust_publish:
-    name: "🧪[Rust] Publish"
+    name: "🦀⬆️[Rust] Publish"
     needs: rust
     runs-on: ubuntu-latest
     permissions:
@@ -90,7 +90,7 @@ jobs:
       # Required for OIDC token exchange for Rust crate publishing.
       id-token: write
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
@@ -125,7 +125,7 @@ jobs:
       working-directory: ./rust/optify
 
   rust_cli:
-    name: "🧪[Rust CLI] Build & Test"
+    name: "🦀🧪[Rust CLI] Build & Test"
     needs: [setup, rust]
     runs-on: ${{ matrix.os }}
     permissions:
@@ -135,7 +135,7 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: "🦀[Rust CLI] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
@@ -160,8 +160,9 @@ jobs:
     - name: "🦀[Rust CLI] Integration tests"
       run: bash tests/test_cli.sh
       working-directory: ./rust/optify-cli
+
   rust_cli_publish:
-    name: "🧪[Rust CLI] Publish"
+    name: "🦀⬆️[Rust CLI] Publish"
     needs: [rust_cli, rust_publish]
     runs-on: ubuntu-latest
     permissions:
@@ -169,7 +170,7 @@ jobs:
       # Required for OIDC token exchange for Rust crate publishing.
       id-token: write
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: "🦀[Rust CLI] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
@@ -202,7 +203,7 @@ jobs:
       working-directory: ./rust/optify-cli
 
   js:
-    name: "🧪[JS] Build & Test"
+    name: "⏣🧪[JS] Build & Test"
     needs: [setup, rust]
     runs-on: ${{ matrix.os }}
     permissions:
@@ -212,9 +213,8 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
-    # JavaScript
     - name: "⏣[JS][Rust] Lint"
       # Don't use Clippy because it gives too many errors.
       # It seems like the macros confuse it.
@@ -247,7 +247,7 @@ jobs:
       working-directory: ./js/optify-config
 
   python:
-    name: "🧪[Python] Build & Test"
+    name: "🐍🧪[Python] Build & Test"
     needs: [setup, rust]
     runs-on: ${{ matrix.os }}
     permissions:
@@ -257,7 +257,7 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: "🐍[Python] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
@@ -266,7 +266,6 @@ jobs:
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
 
-    # Python
     - uses: actions/setup-python@v6
       name: "🐍[Python] Setup"
       with:
