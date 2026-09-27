@@ -35,12 +35,16 @@ fn copy_schema_file() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if let Some(path) = source_path {
-        fs::copy(path, &dest_path)
-            .unwrap_or_else(|e| panic!("Failed to copy schema file from {}: {e}", path.display()));
+        fs::copy(path, &dest_path).unwrap_or_else(|e| {
+            panic!(
+                "Failed to copy schema file from \"{}\": {e}",
+                path.display()
+            )
+        });
         println!("cargo:rerun-if-changed={}", path.display());
     } else {
         panic!(
-            "Schema file not found at any of the expected locations: {possible_paths:?}. If you are running `cargo publish`, then the schema needs to be copied from {} to {}.",
+            "Schema file not found at any of the expected locations: {possible_paths:?}. If you are running `cargo publish`, then the schema needs to be copied from \"{}\" to \"{}\".",
             original_path.display(),
             copied_path.display(),
         );
