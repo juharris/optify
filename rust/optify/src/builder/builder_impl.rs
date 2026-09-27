@@ -26,6 +26,7 @@ use crate::schema::metadata::OptionsMetadata;
 type Dependents = HashMap<String, Vec<String>>;
 type Imports = HashMap<String, Vec<String>>;
 
+// Load the embedded schema file (this is resolved at compile time).
 const EMBEDDED_SCHEMA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/schemas/feature_file.json"));
 
@@ -144,6 +145,7 @@ fn resolve_imports(
         // Get the source so that we can build the configuration.
         // Getting the source also ensures the import is a canonical feature name.
         let Some(mut source) = sources.get(import) else {
+            // The import is not a canonical feature name.
             match aliases.get(&unicase::UniCase::new(import.clone())) {
                 Some(canonical_name_for_import) => {
                     return Err(format!(
