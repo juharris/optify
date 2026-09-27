@@ -47,8 +47,8 @@ jobs:
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  test:
-    name: "🧪Build & Test"
+  rust:
+    name: "🧪[Rust] Build & Test"
     needs: setup
     runs-on: ${{ matrix.os }}
     permissions:
@@ -65,11 +65,7 @@ jobs:
     - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: |
-          js/optify-config
-          python/optify
-          rust/optify
-          rust/optify-cli
+        workspaces: rust/optify
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
@@ -111,6 +107,32 @@ jobs:
       run: |
         cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify
+
+  rust_cli:
+    name: "🧪[Rust CLI] Build & Test"
+    needs: [setup, rust]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # Required for OIDC token exchange for Rust crate publishing.
+      id-token: write
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v6
+    - name: "🦀[Rust CLI] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          rust/optify
+          rust/optify-cli
+        cache-workspace-crates: true
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-rust-cli
+    - uses: rust-lang/crates-io-auth-action@v1
+      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      id: auth
     - name: "🦀[Rust CLI] Build"
       run: cargo build --release
       working-directory: ./rust/optify-cli
@@ -145,6 +167,17 @@ jobs:
         cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify-cli
 
+  js:
+    name: "🧪[JS] Build & Test"
+    needs: [setup, rust]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v6
+
     # JavaScript
     - name: "⏣[JS][Rust] Lint"
       # Don't use Clippy because it gives too many errors.
@@ -176,6 +209,24 @@ jobs:
     - name: "⏣[JS] Test"
       run: yarn test
       working-directory: ./js/optify-config
+
+  python:
+    name: "🧪[Python] Build & Test"
+    needs: [setup, rust]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v6
+    - name: "🐍[Python] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: python/optify
+        cache-workspace-crates: true
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-python-rust
 
     # Python
     - uses: actions/setup-python@v6
