@@ -41,6 +41,7 @@ pub struct OptionsMetadata {
 }
 
 impl OptionsMetadata {
+    #[must_use]
     pub fn new(
         aliases: Option<Vec<String>>,
         details: Option<Details>,
@@ -51,8 +52,8 @@ impl OptionsMetadata {
     ) -> Self {
         Self {
             aliases,
-            details,
             dependents,
+            details,
             name,
             owners,
             path,

@@ -1,4 +1,6 @@
-<img src="./vscode/extension/assets/logo.png" alt="logo" width="64" style="margin-left: 40%"/>
+<p align="center" width="100%">
+  <img src="./vscode/extension/assets/logo.png" alt="logo" width="64"/>
+</p>
 
 # Optify
 

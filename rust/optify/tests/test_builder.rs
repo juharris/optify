@@ -1,3 +1,5 @@
+#![allow(clippy::manual_let_else, clippy::unnecessary_wraps)]
+
 use optify::{
     builder::{BuilderOptions, OptionsProviderBuilder, OptionsRegistryBuilder},
     provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
@@ -45,7 +47,7 @@ fn test_builder_duplicate_alias() -> Result<(), Box<dyn std::error::Error>> {
     match builder.add_directory(path) {
         Ok(_) => panic!("Expected an error."),
         Err(e) => {
-            let pattern = r#"The alias 'b' for canonical feature name 'a' is already mapped to 'b'\.|The alias 'b' for canonical feature name 'b' is already mapped to 'a'\."#;
+            let pattern = r"The alias 'b' for canonical feature name 'a' is already mapped to 'b'\.|The alias 'b' for canonical feature name 'b' is already mapped to 'a'\.";
             assert!(
                 regex::Regex::new(pattern)?.is_match(&e),
                 "Got: {e}\nExpected pattern: {pattern}",

@@ -17,7 +17,7 @@ pub(crate) type RequesterPoliciesMap = HashMap<String, RequesterFeaturePolicy>;
 ///
 /// Feature names must be canonical feature names.
 ///
-/// See https://github.com/juharris/optify#policies for more information.
+/// See <https://github.com/juharris/optify#policies> for more information.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum RequesterFeaturePolicy {

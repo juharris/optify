@@ -18,7 +18,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
             let _ = provider
                 .get_all_options(black_box(&features_a), None, None)
                 .unwrap();
-        })
+        });
     });
 
     // Benchmark with caching (should be faster after first call)
@@ -32,7 +32,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
             let _ = provider
                 .get_all_options(black_box(&features_a), Some(&cache_options), None)
                 .unwrap();
-        })
+        });
     });
 
     // Benchmark specific config retrieval without cache
@@ -46,7 +46,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
                     None,
                 )
                 .unwrap();
-        })
+        });
     });
 
     // Benchmark specific config retrieval with cache
@@ -65,7 +65,7 @@ fn benchmark_cache_vs_no_cache(c: &mut Criterion) {
                     None,
                 )
                 .unwrap();
-        })
+        });
     });
 
     group.finish();
@@ -87,7 +87,7 @@ fn benchmark_cache_with_preferences(c: &mut Criterion) {
             let _ = provider
                 .get_all_options(black_box(&features_a), None, Some(&preferences))
                 .unwrap();
-        })
+        });
     });
 
     // Benchmark with caching and preferences (cache hit)
@@ -108,7 +108,7 @@ fn benchmark_cache_with_preferences(c: &mut Criterion) {
                     Some(&preferences),
                 )
                 .unwrap();
-        })
+        });
     });
 
     group.finish();
@@ -127,7 +127,7 @@ fn benchmark_cache_multiple_features(c: &mut Criterion) {
             let _ = provider
                 .get_all_options(black_box(&features_a_b), None, None)
                 .unwrap();
-        })
+        });
     });
 
     // Benchmark with caching for multiple features (cache hit)
@@ -141,7 +141,7 @@ fn benchmark_cache_multiple_features(c: &mut Criterion) {
             let _ = provider
                 .get_all_options(black_box(&features_a_b), Some(&cache_options), None)
                 .unwrap();
-        })
+        });
     });
 
     group.finish();
@@ -162,7 +162,7 @@ fn benchmark_cache_performance_scaling(c: &mut Criterion) {
                     .get_all_options(black_box(&features_a), None, None)
                     .unwrap();
             }
-        })
+        });
     });
 
     // Benchmark repeated calls with caching (should show significant improvement)
@@ -178,7 +178,7 @@ fn benchmark_cache_performance_scaling(c: &mut Criterion) {
                     .get_all_options(black_box(&features_a), Some(&cache_options), None)
                     .unwrap();
             }
-        })
+        });
     });
 
     group.finish();

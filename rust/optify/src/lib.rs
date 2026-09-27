@@ -1,3 +1,5 @@
+#![allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
+
 pub mod builder;
 pub mod configurable_string;
 pub(crate) mod configurable_values;

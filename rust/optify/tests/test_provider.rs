@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_wraps)]
+
 use optify::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
@@ -470,7 +472,7 @@ fn test_provider_get_metadata() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap()
             .to_string_lossy()
             .to_string();
-    assert_eq!(expected_path, a_metadata.path.as_ref().unwrap().to_string());
+    assert_eq!(expected_path, a_metadata.path.as_ref().unwrap().clone());
 
     Ok(())
 }

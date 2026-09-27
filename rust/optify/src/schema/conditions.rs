@@ -45,6 +45,7 @@ pub enum Predicate {
 }
 
 impl Predicate {
+    #[must_use]
     pub fn equals(value: serde_json::Value) -> Self {
         Self::Equals { equals: value }
     }
@@ -55,6 +56,7 @@ impl Predicate {
         })
     }
 
+    #[must_use]
     pub fn evaluate(&self, value: &serde_json::Value) -> bool {
         match (self, value) {
             (Self::Equals { equals }, value) => value == equals,
@@ -77,6 +79,7 @@ pub struct Condition {
 }
 
 impl Condition {
+    #[must_use]
     pub fn evaluate(&self, constraints: &Constraints) -> bool {
         constraints
             .constraints
@@ -153,6 +156,7 @@ impl<'de> Deserialize<'de> for ConditionExpression {
 }
 
 impl ConditionExpression {
+    #[must_use]
     pub fn evaluate(&self, data: &Constraints) -> bool {
         match self {
             Self::Condition(condition) => condition.evaluate(data),
@@ -162,6 +166,7 @@ impl ConditionExpression {
         }
     }
 
+    #[must_use]
     pub fn evaluate_with(&self, data: &serde_json::Value) -> bool {
         self.evaluate(&Constraints {
             constraints: data.clone(),

@@ -21,9 +21,8 @@ fn collect_file_values(value: &serde_json::Value, files: &mut Vec<String>) {
 
 pub(crate) fn extract_files_from_config(raw_config: &serde_json::Value) -> Vec<String> {
     let mut result = Vec::new();
-    let options_obj = match raw_config.get("options") {
-        Some(v) => v,
-        None => return result,
+    let Some(options_obj) = raw_config.get("options") else {
+        return result;
     };
 
     collect_file_values(options_obj, &mut result);

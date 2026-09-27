@@ -1,3 +1,5 @@
+#![allow(clippy::manual_let_else, clippy::unnecessary_wraps)]
+
 use optify::{
     builder::{OptionsRegistryBuilder, OptionsWatcherBuilder},
     provider::{OptionsProvider, OptionsRegistry, OptionsWatcher},
@@ -250,8 +252,12 @@ fn test_invalid_file_fails_schema_validation() -> Result<(), String> {
 
     let error_message = result.err().unwrap();
     assert!(
-        error_message.contains("Failed to build provider: Schema validation failed for \""),
+        error_message.contains("Failed to build provider: Schema validation failed for "),
         "Expected error message to mention schema validation, got: {error_message}"
+    );
+    assert!(
+        error_message.contains(invalid_file_path.to_string_lossy().as_ref()),
+        "Expected error message to include the failing file path, got: {error_message}"
     );
     assert!(
         error_message

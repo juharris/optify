@@ -4,3 +4,7 @@ members = [
     "optify-cli",
 ]
 resolver = "2"
+
+[workspace.lints.clippy]
+pedantic = "warn"
+perf = "warn"
