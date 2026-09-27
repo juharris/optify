@@ -31,6 +31,7 @@ impl MutGetOptionsPreferences {
     }
 
     // Constraints Section
+    #[allow(clippy::needless_pass_by_value)]
     pub fn set_constraints_json(&self, constraints_json: Option<String>) {
         self.0
             .borrow_mut()
