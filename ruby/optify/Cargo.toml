@@ -7,3 +7,7 @@ resolver = "2"
 # When building from the source gem (no workspace), Cargo fetches from crates.io instead.
 [patch.crates-io]
 optify = { path = "../../rust/optify" }
+
+[workspace.lints.clippy]
+pedantic = "warn"
+perf = "warn"
