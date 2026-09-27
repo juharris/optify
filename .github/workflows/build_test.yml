@@ -47,29 +47,24 @@ jobs:
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  test:
-    name: "🧪Build & Test"
+  rust:
+    name: "🦀🧪[Rust] Build & Test"
     needs: setup
     runs-on: ${{ matrix.os }}
     permissions:
-      # Required for OIDC token exchange for Rust crate publishing.
-      id-token: write
+      contents: read
     strategy:
       fail-fast: true
       matrix:
         os: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     # Rust
     - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: |
-          js/optify-config
-          python/optify
-          rust/optify
-          rust/optify-cli
+        workspaces: rust/optify
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
@@ -79,23 +74,40 @@ jobs:
     - name: "🦀[Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./rust/optify
-    - name: "🦀[Rust] Clippy"
+    - name: "🦀📎[Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./rust/optify
     - name: "🦀[Rust] Test"
       run: cargo test --release
       working-directory: ./rust/optify
+  
+  rust_publish:
+    name: "🦀⬆️[Rust] Publish"
+    needs: rust
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for OIDC token exchange for Rust crate publishing.
+      id-token: write
+    steps:
+    - uses: actions/checkout@v7
+    - name: "🦀[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: rust/optify
+        cache-workspace-crates: true
+        cache-on-failure: true
+        shared-key: ubuntu-latest-rust
     - name: "🦀[Rust] Copy schema for publish"
-      if: matrix.os == 'ubuntu-latest'
       run: |
         mkdir schemas
         cp ../../schemas/feature_file.json schemas/
       working-directory: ./rust/optify
     - uses: rust-lang/crates-io-auth-action@v1
-      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      if: github.ref == 'refs/heads/main'
       id: auth
     - name: "🦀[Rust] Publish"
-      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      if: github.ref == 'refs/heads/main'
       shell: bash
       # It probably just fails if the crate is already published.
       # We want to only be lenient for the `cargo publish`, but we would still want to clearly see that an issue happened during the run.
@@ -106,18 +118,40 @@ jobs:
         CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       working-directory: ./rust/optify
     - name: "🦀[Rust] Publish (dry run)"
-      if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      if: github.ref != 'refs/heads/main'
       shell: bash
       run: |
         cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify
+
+  rust_cli:
+    name: "🦀🧪[Rust CLI] Build & Test"
+    needs: [setup, rust]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: "🦀[Rust CLI] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          rust/optify
+          rust/optify-cli
+        cache-workspace-crates: true
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-rust
     - name: "🦀[Rust CLI] Build"
       run: cargo build --release
       working-directory: ./rust/optify-cli
     - name: "🦀[Rust CLI] Lint"
       run: cargo fmt -- --check
       working-directory: ./rust/optify-cli
-    - name: "🦀[Rust CLI] Clippy"
+    - name: "🦀📎[Rust CLI] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings
       working-directory: ./rust/optify-cli
     - name: "🦀[Rust CLI] Test"
@@ -126,8 +160,31 @@ jobs:
     - name: "🦀[Rust CLI] Integration tests"
       run: bash tests/test_cli.sh
       working-directory: ./rust/optify-cli
+
+  rust_cli_publish:
+    name: "🦀⬆️[Rust CLI] Publish"
+    needs: [rust_cli, rust_publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for OIDC token exchange for Rust crate publishing.
+      id-token: write
+    steps:
+    - uses: actions/checkout@v7
+    - name: "🦀[Rust CLI] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          rust/optify
+          rust/optify-cli
+        cache-workspace-crates: true
+        cache-on-failure: true
+        shared-key: ubuntu-latest-rust
+    - uses: rust-lang/crates-io-auth-action@v1
+      if: github.ref == 'refs/heads/main'
+      id: auth
     - name: "🦀[Rust CLI] Publish"
-      if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      if: github.ref == 'refs/heads/main'
       shell: bash
       continue-on-error: true
       run: |
@@ -136,7 +193,7 @@ jobs:
         CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       working-directory: ./rust/optify-cli
     - name: "🦀[Rust CLI] Publish (dry run)"
-      if: github.ref != 'refs/heads/main' && matrix.os == 'ubuntu-latest'
+      if: github.ref != 'refs/heads/main'
       # May fail on PRs when optify-cli depends on unpublished optify changes,
       # since --dry-run resolves the optify crate from crates.io, not the workspace.
       continue-on-error: true
@@ -145,7 +202,19 @@ jobs:
         cargo publish --allow-dirty --dry-run
       working-directory: ./rust/optify-cli
 
-    # JavaScript
+  js:
+    name: "⏣🧪[JS] Build & Test"
+    needs: [setup, rust]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v7
+
     - name: "⏣[JS][Rust] Lint"
       # Don't use Clippy because it gives too many errors.
       # It seems like the macros confuse it.
@@ -177,7 +246,26 @@ jobs:
       run: yarn test
       working-directory: ./js/optify-config
 
-    # Python
+  python:
+    name: "🐍🧪[Python] Build & Test"
+    needs: [setup, rust]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: "🐍[Python] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: python/optify
+        cache-workspace-crates: true
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-rust
+
     - uses: actions/setup-python@v6
       name: "🐍[Python] Setup"
       with:
@@ -191,7 +279,7 @@ jobs:
     - name: "🐍[Python][Rust] Lint"
       run : cargo fmt -- --check
       working-directory: ./python/optify
-    - name: "🐍[Python][Rust] Clippy"
+    - name: "🐍📎[Python][Rust] Clippy"
       run: cargo clippy --release --no-deps -- -D warnings --no-deps
       working-directory: ./python/optify
     - name: "🐍[Python] Test"
