@@ -632,6 +632,7 @@ impl WrappedOptionsWatcher {
 #[wrap(class = "Optify::OptionsWatcherBuilder")]
 struct WrappedOptionsWatcherBuilder(RefCell<OptionsWatcherBuilder>);
 
+#[allow(clippy::needless_pass_by_value)]
 impl WrappedOptionsWatcherBuilder {
     fn new() -> Self {
         Self(RefCell::new(OptionsWatcherBuilder::new()))
@@ -657,6 +658,7 @@ impl WrappedOptionsWatcherBuilder {
 }
 
 #[magnus::init]
+#[allow(clippy::too_many_lines)]
 fn init(ruby: &Ruby) -> Result<(), magnus::Error> {
     let module = ruby.define_module("Optify")?;
 
