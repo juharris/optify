@@ -129,7 +129,7 @@ jobs:
           rust/optify-cli
         cache-workspace-crates: true
         cache-on-failure: true
-        shared-key: ${{ matrix.os }}-rust-cli
+        shared-key: ${{ matrix.os }}-rust
     - uses: rust-lang/crates-io-auth-action@v1
       if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'
       id: auth
@@ -171,6 +171,8 @@ jobs:
     name: "🧪[JS] Build & Test"
     needs: [setup, rust]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -214,6 +216,8 @@ jobs:
     name: "🧪[Python] Build & Test"
     needs: [setup, rust]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -226,7 +230,7 @@ jobs:
         workspaces: python/optify
         cache-workspace-crates: true
         cache-on-failure: true
-        shared-key: ${{ matrix.os }}-python-rust
+        shared-key: ${{ matrix.os }}-rust
 
     # Python
     - uses: actions/setup-python@v6
