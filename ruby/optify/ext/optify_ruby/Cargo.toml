@@ -20,7 +20,7 @@ exclude = [
 crate-type = ["cdylib"]
 
 [dependencies]
-magnus = "0.8.2"
+magnus = "0.9.0"
 # Can't put a relative path here because then others can't install the source gem: https://github.com/juharris/optify/pull/176
 optify = "1.5.1"
 rb-sys = { version = "0.9.124", default-features = false, features = ["ruby-static"] }
