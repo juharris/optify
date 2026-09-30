@@ -66,14 +66,14 @@ export class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 links.push(link);
             }
         }
+    }
 
-        private gatherPolicyFeatureLinks(provider: OptionsWatcher, featureInfos: ImportInfo[], links: vscode.DocumentLink[]): void {
-            const featuresWithMetadata = provider.featuresWithMetadata();
-            for (const featureInfo of featureInfos) {
-                const targetPath = featuresWithMetadata[featureInfo.name]?.path();
-                if (targetPath) {
-                    links.push(new vscode.DocumentLink(featureInfo.range, vscode.Uri.file(targetPath)));
-                }
+    private gatherPolicyFeatureLinks(provider: OptionsWatcher, featureInfos: ImportInfo[], links: vscode.DocumentLink[]): void {
+        const featuresWithMetadata = provider.featuresWithMetadata();
+        for (const featureInfo of featureInfos) {
+            const targetPath = featuresWithMetadata[featureInfo.name]?.path();
+            if (targetPath) {
+                links.push(new vscode.DocumentLink(featureInfo.range, vscode.Uri.file(targetPath)));
             }
         }
     }

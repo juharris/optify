@@ -316,12 +316,6 @@ export class ConfigParser {
 		return results;
 	}
 
-	private static findImportRangesInYaml(text: string, config?: OptifyConfig): ImportInfo[] {
-		const results: ImportInfo[] = [];
-		if (config && !config.imports) {
-			return results;
-		}
-
 		private static findPolicyFeatureRangesInJson(text: string): ImportInfo[] {
 			const results: ImportInfo[] = [];
 			const policyArrayPattern = /"(?:allow|block)"\s*:\s*\[([^\]]*)\]/g;
@@ -347,15 +341,15 @@ export class ConfigParser {
 			return results;
 		}
 
-		private static findPolicyFeatureRangesInYaml(text: string): ImportInfo[] {
-			const results: ImportInfo[] = [];
-			const lines = text.split('\n');
+	private static findPolicyFeatureRangesInYaml(text: string): ImportInfo[] {
+		const results: ImportInfo[] = [];
+		const lines = text.split('\n');
 
-			for (let i = 0; i < lines.length; i++) {
-				const policyListMatch = lines[i].match(/^(\s*)(?:allow|block)\s*:\s*(.*)$/);
-				if (!policyListMatch) {
-					continue;
-				}
+		for (let i = 0; i < lines.length; i++) {
+			const policyListMatch = lines[i].match(/^(\s*)(?:allow|block)\s*:\s*(.*)$/);
+			if (!policyListMatch) {
+				continue;
+			}
 
 				const indent = policyListMatch[1].length;
 				const inlineValue = policyListMatch[2].trim();
@@ -411,6 +405,12 @@ export class ConfigParser {
 				}
 			}
 
+		return results;
+	}
+
+	private static findImportRangesInYaml(text: string, config?: OptifyConfig): ImportInfo[] {
+		const results: ImportInfo[] = [];
+		if (config && !config.imports) {
 			return results;
 		}
 
