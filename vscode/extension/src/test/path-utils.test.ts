@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { findOptifyRoot, getCanonicalName, getRelativeOptifyPath, isConfigFilePath, isOptifyFeatureFile, resolveFilePathArg } from '../path-utils';
+import { findOptifyRoot, getCanonicalName, getRelativeOptifyPath, isConfigFilePath, isOptifyFeatureFile, isOptifyPoliciesFile, resolveFilePathArg } from '../path-utils';
 
 suite('Utils Test Suite', () => {
 	if (process.platform === 'win32') {
@@ -173,6 +173,20 @@ suite('isOptifyFeatureFile', () => {
 		fs.writeFileSync(featurePath, '{}');
 
 		assert.strictEqual(isOptifyFeatureFile(featurePath, root), true);
+	});
+});
+
+suite('isOptifyPoliciesFile', () => {
+	test('recognizes JSON and YAML policies files in the Optify metadata directory', () => {
+		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/policies.json'), true);
+		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/policies.yaml'), true);
+		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/policies.yml'), true);
+	});
+
+	test('does not recognize unrelated files', () => {
+		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/config.json'), false);
+		assert.strictEqual(isOptifyPoliciesFile('/repo/policies.json'), false);
+		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/nested/policies.json'), false);
 	});
 });
 
