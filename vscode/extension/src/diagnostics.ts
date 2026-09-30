@@ -1,6 +1,7 @@
 import { OptionsWatcher } from '@optify/config';
 import * as vscode from 'vscode';
 import { ConfigParser, OptifyConfig } from './config-parser';
+import { PolicyParser } from './policy-parser';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, isOptifyPoliciesFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
@@ -62,7 +63,7 @@ export class OptifyDiagnosticsProvider {
 		diagnostics: vscode.Diagnostic[],
 	) {
 		const featuresWithMetadata = provider.featuresWithMetadata();
-		for (const featureInfo of ConfigParser.findPolicyFeatureRanges(text, document.languageId)) {
+		for (const featureInfo of PolicyParser.findFeatureRanges(text, document.languageId)) {
 			if (featuresWithMetadata[featureInfo.name]) {
 				continue;
 			}

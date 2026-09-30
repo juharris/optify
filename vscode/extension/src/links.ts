@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigParser, ImportInfo, OptifyConfig } from './config-parser';
+import { PolicyParser } from './policy-parser';
 import { findOptifyRoot, isOptifyFeatureFile, isOptifyPoliciesFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 import { OptionsWatcher } from '@optify/config';
@@ -27,7 +28,7 @@ export class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
         const text = document.getText();
         const provider = getOptionsProvider(optifyRoot);
         if (isPoliciesFile) {
-            this.gatherPolicyFeatureLinks(provider, ConfigParser.findPolicyFeatureRanges(text, document.languageId), links);
+            this.gatherPolicyFeatureLinks(provider, PolicyParser.findFeatureRanges(text, document.languageId), links);
             return links;
         }
 

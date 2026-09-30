@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigParser } from './config-parser';
+import { PolicyParser } from './policy-parser';
 import { findOptifyRoot, isOptifyFeatureFile, isOptifyPoliciesFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
@@ -29,7 +30,7 @@ export class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 		const featuresWithMetadata = provider.featuresWithMetadata();
 		const text = document.getText();
 		if (isPoliciesFile) {
-			for (const featureInfo of ConfigParser.findPolicyFeatureRanges(text, document.languageId)) {
+			for (const featureInfo of PolicyParser.findFeatureRanges(text, document.languageId)) {
 				const line = document.lineAt(featureInfo.range.start.line).text;
 				const beforeChar = line.charAt(featureInfo.range.start.character - 1);
 				const afterChar = line.charAt(featureInfo.range.end.character);

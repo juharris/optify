@@ -71,20 +71,6 @@ export class ConfigParser {
 	}
 
 	/**
-	 * Find feature names in requester policy allow/block lists.
-	 */
-	static findPolicyFeatureRanges(text: string, languageId: string): ImportInfo[] {
-		switch (languageId) {
-			case 'json':
-				return this.findPolicyFeatureRangesInJson(text);
-			case 'yaml':
-				return this.findPolicyFeatureRangesInYaml(text);
-			default:
-				return [];
-		}
-	}
-
-	/**
 	 * Find all file references in the options section of a document.
 	 */
 	static findFileReferences(text: string, languageId: string, config?: OptifyConfig): FileReferenceInfo[] {
@@ -312,98 +298,6 @@ export class ConfigParser {
 		} catch (error) {
 			// Return empty array on parse error
 		}
-
-		return results;
-	}
-
-		private static findPolicyFeatureRangesInJson(text: string): ImportInfo[] {
-			const results: ImportInfo[] = [];
-			const policyArrayPattern = /"(?:allow|block)"\s*:\s*\[([^\]]*)\]/g;
-			let arrayMatch: RegExpExecArray | null;
-
-			while ((arrayMatch = policyArrayPattern.exec(text)) !== null) {
-				const arrayContent = arrayMatch[1];
-				const stringsPattern = /"(?:\\.|[^"\\])*"/g;
-				let stringMatch: RegExpExecArray | null;
-				while ((stringMatch = stringsPattern.exec(arrayContent)) !== null) {
-					try {
-						const name = JSON.parse(stringMatch[0]) as string;
-						const startIndex = arrayMatch.index + arrayMatch[0].indexOf(arrayContent) + stringMatch.index + 1;
-						const startPosition = this.getPositionFromIndex(text, startIndex);
-						const endPosition = this.getPositionFromIndex(text, startIndex + stringMatch[0].length - 2);
-						results.push({ name, range: new vscode.Range(startPosition, endPosition) });
-					} catch {
-						// Ignore malformed string literals.
-					}
-				}
-			}
-
-			return results;
-		}
-
-	private static findPolicyFeatureRangesInYaml(text: string): ImportInfo[] {
-		const results: ImportInfo[] = [];
-		const lines = text.split('\n');
-
-		for (let i = 0; i < lines.length; i++) {
-			const policyListMatch = lines[i].match(/^(\s*)(?:allow|block)\s*:\s*(.*)$/);
-			if (!policyListMatch) {
-				continue;
-			}
-
-				const indent = policyListMatch[1].length;
-				const inlineValue = policyListMatch[2].trim();
-				if (inlineValue.startsWith('[') && inlineValue.endsWith(']')) {
-					const listStart = lines[i].indexOf('[') + 1;
-					const inlineItems = inlineValue.slice(1, -1);
-					const itemPattern = /'([^']*)'|"((?:\\.|[^"\\])*)"|([^,\s][^,]*)/g;
-					let itemMatch: RegExpExecArray | null;
-					while ((itemMatch = itemPattern.exec(inlineItems)) !== null) {
-						const name = itemMatch[1] ?? itemMatch[2] ?? itemMatch[3].trim();
-						const rawValue = itemMatch[0];
-						const startCol = listStart + itemMatch.index + (rawValue.startsWith('"') || rawValue.startsWith("'") ? 1 : 0);
-						results.push({
-							name,
-							range: new vscode.Range(
-								new vscode.Position(i, startCol),
-								new vscode.Position(i, startCol + name.length)
-							)
-						});
-					}
-					continue;
-				}
-
-				if (inlineValue) {
-					continue;
-				}
-
-				for (let listLine = i + 1; listLine < lines.length; listLine++) {
-					const line = lines[listLine];
-					const trimmedLine = line.trim();
-					if (!trimmedLine || trimmedLine.startsWith('#')) {
-						continue;
-					}
-					const listItem = line.match(/^(\s*)-\s*(.*?)\s*(?:#.*)?$/);
-					if (!listItem || listItem[1].length <= indent) {
-						if (line.length - line.trimStart().length <= indent) {
-							break;
-						}
-						continue;
-					}
-
-					const rawValue = listItem[2].trim();
-					const quote = rawValue[0] === '"' || rawValue[0] === "'" ? rawValue[0] : '';
-					const name = quote && rawValue.endsWith(quote) ? rawValue.slice(1, -1) : rawValue;
-					const startCol = line.indexOf(listItem[2]) + (quote ? 1 : 0);
-					results.push({
-						name,
-						range: new vscode.Range(
-							new vscode.Position(listLine, startCol),
-							new vscode.Position(listLine, startCol + name.length)
-						)
-					});
-				}
-			}
 
 		return results;
 	}

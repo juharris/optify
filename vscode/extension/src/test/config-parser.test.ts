@@ -1,8 +1,9 @@
 import * as assert from 'assert';
 import { ConfigParser } from '../config-parser';
+import { PolicyParser } from '../policy-parser';
 
 suite('ConfigParser File References Test Suite', () => {
-	suite('policy feature references', () => {
+	suite('PolicyParser Feature References Test Suite', () => {
 		test('finds JSON allow and block feature names with exact ranges', () => {
 			const text = `{
 	"requesters": {
@@ -12,7 +13,7 @@ suite('ConfigParser File References Test Suite', () => {
 		}
 	}
 }`;
-			const refs = ConfigParser.findPolicyFeatureRanges(text, 'json');
+			const refs = PolicyParser.findFeatureRanges(text, 'json');
 			assert.deepStrictEqual(refs.map(ref => ref.name), ['feature.one', 'feature.two', 'feature.three']);
 			assert.strictEqual(text.slice(
 				text.indexOf('"feature.one"') + 1,
@@ -27,7 +28,7 @@ suite('ConfigParser File References Test Suite', () => {
       - feature.one
       - "feature.two"
     block: [feature.three, 'feature.four']`;
-			const refs = ConfigParser.findPolicyFeatureRanges(text, 'yaml');
+			const refs = PolicyParser.findFeatureRanges(text, 'yaml');
 			assert.deepStrictEqual(refs.map(ref => ref.name), [
 				'feature.one',
 				'feature.two',
