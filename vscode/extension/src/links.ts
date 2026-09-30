@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigParser, ImportInfo, OptifyConfig } from './config-parser';
-import { findOptifyRoot, isOptifyFeatureFile } from './path-utils';
+import { findOptifyRoot, isOptifyFeatureFile, isOptifyPoliciesFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 import { OptionsWatcher } from '@optify/config';
 
@@ -19,15 +19,20 @@ export class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
         const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
 
-        // Only provide links for Optify feature files
-        if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot)) {
+        const isPoliciesFile = isOptifyPoliciesFile(document.fileName);
+        if (!optifyRoot || (!isPoliciesFile && !isOptifyFeatureFile(document.fileName, optifyRoot))) {
             return links;
         }
 
         const text = document.getText();
+        const provider = getOptionsProvider(optifyRoot);
+        if (isPoliciesFile) {
+            this.gatherPolicyFeatureLinks(provider, ConfigParser.findPolicyFeatureRanges(text, document.languageId), links);
+            return links;
+        }
+
         const config = ConfigParser.parse(text, document.languageId);
         const importInfos = ConfigParser.findImportRanges(text, document.languageId, config);
-        const provider = getOptionsProvider(optifyRoot);
         this.gatherImportLinks(provider, importInfos, links);
         this.gatherFileLinks(text, document, config, optifyRoot, links);
 
@@ -59,6 +64,16 @@ export class OptifyDocumentLinkProvider implements vscode.DocumentLinkProvider {
             if (targetPath) {
                 const link = new vscode.DocumentLink(importInfo.range, vscode.Uri.file(targetPath));
                 links.push(link);
+            }
+        }
+
+        private gatherPolicyFeatureLinks(provider: OptionsWatcher, featureInfos: ImportInfo[], links: vscode.DocumentLink[]): void {
+            const featuresWithMetadata = provider.featuresWithMetadata();
+            for (const featureInfo of featureInfos) {
+                const targetPath = featuresWithMetadata[featureInfo.name]?.path();
+                if (targetPath) {
+                    links.push(new vscode.DocumentLink(featureInfo.range, vscode.Uri.file(targetPath)));
+                }
             }
         }
     }

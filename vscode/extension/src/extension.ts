@@ -7,7 +7,7 @@ import { OptifyDefinitionProvider } from './definitions';
 import { OptifyReferencesCodeLensProvider } from './dependents/code-lens';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
 import { OptifyDocumentLinkProvider } from './links';
-import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveFilePathArg } from './path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, isOptifyPoliciesFile, resolveFilePathArg } from './path-utils';
 import { PreviewBuilder, PreviewWhileEditingOptions, PreviewData, FeatureGraphData } from './preview';
 import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
@@ -386,7 +386,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
-		if (isOptifyFeatureFile(event.document.fileName)) {
+		if (isOptifyFeatureFile(event.document.fileName) || isOptifyPoliciesFile(event.document.fileName)) {
 			diagnosticsProvider.updateDiagnostics(event.document);
 		}
 	});
@@ -399,7 +399,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		// console.debug(`onDidOpenDocument: filePath: ${filePath}`);
 		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath);
-		if (_isOptifyFeatureFile) {
+		if (_isOptifyFeatureFile || isOptifyPoliciesFile(filePath)) {
 			diagnosticsProvider.updateDiagnostics(document);
 		}
 		referencesCodeLensProvider.refresh();

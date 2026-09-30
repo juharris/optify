@@ -1,7 +1,7 @@
 import { OptionsWatcher } from '@optify/config';
 import * as vscode from 'vscode';
 import { ConfigParser, OptifyConfig } from './config-parser';
-import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, isOptifyPoliciesFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
 /**
@@ -22,12 +22,18 @@ export class OptifyDiagnosticsProvider {
 		}
 
 		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-		if (!optifyRoot) {
+		const isPoliciesFile = isOptifyPoliciesFile(document.fileName);
+		if (!optifyRoot || (!isPoliciesFile && !isOptifyFeatureFile(document.fileName, optifyRoot))) {
 			return;
 		}
 
 		try {
 			const provider = getOptionsProvider(optifyRoot);
+			if (isPoliciesFile) {
+				this.checkPolicyFeatures(text, document, provider, diagnostics);
+				this.diagnosticCollection.set(document.uri, diagnostics);
+				return;
+			}
 
 			const currentFileCanonicalFeatureName = getCanonicalName(document.uri.fsPath, optifyRoot);
 			const config = ConfigParser.parse(text, document.languageId);
@@ -47,6 +53,45 @@ export class OptifyDiagnosticsProvider {
 		}
 
 		this.diagnosticCollection.set(document.uri, diagnostics);
+	}
+
+	private checkPolicyFeatures(
+		text: string,
+		document: vscode.TextDocument,
+		provider: OptionsWatcher,
+		diagnostics: vscode.Diagnostic[],
+	) {
+		const featuresWithMetadata = provider.featuresWithMetadata();
+		for (const featureInfo of ConfigParser.findPolicyFeatureRanges(text, document.languageId)) {
+			if (featuresWithMetadata[featureInfo.name]) {
+				continue;
+			}
+
+			try {
+				const canonicalName = provider.getCanonicalFeatureName(featureInfo.name);
+				if (canonicalName) {
+					const diagnostic = new vscode.Diagnostic(
+						featureInfo.range,
+						`Use '${canonicalName}' for clarity and to help navigate to the file. '${featureInfo.name}' is an alias.`,
+						vscode.DiagnosticSeverity.Error
+					);
+					diagnostic.code = {
+						value: `feature-alias:${featureInfo.name}:${canonicalName}`,
+						target: vscode.Uri.parse('https://github.com/juharris/optify')
+					};
+					diagnostics.push(diagnostic);
+					continue;
+				}
+			} catch {
+				// Treat lookup failures as unresolved feature names.
+			}
+
+			diagnostics.push(new vscode.Diagnostic(
+				featureInfo.range,
+				`Cannot resolve feature '${featureInfo.name}'`,
+				vscode.DiagnosticSeverity.Error
+			));
+		}
 	}
 
 	private checkConditions(

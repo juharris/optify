@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigParser } from './config-parser';
-import { findOptifyRoot, isOptifyFeatureFile } from './path-utils';
+import { findOptifyRoot, isOptifyFeatureFile, isOptifyPoliciesFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
 /**
@@ -20,13 +20,33 @@ export class OptifyDefinitionProvider implements vscode.DefinitionProvider {
 		}
 
 		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-		if (!optifyRoot || !isOptifyFeatureFile(document.fileName, optifyRoot)) {
+		const isPoliciesFile = isOptifyPoliciesFile(document.fileName);
+		if (!optifyRoot || (!isPoliciesFile && !isOptifyFeatureFile(document.fileName, optifyRoot))) {
 			return null;
 		}
 
 		const provider = getOptionsProvider(optifyRoot);
 		const featuresWithMetadata = provider.featuresWithMetadata();
 		const text = document.getText();
+		if (isPoliciesFile) {
+			for (const featureInfo of ConfigParser.findPolicyFeatureRanges(text, document.languageId)) {
+				const line = document.lineAt(featureInfo.range.start.line).text;
+				const beforeChar = line.charAt(featureInfo.range.start.character - 1);
+				const afterChar = line.charAt(featureInfo.range.end.character);
+				const range = (beforeChar === '"' || beforeChar === "'") && afterChar === beforeChar
+					? new vscode.Range(
+						new vscode.Position(featureInfo.range.start.line, featureInfo.range.start.character - 1),
+						new vscode.Position(featureInfo.range.end.line, featureInfo.range.end.character + 1)
+					)
+					: featureInfo.range;
+				const targetPath = featuresWithMetadata[featureInfo.name]?.path();
+				if (range.contains(position) && targetPath) {
+					return new vscode.Location(vscode.Uri.file(targetPath), new vscode.Position(0, 0));
+				}
+			}
+			return null;
+		}
+
 		const config = ConfigParser.parse(text, document.languageId);
 		const importInfos = ConfigParser.findImportRanges(text, document.languageId, config);
 
