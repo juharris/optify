@@ -51,6 +51,12 @@ export function isOptifyFeatureFile(filePath: string,
 	return optifyRoot !== undefined && !isOptifyMetadataFile(filePath, optifyRoot);
 }
 
+export function isOptifyPoliciesFile(filePath: string): boolean {
+	return path.basename(path.dirname(filePath)) === MARKER_DIR_NAME &&
+		path.basename(filePath, path.extname(filePath)) === 'policies' &&
+		['.json', '.yaml', '.yml'].includes(path.extname(filePath).toLowerCase());
+}
+
 function isOptifyMetadataFile(filePath: string, optifyRoot: string): boolean {
 	const relativePath = path.relative(path.join(optifyRoot, MARKER_DIR_NAME), filePath);
 	return relativePath !== '' && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
