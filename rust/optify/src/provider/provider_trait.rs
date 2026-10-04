@@ -138,7 +138,15 @@ pub trait OptionsRegistry {
         cache_options: Option<&CacheOptions>,
     ) -> Result<(), String>;
 
-    /// Returns the policies for the given canonical feature name, if any.
+    /// Returns the effective policies for the given canonical feature name.
+    ///
+    /// This combines the feature's own `policies.requester` with the requester policies
+    /// from `.optify/policies.json`, so the result shows every requester that is explicitly
+    /// allowed (`allow`) or explicitly blocked (`block`) from using the feature.
+    /// With `block`, any requester that is not listed is allowed.
+    ///
+    /// Returns `None` if the feature is unknown or if nothing restricts it
+    /// (every requester is permitted).
     ///
     /// Policies are only checked for top-level features in a request.
     /// Features that are imported by other features may have policies, but those policies

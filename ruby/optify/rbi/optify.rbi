@@ -412,8 +412,10 @@ module Optify
     end
     def map_feature_names(feature_names, preferences); end
 
-    # @return The policies directly declared for the feature, or `nil` if the feature has no policies.
-    # This may not consider all policies defined per requester outside of the feature configuration.
+    # @return The effective policies for the feature, combining the feature's own policies with the requester
+    # policies from `.optify/policies.json`. Either `requester.allow` (only those requesters may use the feature)
+    # or `requester.block` (all requesters except those may use the feature) is set.
+    # Returns `nil` if the feature is unknown or nothing restricts it (every requester is permitted).
     sig { params(canonical_feature_name: String).returns(T.nilable(Optify::Policies)) }
     def get_policies(canonical_feature_name); end
 
@@ -442,7 +444,7 @@ module Optify
     sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
     def get_feature_metadata_json(canonical_feature_name); end
 
-    # @return The policies for the feature as JSON, or `nil` if the feature has no policies.
+    # @return The effective policies for the feature as JSON, or `nil` if the feature is unknown or nothing restricts it.
     sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
     def get_policies_json(canonical_feature_name); end
   end
