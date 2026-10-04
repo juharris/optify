@@ -5,6 +5,7 @@ import { GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../dist/
 
 const configsPath = path.join(__dirname, "../../../tests/test_suites/simple/configs");
 const conditionsConfigsPath = path.join(__dirname, "../../../tests/test_suites/conditions/configs");
+const policiesConfigsPath = path.join(__dirname, "../../../tests/test_suites/policies/configs");
 const expectationsPath = path.join(configsPath, "../expectations");
 
 describe("Provider", () => {
@@ -194,4 +195,35 @@ describe("overrides", () => {
 		expect(options.myConfig.rootString).toBe("root string same");
 		expect(options.myConfig.rootString2).toBe("overridden");
 	});
+});
+
+describe("getPolicies", () => {
+	const providers = [
+		{ name: "OptionsProvider", provider: OptionsProvider.buildFromDirectories([policiesConfigsPath]) },
+		{ name: "OptionsWatcher", provider: OptionsWatcher.buildFromDirectories([policiesConfigsPath]) },
+	];
+
+	for (const { name, provider } of providers) {
+		test(`${name} returns the feature's allow list`, () => {
+			const policies = provider.getPolicies("feature_allowed");
+			expect(policies.requester.block).toBeUndefined();
+			expect([...policies.requester.allow].sort()).toEqual(["service_a", "service_d"]);
+		});
+
+		test(`${name} merges the feature's block list with requesters denied by .optify/policies.json`, () => {
+			const policies = provider.getPolicies("feature_blocked");
+			expect(policies.requester.allow).toBeUndefined();
+			expect([...policies.requester.block].sort()).toEqual(["requester_x", "service_b", "service_f", "untrusted_service"]);
+		});
+
+		test(`${name} returns requesters denied only by .optify/policies.json`, () => {
+			const policies = provider.getPolicies("feature_neutral");
+			expect(policies.requester.allow).toBeUndefined();
+			expect([...policies.requester.block].sort()).toEqual(["requester_y", "service_a", "service_d"]);
+		});
+
+		test(`${name} returns null for an unknown feature`, () => {
+			expect(provider.getPolicies("nonexistent_feature")).toBeNull();
+		});
+	}
 });

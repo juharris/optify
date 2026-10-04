@@ -650,6 +650,9 @@ Feature names in `.optify/policies.json` must be canonical feature names.
 A requester must be permitted by **both** `.optify/policies.json` and a feature's own `policies` (if set) to use the feature: the two mechanisms combine with AND semantics so one cannot be used to bypass the other.
 It's fine to omit declaring policies in one place, but they cannot conflict with each other.
 
+To see which requesters may or may not use a feature, call `get_policies` (`getPolicies` in JavaScript).
+It combines the feature's own `policies` with `.optify/policies.json` into a single `allow` list (only those requesters may use the feature) or `block` list (every requester except those may use the feature), and returns nothing when no requester is restricted.
+
 # Configurable Strings
 
 Strings can be configured with a starting base starting template and arguments.

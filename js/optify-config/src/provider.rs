@@ -213,48 +213,21 @@ impl JsOptionsProvider {
       .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
 
-  /// Gets all policies for a specific feature.
-  /// Returns the policies showing which requesters are allowed or blocked for the feature.
+  /// Gets the effective policies for a feature, combining the feature's own policies with the
+  /// global requester policies from `.optify/policies.json`.
+  /// Shows which requesters are allowed or blocked from using the feature.
   ///
-  /// For allow policies, the response will be:
-  /// ```json
-  /// { "requester": { "allow": ["requester1", "requester2"] } }
-  /// ```
-  ///
-  /// For block policies, the response will be:
-  /// ```json
-  /// { "requester": { "block": ["requester1", "requester2"] } }
-  /// ```
-  ///
-  /// Returns `null` if the feature has no policies defined.
-  #[napi(js_name = "getFeaturePolicies")]
-  pub fn get_feature_policies(
-    &self,
-    canonical_feature_name: String,
-  ) -> Option<serde_json::Value> {
+  /// Returns `{ requester: { allow: [...] } }` when only the listed requesters may use the feature,
+  /// or `{ requester: { block: [...] } }` when every requester except the listed ones may use it.
+  /// Returns `null` if the feature is unknown or nothing restricts it.
+  #[napi(js_name = "getPolicies")]
+  pub fn get_policies(&self, canonical_feature_name: String) -> Option<serde_json::Value> {
     self
       .inner
       .as_ref()
       .unwrap()
       .get_policies(&canonical_feature_name)
       .and_then(|policies| serde_json::to_value(policies).ok())
-  }
-
-  /// Gets all policies for a specific feature as a JSON string.
-  /// Returns the policies showing which requesters are allowed or blocked for the feature.
-  ///
-  /// Returns `null` if the feature has no policies defined.
-  #[napi(js_name = "getFeaturePoliciesJson")]
-  pub fn get_feature_policies_json(
-    &self,
-    canonical_feature_name: String,
-  ) -> Option<String> {
-    self
-      .inner
-      .as_ref()
-      .unwrap()
-      .get_policies(&canonical_feature_name)
-      .and_then(|policies| serde_json::to_string(&policies).ok())
   }
 }
 
