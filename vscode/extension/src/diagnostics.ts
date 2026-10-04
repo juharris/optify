@@ -23,7 +23,7 @@ export class OptifyDiagnosticsProvider {
 		}
 
 		const optifyRoot = findOptifyRoot(document.uri.fsPath, workspaceFolder.uri.fsPath);
-		const isPoliciesFile = isOptifyPoliciesFile(document.fileName);
+		const isPoliciesFile = optifyRoot !== undefined && isOptifyPoliciesFile(document.fileName, optifyRoot);
 		if (!optifyRoot || (!isPoliciesFile && !isOptifyFeatureFile(document.fileName, optifyRoot))) {
 			return;
 		}

@@ -51,10 +51,19 @@ export function isOptifyFeatureFile(filePath: string,
 	return optifyRoot !== undefined && !isOptifyMetadataFile(filePath, optifyRoot);
 }
 
-export function isOptifyPoliciesFile(filePath: string): boolean {
-	return path.basename(path.dirname(filePath)) === MARKER_DIR_NAME &&
-		path.basename(filePath, path.extname(filePath)) === 'policies' &&
-		['.json', '.yaml', '.yml'].includes(path.extname(filePath).toLowerCase());
+export function isOptifyPoliciesFile(filePath: string, optifyRoot: string): boolean {
+	if (!['.json', '.yaml', '.yml'].includes(path.extname(filePath).toLowerCase())) {
+		return false;
+	}
+
+	const configPath = path.join(optifyRoot, MARKER_DIR_NAME, 'config.json');
+	try {
+		const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+		return typeof config.policiesPath === 'string' &&
+			path.resolve(filePath) === path.resolve(optifyRoot, config.policiesPath);
+	} catch {
+		return false;
+	}
 }
 
 function isOptifyMetadataFile(filePath: string, optifyRoot: string): boolean {

@@ -386,7 +386,12 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
-		if (isOptifyFeatureFile(event.document.fileName) || isOptifyPoliciesFile(event.document.fileName)) {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(event.document.uri);
+		const optifyRoot = workspaceFolder
+			? findOptifyRoot(event.document.fileName, workspaceFolder.uri.fsPath)
+			: undefined;
+		if (isOptifyFeatureFile(event.document.fileName) ||
+			(optifyRoot && isOptifyPoliciesFile(event.document.fileName, optifyRoot))) {
 			diagnosticsProvider.updateDiagnostics(event.document);
 		}
 	});
@@ -399,7 +404,11 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		// console.debug(`onDidOpenDocument: filePath: ${filePath}`);
 		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath);
-		if (_isOptifyFeatureFile || isOptifyPoliciesFile(filePath)) {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		const optifyRoot = workspaceFolder
+			? findOptifyRoot(filePath, workspaceFolder.uri.fsPath)
+			: undefined;
+		if (_isOptifyFeatureFile || (optifyRoot && isOptifyPoliciesFile(filePath, optifyRoot))) {
 			diagnosticsProvider.updateDiagnostics(document);
 		}
 		referencesCodeLensProvider.refresh();

@@ -177,16 +177,45 @@ suite('isOptifyFeatureFile', () => {
 });
 
 suite('isOptifyPoliciesFile', () => {
-	test('recognizes JSON and YAML policies files in the Optify metadata directory', () => {
-		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/policies.json'), true);
-		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/policies.yaml'), true);
-		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/policies.yml'), true);
+	const tempDirs: string[] = [];
+
+	suiteTeardown(() => {
+		for (const dir of tempDirs) {
+			fs.rmSync(dir, { recursive: true, force: true });
+		}
 	});
 
-	test('does not recognize unrelated files', () => {
-		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/config.json'), false);
-		assert.strictEqual(isOptifyPoliciesFile('/repo/policies.json'), false);
-		assert.strictEqual(isOptifyPoliciesFile('/repo/.optify/nested/policies.json'), false);
+	test('recognizes the configured JSON or YAML policy path', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-policy-file-'));
+		tempDirs.push(root);
+		const optifyDir = path.join(root, '.optify');
+		fs.mkdirSync(optifyDir);
+		fs.writeFileSync(path.join(optifyDir, 'config.json'), JSON.stringify({ policiesPath: '.optify/custom-policies.yaml' }));
+
+		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/custom-policies.yaml'), root), true);
+		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/custom-policies.yml'), root), false);
+	});
+
+	test('does not recognize a policy file without a configured path', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-policy-file-'));
+		tempDirs.push(root);
+		const optifyDir = path.join(root, '.optify');
+		fs.mkdirSync(optifyDir);
+		fs.writeFileSync(path.join(optifyDir, 'config.json'), JSON.stringify({}));
+
+		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/policies.json'), root), false);
+	});
+
+	test('returns false for invalid config and unsupported extensions', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-policy-file-'));
+		tempDirs.push(root);
+		const optifyDir = path.join(root, '.optify');
+		fs.mkdirSync(optifyDir);
+		fs.writeFileSync(path.join(optifyDir, 'config.json'), '{');
+
+		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/policies.json'), root), false);
+		fs.writeFileSync(path.join(optifyDir, 'config.json'), JSON.stringify({ policiesPath: '.optify/policies.toml' }));
+		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/policies.toml'), root), false);
 	});
 });
 
