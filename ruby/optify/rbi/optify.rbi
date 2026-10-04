@@ -415,7 +415,8 @@ module Optify
     # @return The effective policies for the feature, combining the feature's own policies with the requester
     # policies from `.optify/policies.json`. Either `requester.allow` (only those requesters may use the feature)
     # or `requester.block` (all requesters except those may use the feature) is set.
-    # Returns `nil` if the feature is unknown or nothing restricts it (every requester is permitted).
+    # Returns `nil` if nothing restricts the feature (every requester is permitted).
+    # Assumes a valid canonical feature name; it isn't checked.
     sig { params(canonical_feature_name: String).returns(T.nilable(Optify::Policies)) }
     def get_policies(canonical_feature_name); end
 
@@ -444,7 +445,7 @@ module Optify
     sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
     def get_feature_metadata_json(canonical_feature_name); end
 
-    # @return The effective policies for the feature as JSON, or `nil` if the feature is unknown or nothing restricts it.
+    # @return The effective policies for the feature as JSON, or `nil` if nothing restricts the feature.
     sig { params(canonical_feature_name: String).returns(T.nilable(String)) }
     def get_policies_json(canonical_feature_name); end
   end

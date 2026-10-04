@@ -852,8 +852,8 @@ fn test_get_policies_merges_feature_and_global_policies() {
         vec!["requester_y", "service_a", "service_d"]
     );
 
-    // Unknown features have no policies.
-    assert!(provider.get_policies("nonexistent_feature").is_none());
+    // Nothing restricts the feature when there are no policies at all.
+    assert!(get_provider().get_policies("feature_A").is_none());
 }
 
 /// The effective policies must agree with what `check_policies` enforces.

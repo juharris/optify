@@ -647,9 +647,6 @@ impl OptionsRegistry for OptionsProvider {
     }
 
     fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
-        if !self.features.contains_key(canonical_feature_name) {
-            return None;
-        }
         self.policy_store
             .get_effective_policies(canonical_feature_name)
     }

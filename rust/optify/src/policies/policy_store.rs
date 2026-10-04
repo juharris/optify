@@ -64,7 +64,7 @@ impl PolicyStore {
     /// Conflicts between the two sources are already rejected when loading,
     /// so this doesn't check for them.
     ///
-    /// `canonical_feature_name` should be a known canonical feature name.
+    /// `canonical_feature_name` is assumed to be a valid canonical feature name; it isn't checked.
     pub(crate) fn get_effective_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
         let denied_by_requester_policies: HashSet<String> = self
             .requester_policies
