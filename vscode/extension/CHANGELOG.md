@@ -5,6 +5,10 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.12.0
+
+- Support policies and linking to features from policy files.
+
 ## 1.11.2
 
 - Handle all nested configurable lists: deep ones might not have been resolved before because the order was not deterministic.

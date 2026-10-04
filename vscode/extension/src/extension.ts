@@ -7,7 +7,7 @@ import { OptifyDefinitionProvider } from './definitions';
 import { OptifyReferencesCodeLensProvider } from './dependents/code-lens';
 import { OptifyCodeActionProvider, OptifyDiagnosticsProvider } from './diagnostics';
 import { OptifyDocumentLinkProvider } from './links';
-import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, resolveFilePathArg } from './path-utils';
+import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile, isOptifyPoliciesFile, resolveFilePathArg } from './path-utils';
 import { PreviewBuilder, PreviewWhileEditingOptions, PreviewData, FeatureGraphData } from './preview';
 import { clearProviderCache, getOptionsProvider, registerUpdateCallback } from './providers';
 
@@ -386,7 +386,12 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	const onDidChangeDocument = vscode.workspace.onDidChangeTextDocument((event) => {
-		if (isOptifyFeatureFile(event.document.fileName)) {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(event.document.uri);
+		const optifyRoot = workspaceFolder
+			? findOptifyRoot(event.document.fileName, workspaceFolder.uri.fsPath)
+			: undefined;
+		if (isOptifyFeatureFile(event.document.fileName, optifyRoot) ||
+			(optifyRoot && isOptifyPoliciesFile(event.document.fileName, optifyRoot))) {
 			diagnosticsProvider.updateDiagnostics(event.document);
 		}
 	});
@@ -398,8 +403,12 @@ export function activate(context: vscode.ExtensionContext) {
 				filePath = filePath.replace(/\.git$/, '');
 		}
 		// console.debug(`onDidOpenDocument: filePath: ${filePath}`);
-		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath);
-		if (_isOptifyFeatureFile) {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		const optifyRoot = workspaceFolder
+			? findOptifyRoot(filePath, workspaceFolder.uri.fsPath)
+			: undefined;
+		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath, optifyRoot);
+		if (_isOptifyFeatureFile || (optifyRoot && isOptifyPoliciesFile(filePath, optifyRoot))) {
 			diagnosticsProvider.updateDiagnostics(document);
 		}
 		referencesCodeLensProvider.refresh();
