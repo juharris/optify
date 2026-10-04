@@ -1,9 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { getOptionsProvider } from './providers';
 
 const CONFIG_DIRECTORIES = new Set(['options', 'configs', 'configurations']);
 const MARKER_DIR_NAME = '.optify';
+const policiesPathCache = new Map<string, {
+	lastModified: number;
+	policiesPath: string | undefined;
+}>();
 
 export function findOptifyRoot(filePath: string, workspaceRoot: string): string | undefined {
 	let currentDir = path.dirname(filePath);
@@ -52,18 +57,23 @@ export function isOptifyFeatureFile(filePath: string,
 }
 
 export function isOptifyPoliciesFile(filePath: string, optifyRoot: string): boolean {
-	if (!['.json', '.yaml', '.yml'].includes(path.extname(filePath).toLowerCase())) {
-		return false;
+	const lastModified = getOptionsProvider(optifyRoot).lastModified();
+	let cached = policiesPathCache.get(optifyRoot);
+	if (!cached || cached.lastModified !== lastModified) {
+		let policiesPath: string | undefined;
+		try {
+			const configPath = path.resolve(optifyRoot, MARKER_DIR_NAME, 'config.json');
+			const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+			if (typeof config?.policiesPath === 'string') {
+				policiesPath = path.resolve(optifyRoot, config.policiesPath);
+			}
+		} catch {
+			policiesPath = undefined;
+		}
+		cached = { lastModified, policiesPath };
+		policiesPathCache.set(optifyRoot, cached);
 	}
-
-	const configPath = path.join(optifyRoot, MARKER_DIR_NAME, 'config.json');
-	try {
-		const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-		return typeof config.policiesPath === 'string' &&
-			path.resolve(filePath) === path.resolve(optifyRoot, config.policiesPath);
-	} catch {
-		return false;
-	}
+	return path.resolve(filePath) === cached.policiesPath;
 }
 
 function isOptifyMetadataFile(filePath: string, optifyRoot: string): boolean {

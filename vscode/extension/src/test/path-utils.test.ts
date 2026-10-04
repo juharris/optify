@@ -2,8 +2,10 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { mock } from 'node:test';
 import * as vscode from 'vscode';
 import { findOptifyRoot, getCanonicalName, getRelativeOptifyPath, isConfigFilePath, isOptifyFeatureFile, isOptifyPoliciesFile, resolveFilePathArg } from '../path-utils';
+import providers = require('../providers');
 
 suite('Utils Test Suite', () => {
 	if (process.platform === 'win32') {
@@ -178,14 +180,23 @@ suite('isOptifyFeatureFile', () => {
 
 suite('isOptifyPoliciesFile', () => {
 	const tempDirs: string[] = [];
+	let lastModified = 0;
+	let providerMock: ReturnType<typeof mock.method<typeof providers, 'getOptionsProvider'>>;
+
+	suiteSetup(() => {
+		providerMock = mock.method(providers, 'getOptionsProvider', () => ({
+			lastModified: () => lastModified,
+		}) as ReturnType<typeof providers.getOptionsProvider>);
+	});
 
 	suiteTeardown(() => {
+		providerMock.mock.restore();
 		for (const dir of tempDirs) {
 			fs.rmSync(dir, { recursive: true, force: true });
 		}
 	});
 
-	test('recognizes the configured JSON or YAML policy path', () => {
+	test('recognizes the configured policy path', () => {
 		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-policy-file-'));
 		tempDirs.push(root);
 		const optifyDir = path.join(root, '.optify');
@@ -206,7 +217,7 @@ suite('isOptifyPoliciesFile', () => {
 		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/policies.json'), root), false);
 	});
 
-	test('returns false for invalid config and unsupported extensions', () => {
+	test('returns false for invalid config and accepts any configured extension', () => {
 		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-policy-file-'));
 		tempDirs.push(root);
 		const optifyDir = path.join(root, '.optify');
@@ -215,7 +226,46 @@ suite('isOptifyPoliciesFile', () => {
 
 		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/policies.json'), root), false);
 		fs.writeFileSync(path.join(optifyDir, 'config.json'), JSON.stringify({ policiesPath: '.optify/policies.toml' }));
-		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/policies.toml'), root), false);
+		lastModified++;
+		assert.strictEqual(isOptifyPoliciesFile(path.join(root, '.optify/policies.toml'), root), true);
+	});
+
+	test('reuses the cached path until the watcher changes and handles config deletion', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'optify-policy-file-'));
+		tempDirs.push(root);
+		const optifyDir = path.join(root, '.optify');
+		fs.mkdirSync(optifyDir);
+		const configPath = path.join(optifyDir, 'config.json');
+		const originalPath = path.join(optifyDir, 'policies');
+		const updatedPath = path.join(optifyDir, 'updated-policies');
+		fs.writeFileSync(configPath, JSON.stringify({ policiesPath: '.optify/policies' }));
+		const parse = mock.method(JSON, 'parse');
+		try {
+			assert.strictEqual(isOptifyPoliciesFile(originalPath, root), true);
+			assert.strictEqual(isOptifyPoliciesFile(updatedPath, root), false);
+			assert.strictEqual(parse.mock.callCount(), 1);
+
+			fs.writeFileSync(configPath, JSON.stringify({ policiesPath: '.optify/updated-policies' }));
+			assert.strictEqual(isOptifyPoliciesFile(originalPath, root), true);
+			assert.strictEqual(isOptifyPoliciesFile(updatedPath, root), false);
+			assert.strictEqual(parse.mock.callCount(), 1);
+			lastModified++;
+			assert.strictEqual(isOptifyPoliciesFile(originalPath, root), false);
+			assert.strictEqual(isOptifyPoliciesFile(updatedPath, root), true);
+			assert.strictEqual(parse.mock.callCount(), 2);
+
+			fs.unlinkSync(configPath);
+			assert.strictEqual(isOptifyPoliciesFile(updatedPath, root), true);
+			lastModified++;
+			assert.strictEqual(isOptifyPoliciesFile(updatedPath, root), false);
+			fs.writeFileSync(configPath, JSON.stringify({ policiesPath: '.optify/policies' }));
+			assert.strictEqual(isOptifyPoliciesFile(originalPath, root), false);
+			lastModified++;
+			assert.strictEqual(isOptifyPoliciesFile(originalPath, root), true);
+			assert.strictEqual(parse.mock.callCount(), 3);
+		} finally {
+			parse.mock.restore();
+		}
 	});
 });
 
