@@ -390,7 +390,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const optifyRoot = workspaceFolder
 			? findOptifyRoot(event.document.fileName, workspaceFolder.uri.fsPath)
 			: undefined;
-		if (isOptifyFeatureFile(event.document.fileName) ||
+		if (isOptifyFeatureFile(event.document.fileName, optifyRoot) ||
 			(optifyRoot && isOptifyPoliciesFile(event.document.fileName, optifyRoot))) {
 			diagnosticsProvider.updateDiagnostics(event.document);
 		}
@@ -403,11 +403,11 @@ export function activate(context: vscode.ExtensionContext) {
 				filePath = filePath.replace(/\.git$/, '');
 		}
 		// console.debug(`onDidOpenDocument: filePath: ${filePath}`);
-		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath);
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
 		const optifyRoot = workspaceFolder
 			? findOptifyRoot(filePath, workspaceFolder.uri.fsPath)
 			: undefined;
+		const _isOptifyFeatureFile = isOptifyFeatureFile(filePath, optifyRoot);
 		if (_isOptifyFeatureFile || (optifyRoot && isOptifyPoliciesFile(filePath, optifyRoot))) {
 			diagnosticsProvider.updateDiagnostics(document);
 		}
