@@ -315,6 +315,50 @@ impl JsOptionsWatcher {
       .map_feature_names(&feature_names, preferences)
       .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
+
+  /// Gets all policies for a specific feature.
+  /// Returns the policies showing which requesters are allowed or blocked for the feature.
+  ///
+  /// For allow policies, the response will be:
+  /// ```json
+  /// { "requester": { "allow": ["requester1", "requester2"] } }
+  /// ```
+  ///
+  /// For block policies, the response will be:
+  /// ```json
+  /// { "requester": { "block": ["requester1", "requester2"] } }
+  /// ```
+  ///
+  /// Returns `null` if the feature has no policies defined.
+  #[napi(js_name = "getFeaturePolicies")]
+  pub fn get_feature_policies(
+    &self,
+    canonical_feature_name: String,
+  ) -> Option<serde_json::Value> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_policies(&canonical_feature_name)
+      .and_then(|policies| serde_json::to_value(policies).ok())
+  }
+
+  /// Gets all policies for a specific feature as a JSON string.
+  /// Returns the policies showing which requesters are allowed or blocked for the feature.
+  ///
+  /// Returns `null` if the feature has no policies defined.
+  #[napi(js_name = "getFeaturePoliciesJson")]
+  pub fn get_feature_policies_json(
+    &self,
+    canonical_feature_name: String,
+  ) -> Option<String> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_policies(&canonical_feature_name)
+      .and_then(|policies| serde_json::to_string(&policies).ok())
+  }
 }
 
 #[napi(js_name = "OptionsWatcherBuilder")]
