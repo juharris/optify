@@ -1,7 +1,47 @@
 import * as assert from 'assert';
 import { ConfigParser } from '../config-parser';
+import { PolicyParser } from '../policy-parser';
 
 suite('ConfigParser File References Test Suite', () => {
+	suite('PolicyParser Feature References Test Suite', () => {
+		test('finds JSON allow and block feature names with exact ranges', () => {
+			const text = `{
+	"requesters": {
+		"service": {
+			"allow": ["feature.one", "feature.two"],
+			"block": ["feature.three"]
+		}
+	}
+}`;
+			const refs = PolicyParser.findFeatureRanges(text, 'json');
+			assert.deepStrictEqual(refs.map(ref => ref.name), ['feature.one', 'feature.two', 'feature.three']);
+			assert.strictEqual(text.slice(
+				text.indexOf('"feature.one"') + 1,
+				text.indexOf('"feature.one"') + refs[0].name.length + 1
+			), refs[0].name);
+		});
+
+		test('finds YAML block and inline feature lists', () => {
+			const text = `requesters:
+  service:
+    allow:
+      - feature.one
+      - "feature.two"
+    block: [feature.three, 'feature.four']`;
+			const refs = PolicyParser.findFeatureRanges(text, 'yaml');
+			assert.deepStrictEqual(refs.map(ref => ref.name), [
+				'feature.one',
+				'feature.two',
+				'feature.three',
+				'feature.four'
+			]);
+			for (const ref of refs) {
+				const line = text.split('\n')[ref.range.start.line];
+				assert.strictEqual(line.slice(ref.range.start.character, ref.range.end.character), ref.name);
+			}
+		});
+	});
+
 	suite('JSON file references', () => {
 		test('should find file reference in simple JSON', () => {
 			const text = `{
