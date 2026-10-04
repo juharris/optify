@@ -145,8 +145,9 @@ pub trait OptionsRegistry {
     /// allowed (`allow`) or explicitly blocked (`block`) from using the feature.
     /// With `block`, any requester that is not listed is allowed.
     ///
-    /// Returns `None` if the feature is unknown or if nothing restricts it
-    /// (every requester is permitted).
+    /// Returns `None` if nothing restricts the feature (every requester is permitted).
+    ///
+    /// `canonical_feature_name` is assumed to be a valid canonical feature name; it isn't checked.
     ///
     /// Policies are only checked for top-level features in a request.
     /// Features that are imported by other features may have policies, but those policies

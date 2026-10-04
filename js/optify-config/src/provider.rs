@@ -219,7 +219,8 @@ impl JsOptionsProvider {
   ///
   /// Returns `{ requester: { allow: [...] } }` when only the listed requesters may use the feature,
   /// or `{ requester: { block: [...] } }` when every requester except the listed ones may use it.
-  /// Returns `null` if the feature is unknown or nothing restricts it.
+  /// Returns `null` if nothing restricts the feature.
+  /// Assumes a valid canonical feature name; it isn't checked.
   #[napi(js_name = "getPolicies")]
   pub fn get_policies(&self, canonical_feature_name: String) -> Option<serde_json::Value> {
     self

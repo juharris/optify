@@ -55,11 +55,11 @@ class PoliciesTest < Test::Unit::TestCase
   end
 
   #: -> void
-  def test_get_policies_missing
+  def test_get_policies_unrestricted
     PROVIDERS.each do |klass|
-      provider = klass.build(POLICIES_DIR)
-      assert_nil(provider.get_policies('nonexistent_feature'),
-                 "Expected nil for unknown feature from #{klass}")
+      provider = klass.build('../../tests/test_suites/simple/configs')
+      assert_nil(provider.get_policies('feature_A'),
+                 "Expected nil for a feature with no policies from #{klass}")
     end
   end
 

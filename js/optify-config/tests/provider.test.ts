@@ -222,8 +222,9 @@ describe("getPolicies", () => {
 			expect([...policies.requester.block].sort()).toEqual(["requester_y", "service_a", "service_d"]);
 		});
 
-		test(`${name} returns null for an unknown feature`, () => {
-			expect(provider.getPolicies("nonexistent_feature")).toBeNull();
+		test(`${name} returns null when nothing restricts the feature`, () => {
+			const unrestricted = OptionsProvider.buildFromDirectories([configsPath]);
+			expect(unrestricted.getPolicies("feature_A")).toBeNull();
 		});
 	}
 });
