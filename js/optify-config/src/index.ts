@@ -65,6 +65,21 @@ declare module "../index" {
 		 * @param cacheOptions Optional cache options to enable caching of the result.
 		 */
 		getAllOptions(featureNames: Array<string>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): any;
+		/**
+		 * Gets all policies for a specific feature.
+		 * @param canonicalFeatureName The canonical name of the feature
+		 * @returns Object with requester policy info showing allowed or blocked requesters, or null if no policies are defined
+		 *
+		 * For allow policies: `{ "requester": { "allow": ["requester1", "requester2"] } }`
+		 * For block policies: `{ "requester": { "block": ["requester1", "requester2"] } }`
+		 */
+		getFeaturePolicies(canonicalFeatureName: string): any | null;
+		/**
+		 * Gets all policies for a specific feature as a JSON string.
+		 * @param canonicalFeatureName The canonical name of the feature
+		 * @returns JSON string with policy info, or null if no policies are defined
+		 */
+		getFeaturePoliciesJson(canonicalFeatureName: string): string | null;
 	}
 
 	interface OptionsWatcher {
@@ -94,6 +109,21 @@ declare module "../index" {
 		 * @param cacheOptions Optional cache options to enable caching of the result.
 		 */
 		getAllOptions(featureNames: Array<string>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): any;
+		/**
+		 * Gets all policies for a specific feature.
+		 * @param canonicalFeatureName The canonical name of the feature
+		 * @returns Object with requester policy info showing allowed or blocked requesters, or null if no policies are defined
+		 *
+		 * For allow policies: `{ "requester": { "allow": ["requester1", "requester2"] } }`
+		 * For block policies: `{ "requester": { "block": ["requester1", "requester2"] } }`
+		 */
+		getFeaturePolicies(canonicalFeatureName: string): any | null;
+		/**
+		 * Gets all policies for a specific feature as a JSON string.
+		 * @param canonicalFeatureName The canonical name of the feature
+		 * @returns JSON string with policy info, or null if no policies are defined
+		 */
+		getFeaturePoliciesJson(canonicalFeatureName: string): string | null;
 	}
 }
 
