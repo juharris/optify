@@ -315,6 +315,23 @@ impl JsOptionsWatcher {
       .map_feature_names(&feature_names, preferences)
       .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
+
+  /// Gets the effective policies for a feature, combining the feature's own policies with the
+  /// global requester policies from `.optify/policies.json`.
+  /// Shows which requesters are allowed or blocked from using the feature.
+  ///
+  /// Returns `{ requester: { allow: [...] } }` when only the listed requesters may use the feature,
+  /// or `{ requester: { block: [...] } }` when every requester except the listed ones may use it.
+  /// Returns `null` if the feature is unknown or nothing restricts it.
+  #[napi(js_name = "getPolicies")]
+  pub fn get_policies(&self, canonical_feature_name: String) -> Option<serde_json::Value> {
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .get_policies(&canonical_feature_name)
+      .and_then(|policies| serde_json::to_value(policies).ok())
+  }
 }
 
 #[napi(js_name = "OptionsWatcherBuilder")]
