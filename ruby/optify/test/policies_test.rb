@@ -32,18 +32,34 @@ class PoliciesTest < Test::Unit::TestCase
       assert_instance_of(Optify::Policies, result)
       requester = result.requester #: as !nil
       assert_not_nil(requester)
-      assert_equal(Set.new(%w[service_f untrusted_service]), requester.block,
+      # Includes requesters blocked by the feature (service_f, untrusted_service)
+      # and requesters denied by `.optify/policies.json` (service_f, and requester_x and service_b
+      # whose `allow` lists don't include the feature).
+      assert_equal(Set.new(%w[requester_x service_b service_f untrusted_service]), requester.block,
                    "feature_blocked requester block mismatch for #{klass}")
       assert_nil(requester.allow)
     end
   end
 
   #: -> void
-  def test_get_policies_missing
+  def test_get_policies_only_from_requester_policies_file
     PROVIDERS.each do |klass|
       provider = klass.build(POLICIES_DIR)
-      assert_nil(provider.get_policies('nonexistent_feature'),
-                 "Expected nil for unknown feature from #{klass}")
+      result = provider.get_policies('feature_neutral') #: as !nil
+      assert_not_nil(result, "Expected policies for feature_neutral from #{klass}")
+      requester = result.requester #: as !nil
+      assert_equal(Set.new(%w[requester_y service_a service_d]), requester.block,
+                   "feature_neutral requester block mismatch for #{klass}")
+      assert_nil(requester.allow)
+    end
+  end
+
+  #: -> void
+  def test_get_policies_unrestricted
+    PROVIDERS.each do |klass|
+      provider = klass.build('../../tests/test_suites/simple/configs')
+      assert_nil(provider.get_policies('feature_A'),
+                 "Expected nil for a feature with no policies from #{klass}")
     end
   end
 

@@ -806,3 +806,79 @@ fn test_requester_feature_policy_all_combinations() -> Result<(), Box<dyn std::e
 
     Ok(())
 }
+
+/// Returns the sorted requesters from `policies.requester.<kind>` (`kind` is `allow` or `block`),
+/// and asserts that the other kind is absent.
+fn sorted_requesters(value: &serde_json::Value, kind: &str) -> Vec<String> {
+    let requester = value["requester"].as_object().unwrap();
+    assert_eq!(requester.len(), 1, "Expected only `{kind}`: {requester:?}");
+    let mut requesters: Vec<String> = requester[kind]
+        .as_array()
+        .unwrap_or_else(|| panic!("Expected `{kind}` in {requester:?}"))
+        .iter()
+        .map(|v| v.as_str().unwrap().to_owned())
+        .collect();
+    requesters.sort();
+    requesters
+}
+
+/// `get_policies` combines a feature's own policies with the global `.optify/policies.json`.
+#[test]
+fn test_get_policies_merges_feature_and_global_policies() {
+    let provider = get_policies_provider();
+
+    // Feature `allow` list: only the listed requesters. The global policies agree for these.
+    let policies = provider.get_policies("feature_allowed").unwrap();
+    assert_eq!(
+        sorted_requesters(&serde_json::to_value(&policies).unwrap(), "allow"),
+        vec!["service_a", "service_d"]
+    );
+
+    // Feature `block` list plus requesters denied by global policies:
+    // - `service_f` blocks the feature globally (also in the feature's own list).
+    // - `requester_x` and `service_b` have global `allow` lists that don't include the feature.
+    let policies = provider.get_policies("feature_blocked").unwrap();
+    assert_eq!(
+        sorted_requesters(&serde_json::to_value(&policies).unwrap(), "block"),
+        vec!["requester_x", "service_b", "service_f", "untrusted_service"]
+    );
+
+    // No policies on the feature, so only the global policies apply:
+    // - `requester_y` and `service_d` block the feature globally.
+    // - `service_a` has a global `allow` list that doesn't include the feature.
+    let policies = provider.get_policies("feature_neutral").unwrap();
+    assert_eq!(
+        sorted_requesters(&serde_json::to_value(&policies).unwrap(), "block"),
+        vec!["requester_y", "service_a", "service_d"]
+    );
+
+    // Nothing restricts the feature when there are no policies at all.
+    assert!(get_provider().get_policies("feature_A").is_none());
+}
+
+/// The effective policies must agree with what `check_policies` enforces.
+#[test]
+fn test_get_policies_agrees_with_check_policies() {
+    let provider = get_policies_provider();
+    let requesters = [
+        "requester_x",
+        "requester_y",
+        "service_a",
+        "service_b",
+        "service_d",
+        "service_f",
+        "untrusted_service",
+        "totally_unknown_requester",
+    ];
+    for feature in ["feature_allowed", "feature_blocked", "feature_neutral"] {
+        let policies = provider.get_policies(feature).unwrap();
+        for requester in requesters {
+            let expected = provider.check_policies(requester, &[feature], None).is_ok();
+            assert_eq!(
+                policies.is_requester_permitted(requester),
+                expected,
+                "Mismatch for requester '{requester}' and feature '{feature}'"
+            );
+        }
+    }
+}
