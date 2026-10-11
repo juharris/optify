@@ -2,6 +2,7 @@
 
 mod builder_options;
 mod metadata;
+mod policies;
 mod preferences;
 mod provider;
 mod watcher;

@@ -8,5 +8,6 @@ pub(crate) mod policies;
 pub mod provider;
 pub mod schema;
 
+pub use policies::{feature_policies::Policies, requester_policy::RequesterPolicy};
 pub use provider::OptionsProvider;
 pub use provider::OptionsWatcher;

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@jest/globals";
 import fs from "fs";
 import path from "path";
-import { GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../dist/index";
+import { GetOptionsPreferences, OptionsProvider, OptionsWatcher, Policies } from "../dist/index";
 
 const configsPath = path.join(__dirname, "../../../tests/test_suites/simple/configs");
 const conditionsConfigsPath = path.join(__dirname, "../../../tests/test_suites/conditions/configs");
@@ -199,31 +199,40 @@ describe("overrides", () => {
 
 describe("getPolicies", () => {
 	const providers = [
-		{ name: "OptionsProvider", provider: OptionsProvider.buildFromDirectories([policiesConfigsPath]) },
-		{ name: "OptionsWatcher", provider: OptionsWatcher.buildFromDirectories([policiesConfigsPath]) },
+		{ name: "OptionsProvider", provider: OptionsProvider.build(policiesConfigsPath) },
+		{ name: "OptionsWatcher", provider: OptionsWatcher.build(policiesConfigsPath) },
 	];
+
+	// The lists come from sets, so sort them for stable comparisons.
+	const sortLists = (policies: Policies | null) => {
+		const requester = policies?.requester;
+		if (requester) {
+			("allow" in requester ? requester.allow : requester.block).sort();
+		}
+		return policies;
+	};
 
 	for (const { name, provider } of providers) {
 		test(`${name} returns the feature's allow list`, () => {
-			const policies = provider.getPolicies("feature_allowed");
-			expect(policies.requester.block).toBeUndefined();
-			expect([...policies.requester.allow].sort()).toEqual(["service_a", "service_d"]);
+			expect(sortLists(provider.getPolicies("feature_allowed"))).toEqual({
+				requester: { allow: ["service_a", "service_d"] },
+			});
 		});
 
 		test(`${name} merges the feature's block list with requesters denied by .optify/policies.json`, () => {
-			const policies = provider.getPolicies("feature_blocked");
-			expect(policies.requester.allow).toBeUndefined();
-			expect([...policies.requester.block].sort()).toEqual(["requester_x", "service_b", "service_f", "untrusted_service"]);
+			expect(sortLists(provider.getPolicies("feature_blocked"))).toEqual({
+				requester: { block: ["requester_x", "service_b", "service_f", "untrusted_service"] },
+			});
 		});
 
 		test(`${name} returns requesters denied only by .optify/policies.json`, () => {
-			const policies = provider.getPolicies("feature_neutral");
-			expect(policies.requester.allow).toBeUndefined();
-			expect([...policies.requester.block].sort()).toEqual(["requester_y", "service_a", "service_d"]);
+			expect(sortLists(provider.getPolicies("feature_neutral"))).toEqual({
+				requester: { block: ["requester_y", "service_a", "service_d"] },
+			});
 		});
 
 		test(`${name} returns null when nothing restricts the feature`, () => {
-			const unrestricted = OptionsProvider.buildFromDirectories([configsPath]);
+			const unrestricted = OptionsProvider.build(configsPath);
 			expect(unrestricted.getPolicies("feature_A")).toBeNull();
 		});
 	}

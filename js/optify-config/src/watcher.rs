@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::builder_options::JsBuilderOptions;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
+use crate::policies::Policies;
 use crate::preferences::JsGetOptionsPreferences;
 use crate::watcher_options::JsWatcherOptions;
 
@@ -316,22 +317,18 @@ impl JsOptionsWatcher {
       .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
 
-  /// Gets the effective policies for a feature, combining the feature's own policies with the
-  /// global requester policies from `.optify/policies.json`.
-  /// Shows which requesters are allowed or blocked from using the feature.
-  ///
-  /// Returns `{ requester: { allow: [...] } }` when only the listed requesters may use the feature,
-  /// or `{ requester: { block: [...] } }` when every requester except the listed ones may use it.
+  /// Gets the effective policies for a feature, combining the feature's own policies with
+  /// `.optify/policies.json`.
   /// Returns `null` if nothing restricts the feature.
   /// Assumes a valid canonical feature name; it isn't checked.
   #[napi(js_name = "getPolicies")]
-  pub fn get_policies(&self, canonical_feature_name: String) -> Option<serde_json::Value> {
+  pub fn get_policies(&self, canonical_feature_name: String) -> Option<Policies> {
     self
       .inner
       .as_ref()
       .unwrap()
       .get_policies(&canonical_feature_name)
-      .and_then(|policies| serde_json::to_value(policies).ok())
+      .map(Policies::from)
   }
 }
 

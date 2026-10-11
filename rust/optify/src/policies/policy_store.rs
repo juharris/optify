@@ -54,48 +54,54 @@ impl PolicyStore {
     /// with the requester policies from `.optify/policies.json`.
     ///
     /// The result uses the same shape as the feature's own policies:
-    /// - `allow`: the feature has its own `allow` list, so only those requesters may use it,
-    ///   minus any requester that `.optify/policies.json` denies for this feature.
+    /// - `allow`: the feature's own `allow` list, so only those requesters may use it.
+    ///   The builder rejects `.optify/policies.json` files that deny a requester in this list,
+    ///   so it doesn't need to be adjusted.
     /// - `block`: every requester except those listed may use the feature. The list is the feature's
     ///   own `block` list plus every requester whose `.optify/policies.json` policy denies the feature.
     ///   This includes requesters with an `allow` list that does not mention the feature.
     ///
     /// Returns `None` if nothing restricts the feature, meaning every requester is permitted.
-    /// Conflicts between the two sources are already rejected when loading,
-    /// so this doesn't check for them.
     ///
     /// `canonical_feature_name` is assumed to be a valid canonical feature name; it isn't checked.
     pub(crate) fn get_effective_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
-        let denied_by_requester_policies: HashSet<String> = self
-            .requester_policies
-            .iter()
-            .filter(|(_, policy)| !policy.is_permitted(canonical_feature_name))
-            .map(|(requester, _)| requester.clone())
-            .collect();
-
         let requester = match self
             .policies
             .get(canonical_feature_name)
             .map(|policies| &policies.requester)
         {
             Some(RequesterPolicy::Allow { allow }) => RequesterPolicy::Allow {
-                allow: allow
-                    .difference(&denied_by_requester_policies)
-                    .cloned()
-                    .collect(),
+                allow: allow.clone(),
             },
             Some(RequesterPolicy::Block { block }) => RequesterPolicy::Block {
                 block: block
-                    .union(&denied_by_requester_policies)
+                    .iter()
                     .cloned()
+                    .chain(self.requesters_denied_feature(canonical_feature_name))
                     .collect(),
             },
-            None if denied_by_requester_policies.is_empty() => return None,
-            None => RequesterPolicy::Block {
-                block: denied_by_requester_policies,
-            },
+            None => {
+                let block: HashSet<String> = self
+                    .requesters_denied_feature(canonical_feature_name)
+                    .collect();
+                if block.is_empty() {
+                    return None;
+                }
+                RequesterPolicy::Block { block }
+            }
         };
         Some(Policies { requester })
+    }
+
+    /// Returns the requesters whose `.optify/policies.json` policy denies the feature.
+    fn requesters_denied_feature<'a>(
+        &'a self,
+        canonical_feature_name: &'a str,
+    ) -> impl Iterator<Item = String> + 'a {
+        self.requester_policies
+            .iter()
+            .filter(|(_, policy)| !policy.is_permitted(canonical_feature_name))
+            .map(|(requester, _)| requester.clone())
     }
 
     pub(crate) fn insert_policy(&mut self, canonical_feature_name: String, policies: Policies) {
