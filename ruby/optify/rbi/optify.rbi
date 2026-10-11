@@ -412,8 +412,8 @@ module Optify
     end
     def map_feature_names(feature_names, preferences); end
 
-    # @return The effective policies for the feature, combining the feature's own policies with the requester
-    # policies from `.optify/policies.json`. Either `requester.allow` (only those requesters may use the feature)
+    # @return The effective policies for the feature, combining the feature's own policies with the requester policies from `.optify/policies.json`.
+    # Either `requester.allow` (only those requesters may use the feature)
     # or `requester.block` (all requesters except those may use the feature) is set.
     # Returns `nil` if nothing restricts the feature (every requester is permitted).
     # Assumes a valid canonical feature name; it isn't checked.
