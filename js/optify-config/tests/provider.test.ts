@@ -1,10 +1,11 @@
 import { describe, expect, test } from "@jest/globals";
 import fs from "fs";
 import path from "path";
-import { GetOptionsPreferences, OptionsProvider, OptionsWatcher } from "../dist/index";
+import { GetOptionsPreferences, OptionsProvider, OptionsWatcher, Policies } from "../dist/index";
 
 const configsPath = path.join(__dirname, "../../../tests/test_suites/simple/configs");
 const conditionsConfigsPath = path.join(__dirname, "../../../tests/test_suites/conditions/configs");
+const policiesConfigsPath = path.join(__dirname, "../../../tests/test_suites/policies/configs");
 const expectationsPath = path.join(configsPath, "../expectations");
 
 describe("Provider", () => {
@@ -194,4 +195,45 @@ describe("overrides", () => {
 		expect(options.myConfig.rootString).toBe("root string same");
 		expect(options.myConfig.rootString2).toBe("overridden");
 	});
+});
+
+describe("getPolicies", () => {
+	const providers = [
+		{ name: "OptionsProvider", provider: OptionsProvider.build(policiesConfigsPath) },
+		{ name: "OptionsWatcher", provider: OptionsWatcher.build(policiesConfigsPath) },
+	];
+
+	// The lists come from sets, so sort them for stable comparisons.
+	const sortLists = (policies: Policies | null) => {
+		const requester = policies?.requester;
+		if (requester) {
+			("allow" in requester ? requester.allow : requester.block).sort();
+		}
+		return policies;
+	};
+
+	for (const { name, provider } of providers) {
+		test(`${name} returns the feature's allow list`, () => {
+			expect(sortLists(provider.getPolicies("feature_allowed"))).toEqual({
+				requester: { allow: ["service_a", "service_d"] },
+			});
+		});
+
+		test(`${name} merges the feature's block list with requesters denied by .optify/policies.json`, () => {
+			expect(sortLists(provider.getPolicies("feature_blocked"))).toEqual({
+				requester: { block: ["requester_x", "service_b", "service_f", "untrusted_service"] },
+			});
+		});
+
+		test(`${name} returns requesters denied only by .optify/policies.json`, () => {
+			expect(sortLists(provider.getPolicies("feature_neutral"))).toEqual({
+				requester: { block: ["requester_y", "service_a", "service_d"] },
+			});
+		});
+
+		test(`${name} returns null when nothing restricts the feature`, () => {
+			const unrestricted = OptionsProvider.build(configsPath);
+			expect(unrestricted.getPolicies("feature_A")).toBeNull();
+		});
+	}
 });

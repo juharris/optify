@@ -26,6 +26,7 @@ pub struct Policies {
 
 impl Policies {
     /// Returns `true` if the given requester is permitted to use the feature.
+    #[must_use]
     pub fn is_requester_permitted(&self, requester: &str) -> bool {
         self.requester.is_permitted(requester)
     }

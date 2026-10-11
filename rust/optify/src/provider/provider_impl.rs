@@ -648,8 +648,7 @@ impl OptionsRegistry for OptionsProvider {
 
     fn get_policies(&self, canonical_feature_name: &str) -> Option<Policies> {
         self.policy_store
-            .get_policies(canonical_feature_name)
-            .cloned()
+            .get_effective_policies(canonical_feature_name)
     }
 
     fn map_feature_names(

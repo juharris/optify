@@ -21,6 +21,7 @@ pub enum RequesterPolicy {
 
 impl RequesterPolicy {
     /// Returns `true` if the given requester is permitted by this policy.
+    #[must_use]
     pub fn is_permitted(&self, value: &str) -> bool {
         match self {
             Self::Allow { allow } => allow.contains(value),
@@ -29,6 +30,7 @@ impl RequesterPolicy {
     }
 
     /// Returns `true` if this policy explicitly names the given requester.
+    #[must_use]
     pub fn mentions_requester(&self, requester: &str) -> bool {
         match self {
             Self::Allow { allow } => allow.contains(requester),
