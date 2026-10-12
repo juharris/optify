@@ -18,6 +18,10 @@
 			"type": "boolean",
 			"deprecated": true,
 			"description": "Deprecated: Equivalent to \"areConfigurableValuesEnabled\"."
+		},
+		"policiesPath": {
+			"type": "string",
+			"description": "The path to the policies for permissions for requesters."
 		}
 	}
 }
