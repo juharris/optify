@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import Select, { GroupBase, MultiValue, MultiValueGenericProps, StylesConfig, components as SelectComponents } from 'react-select';
-import { JsonViewer } from '@textea/json-viewer';
+import { DataItemProps, JsonViewer, JsonViewerKeyRenderer } from '@textea/json-viewer';
+import { toJsonPointer } from '../json-pointer';
 import { ImportGraph } from './ImportGraph';
-import { PreviewData, FeatureGraphData, MessageFromExtension, MessageToExtension } from './types';
+import { FileLink, OptionOriginPanel } from './OptionOriginPanel';
+import { PreviewData, FeatureGraphData, MessageFromExtension, MessageToExtension, OptionAnalysisData } from './types';
 
 declare const acquireVsCodeApi: () => {
 	postMessage(message: MessageToExtension): void;
@@ -40,6 +42,36 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 	}
 }
 
+/**
+ * Creates a key renderer for the JSON viewer that adds a button to each option to show where it comes from.
+ */
+function createOptionKeyRenderer(onAnalyzeOption: (keyPath: string) => void): JsonViewerKeyRenderer {
+	const OptionKeyRenderer = ({ path }: DataItemProps) => {
+		const key = path[path.length - 1];
+		const keyPath = toJsonPointer(path);
+		return (
+			<>
+				<button
+					className="optify-origin-button"
+					onClick={(e) => {
+						// Prevent the JSON viewer from toggling the value when the button is clicked.
+						e.preventDefault();
+						e.stopPropagation();
+						onAnalyzeOption(keyPath);
+					}}
+					title={`Show where ${keyPath} comes from`}
+				>
+					ⓘ
+				</button>
+				"{key}"
+			</>
+		);
+	};
+	// Array indices use the default rendering because values in arrays come from the same feature as the array.
+	OptionKeyRenderer.when = ({ path }: DataItemProps) => typeof path[path.length - 1] === 'string';
+	return OptionKeyRenderer;
+}
+
 const LoadingIndicator: React.FC<{ label: string }> = ({ label }) => (
 	<div style={{
 		display: 'flex',
@@ -61,6 +93,10 @@ export const PreviewApp: React.FC = () => {
 	const [showGraph, setShowGraph] = useState(false);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(true);
 	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
+	const [optionAnalysis, setOptionAnalysis] = useState<OptionAnalysisData | undefined>(undefined);
+	const [analyzedKeyPath, setAnalyzedKeyPath] = useState<string | undefined>(undefined);
+	// The message handler is only registered once, so it reads the current key path from a ref.
+	const analyzedKeyPathRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
 		// Detect VS Code theme (dark / light / high-contrast) once on mount.
@@ -78,6 +114,11 @@ export const PreviewApp: React.FC = () => {
 			} else if (message.type === 'updateGraph') {
 				setGraphData(message.data.graphData);
 				setIsGraphLoading(false);
+			} else if (message.type === 'optionAnalysis') {
+				// Ignore results for options that are no longer selected.
+				if (message.data.keyPath === analyzedKeyPathRef.current) {
+					setOptionAnalysis(message.data);
+				}
 			}
 		};
 
@@ -88,9 +129,32 @@ export const PreviewApp: React.FC = () => {
 		return () => window.removeEventListener('message', handleMessage);
 	}, []);
 
-	const handleOpenFile = useCallback((path: string) => {
-		vscode.postMessage({ command: 'openFile', path });
+	const handleOpenFile = useCallback((path: string, keyPath?: string) => {
+		vscode.postMessage({ command: 'openFile', path, keyPath });
 	}, []);
+
+	const handleAnalyzeOption = useCallback((keyPath: string) => {
+		analyzedKeyPathRef.current = keyPath;
+		setAnalyzedKeyPath(keyPath);
+		setOptionAnalysis(undefined);
+		vscode.postMessage({ command: 'analyzeOption', keyPath });
+	}, []);
+
+	const handleCloseOptionAnalysis = useCallback(() => {
+		analyzedKeyPathRef.current = undefined;
+		setAnalyzedKeyPath(undefined);
+		setOptionAnalysis(undefined);
+	}, []);
+
+	useEffect(() => {
+		// Keep the analysis in sync with the preview, such as when features change or files are edited.
+		const keyPath = analyzedKeyPathRef.current;
+		if (previewData && keyPath) {
+			vscode.postMessage({ command: 'analyzeOption', keyPath });
+		}
+	}, [previewData]);
+
+	const keyRenderer = useMemo(() => createOptionKeyRenderer(handleAnalyzeOption), [handleAnalyzeOption]);
 
 	const handleToggleConfigurableValues = useCallback(() => {
 		if (!previewData) { return; }
@@ -267,15 +331,9 @@ export const PreviewApp: React.FC = () => {
 					<ul>
 						{previewData.dependents.map((dep) => (
 							<li key={dep.name}>
-								<a
-									href="#"
-									onClick={(e) => { e.preventDefault(); handleOpenFile(dep.path); }}
-									style={{ color: 'var(--vscode-textLink-foreground)', textDecoration: 'none', cursor: 'pointer' }}
-									onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
-									onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
-								>
+								<FileLink onOpenFile={handleOpenFile} path={dep.path}>
 									{dep.name}
-								</a>
+								</FileLink>
 							</li>
 						))}
 					</ul>
@@ -437,6 +495,16 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
+			{previewData && !previewData.error && analyzedKeyPath && (
+				<OptionOriginPanel
+					analysisData={optionAnalysis}
+					featurePaths={previewData.featurePaths}
+					keyPath={analyzedKeyPath}
+					onClose={handleCloseOptionAnalysis}
+					onOpenFile={handleOpenFile}
+				/>
+			)}
+
 			{previewData && !previewData.error && (
 				<div
 					style={{
@@ -479,6 +547,7 @@ export const PreviewApp: React.FC = () => {
 						displayDataTypes={false}
 						displaySize={false}
 						highlightUpdates={true}
+						keyRenderer={keyRenderer}
 						maxDisplayLength={100}
 						rootName={false}
 						valueTypes={valueTypes}

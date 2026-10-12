@@ -1,7 +1,7 @@
 // Import shared data types from the extension host side.
 // Using `import type` so nothing from preview.ts is included in the webview bundle.
-import type { FeatureGraphData, PreviewData } from '../preview';
-export type { FeatureGraphData, PreviewData };
+import type { FeatureGraphData, OptionAnalysisData, PreviewData } from '../preview';
+export type { FeatureGraphData, OptionAnalysisData, PreviewData };
 
 export interface UpdateConfigMessage {
 	type: 'updateConfig';
@@ -15,9 +15,22 @@ export interface UpdateGraphMessage {
 	};
 }
 
+export interface OptionAnalysisMessage {
+	type: 'optionAnalysis';
+	data: OptionAnalysisData;
+}
+
+export interface AnalyzeOptionMessage {
+	command: 'analyzeOption';
+	/** A JSON pointer to the option, such as "/myConfig/myKey". */
+	keyPath: string;
+}
+
 export interface OpenFileMessage {
 	command: 'openFile';
 	path: string;
+	/** A JSON pointer to an option to reveal in the file, such as "/myConfig/myKey". */
+	keyPath?: string;
 }
 
 export interface ReadyMessage {
@@ -34,5 +47,5 @@ export interface SetFeaturesMessage {
 	features: string[];
 }
 
-export type MessageFromExtension = UpdateConfigMessage | UpdateGraphMessage;
-export type MessageToExtension = OpenFileMessage | ReadyMessage | SetConfigurableValuesMessage | SetFeaturesMessage;
+export type MessageFromExtension = OptionAnalysisMessage | UpdateConfigMessage | UpdateGraphMessage;
+export type MessageToExtension = AnalyzeOptionMessage | OpenFileMessage | ReadyMessage | SetConfigurableValuesMessage | SetFeaturesMessage;

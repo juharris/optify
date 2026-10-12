@@ -10,6 +10,8 @@ export function getOptionsProvider(optifyRoot: string): OptionsWatcher {
 	let result = providerCache.get(optifyRoot);
 	if (result === undefined) {
 		const builderOptions = new BuilderOptions();
+		// Analysis explains where options in the preview come from.
+		builderOptions.setAnalysisEnabled(true);
 		builderOptions.setTrackFileReferencesMode('KEY_NAME');
 		const watcherOptions = new WatcherOptions();
 		watcherOptions.setDebounceDurationMs(10);

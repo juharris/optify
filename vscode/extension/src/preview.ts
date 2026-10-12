@@ -1,4 +1,4 @@
-import { CacheOptions, GetOptionsPreferences, OptionsWatcher } from "@optify/config";
+import { CacheOptions, GetOptionsPreferences, OptionAnalysis, OptionsWatcher } from "@optify/config";
 import * as vscode from 'vscode';
 
 export interface PreviewWhileEditingOptions {
@@ -30,6 +30,16 @@ export interface FeatureGraphData {
 	edges: FeatureGraphEdge[];
 }
 
+/**
+ * Explains where the value for an option in the preview came from.
+ */
+export interface OptionAnalysisData {
+	/** The JSON pointer to the option that was analyzed. */
+	keyPath: string;
+	analysis?: OptionAnalysis;
+	error?: string;
+}
+
 export interface PreviewData {
 	features: string[];
 	config: any;
@@ -46,6 +56,18 @@ export interface PreviewData {
 }
 
 const DEFAULT_CACHE_OPTIONS = new CacheOptions();
+
+/**
+ * Creates preferences that use the same features and overrides as the preview.
+ */
+function createPreferences(editingOptions?: PreviewWhileEditingOptions): GetOptionsPreferences {
+	const preferences = new GetOptionsPreferences();
+	preferences.setSkipFeatureNameConversion(true);
+	if (editingOptions?.overrides) {
+		preferences.setOverridesJson(editingOptions.overrides);
+	}
+	return preferences;
+}
 
 export class PreviewBuilder {
 	getPreviewHtmlShell(webview: vscode.Webview, extensionUri: vscode.Uri): string {
@@ -69,6 +91,20 @@ export class PreviewBuilder {
 		}
 		@keyframes optify-spin {
 			to { transform: rotate(360deg); }
+		}
+		.optify-origin-button {
+			margin-right: 0.25em;
+			padding: 0 0.15em;
+			background: none;
+			border: none;
+			color: var(--vscode-textLink-foreground);
+			cursor: pointer;
+			font-size: 0.9em;
+			opacity: 0.35;
+		}
+		.data-key:hover > .data-key-key > .optify-origin-button,
+		.optify-origin-button:focus-visible {
+			opacity: 1;
 		}
 		.optify-spinner {
 			display: inline-block;
@@ -95,8 +131,7 @@ export class PreviewBuilder {
 		areConfigurableValuesEnabled?: boolean,
 		configurableValuesDefault?: boolean,
 	): PreviewData {
-		const preferences = new GetOptionsPreferences();
-		preferences.setSkipFeatureNameConversion(true);
+		const preferences = createPreferences(editingOptions);
 		if (areConfigurableValuesEnabled) {
 			preferences.enableConfigurableValues();
 		}
@@ -104,7 +139,6 @@ export class PreviewBuilder {
 		if (editingOptions?.overrides) {
 			// Caching is not supported when overrides are given.
 			cacheOptions = undefined;
-			preferences.setOverridesJson(editingOptions.overrides);
 		}
 		const featureNames = editingOptions?.features ?? canonicalFeatures;
 		let builtConfig: any;
@@ -119,11 +153,7 @@ export class PreviewBuilder {
 				throw error;
 			}
 
-			const fallbackPreferences = new GetOptionsPreferences();
-			fallbackPreferences.setSkipFeatureNameConversion(true);
-			if (editingOptions?.overrides) {
-				fallbackPreferences.setOverridesJson(editingOptions.overrides);
-			}
+			const fallbackPreferences = createPreferences(editingOptions);
 
 			builtConfig = provider.getAllOptions(featureNames, fallbackPreferences, cacheOptions);
 			effectiveAreConfigurableValuesEnabled = false;
@@ -205,5 +235,25 @@ export class PreviewBuilder {
 		}));
 
 		return { nodes: graphNodes, edges: graphEdges };
+	}
+
+	/**
+	 * Explains which feature and chain of imports set the option at `keyPath` in the preview.
+	 *
+	 * @param keyPath A JSON pointer to the option, such as "/myConfig/myKey".
+	 */
+	buildOptionAnalysis(
+		canonicalFeatures: string[],
+		provider: OptionsWatcher,
+		keyPath: string,
+		editingOptions?: PreviewWhileEditingOptions,
+	): OptionAnalysisData {
+		const featureNames = editingOptions?.features ?? canonicalFeatures;
+		try {
+			const analysis = provider.analyze(keyPath, featureNames, createPreferences(editingOptions));
+			return { keyPath, analysis };
+		} catch (error) {
+			return { keyPath, error: `${error}` };
+		}
 	}
 }
