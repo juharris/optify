@@ -76,6 +76,29 @@ import { OptionsProvider } from '@optify/config'
 const provider = OptionsProvider.buildFromDirectories(['<configs folder path>', '<another folder path>'])
 ```
 
+### Analyzing where a value comes from
+
+To explain which feature (and import chain) set a value, enable analysis and pass a [JSON pointer](https://datatracker.ietf.org/doc/html/rfc6901) to the value.
+Analysis retains more data, so it is meant for local development and debugging tools.
+
+```TypeScript
+import { BuilderOptions, OptionsProvider } from '@optify/config'
+
+const builderOptions = new BuilderOptions()
+builderOptions.setAnalysisEnabled(true)
+const provider = OptionsProvider.build('<configs folder path>', builderOptions)
+const analysis = provider.analyze('/myConfig/key2', ['grandparent'])
+// {
+//   origins: [{
+//     path: '/myConfig/key2',
+//     source: { lineage: ['grandparent', 'parent2', 'base2'], kind: 'feature' },
+//     overridden: [{ lineage: ['grandparent', 'parent1'], kind: 'feature' }],
+//   }],
+// }
+```
+
+See [Analysis.md](../../docs/Analysis.md) for details about the result.
+
 # Development
 
 Use Node >= 22.

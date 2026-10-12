@@ -4,6 +4,7 @@ use crate::builder::builder_options::BuilderOptions;
 use crate::configurable_values::configurable_list_impl::ConfigurableList;
 
 use crate::policies::{Policies, PolicyStore};
+use crate::provider::analysis::{analyze, AnalysisData, OptionAnalysis};
 use crate::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
     configurable_string::LoadedFiles,
@@ -23,6 +24,8 @@ pub(crate) type SourceValue = serde_json::Value;
 pub(crate) type Aliases = HashMap<unicase::UniCase<String>, String>;
 pub(crate) type Conditions = HashMap<String, ConditionExpression>;
 pub(crate) type Features = HashMap<String, OptionsMetadata>;
+/// The canonical feature names imported by each canonical feature name.
+pub(crate) type Imports = HashMap<String, Vec<String>>;
 pub(crate) type ReferencedFileToFeatureNames = HashMap<String, Vec<String>>;
 pub(crate) type Sources = HashMap<String, SourceValue>;
 
@@ -39,6 +42,8 @@ pub struct OptionsProvider {
     keyed_configurable_string_pointers: HashMap<String, Vec<String>>,
 
     aliases: Aliases,
+    /// Only set when analysis is enabled in the `BuilderOptions`.
+    analysis_data: Option<AnalysisData>,
     conditions: Conditions,
     features: Features,
     loaded_files: LoadedFiles,
@@ -61,6 +66,7 @@ impl OptionsProvider {
         aliases: Aliases,
         all_configurable_list_pointers: Vec<String>,
         all_configurable_string_pointers: Vec<String>,
+        analysis_data: Option<AnalysisData>,
         keyed_configurable_list_pointers: HashMap<String, Vec<String>>,
         keyed_configurable_string_pointers: HashMap<String, Vec<String>>,
         conditions: Conditions,
@@ -76,6 +82,7 @@ impl OptionsProvider {
             keyed_configurable_list_pointers,
             keyed_configurable_string_pointers,
             aliases,
+            analysis_data,
             conditions,
             features,
             loaded_files,
@@ -456,6 +463,26 @@ impl OptionsRegistry for OptionsProvider {
         builder.with_options(options)?;
         builder.add_directory(directory.as_ref())?;
         builder.build_and_clear()
+    }
+
+    fn analyze(
+        &self,
+        key_path: &str,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<OptionAnalysis, String> {
+        let Some(analysis_data) = &self.analysis_data else {
+            return Err("Analysis is not enabled. Enable it with `is_analysis_enabled` in the builder options or `isAnalysisEnabled` in `.optify/config.json`.".to_owned());
+        };
+        let filtered_feature_names = self.get_filtered_feature_names(feature_names, preferences)?;
+        let overrides = preferences.and_then(|p| p.overrides.as_ref());
+        analyze(
+            analysis_data,
+            key_path,
+            &filtered_feature_names,
+            feature_names,
+            overrides,
+        )
     }
 
     fn get_aliases(&self) -> Vec<String> {

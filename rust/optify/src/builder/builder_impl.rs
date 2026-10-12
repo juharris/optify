@@ -17,14 +17,14 @@ use crate::configurable_values::locator::{find_configurable_values, Configurable
 use crate::json::merge::{merge_json_with_defaults, FrozenPaths};
 use crate::json::reader::read_json_from_file_as;
 use crate::policies::PolicyStore;
+use crate::provider::analysis::AnalysisData;
 use crate::provider::{
-    Aliases, Conditions, Features, OptionsProvider, ReferencedFileToFeatureNames, Sources,
+    Aliases, Conditions, Features, Imports, OptionsProvider, ReferencedFileToFeatureNames, Sources,
 };
 use crate::schema::feature::FeatureConfiguration;
 use crate::schema::metadata::OptionsMetadata;
 
 type Dependents = HashMap<String, Vec<String>>;
-type Imports = HashMap<String, Vec<String>>;
 
 // Load the embedded schema file (this is resolved at compile time).
 const EMBEDDED_SCHEMA: &[u8] =
@@ -41,6 +41,8 @@ pub struct OptionsProviderBuilder {
     dependents: Dependents,
     features: Features,
     imports: Imports,
+    /// Set when the builder options or the config for any added directory enable analysis.
+    is_analysis_enabled: bool,
     keyed_configurable_list_pointers: HashMap<String, HashSet<String>>,
     keyed_configurable_string_pointers: HashMap<String, HashSet<String>>,
     loaded_files: LoadedFiles,
@@ -201,6 +203,7 @@ impl OptionsProviderBuilder {
             dependents: Dependents::new(),
             features: Features::new(),
             imports: HashMap::new(),
+            is_analysis_enabled: false,
             keyed_configurable_list_pointers: HashMap::new(),
             keyed_configurable_string_pointers: HashMap::new(),
             loaded_files: LoadedFiles::new(),
@@ -212,6 +215,7 @@ impl OptionsProviderBuilder {
     }
 
     pub fn build_and_clear(&mut self) -> Result<OptionsProvider, String> {
+        let analysis_data = self.create_analysis_data();
         self.prepare_build()?;
 
         let all_configurable_list_pointers =
@@ -241,6 +245,7 @@ impl OptionsProviderBuilder {
             std::mem::take(&mut self.aliases),
             all_configurable_list_pointers,
             all_configurable_string_pointers,
+            analysis_data,
             keyed_configurable_list_pointers,
             keyed_configurable_string_pointers,
             std::mem::take(&mut self.conditions),
@@ -250,6 +255,16 @@ impl OptionsProviderBuilder {
             std::mem::take(&mut self.loaded_files),
             std::mem::take(&mut self.sources),
         ))
+    }
+
+    /// Captures each feature's own options and imports before imports are merged into the sources.
+    fn create_analysis_data(&self) -> Option<AnalysisData> {
+        (self.is_analysis_enabled || self.builder_options.is_analysis_enabled).then(|| {
+            AnalysisData {
+                imports: self.imports.clone(),
+                raw_sources: self.sources.clone(),
+            }
+        })
     }
 
     fn prepare_build(&mut self) -> Result<(), String> {
@@ -575,6 +590,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         } else {
             self.builder_options.clone()
         };
+        self.is_analysis_enabled |= builder_options.is_analysis_enabled;
 
         if let Some(policies_path) = &builder_options.policies_path {
             self.policy_store
@@ -676,6 +692,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
     }
 
     fn build(&mut self) -> Result<OptionsProvider, String> {
+        let analysis_data = self.create_analysis_data();
         self.prepare_build()?;
 
         let all_configurable_string_pointers = self
@@ -706,6 +723,7 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.aliases.clone(),
             all_configurable_list_pointers,
             all_configurable_string_pointers,
+            analysis_data,
             keyed_configurable_list_pointers,
             keyed_configurable_string_pointers,
             self.conditions.clone(),

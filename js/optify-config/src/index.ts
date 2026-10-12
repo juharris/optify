@@ -34,7 +34,15 @@ export type OptionsWatcher = nativeBinding.OptionsWatcher;
 
 export { CacheInitOptions };
 export { CacheOptions };
-export type { AllowRequesterPolicy, BlockRequesterPolicy, Policies, RequesterPolicy } from "../index";
+export type {
+	AllowRequesterPolicy,
+	BlockRequesterPolicy,
+	OptionAnalysis,
+	OptionOrigin,
+	OptionSource,
+	Policies,
+	RequesterPolicy,
+} from "../index";
 export type { TypeSchema } from "./types";
 
 // Augment the native class interfaces to include our new method

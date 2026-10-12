@@ -1,11 +1,13 @@
 import { describe, expect, test } from "@jest/globals";
 import fs from "fs";
 import path from "path";
-import { GetOptionsPreferences, OptionsProvider, OptionsWatcher, Policies } from "../dist/index";
+import { BuilderOptions, GetOptionsPreferences, OptionsProvider, OptionsWatcher, Policies } from "../dist/index";
 
 const configsPath = path.join(__dirname, "../../../tests/test_suites/simple/configs");
 const conditionsConfigsPath = path.join(__dirname, "../../../tests/test_suites/conditions/configs");
 const policiesConfigsPath = path.join(__dirname, "../../../tests/test_suites/policies/configs");
+const inheritanceConfigsPath = path.join(__dirname, "../../../tests/test_suites/inheritance/configs");
+const analysisConfigsPath = path.join(__dirname, "../../../rust/optify/tests/analysis");
 const expectationsPath = path.join(configsPath, "../expectations");
 
 describe("Provider", () => {
@@ -236,4 +238,69 @@ describe("getPolicies", () => {
 			expect(unrestricted.getPolicies("feature_A")).toBeNull();
 		});
 	}
+});
+
+describe("analyze", () => {
+	const builderOptions = new BuilderOptions();
+	builderOptions.setAnalysisEnabled(true);
+	const buildProviders = (directory: string) => [
+		{ name: "OptionsProvider", provider: OptionsProvider.build(directory, builderOptions) },
+		{ name: "OptionsWatcher", provider: OptionsWatcher.build(directory, builderOptions) },
+	];
+
+	for (const { name, provider } of buildProviders(inheritanceConfigsPath)) {
+		test(`${name} explains the import chain and overridden features`, () => {
+			expect(provider.analyze("/myConfig/key2", ["grandparent"])).toEqual({
+				origins: [
+					{
+						overridden: [{ lineage: ["grandparent", "parent1"], kind: "feature" }],
+						path: "/myConfig/key2",
+						source: { lineage: ["grandparent", "parent2", "base2"], kind: "feature" },
+					},
+				],
+			});
+		});
+
+		test(`${name} lists one origin per sub-path of an object`, () => {
+			const analysis = provider.analyze("/myConfig", ["grandparent"]);
+			expect(analysis.origins.map((origin) => [origin.path, origin.source.lineage])).toEqual([
+				["/myConfig/key1", ["grandparent", "parent1", "base1"]],
+				["/myConfig/key2", ["grandparent", "parent2", "base2"]],
+			]);
+		});
+
+		test(`${name} throws when the path is not found`, () => {
+			expect(() => provider.analyze("/missing", ["grandparent"])).toThrow(/not found/);
+		});
+	}
+
+	for (const { name, provider } of buildProviders(analysisConfigsPath)) {
+		test(`${name} explains a blocked path`, () => {
+			expect(provider.analyze("/k/x", ["x", "null_k"])).toEqual({
+				blocker: {
+					overridden: [{ lineage: ["x"], kind: "feature" }],
+					path: "/k",
+					source: { lineage: ["null_k"], kind: "feature" },
+				},
+				origins: [],
+			});
+		});
+
+		test(`${name} attributes overrides`, () => {
+			const preferences = new GetOptionsPreferences();
+			preferences.setOverridesJson(JSON.stringify({ k: { x: 99 } }));
+			expect(provider.analyze("/k/x", ["x"], preferences).origins).toEqual([
+				{
+					overridden: [{ lineage: ["x"], kind: "feature" }],
+					path: "/k/x",
+					source: { kind: "overrides" },
+				},
+			]);
+		});
+	}
+
+	test("throws when analysis is not enabled", () => {
+		const provider = OptionsProvider.build(inheritanceConfigsPath);
+		expect(() => provider.analyze("/myConfig/key2", ["grandparent"])).toThrow(/Analysis is not enabled/);
+	});
 });

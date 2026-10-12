@@ -26,6 +26,8 @@ pub(crate) struct BuilderOptionsConfig {
     #[serde(alias = "areConfigurableStringsEnabled")]
     pub are_configurable_values_enabled: Option<bool>,
     #[serde(default)]
+    pub is_analysis_enabled: Option<bool>,
+    #[serde(default)]
     pub schema_path: Option<PathBuf>,
     #[serde(default)]
     pub track_file_references: Option<TrackReferenceMode>,
@@ -53,6 +55,12 @@ impl BuilderOptionsConfig {
         BuilderOptions {
             are_configurable_strings_enabled: are_configurable_values_enabled,
             are_configurable_values_enabled,
+            is_analysis_enabled: if overrides.is_analysis_enabled == defaults.is_analysis_enabled {
+                self.is_analysis_enabled
+                    .unwrap_or(defaults.is_analysis_enabled)
+            } else {
+                overrides.is_analysis_enabled
+            },
             schema_path: if overrides.schema_path == defaults.schema_path {
                 self.schema_path.or(defaults.schema_path)
             } else {
@@ -81,6 +89,9 @@ pub struct BuilderOptions {
     /// DEPRECATED: Use `are_configurable_values_enabled` instead to enable all configurable values.
     pub are_configurable_strings_enabled: bool,
     pub are_configurable_values_enabled: bool,
+    /// Retains each feature's own options and imports so that `OptionsRegistry::analyze` can explain where values came from.
+    /// This uses more memory, so it is meant for local development and debugging tools.
+    pub is_analysis_enabled: bool,
     pub schema_path: Option<PathBuf>,
     /// Path to the file declaring requester feature policies. Relative to the directory being
     /// added, unless absolute.
@@ -99,12 +110,14 @@ mod tests {
         let overrides = BuilderOptions {
             are_configurable_strings_enabled: true,
             are_configurable_values_enabled: true,
+            is_analysis_enabled: true,
             schema_path: Some(PathBuf::from("override_schema.json")),
             policies_path: None,
             track_file_references: TrackReferenceMode::ConfigurableStrings,
         };
         let config = BuilderOptionsConfig {
             are_configurable_values_enabled: Some(false),
+            is_analysis_enabled: Some(false),
             schema_path: Some(PathBuf::from("config_schema.json")),
             policies_path: None,
             track_file_references: Some(TrackReferenceMode::None),
@@ -114,6 +127,7 @@ mod tests {
 
         assert!(merged.are_configurable_strings_enabled);
         assert!(merged.are_configurable_values_enabled);
+        assert!(merged.is_analysis_enabled);
         assert_eq!(
             merged.schema_path,
             Some(PathBuf::from("override_schema.json"))
@@ -130,6 +144,7 @@ mod tests {
         let overrides = BuilderOptions::default();
         let config = BuilderOptionsConfig {
             are_configurable_values_enabled: Some(true),
+            is_analysis_enabled: Some(true),
             schema_path: Some(PathBuf::from("config_schema.json")),
             policies_path: None,
             track_file_references: Some(TrackReferenceMode::ConfigurableStrings),
@@ -139,6 +154,7 @@ mod tests {
 
         assert!(merged.are_configurable_strings_enabled);
         assert!(merged.are_configurable_values_enabled);
+        assert!(merged.is_analysis_enabled);
         assert_eq!(
             merged.schema_path,
             Some(PathBuf::from("config_schema.json"))
@@ -156,12 +172,14 @@ mod tests {
         let overrides = BuilderOptions {
             are_configurable_strings_enabled: false,
             are_configurable_values_enabled: false,
+            is_analysis_enabled: false,
             schema_path: None,
             policies_path: None,
             track_file_references: TrackReferenceMode::ConfigurableStrings,
         };
         let config = BuilderOptionsConfig {
             are_configurable_values_enabled: Some(true),
+            is_analysis_enabled: None,
             schema_path: Some(PathBuf::from("config_schema.json")),
             policies_path: None,
             track_file_references: None,
@@ -171,6 +189,7 @@ mod tests {
 
         assert!(merged.are_configurable_strings_enabled);
         assert!(merged.are_configurable_values_enabled);
+        assert!(!merged.is_analysis_enabled);
         assert_eq!(
             merged.schema_path,
             Some(PathBuf::from("config_schema.json"))

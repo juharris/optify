@@ -74,7 +74,8 @@ fn merge_json_with_defaults_at_path(
     }
 }
 
-fn push_json_pointer_segment(path: &mut String, key: &str) {
+/// Appends `key` to the JSON pointer `path` as an escaped segment.
+pub(crate) fn push_json_pointer_segment(path: &mut String, key: &str) {
     path.push('/');
     for character in key.chars() {
         match character {

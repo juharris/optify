@@ -7,7 +7,8 @@ use crate::builder::builder_options::BuilderOptions;
 use crate::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::policies::Policies;
 use crate::provider::{
-    CacheOptions, Features, GetOptionsPreferences, OptionsProvider, OptionsRegistry, WatcherOptions,
+    CacheOptions, Features, GetOptionsPreferences, OptionAnalysis, OptionsProvider,
+    OptionsRegistry, WatcherOptions,
 };
 use crate::schema::metadata::OptionsMetadata;
 
@@ -230,6 +231,18 @@ impl OptionsRegistry for OptionsWatcher {
         builder.with_options(options)?;
         builder.add_directory(directory.as_ref())?;
         builder.build()
+    }
+
+    fn analyze(
+        &self,
+        key_path: &str,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<OptionAnalysis, String> {
+        self.current_provider
+            .read()
+            .unwrap()
+            .analyze(key_path, feature_names, preferences)
     }
 
     fn get_aliases(&self) -> Vec<String> {

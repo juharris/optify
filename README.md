@@ -527,6 +527,8 @@ There is no limit on the depth for imports; imports can import other features th
 
 Circular imports are not allowed and will result in an error at build time.
 
+To find out which feature and chain of imports set a value, see [Analysis](./docs/Analysis.md).
+
 See [tests](./tests/) for more examples.
 
 # Conditions
@@ -711,6 +713,11 @@ optify --dir ./configs get-options -k myConfig -f A B
 
 # Get the full merged configuration for a set of features
 optify --dir ./configs get-all-options -f A B
+
+# Explain which feature and chain of imports set a value
+optify --dir ./configs analyze -p /myConfig/key2 -f grandparent --format text
+# /myConfig/key2: base2 (grandparent -> parent2 -> base2)
+#   overrode: parent1 (grandparent -> parent1)
 ```
 
 See [rust/optify-cli](./rust/optify-cli/) for full documentation.
