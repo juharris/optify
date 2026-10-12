@@ -56,6 +56,22 @@ Use `get_all_options` when you want the full merged options object instead of on
 let options = provider.get_all_options(&["feature_A", "feature_B/initial"], None, None)?;
 ```
 
+Use `analyze` to explain which feature and chain of imports set a value.
+Analysis must be enabled with `BuilderOptions.is_analysis_enabled` because it retains more data.
+See [Analysis](../../docs/Analysis.md) for details.
+
+```rust
+use optify::builder::BuilderOptions;
+
+let options = BuilderOptions {
+    is_analysis_enabled: true,
+    ..Default::default()
+};
+let provider = OptionsProvider::build_with_options("path/to/configs", options)?;
+let analysis = provider.analyze("/myConfig/myArray", &["feature_A", "feature_B/initial"], None)?;
+println!("{:?}", analysis.origins[0].source.defining_feature());
+```
+
 See [tests] for examples and tests for different implementations of this format for managing options.
 
 ## How It Works

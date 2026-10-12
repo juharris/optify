@@ -15,6 +15,13 @@ impl JsBuilderOptions {
     }
   }
 
+  /// Retains each feature's own options and imports so that `analyze` can explain where values came from.
+  /// This uses more memory, so it is meant for local development and debugging tools.
+  #[napi]
+  pub fn set_analysis_enabled(&mut self, is_analysis_enabled: bool) {
+    self.inner.is_analysis_enabled = is_analysis_enabled;
+  }
+
   #[napi]
   pub fn set_track_file_references_mode(
     &mut self,

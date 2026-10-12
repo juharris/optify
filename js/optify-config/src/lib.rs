@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 
+mod analysis;
 mod builder_options;
 mod metadata;
 mod policies;

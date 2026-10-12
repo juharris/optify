@@ -98,6 +98,42 @@ else
     (( ++pass ))
 fi
 
+## Analyze tests
+INHERITANCE_CONFIGS="../../tests/test_suites/inheritance/configs"
+ANALYSIS_CONFIGS="../optify/tests/analysis"
+
+check "analyze shows the import chain and overridden features" \
+    '{"origins":[{"overridden":[{"kind":"feature","importChain":["grandparent","parent1"]}],"path":"/myConfig/key2","source":{"kind":"feature","importChain":["grandparent","parent2","base2"]}}]}' \
+    "$(optify --dir "$INHERITANCE_CONFIGS" analyze -p /myConfig/key2 -f grandparent)"
+
+check "analyze --format text for an object with several origins" \
+    "$(printf '%s\n' '/myConfig/key1: base1 (grandparent -> parent1 -> base1)' '/myConfig/key2: base2 (grandparent -> parent2 -> base2)' '  overrode: parent1 (grandparent -> parent1)')" \
+    "$(optify --dir "$INHERITANCE_CONFIGS" analyze -p /myConfig -f grandparent --format text)"
+
+check "analyze --format text for a blocked path" \
+    "$(printf '%s\n' '/k/x is blocked: /k was set to a non-object by b (b)' '  blocked: x (x)')" \
+    "$(optify --dir "$ANALYSIS_CONFIGS" analyze -p /k/x -f x b high --format text)"
+
+check "analyze with overrides" \
+    '{"origins":[{"overridden":[{"kind":"feature","importChain":["x"]}],"path":"/k/x","source":{"kind":"overrides"}}]}' \
+    "$(optify --dir "$ANALYSIS_CONFIGS" analyze -p /k/x -f x --prefs '{"overrides":{"k":{"x":99}}}')"
+
+if optify --dir "$INHERITANCE_CONFIGS" analyze -p /missing -f grandparent 2>/dev/null; then
+    echo "FAIL: analyze with a missing path should exit non-zero"
+    (( ++fail ))
+else
+    echo "PASS: analyze with a missing path exits non-zero"
+    (( ++pass ))
+fi
+
+if optify --dir "$INHERITANCE_CONFIGS" analyze -p myConfig -f grandparent 2>/dev/null; then
+    echo "FAIL: analyze with an invalid JSON pointer should exit non-zero"
+    (( ++fail ))
+else
+    echo "PASS: analyze with an invalid JSON pointer exits non-zero"
+    (( ++pass ))
+fi
+
 # error on unknown feature exits non-zero and prints to stderr
 if optify --dir "$CONFIGS" get-options -k myConfig -f unknown_feature 2>/dev/null; then
     echo "FAIL: unknown feature should exit non-zero"

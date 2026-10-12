@@ -6,7 +6,7 @@ use crate::builder::builder_options::BuilderOptions;
 
 use crate::policies::Policies;
 use crate::{
-    provider::{CacheOptions, Features, GetOptionsPreferences},
+    provider::{CacheOptions, Features, GetOptionsPreferences, OptionAnalysis},
     schema::metadata::OptionsMetadata,
 };
 
@@ -61,6 +61,21 @@ pub trait OptionsRegistry {
         };
         Self::build_with_options(directory, options)
     }
+
+    /// Explains which feature (and import chain) set the value at `key_path` in the options built for `feature_names`.
+    ///
+    /// `key_path` is a JSON pointer (RFC 6901) into the options, such as "/myConfig/myKey".
+    /// Its first segment is the same key that `get_options` uses.
+    ///
+    /// Analysis must be enabled with `BuilderOptions.is_analysis_enabled` or `isAnalysisEnabled` in `.optify/config.json`.
+    ///
+    /// Returns `Err` if analysis is not enabled, `key_path` is invalid, or no feature or override sets a value at `key_path`.
+    fn analyze(
+        &self,
+        key_path: &str,
+        feature_names: &[impl AsRef<str>],
+        preferences: Option<&GetOptionsPreferences>,
+    ) -> Result<OptionAnalysis, String>;
 
     /// Gets all alias names.
     fn get_aliases(&self) -> Vec<String>;

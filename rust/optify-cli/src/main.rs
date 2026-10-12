@@ -1,8 +1,12 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use optify::builder::BuilderOptions;
 use optify::provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry};
 use std::path::PathBuf;
 use std::process;
+
+mod format_analysis;
+
+use format_analysis::format_analysis_text;
 
 /// Inspect and query Optify configuration options from config directories.
 #[derive(Parser)]
@@ -23,6 +27,25 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Explain which feature (and import chain) set the value at a path in the options.
+    Analyze {
+        /// JSON pointer to the value to explain, such as "/myConfig/myKey".
+        #[arg(short, long, value_name = "JSON_POINTER")]
+        path: String,
+
+        /// Feature names to apply, in order from lowest to highest priority.
+        #[arg(short, long, value_name = "FEATURE", num_args = 0..)]
+        features: Vec<String>,
+
+        /// JSON preferences for configuring how options are resolved.
+        #[arg(long = "preferences", visible_alias = "prefs", value_name = "JSON")]
+        preferences: Option<String>,
+
+        /// The output format.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Json)]
+        format: OutputFormat,
+    },
+
     /// List all features with their metadata as a JSON object.
     ListFeatures,
 
@@ -53,13 +76,26 @@ enum Commands {
     },
 }
 
+#[derive(Clone, Copy, ValueEnum)]
+enum OutputFormat {
+    /// Compact single-line JSON.
+    Json,
+    /// Human-readable lines.
+    Text,
+}
+
 fn parse_preferences(json: Option<&str>) -> Result<Option<GetOptionsPreferences>, String> {
     json.map(|s| serde_json::from_str(s).map_err(|e| format!("Failed to parse preferences: {e}")))
         .transpose()
 }
 
-fn build_provider(dirs: &[PathBuf], schema: Option<&PathBuf>) -> Result<OptionsProvider, String> {
+fn build_provider(
+    dirs: &[PathBuf],
+    schema: Option<&PathBuf>,
+    is_analysis_enabled: bool,
+) -> Result<OptionsProvider, String> {
     let options = BuilderOptions {
+        is_analysis_enabled,
         schema_path: schema.cloned(),
         ..BuilderOptions::default()
     };
@@ -69,9 +105,29 @@ fn build_provider(dirs: &[PathBuf], schema: Option<&PathBuf>) -> Result<OptionsP
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
 
-    let provider = build_provider(&cli.dirs, cli.schema.as_ref())?;
+    // Analysis retains more data, so only enable it when it is needed.
+    let is_analysis_enabled = matches!(cli.command, Commands::Analyze { .. });
+    let provider = build_provider(&cli.dirs, cli.schema.as_ref(), is_analysis_enabled)?;
 
     match cli.command {
+        Commands::Analyze {
+            path,
+            features,
+            preferences,
+            format,
+        } => {
+            let preferences = parse_preferences(preferences.as_deref())?;
+            let analysis = provider.analyze(&path, &features, preferences.as_ref())?;
+            match format {
+                OutputFormat::Json => println!(
+                    "{}",
+                    serde_json::to_string(&analysis)
+                        .map_err(|e| format!("Failed to serialize analysis: {e}"))?
+                ),
+                OutputFormat::Text => println!("{}", format_analysis_text(&path, &analysis)),
+            }
+        }
+
         Commands::ListFeatures => {
             let features = provider.get_features_with_metadata();
             let list: Vec<_> = features.into_values().collect();

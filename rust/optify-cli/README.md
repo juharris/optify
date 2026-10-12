@@ -22,7 +22,7 @@ The binary will be at `target/release/optify`.
 optify --dir <DIR> [--dir <DIR>...] [--schema <PATH>] <COMMAND>
 ```
 
-Output is always compact single-line JSON.
+Output is compact single-line JSON, except for `analyze --format text`.
 Use [`jq`](https://jqlang.org) to pretty-print or further process the output:
 
 ```shell
@@ -79,9 +79,43 @@ optify --dir ./configs get-all-options --features A B
 
 ---
 
+### `analyze`
+
+Explain which feature (and import chain) set the value at a path in the options.
+This helps when a feature has many imports or several features are applied and you need to know why an option has a value.
+
+The path (`-p, --path`) is a [JSON pointer](https://datatracker.ietf.org/doc/html/rfc6901) such as `/myConfig/myKey`.
+Escape `~` as `~0` and `/` as `~1` in keys.
+
+```shell
+optify --dir ./configs analyze -p /myConfig/key2 -f grandparent
+# {"origins":[{"overridden":[{"kind":"feature","importChain":["grandparent","parent1"]}],"path":"/myConfig/key2","source":{"kind":"feature","importChain":["grandparent","parent2","base2"]}}]}
+```
+
+Use `--format text` for human-readable output:
+
+```shell
+optify --dir ./configs analyze -p /myConfig -f grandparent --format text
+# /myConfig/key1: base1 (grandparent -> parent1 -> base1)
+# /myConfig/key2: base2 (grandparent -> parent2 -> base2)
+#   overrode: parent1 (grandparent -> parent1)
+```
+
+When features set a value at the path, but a higher-priority feature set an ancestor of the path to a non-object, the output explains what blocked the value:
+
+```shell
+optify --dir ./configs analyze -p /k/x -f x b high --format text
+# /k/x is blocked: /k was set to a non-object by b (b)
+#   blocked: x (x)
+```
+
+See [Analysis.md](../../docs/Analysis.md) for details about the output.
+
+---
+
 ### `--preferences` / `--prefs`
 
-Both `get-options` and `get-all-options` accept a `--preferences` (or `--prefs`) flag with a JSON value.
+`analyze`, `get-options`, and `get-all-options` accept a `--preferences` (or `--prefs`) flag with a JSON value.
 This maps directly to the `GetOptionsPreferences` struct, so any new fields added to the struct are automatically available.
 
 ```shell
@@ -117,6 +151,9 @@ optify --dir tests/test_suites/simple/configs get-all-options -f A B
 
 # Load from multiple directories
 optify --dir ./base-configs --dir ./override-configs get-options -k myConfig -f A
+
+# Explain which feature set a value
+optify --dir tests/test_suites/inheritance/configs analyze -p /myConfig/key2 -f grandparent --format text
 ```
 
 ## Testing

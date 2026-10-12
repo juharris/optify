@@ -4,6 +4,7 @@ use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::{OptionsRegistry, OptionsWatcher};
 use std::sync::Arc;
 
+use crate::analysis::OptionAnalysis;
 use crate::builder_options::JsBuilderOptions;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::policies::Policies;
@@ -134,6 +135,27 @@ impl JsOptionsWatcher {
       }),
       Err(e) => Err(napi::Error::from_reason(e.to_string())),
     }
+  }
+
+  /// Explains which feature (and import chain) set the value at `keyPath` in the options built for `featureNames`.
+  /// `keyPath` is a JSON pointer, such as "/myConfig/myKey".
+  ///
+  /// Analysis must be enabled with `BuilderOptions.setAnalysisEnabled(true)` or `isAnalysisEnabled` in `.optify/config.json`.
+  #[napi]
+  pub fn analyze(
+    &self,
+    key_path: String,
+    feature_names: Vec<String>,
+    preferences: Option<&JsGetOptionsPreferences>,
+  ) -> napi::Result<OptionAnalysis> {
+    let preferences = preferences.map(|p| &p.inner);
+    self
+      .inner
+      .as_ref()
+      .unwrap()
+      .analyze(&key_path, &feature_names, preferences)
+      .map(OptionAnalysis::from)
+      .map_err(|e| napi::Error::from_reason(e.to_string()))
   }
 
   /// Returns all of the canonical feature names.
