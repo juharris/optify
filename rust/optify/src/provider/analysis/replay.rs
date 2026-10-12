@@ -65,7 +65,7 @@ impl Replayer<'_> {
     fn replay_feature(
         &mut self,
         canonical_feature_name: &str,
-        import_chain: &[String],
+        lineage: &[String],
     ) -> Result<(Value, Provenance), String> {
         let data = self.data;
         let raw_source = data
@@ -77,7 +77,7 @@ impl Replayer<'_> {
         let mut value = project(raw_source, self.segments);
         let origin = self.create_origin(
             OptionSource::Feature {
-                import_chain: import_chain.to_vec(),
+                lineage: lineage.to_vec(),
             },
             raw_source,
         );
@@ -86,10 +86,10 @@ impl Replayer<'_> {
         if let Some(imports) = data.imports.get(canonical_feature_name) {
             let mut frozen_paths = TrackedFrozenPaths::new();
             for import in imports.iter().rev() {
-                let mut chain_for_import = import_chain.to_vec();
-                chain_for_import.push(import.clone());
+                let mut lineage_for_import = lineage.to_vec();
+                lineage_for_import.push(import.clone());
                 let (import_value, import_provenance) =
-                    self.replay_feature(import, &chain_for_import)?;
+                    self.replay_feature(import, &lineage_for_import)?;
                 merge_json_with_defaults_tracked(
                     &mut value,
                     &mut provenance,

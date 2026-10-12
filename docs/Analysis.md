@@ -29,13 +29,13 @@ Analysis explains the options as they are in the feature files, before [configur
 
 ## Results
 
-The result has `origins` and, when the value is blocked, `blockedBy`.
+The result has `origins` and, when the value is blocked, `blocker`.
 
 Each origin has:
 
 - `path`: the JSON pointer for the value.
 - `source`: where the value came from.
-  For a feature, `importChain` lists the canonical feature names from the requested feature to the feature that defined the value.
+  For a feature, `lineage` lists the canonical feature names from the requested feature to the feature that defined the value.
   For example, `["grandparent", "parent2", "base2"]` means that `grandparent` was requested, it imports `parent2`, and `parent2` imports `base2`, which set the value.
   `{"kind": "overrides"}` means that the value came from the overrides in the preferences.
 - `overridden`: the lower-priority sources that also set a value at the path, or at an ancestor on the way to the path, and lost, highest priority first.
@@ -58,9 +58,9 @@ Analyzing `/myConfig/key2` for `["grandparent"]` gives:
 {
   "origins": [
     {
-      "overridden": [{ "kind": "feature", "importChain": ["grandparent", "parent1"] }],
       "path": "/myConfig/key2",
-      "source": { "kind": "feature", "importChain": ["grandparent", "parent2", "base2"] }
+      "source": { "kind": "feature", "lineage": ["grandparent", "parent2", "base2"] },
+      "overridden": [{ "kind": "feature", "lineage": ["grandparent", "parent1"] }]
     }
   ]
 }
@@ -73,7 +73,7 @@ Analyzing `/myConfig` for `["grandparent"]` gives one origin for `/myConfig/key1
 ## Blocked Values
 
 A feature can set a value at a path that still does not appear in the final options because of a non-object value at an ancestor of the path.
-Instead of returning an error, analysis sets `blockedBy` and returns no `origins`:
+Instead of returning an error, analysis sets `blocker` and returns no `origins`:
 
 - `path` is the ancestor.
 - `source` is the feature that set the ancestor to a non-object value.
@@ -91,10 +91,10 @@ For the second example, analyzing `/k/x` gives:
 
 ```JSON
 {
-  "blockedBy": {
-    "overridden": [{ "kind": "feature", "importChain": ["x"] }],
+  "blocker": {
     "path": "/k",
-    "source": { "kind": "feature", "importChain": ["b"] }
+    "source": { "kind": "feature", "lineage": ["b"] },
+    "overridden": [{ "kind": "feature", "lineage": ["x"] }]
   },
   "origins": []
 }

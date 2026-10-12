@@ -22,9 +22,9 @@ fn build(directory: impl AsRef<Path>) -> OptionsProvider {
     OptionsProvider::build_with_options(directory, analysis_options()).unwrap()
 }
 
-fn feature(import_chain: &[&str]) -> OptionSource {
+fn feature(lineage: &[&str]) -> OptionSource {
     OptionSource::Feature {
-        import_chain: import_chain.iter().map(ToString::to_string).collect(),
+        lineage: lineage.iter().map(ToString::to_string).collect(),
     }
 }
 
@@ -38,14 +38,14 @@ fn origin(path: &str, source: OptionSource, overridden: Vec<OptionSource>) -> Op
 
 fn found(origins: Vec<OptionOrigin>) -> OptionAnalysis {
     OptionAnalysis {
-        blocked_by: None,
+        blocker: None,
         origins,
     }
 }
 
-fn blocked(blocked_by: OptionOrigin) -> OptionAnalysis {
+fn blocked(blocker: OptionOrigin) -> OptionAnalysis {
     OptionAnalysis {
-        blocked_by: Some(blocked_by),
+        blocker: Some(blocker),
         origins: Vec::new(),
     }
 }
@@ -155,7 +155,7 @@ fn test_analyze_enabled_by_directory_config() {
 }
 
 #[test]
-fn test_analyze_import_chain() {
+fn test_analyze_lineage() {
     let provider = build(INHERITANCE_CONFIGS);
 
     let analysis = provider
@@ -354,9 +354,9 @@ fn test_analyze_serialization() {
         serde_json::to_value(&analysis).unwrap(),
         json!({
             "origins": [{
-                "overridden": [{"kind": "feature", "importChain": ["grandparent", "parent1"]}],
+                "overridden": [{"kind": "feature", "lineage": ["grandparent", "parent1"]}],
                 "path": "/myConfig/key2",
-                "source": {"kind": "feature", "importChain": ["grandparent", "parent2", "base2"]},
+                "source": {"kind": "feature", "lineage": ["grandparent", "parent2", "base2"]},
             }]
         })
     );
@@ -366,10 +366,10 @@ fn test_analyze_serialization() {
     assert_eq!(
         serde_json::to_value(&analysis).unwrap(),
         json!({
-            "blockedBy": {
-                "overridden": [{"kind": "feature", "importChain": ["x"]}],
+            "blocker": {
+                "overridden": [{"kind": "feature", "lineage": ["x"]}],
                 "path": "/k",
-                "source": {"kind": "feature", "importChain": ["null_k"]},
+                "source": {"kind": "feature", "lineage": ["null_k"]},
             },
             "origins": [],
         })
@@ -416,7 +416,7 @@ fn test_analyze_test_suites_match_options() {
                 let analysis = provider
                     .analyze(&pointer, &features, Some(&preferences))
                     .unwrap_or_else(|error| panic!("{context}: {error}"));
-                assert!(analysis.blocked_by.is_none(), "{context}");
+                assert!(analysis.blocker.is_none(), "{context}");
                 assert_eq!(analysis.origins.len(), 1, "{context}");
                 let origin = &analysis.origins[0];
                 assert_eq!(origin.path, pointer, "{context}");

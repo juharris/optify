@@ -89,7 +89,7 @@ Escape `~` as `~0` and `/` as `~1` in keys.
 
 ```shell
 optify --dir ./configs analyze -p /myConfig/key2 -f grandparent
-# {"origins":[{"overridden":[{"kind":"feature","importChain":["grandparent","parent1"]}],"path":"/myConfig/key2","source":{"kind":"feature","importChain":["grandparent","parent2","base2"]}}]}
+# {"origins":[{"overridden":[{"kind":"feature","lineage":["grandparent","parent1"]}],"path":"/myConfig/key2","source":{"kind":"feature","lineage":["grandparent","parent2","base2"]}}]}
 ```
 
 Use `--format text` for human-readable output:

@@ -103,7 +103,7 @@ INHERITANCE_CONFIGS="../../tests/test_suites/inheritance/configs"
 ANALYSIS_CONFIGS="../optify/tests/analysis"
 
 check "analyze shows the import chain and overridden features" \
-    '{"origins":[{"overridden":[{"kind":"feature","importChain":["grandparent","parent1"]}],"path":"/myConfig/key2","source":{"kind":"feature","importChain":["grandparent","parent2","base2"]}}]}' \
+    '{"origins":[{"overridden":[{"kind":"feature","lineage":["grandparent","parent1"]}],"path":"/myConfig/key2","source":{"kind":"feature","lineage":["grandparent","parent2","base2"]}}]}' \
     "$(optify --dir "$INHERITANCE_CONFIGS" analyze -p /myConfig/key2 -f grandparent)"
 
 check "analyze --format text for an object with several origins" \
@@ -115,7 +115,7 @@ check "analyze --format text for a blocked path" \
     "$(optify --dir "$ANALYSIS_CONFIGS" analyze -p /k/x -f x b high --format text)"
 
 check "analyze with overrides" \
-    '{"origins":[{"overridden":[{"kind":"feature","importChain":["x"]}],"path":"/k/x","source":{"kind":"overrides"}}]}' \
+    '{"origins":[{"overridden":[{"kind":"feature","lineage":["x"]}],"path":"/k/x","source":{"kind":"overrides"}}]}' \
     "$(optify --dir "$ANALYSIS_CONFIGS" analyze -p /k/x -f x --prefs '{"overrides":{"k":{"x":99}}}')"
 
 if optify --dir "$INHERITANCE_CONFIGS" analyze -p /missing -f grandparent 2>/dev/null; then

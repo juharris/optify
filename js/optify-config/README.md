@@ -91,8 +91,8 @@ const analysis = provider.analyze('/myConfig/key2', ['grandparent'])
 // {
 //   origins: [{
 //     path: '/myConfig/key2',
-//     source: { importChain: ['grandparent', 'parent2', 'base2'], kind: 'feature' },
-//     overridden: [{ importChain: ['grandparent', 'parent1'], kind: 'feature' }],
+//     source: { lineage: ['grandparent', 'parent2', 'base2'], kind: 'feature' },
+//     overridden: [{ lineage: ['grandparent', 'parent1'], kind: 'feature' }],
 //   }],
 // }
 ```

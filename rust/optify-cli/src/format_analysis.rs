@@ -3,13 +3,13 @@ use optify::provider::{OptionAnalysis, OptionOrigin, OptionSource};
 /// Formats an analysis as human-readable lines.
 pub fn format_analysis_text(key_path: &str, analysis: &OptionAnalysis) -> String {
     let mut lines = Vec::new();
-    if let Some(blocked_by) = &analysis.blocked_by {
+    if let Some(blocker) = &analysis.blocker {
         lines.push(format!(
             "{key_path} is blocked: {} was set to a non-object by {}",
-            blocked_by.path,
-            format_source(&blocked_by.source)
+            blocker.path,
+            format_source(&blocker.source)
         ));
-        push_sources(&mut lines, "blocked", &blocked_by.overridden);
+        push_sources(&mut lines, "blocked", &blocker.overridden);
     }
     for origin in &analysis.origins {
         push_origin(&mut lines, origin);
@@ -19,10 +19,10 @@ pub fn format_analysis_text(key_path: &str, analysis: &OptionAnalysis) -> String
 
 fn format_source(source: &OptionSource) -> String {
     match source {
-        OptionSource::Feature { import_chain } => format!(
+        OptionSource::Feature { lineage } => format!(
             "{} ({})",
             source.defining_feature().unwrap_or_default(),
-            import_chain.join(" -> ")
+            lineage.join(" -> ")
         ),
         OptionSource::Overrides => "overrides".to_owned(),
     }

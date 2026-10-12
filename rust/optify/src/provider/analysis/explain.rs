@@ -62,7 +62,7 @@ pub(super) fn explain(
     let mut origins = Vec::new();
     flatten_origins(&current_provenance, path, losses, &mut origins);
     Ok(OptionAnalysis {
-        blocked_by: None,
+        blocker: None,
         origins,
     })
 }
@@ -98,7 +98,7 @@ fn explain_missing(
         return Err(NotFound { non_object_path });
     }
 
-    let (path, blocker) = if deepest_value.is_object() {
+    let (path, blocking_origin) = if deepest_value.is_object() {
         // An object on the path is missing the next key, so a frozen path must have blocked lower-priority values.
         blocked_on_path
             .iter()
@@ -118,9 +118,9 @@ fn explain_missing(
     };
 
     Ok(OptionAnalysis {
-        blocked_by: Some(create_option_origin(
+        blocker: Some(create_option_origin(
             path,
-            &blocker,
+            &blocking_origin,
             replayed.defining_origins.clone(),
         )),
         origins: Vec::new(),

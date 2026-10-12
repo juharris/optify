@@ -8,8 +8,7 @@ pub enum OptionSource {
     Feature {
         /// The canonical feature names from the requested feature to the feature that defined the value.
         /// For example, `["grandparent", "parent2", "base2"]` when the requested feature `grandparent` imports `parent2` which imports `base2`.
-        #[serde(rename = "importChain")]
-        import_chain: Vec<String>,
+        lineage: Vec<String>,
     },
     /// The value came from the overrides in the preferences.
     Overrides,
@@ -20,7 +19,7 @@ impl OptionSource {
     #[must_use]
     pub fn defining_feature(&self) -> Option<&str> {
         match self {
-            OptionSource::Feature { import_chain } => import_chain.last().map(String::as_str),
+            OptionSource::Feature { lineage } => lineage.last().map(String::as_str),
             OptionSource::Overrides => None,
         }
     }

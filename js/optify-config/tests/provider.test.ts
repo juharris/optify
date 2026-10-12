@@ -253,9 +253,9 @@ describe("analyze", () => {
 			expect(provider.analyze("/myConfig/key2", ["grandparent"])).toEqual({
 				origins: [
 					{
-						overridden: [{ importChain: ["grandparent", "parent1"], kind: "feature" }],
+						overridden: [{ lineage: ["grandparent", "parent1"], kind: "feature" }],
 						path: "/myConfig/key2",
-						source: { importChain: ["grandparent", "parent2", "base2"], kind: "feature" },
+						source: { lineage: ["grandparent", "parent2", "base2"], kind: "feature" },
 					},
 				],
 			});
@@ -263,7 +263,7 @@ describe("analyze", () => {
 
 		test(`${name} lists one origin per sub-path of an object`, () => {
 			const analysis = provider.analyze("/myConfig", ["grandparent"]);
-			expect(analysis.origins.map((origin) => [origin.path, origin.source.importChain])).toEqual([
+			expect(analysis.origins.map((origin) => [origin.path, origin.source.lineage])).toEqual([
 				["/myConfig/key1", ["grandparent", "parent1", "base1"]],
 				["/myConfig/key2", ["grandparent", "parent2", "base2"]],
 			]);
@@ -277,10 +277,10 @@ describe("analyze", () => {
 	for (const { name, provider } of buildProviders(analysisConfigsPath)) {
 		test(`${name} explains a blocked path`, () => {
 			expect(provider.analyze("/k/x", ["x", "null_k"])).toEqual({
-				blockedBy: {
-					overridden: [{ importChain: ["x"], kind: "feature" }],
+				blocker: {
+					overridden: [{ lineage: ["x"], kind: "feature" }],
 					path: "/k",
-					source: { importChain: ["null_k"], kind: "feature" },
+					source: { lineage: ["null_k"], kind: "feature" },
 				},
 				origins: [],
 			});
@@ -291,7 +291,7 @@ describe("analyze", () => {
 			preferences.setOverridesJson(JSON.stringify({ k: { x: 99 } }));
 			expect(provider.analyze("/k/x", ["x"], preferences).origins).toEqual([
 				{
-					overridden: [{ importChain: ["x"], kind: "feature" }],
+					overridden: [{ lineage: ["x"], kind: "feature" }],
 					path: "/k/x",
 					source: { kind: "overrides" },
 				},

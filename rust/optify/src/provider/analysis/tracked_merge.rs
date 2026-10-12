@@ -111,7 +111,7 @@ mod tests {
         Arc::new(Origin {
             rank,
             source: OptionSource::Feature {
-                import_chain: vec![format!("feature_{rank}")],
+                lineage: vec![format!("feature_{rank}")],
             },
         })
     }

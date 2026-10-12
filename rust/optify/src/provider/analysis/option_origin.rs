@@ -10,7 +10,7 @@ pub struct OptionOrigin {
     /// This explains why values from other features were not used.
     pub overridden: Vec<OptionSource>,
 
-    /// A JSON pointer equal to the requested path, a descendant of it, or an ancestor of it for `OptionAnalysis.blocked_by`.
+    /// A JSON pointer equal to the requested path, a descendant of it, or an ancestor of it for `OptionAnalysis.blocker`.
     pub path: String,
 
     pub source: OptionSource,
