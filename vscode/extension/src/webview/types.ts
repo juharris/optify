@@ -1,6 +1,6 @@
 // Import shared data types from the extension host side.
-// Using `import type` so nothing from preview.ts is included in the webview bundle.
-import type { FeatureGraphData, OptionAnalysisData, PreviewData } from '../preview';
+// Using `import type` so nothing from the extension host is included in the webview bundle.
+import type { FeatureGraphData, OptionAnalysisData, PreviewData } from '../preview/types';
 export type { FeatureGraphData, OptionAnalysisData, PreviewData };
 
 export interface UpdateConfigMessage {

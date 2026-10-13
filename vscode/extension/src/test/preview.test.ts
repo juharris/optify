@@ -1,7 +1,9 @@
 import * as assert from 'assert';
 import path from 'path';
 
-import { buildOptifyOptionAnalysis, buildOptifyPreviewData, buildOptifyGraphData } from '../extension';
+import { buildOptifyGraphData } from '../preview/graph-data';
+import { buildOptifyOptionAnalysis } from '../preview/option-analysis';
+import { buildOptifyPreviewData } from '../preview/preview-data';
 import { findOptifyRoot } from '../path-utils';
 
 const expectedRoot = path.join(__dirname, '../../src/test/configs');

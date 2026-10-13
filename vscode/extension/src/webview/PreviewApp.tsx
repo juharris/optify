@@ -1,89 +1,18 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef, Component, ErrorInfo, ReactNode } from 'react';
-import Select, { GroupBase, MultiValue, MultiValueGenericProps, StylesConfig, components as SelectComponents } from 'react-select';
-import { DataItemProps, JsonViewer, JsonViewerKeyRenderer } from '@textea/json-viewer';
-import { toJsonPointer } from '../json-pointer';
+import React, { useState, useEffect, useCallback } from 'react';
+import { MultiValue } from 'react-select';
+import { JsonViewer } from '@textea/json-viewer';
+import { ErrorBoundary } from './ErrorBoundary';
+import { FeatureOption, FeatureSelect } from './FeatureSelect';
+import { FileLink } from './FileLink';
 import { ImportGraph } from './ImportGraph';
-import { FileLink, OptionOriginPanel } from './OptionOriginPanel';
-import { PreviewData, FeatureGraphData, MessageFromExtension, MessageToExtension, OptionAnalysisData } from './types';
+import { LoadingIndicator } from './LoadingIndicator';
+import { multilineStringValueType } from './multilineStringValueType';
+import { OptionOriginPanel } from './OptionOriginPanel';
+import { PreviewData, FeatureGraphData, MessageFromExtension } from './types';
+import { useOptionAnalysis } from './useOptionAnalysis';
+import { vscode } from './vscode-api';
 
-declare const acquireVsCodeApi: () => {
-	postMessage(message: MessageToExtension): void;
-	getState(): any;
-	setState(state: any): void;
-};
-
-const vscode = acquireVsCodeApi();
-
-interface ErrorBoundaryProps {
-	children: ReactNode;
-	fallback: (error: Error) => ReactNode;
-}
-
-interface ErrorBoundaryState {
-	error: Error | null;
-}
-
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-	state: ErrorBoundaryState = { error: null };
-
-	static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-		return { error };
-	}
-
-	componentDidCatch(error: Error, info: ErrorInfo) {
-		console.error('Component error:', error, info);
-	}
-
-	render() {
-		if (this.state.error) {
-			return this.props.fallback(this.state.error);
-		}
-		return this.props.children;
-	}
-}
-
-/**
- * Creates a key renderer for the JSON viewer that adds a button to each option to show where it comes from.
- */
-function createOptionKeyRenderer(onAnalyzeOption: (keyPath: string) => void): JsonViewerKeyRenderer {
-	const OptionKeyRenderer = ({ path }: DataItemProps) => {
-		const key = path[path.length - 1];
-		const keyPath = toJsonPointer(path);
-		return (
-			<>
-				<button
-					className="optify-origin-button"
-					onClick={(e) => {
-						// Prevent the JSON viewer from toggling the value when the button is clicked.
-						e.preventDefault();
-						e.stopPropagation();
-						onAnalyzeOption(keyPath);
-					}}
-					title={`Show where ${keyPath} comes from`}
-				>
-					ⓘ
-				</button>
-				"{key}"
-			</>
-		);
-	};
-	// Array indices use the default rendering because values in arrays come from the same feature as the array.
-	OptionKeyRenderer.when = ({ path }: DataItemProps) => typeof path[path.length - 1] === 'string';
-	return OptionKeyRenderer;
-}
-
-const LoadingIndicator: React.FC<{ label: string }> = ({ label }) => (
-	<div style={{
-		display: 'flex',
-		alignItems: 'center',
-		gap: '0.5rem',
-		padding: '0.75rem 0',
-		color: 'var(--vscode-descriptionForeground)',
-	}}>
-		<div className="optify-spinner" />
-		{label}
-	</div>
-);
+const VALUE_TYPES = [multilineStringValueType];
 
 export const PreviewApp: React.FC = () => {
 	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
@@ -92,11 +21,8 @@ export const PreviewApp: React.FC = () => {
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 	const [showGraph, setShowGraph] = useState(false);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(true);
-	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
-	const [optionAnalysis, setOptionAnalysis] = useState<OptionAnalysisData | undefined>(undefined);
-	const [analyzedKeyPath, setAnalyzedKeyPath] = useState<string | undefined>(undefined);
-	// The message handler is only registered once, so it reads the current key path from a ref.
-	const analyzedKeyPathRef = useRef<string | undefined>(undefined);
+	const [selectedFeatures, setSelectedFeatures] = useState<FeatureOption[]>([]);
+	const optionAnalysis = useOptionAnalysis(previewData);
 
 	useEffect(() => {
 		// Detect VS Code theme (dark / light / high-contrast) once on mount.
@@ -114,11 +40,6 @@ export const PreviewApp: React.FC = () => {
 			} else if (message.type === 'updateGraph') {
 				setGraphData(message.data.graphData);
 				setIsGraphLoading(false);
-			} else if (message.type === 'optionAnalysis') {
-				// Ignore results for options that are no longer selected.
-				if (message.data.keyPath === analyzedKeyPathRef.current) {
-					setOptionAnalysis(message.data);
-				}
 			}
 		};
 
@@ -133,159 +54,17 @@ export const PreviewApp: React.FC = () => {
 		vscode.postMessage({ command: 'openFile', path, keyPath });
 	}, []);
 
-	const handleAnalyzeOption = useCallback((keyPath: string) => {
-		analyzedKeyPathRef.current = keyPath;
-		setAnalyzedKeyPath(keyPath);
-		setOptionAnalysis(undefined);
-		vscode.postMessage({ command: 'analyzeOption', keyPath });
-	}, []);
-
-	const handleCloseOptionAnalysis = useCallback(() => {
-		analyzedKeyPathRef.current = undefined;
-		setAnalyzedKeyPath(undefined);
-		setOptionAnalysis(undefined);
-	}, []);
-
-	useEffect(() => {
-		// Keep the analysis in sync with the preview, such as when features change or files are edited.
-		const keyPath = analyzedKeyPathRef.current;
-		if (previewData && keyPath) {
-			vscode.postMessage({ command: 'analyzeOption', keyPath });
-		}
-	}, [previewData]);
-
-	const keyRenderer = useMemo(() => createOptionKeyRenderer(handleAnalyzeOption), [handleAnalyzeOption]);
-
 	const handleToggleConfigurableValues = useCallback(() => {
 		if (!previewData) { return; }
 		const newValue = !previewData.areConfigurableValuesEnabled;
 		vscode.postMessage({ command: 'setConfigurableValues', enabled: newValue });
 	}, [previewData]);
 
-	const selectOptions = useMemo(() => {
-		if (!previewData) { return []; }
-		const opts: Array<{ value: string; label: string; path?: string }> = [];
-		for (const name of previewData.allFeatureNames) {
-			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
-			const aliases = previewData.featureAliases[name];
-			if (aliases) {
-				for (const alias of aliases) {
-					opts.push({ value: name, label: `${name} (alias ${alias})`, path: previewData.featurePaths[name] });
-				}
-			}
-		}
-		return opts;
-	}, [previewData]);
-
-	const handleFeaturesChange = useCallback((newValue: MultiValue<{ value: string; label: string; path?: string }>) => {
+	const handleFeaturesChange = useCallback((newValue: MultiValue<FeatureOption>) => {
 		const features = Array.from(newValue);
 		setSelectedFeatures(features);
 		vscode.postMessage({ command: 'setFeatures', features: features.map(f => f.value) });
 	}, []);
-
-	const selectStyles = useMemo((): StylesConfig<{ value: string; label: string; path?: string }, true> => ({
-		control: (base) => ({
-			...base,
-			backgroundColor: 'var(--vscode-input-background)',
-			borderColor: 'var(--vscode-input-border)',
-			color: 'var(--vscode-input-foreground)',
-			boxShadow: 'none',
-			'&:hover': { borderColor: 'var(--vscode-focusBorder)' },
-		}),
-		input: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
-		menu: (base) => ({
-			...base,
-			backgroundColor: 'var(--vscode-dropdown-background)',
-			border: '1px solid var(--vscode-dropdown-border)',
-			zIndex: 100,
-		}),
-		option: (base, state) => ({
-			...base,
-			backgroundColor: state.isFocused
-				? 'var(--vscode-list-hoverBackground)'
-				: state.isSelected
-					? 'var(--vscode-list-activeSelectionBackground)'
-					: 'transparent',
-			color: state.isSelected
-				? 'var(--vscode-list-activeSelectionForeground)'
-				: 'var(--vscode-dropdown-foreground)',
-			cursor: 'pointer',
-		}),
-		multiValue: (base) => ({
-			...base,
-			backgroundColor: 'var(--vscode-badge-background)',
-		}),
-		multiValueLabel: (base, { data }) => ({
-			...base,
-			color: 'var(--vscode-badge-foreground)',
-			cursor: data.path ? 'pointer' : 'default',
-		}),
-		multiValueRemove: (base) => ({
-			...base,
-			color: 'var(--vscode-badge-foreground)',
-			'&:hover': {
-				backgroundColor: 'var(--vscode-inputValidation-errorBackground)',
-				color: 'var(--vscode-errorForeground)',
-			},
-		}),
-		placeholder: (base) => ({ ...base, color: 'var(--vscode-input-placeholderForeground)' }),
-		indicatorSeparator: (base) => ({ ...base, backgroundColor: 'var(--vscode-input-border)' }),
-		dropdownIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
-		clearIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
-	}), []);
-
-	const selectComponents = useMemo(() => ({
-		MultiValueLabel: (props: MultiValueGenericProps<{ value: string; label: string; path?: string }, true, GroupBase<{ value: string; label: string; path?: string }>>) => {
-			const path = (props.data as { path?: string }).path;
-			return (
-				<div
-					onClick={() => path && handleOpenFile(path)}
-					style={{ cursor: path ? 'pointer' : 'default', display: 'flex' }}
-				>
-					<SelectComponents.MultiValueLabel {...props} />
-				</div>
-			);
-		},
-	}), [handleOpenFile]);
-
-	const valueTypes = useMemo(() => [
-		{
-			// Ensure that multi-line strings are displayed correctly.
-			// Without this, "\n"s are shown as spaces.
-			is: (value: any) => typeof value === 'string' && value.includes('\n'),
-			Component: (props: any) => {
-				const [isExpanded, setIsExpanded] = React.useState(false);
-				const maxLength = 80;
-				const shouldCollapse = props.value.length > maxLength;
-
-				const displayValue = shouldCollapse && !isExpanded
-					? props.value.substring(0, maxLength)
-					: props.value;
-
-				const lines = displayValue.split('\n');
-
-				return (
-					<span
-						style={{
-							whiteSpace: 'pre-wrap',
-							color: 'var(--vscode-debugTokenExpression-string)',
-							cursor: shouldCollapse ? 'pointer' : 'default',
-						}}
-						onClick={() => shouldCollapse && setIsExpanded(!isExpanded)}
-					>
-						"{lines.map((line: string, i: number) => (
-							<React.Fragment key={i}>
-								{line}
-								{i < lines.length - 1 && '\n'}
-							</React.Fragment>
-						))}
-						{shouldCollapse && !isExpanded && '…'}
-						"
-					</span>
-				);
-			},
-		},
-	], []);
 
 	const configurableValuesLabel = previewData?.areConfigurableValuesEnabled
 		? '✓ Configurable Values Enabled'
@@ -307,16 +86,11 @@ export const PreviewApp: React.FC = () => {
 			{previewData && (
 				<div style={{ marginBottom: '1rem' }}>
 					<strong>Features:</strong>
-					<Select
-						isMulti
-						options={selectOptions}
-						value={selectedFeatures}
+					<FeatureSelect
 						onChange={handleFeaturesChange}
-						placeholder="Search and select features..."
-						styles={selectStyles}
-						components={selectComponents}
-						menuPortalTarget={document.body}
-						menuPosition="fixed"
+						onOpenFile={handleOpenFile}
+						previewData={previewData}
+						selectedFeatures={selectedFeatures}
 					/>
 				</div>
 			)}
@@ -495,12 +269,12 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
-			{previewData && !previewData.error && analyzedKeyPath && (
+			{previewData && !previewData.error && optionAnalysis.keyPath && (
 				<OptionOriginPanel
-					analysisData={optionAnalysis}
+					analysisData={optionAnalysis.analysisData}
 					featurePaths={previewData.featurePaths}
-					keyPath={analyzedKeyPath}
-					onClose={handleCloseOptionAnalysis}
+					keyPath={optionAnalysis.keyPath}
+					onClose={optionAnalysis.close}
 					onOpenFile={handleOpenFile}
 				/>
 			)}
@@ -547,10 +321,10 @@ export const PreviewApp: React.FC = () => {
 						displayDataTypes={false}
 						displaySize={false}
 						highlightUpdates={true}
-						keyRenderer={keyRenderer}
+						keyRenderer={optionAnalysis.keyRenderer}
 						maxDisplayLength={100}
 						rootName={false}
-						valueTypes={valueTypes}
+						valueTypes={VALUE_TYPES}
 					/>
 				</div>
 			)}

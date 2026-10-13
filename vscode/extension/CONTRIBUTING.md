@@ -41,11 +41,24 @@ F5 in VS Code.
 npm run test
 ```
 
-# Formatting
+# Formatting & Linting
+
+Check:
+
+```shell
+npm run lint
+```
+
+Fix:
 
 ```shell
 npm run lint:fix
 ```
+
+# Building
+
+- Compile TypeScript: `npm run compile`
+- Watch mode: `npm run watch`
 
 # Publishing
 
