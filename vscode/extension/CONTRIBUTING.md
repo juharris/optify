@@ -12,6 +12,25 @@ Install:
 npm install
 ```
 
+## Using Unreleased Changes in `@optify/config`
+
+To try changes in [`js/optify-config`](../../js/optify-config/) before they are published, build the package and link it:
+
+```shell
+# Build the local package.
+(cd ../../js/optify-config && yarn install && yarn build && yarn build:ts)
+
+# Link it instead of the published package.
+npm link ../../js/optify-config
+```
+
+`npm link` does not change `package.json` or `package-lock.json`, so do not commit anything for the link.
+Rebuild the local package after changing it.
+Restore the published package with `npm install`.
+
+Features that depend on unreleased changes in `@optify/config` must wait for a release of `@optify/config` that includes them.
+Then update the `@optify/config` dependency in `package.json` because CI and publishing use the published package.
+
 # Starting
 
 F5 in VS Code.
@@ -22,11 +41,24 @@ F5 in VS Code.
 npm run test
 ```
 
-# Formatting
+# Formatting & Linting
+
+Check:
+
+```shell
+npm run lint
+```
+
+Fix:
 
 ```shell
 npm run lint:fix
 ```
+
+# Building
+
+- Compile TypeScript: `npm run compile`
+- Watch mode: `npm run watch`
 
 # Publishing
 

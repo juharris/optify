@@ -1,0 +1,4 @@
+options:
+  shared:
+    fromBase: 1
+    overridden: base

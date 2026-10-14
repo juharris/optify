@@ -7,6 +7,7 @@ Helps manage and develop [Optify] feature files.
 ## Features
 
 - Show a preview of the built feature file or show the error in the preview window.
+- See where each option in the preview comes from: click ⓘ next to an option to see the feature and chain of imports that set it, the features that it overrides, and links to the files.
 - Click on an import or use Go to Definition (F12) to open the file.
 - Validate imports.
 - Completions for imports.

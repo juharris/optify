@@ -2,6 +2,23 @@ import * as vscode from 'vscode';
 import { findOptifyRoot, getCanonicalName, isOptifyFeatureFile } from './path-utils';
 import { getOptionsProvider } from './providers';
 
+// Generate all printable ASCII characters as trigger characters for completions
+export const COMPLETION_TRIGGER_CHARACTERS: string[] = (() => {
+	const triggers: string[] = [];
+	// Add quotes and special characters
+	triggers.push('"', "'", ' ', '-', '_', '/', '.', ':');
+	// Add all letters (a-z, A-Z)
+	for (let i = 65; i <= 90; i++) {
+		triggers.push(String.fromCharCode(i)); // A-Z
+		triggers.push(String.fromCharCode(i + 32)); // a-z
+	}
+	// Add all digits (0-9)
+	for (let i = 48; i <= 57; i++) {
+		triggers.push(String.fromCharCode(i));
+	}
+	return triggers;
+})();
+
 /**
  * Provides completions for imports based on available features.
  */
@@ -107,7 +124,7 @@ export class OptifyCompletionProvider implements vscode.CompletionItemProvider {
 		}
 
 		if (!isInImportContext) {
-			this.outputChannel.appendLine('  => Returning null (not in import context)');
+			// this.outputChannel.appendLine('  => Returning null (not in import context)');
 			return null;
 		}
 

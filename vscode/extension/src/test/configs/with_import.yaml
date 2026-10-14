@@ -1,0 +1,5 @@
+imports:
+  - base
+options:
+  shared:
+    overridden: with_import

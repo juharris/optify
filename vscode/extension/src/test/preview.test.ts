@@ -1,7 +1,9 @@
 import * as assert from 'assert';
 import path from 'path';
 
-import { buildOptifyPreviewData, buildOptifyGraphData } from '../extension';
+import { buildOptifyGraphData } from '../preview/graph-data';
+import { buildOptifyOptionAnalysis } from '../preview/option-analysis';
+import { buildOptifyPreviewData } from '../preview/preview-data';
 import { findOptifyRoot } from '../path-utils';
 
 const expectedRoot = path.join(__dirname, '../../src/test/configs');
@@ -75,5 +77,46 @@ suite('Preview Builder Test Suite', () => {
 		assert.equal(result.areConfigurableValuesEnabledDefault, true);
 		assert.ok(result.configurableValuesError);
 		assert.ok(result.configurableValuesMessage);
+	});
+
+	test('option analysis shows the feature that set an option', () => {
+		const result = buildOptifyOptionAnalysis(['with_import'], expectedRoot, '/shared/overridden');
+		assert.equal(result.error, undefined);
+		assert.deepStrictEqual(result, {
+			keyPath: '/shared/overridden',
+			analysis: {
+				origins: [{
+					overridden: [{ kind: 'feature', lineage: ['with_import', 'base'] }],
+					path: '/shared/overridden',
+					source: { kind: 'feature', lineage: ['with_import'] },
+				}],
+			},
+		});
+	});
+
+	test('option analysis shows the chain of imports', () => {
+		const result = buildOptifyOptionAnalysis(['with_import'], expectedRoot, '/shared/fromBase');
+		assert.deepStrictEqual(result.analysis?.origins.map(origin => origin.source), [
+			{ kind: 'feature', lineage: ['with_import', 'base'] },
+		]);
+	});
+
+	test('option analysis uses unsaved changes', () => {
+		const result = buildOptifyOptionAnalysis(['with_import'], expectedRoot, '/shared/overridden', {
+			features: ['base'],
+			overrides: JSON.stringify({ shared: { overridden: 'unsaved' } }),
+		});
+		assert.deepStrictEqual(result.analysis?.origins, [{
+			overridden: [{ kind: 'feature', lineage: ['base'] }],
+			path: '/shared/overridden',
+			source: { kind: 'overrides' },
+		}]);
+	});
+
+	test('option analysis returns an error for a missing option', () => {
+		const result = buildOptifyOptionAnalysis(['with_import'], expectedRoot, '/missing');
+		assert.equal(result.keyPath, '/missing');
+		assert.equal(result.analysis, undefined);
+		assert.match(result.error ?? '', /not found/);
 	});
 });

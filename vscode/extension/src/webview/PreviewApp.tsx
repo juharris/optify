@@ -1,57 +1,18 @@
-import React, { useState, useEffect, useCallback, useMemo, Component, ErrorInfo, ReactNode } from 'react';
-import Select, { GroupBase, MultiValue, MultiValueGenericProps, StylesConfig, components as SelectComponents } from 'react-select';
+import React, { useState, useEffect, useCallback } from 'react';
+import { MultiValue } from 'react-select';
 import { JsonViewer } from '@textea/json-viewer';
+import { ErrorBoundary } from './ErrorBoundary';
+import { FeatureOption, FeatureSelect } from './FeatureSelect';
+import { FileLink } from './FileLink';
 import { ImportGraph } from './ImportGraph';
-import { PreviewData, FeatureGraphData, MessageFromExtension, MessageToExtension } from './types';
+import { LoadingIndicator } from './LoadingIndicator';
+import { multilineStringValueType } from './multilineStringValueType';
+import { OptionOriginPanel } from './OptionOriginPanel';
+import { PreviewData, FeatureGraphData, MessageFromExtension } from './types';
+import { useOptionAnalysis } from './useOptionAnalysis';
+import { vscode } from './vscode-api';
 
-declare const acquireVsCodeApi: () => {
-	postMessage(message: MessageToExtension): void;
-	getState(): any;
-	setState(state: any): void;
-};
-
-const vscode = acquireVsCodeApi();
-
-interface ErrorBoundaryProps {
-	children: ReactNode;
-	fallback: (error: Error) => ReactNode;
-}
-
-interface ErrorBoundaryState {
-	error: Error | null;
-}
-
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-	state: ErrorBoundaryState = { error: null };
-
-	static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-		return { error };
-	}
-
-	componentDidCatch(error: Error, info: ErrorInfo) {
-		console.error('Component error:', error, info);
-	}
-
-	render() {
-		if (this.state.error) {
-			return this.props.fallback(this.state.error);
-		}
-		return this.props.children;
-	}
-}
-
-const LoadingIndicator: React.FC<{ label: string }> = ({ label }) => (
-	<div style={{
-		display: 'flex',
-		alignItems: 'center',
-		gap: '0.5rem',
-		padding: '0.75rem 0',
-		color: 'var(--vscode-descriptionForeground)',
-	}}>
-		<div className="optify-spinner" />
-		{label}
-	</div>
-);
+const VALUE_TYPES = [multilineStringValueType];
 
 export const PreviewApp: React.FC = () => {
 	const [previewData, setPreviewData] = useState<PreviewData | undefined>(undefined);
@@ -60,7 +21,8 @@ export const PreviewApp: React.FC = () => {
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 	const [showGraph, setShowGraph] = useState(false);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(true);
-	const [selectedFeatures, setSelectedFeatures] = useState<Array<{ value: string; label: string }>>([]);
+	const [selectedFeatures, setSelectedFeatures] = useState<FeatureOption[]>([]);
+	const optionAnalysis = useOptionAnalysis(previewData);
 
 	useEffect(() => {
 		// Detect VS Code theme (dark / light / high-contrast) once on mount.
@@ -88,8 +50,8 @@ export const PreviewApp: React.FC = () => {
 		return () => window.removeEventListener('message', handleMessage);
 	}, []);
 
-	const handleOpenFile = useCallback((path: string) => {
-		vscode.postMessage({ command: 'openFile', path });
+	const handleOpenFile = useCallback((path: string, keyPath?: string) => {
+		vscode.postMessage({ command: 'openFile', path, keyPath });
 	}, []);
 
 	const handleToggleConfigurableValues = useCallback(() => {
@@ -98,130 +60,11 @@ export const PreviewApp: React.FC = () => {
 		vscode.postMessage({ command: 'setConfigurableValues', enabled: newValue });
 	}, [previewData]);
 
-	const selectOptions = useMemo(() => {
-		if (!previewData) { return []; }
-		const opts: Array<{ value: string; label: string; path?: string }> = [];
-		for (const name of previewData.allFeatureNames) {
-			opts.push({ value: name, label: name, path: previewData.featurePaths[name] });
-			const aliases = previewData.featureAliases[name];
-			if (aliases) {
-				for (const alias of aliases) {
-					opts.push({ value: name, label: `${name} (alias ${alias})`, path: previewData.featurePaths[name] });
-				}
-			}
-		}
-		return opts;
-	}, [previewData]);
-
-	const handleFeaturesChange = useCallback((newValue: MultiValue<{ value: string; label: string; path?: string }>) => {
+	const handleFeaturesChange = useCallback((newValue: MultiValue<FeatureOption>) => {
 		const features = Array.from(newValue);
 		setSelectedFeatures(features);
 		vscode.postMessage({ command: 'setFeatures', features: features.map(f => f.value) });
 	}, []);
-
-	const selectStyles = useMemo((): StylesConfig<{ value: string; label: string; path?: string }, true> => ({
-		control: (base) => ({
-			...base,
-			backgroundColor: 'var(--vscode-input-background)',
-			borderColor: 'var(--vscode-input-border)',
-			color: 'var(--vscode-input-foreground)',
-			boxShadow: 'none',
-			'&:hover': { borderColor: 'var(--vscode-focusBorder)' },
-		}),
-		input: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
-		menu: (base) => ({
-			...base,
-			backgroundColor: 'var(--vscode-dropdown-background)',
-			border: '1px solid var(--vscode-dropdown-border)',
-			zIndex: 100,
-		}),
-		option: (base, state) => ({
-			...base,
-			backgroundColor: state.isFocused
-				? 'var(--vscode-list-hoverBackground)'
-				: state.isSelected
-					? 'var(--vscode-list-activeSelectionBackground)'
-					: 'transparent',
-			color: state.isSelected
-				? 'var(--vscode-list-activeSelectionForeground)'
-				: 'var(--vscode-dropdown-foreground)',
-			cursor: 'pointer',
-		}),
-		multiValue: (base) => ({
-			...base,
-			backgroundColor: 'var(--vscode-badge-background)',
-		}),
-		multiValueLabel: (base, { data }) => ({
-			...base,
-			color: 'var(--vscode-badge-foreground)',
-			cursor: data.path ? 'pointer' : 'default',
-		}),
-		multiValueRemove: (base) => ({
-			...base,
-			color: 'var(--vscode-badge-foreground)',
-			'&:hover': {
-				backgroundColor: 'var(--vscode-inputValidation-errorBackground)',
-				color: 'var(--vscode-errorForeground)',
-			},
-		}),
-		placeholder: (base) => ({ ...base, color: 'var(--vscode-input-placeholderForeground)' }),
-		indicatorSeparator: (base) => ({ ...base, backgroundColor: 'var(--vscode-input-border)' }),
-		dropdownIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
-		clearIndicator: (base) => ({ ...base, color: 'var(--vscode-input-foreground)' }),
-	}), []);
-
-	const selectComponents = useMemo(() => ({
-		MultiValueLabel: (props: MultiValueGenericProps<{ value: string; label: string; path?: string }, true, GroupBase<{ value: string; label: string; path?: string }>>) => {
-			const path = (props.data as { path?: string }).path;
-			return (
-				<div
-					onClick={() => path && handleOpenFile(path)}
-					style={{ cursor: path ? 'pointer' : 'default', display: 'flex' }}
-				>
-					<SelectComponents.MultiValueLabel {...props} />
-				</div>
-			);
-		},
-	}), [handleOpenFile]);
-
-	const valueTypes = useMemo(() => [
-		{
-			// Ensure that multi-line strings are displayed correctly.
-			// Without this, "\n"s are shown as spaces.
-			is: (value: any) => typeof value === 'string' && value.includes('\n'),
-			Component: (props: any) => {
-				const [isExpanded, setIsExpanded] = React.useState(false);
-				const maxLength = 80;
-				const shouldCollapse = props.value.length > maxLength;
-
-				const displayValue = shouldCollapse && !isExpanded
-					? props.value.substring(0, maxLength)
-					: props.value;
-
-				const lines = displayValue.split('\n');
-
-				return (
-					<span
-						style={{
-							whiteSpace: 'pre-wrap',
-							color: 'var(--vscode-debugTokenExpression-string)',
-							cursor: shouldCollapse ? 'pointer' : 'default',
-						}}
-						onClick={() => shouldCollapse && setIsExpanded(!isExpanded)}
-					>
-						"{lines.map((line: string, i: number) => (
-							<React.Fragment key={i}>
-								{line}
-								{i < lines.length - 1 && '\n'}
-							</React.Fragment>
-						))}
-						{shouldCollapse && !isExpanded && '…'}
-						"
-					</span>
-				);
-			},
-		},
-	], []);
 
 	const configurableValuesLabel = previewData?.areConfigurableValuesEnabled
 		? '✓ Configurable Values Enabled'
@@ -243,16 +86,11 @@ export const PreviewApp: React.FC = () => {
 			{previewData && (
 				<div style={{ marginBottom: '1rem' }}>
 					<strong>Features:</strong>
-					<Select
-						isMulti
-						options={selectOptions}
-						value={selectedFeatures}
+					<FeatureSelect
 						onChange={handleFeaturesChange}
-						placeholder="Search and select features..."
-						styles={selectStyles}
-						components={selectComponents}
-						menuPortalTarget={document.body}
-						menuPosition="fixed"
+						onOpenFile={handleOpenFile}
+						previewData={previewData}
+						selectedFeatures={selectedFeatures}
 					/>
 				</div>
 			)}
@@ -267,15 +105,9 @@ export const PreviewApp: React.FC = () => {
 					<ul>
 						{previewData.dependents.map((dep) => (
 							<li key={dep.name}>
-								<a
-									href="#"
-									onClick={(e) => { e.preventDefault(); handleOpenFile(dep.path); }}
-									style={{ color: 'var(--vscode-textLink-foreground)', textDecoration: 'none', cursor: 'pointer' }}
-									onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
-									onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
-								>
+								<FileLink onOpenFile={handleOpenFile} path={dep.path}>
 									{dep.name}
-								</a>
+								</FileLink>
 							</li>
 						))}
 					</ul>
@@ -437,6 +269,16 @@ export const PreviewApp: React.FC = () => {
 				</div>
 			)}
 
+			{previewData && !previewData.error && optionAnalysis.keyPath && (
+				<OptionOriginPanel
+					analysisData={optionAnalysis.analysisData}
+					featurePaths={previewData.featurePaths}
+					keyPath={optionAnalysis.keyPath}
+					onClose={optionAnalysis.close}
+					onOpenFile={handleOpenFile}
+				/>
+			)}
+
 			{previewData && !previewData.error && (
 				<div
 					style={{
@@ -479,9 +321,10 @@ export const PreviewApp: React.FC = () => {
 						displayDataTypes={false}
 						displaySize={false}
 						highlightUpdates={true}
+						keyRenderer={optionAnalysis.keyRenderer}
 						maxDisplayLength={100}
 						rootName={false}
-						valueTypes={valueTypes}
+						valueTypes={VALUE_TYPES}
 					/>
 				</div>
 			)}
