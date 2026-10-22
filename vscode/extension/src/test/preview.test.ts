@@ -1,8 +1,9 @@
 import * as assert from 'assert';
 import path from 'path';
+import { GetOptionsPreferences, OptionsWatcher } from '@optify/config';
 
 import { buildOptifyGraphData } from '../preview/graph-data';
-import { buildOptifyOptionAnalysis } from '../preview/option-analysis';
+import { buildOptionAnalysis, buildOptifyOptionAnalysis } from '../preview/option-analysis';
 import { buildOptifyPreviewData } from '../preview/preview-data';
 import { findOptifyRoot } from '../path-utils';
 
@@ -111,6 +112,25 @@ suite('Preview Builder Test Suite', () => {
 			path: '/shared/overridden',
 			source: { kind: 'overrides' },
 		}]);
+	});
+
+	test('option analysis retries without configurable values when the option is not found', () => {
+		const configurableValuesEnabled: boolean[] = [];
+		const provider = {
+			analyze: (_keyPath: string, _features: string[], preferences?: GetOptionsPreferences | null) => {
+				const enabled = preferences?.areConfigurableValuesEnabled() ?? false;
+				configurableValuesEnabled.push(enabled);
+				if (enabled) {
+					throw new Error('configuration property at "/message" not found.');
+				}
+				return { blocker: undefined, origins: [] };
+			},
+		} as unknown as OptionsWatcher;
+
+		const result = buildOptionAnalysis(['feature'], provider, '/message', undefined, true);
+
+		assert.deepStrictEqual(configurableValuesEnabled, [true, false]);
+		assert.deepStrictEqual(result, { keyPath: '/message', analysis: { blocker: undefined, origins: [] } });
 	});
 
 	test('option analysis returns an error for a missing option', () => {
