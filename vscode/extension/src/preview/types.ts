@@ -33,10 +33,11 @@ export interface FeatureGraphData {
  * Explains where the value for an option in the preview came from.
  */
 export interface OptionAnalysisData {
-	/** The JSON pointer to the option that was analyzed. */
+	/** The JSON pointer to the requested option, even when an ancestor was analyzed. */
 	keyPath: string;
 	analysis?: OptionAnalysis;
 	error?: string;
+	message?: string;
 }
 
 export interface PreviewData {

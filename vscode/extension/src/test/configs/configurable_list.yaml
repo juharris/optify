@@ -1,0 +1,6 @@
+options:
+  items:
+    $type: Optify.ConfigurableList
+    namedItem:
+      $value:
+        name: generated

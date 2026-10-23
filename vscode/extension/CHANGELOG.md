@@ -5,6 +5,10 @@ All notable changes to the "Optify" extension will be documented in this file.
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 -->
 
+## 1.13.1
+
+- Preview: Provenance search: Fallback to checking ancestor paths if the exact key path is not found.
+
 ## 1.13.0
 
 - Preview: Click ⓘ next to an option to see the feature and chain of imports that set it, the features that it overrides, and open the files at the option.

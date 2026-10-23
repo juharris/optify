@@ -10,7 +10,7 @@ import { OptionAnalysisData, PreviewWhileEditingOptions } from './types';
  */
 export function buildOptionAnalysis(
 	canonicalFeatures: string[],
-	provider: OptionsWatcher,
+	provider: Pick<OptionsWatcher, 'analyze'>,
 	keyPath: string,
 	editingOptions?: PreviewWhileEditingOptions,
 	areConfigurableValuesEnabled: boolean = false,
@@ -21,21 +21,24 @@ export function buildOptionAnalysis(
 		preferences.enableConfigurableValues();
 	}
 
-	try {
-		const analysis = provider.analyze(keyPath, featureNames, preferences);
-		return { keyPath, analysis };
-	} catch (error) {
-		if (!areConfigurableValuesEnabled || !isOptionNotFoundError(error)) {
-			return { keyPath, error: `${error}` };
-		}
-
-		const fallbackPreferences = createPreferences(editingOptions);
-		fallbackPreferences.disableConfigurableValues();
+	let analysisKeyPath = keyPath;
+	while (true) {
 		try {
-			const analysis = provider.analyze(keyPath, featureNames, fallbackPreferences);
-			return { keyPath, analysis };
-		} catch (fallbackError) {
-			return { keyPath, error: `${fallbackError}` };
+			const analysis = provider.analyze(analysisKeyPath, featureNames, preferences);
+			if (analysisKeyPath === keyPath) {
+				return { keyPath, analysis };
+			}
+			return {
+				keyPath,
+				analysis,
+				message: `The path could not be found, likely because it points to a value in a ConfigurableList. An ancestor was found at \`${analysisKeyPath}\`.`,
+			};
+		} catch (error) {
+			const separator = analysisKeyPath.lastIndexOf('/');
+			if (!areConfigurableValuesEnabled || !isOptionNotFoundError(error) || separator <= 0) {
+				return { keyPath, error: `${error}` };
+			}
+			analysisKeyPath = analysisKeyPath.substring(0, separator);
 		}
 	}
 }

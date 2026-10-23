@@ -78,6 +78,9 @@ export const OptionOriginPanel: React.FC<OptionOriginPanelProps> = ({
 			{analysisData?.error && (
 				<div style={{ color: 'var(--vscode-errorForeground)', whiteSpace: 'pre-wrap' }}>{analysisData.error}</div>
 			)}
+			{analysisData?.message && (
+				<div style={{ margin: '0.25rem 0', color: 'var(--vscode-descriptionForeground)' }}>{analysisData.message}</div>
+			)}
 			{analysis && analysis.origins.length > 0 && (
 				<ul style={{ margin: '0.25rem 0', paddingLeft: '1.25rem' }}>
 					{analysis.origins.map((origin) => (
