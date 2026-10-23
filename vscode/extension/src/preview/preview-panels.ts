@@ -112,6 +112,7 @@ export class PreviewPanels implements vscode.Disposable {
 						optifyRoot,
 						message.keyPath,
 						preview?.editingOptions,
+						preview?.areConfigurableValuesEnabled ?? configurableValuesDefault,
 					);
 					panel.webview.postMessage({ type: 'optionAnalysis', data });
 				} else if (message.command === 'openFile') {

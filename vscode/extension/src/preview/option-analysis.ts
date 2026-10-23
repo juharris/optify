@@ -10,17 +10,42 @@ import { OptionAnalysisData, PreviewWhileEditingOptions } from './types';
  */
 export function buildOptionAnalysis(
 	canonicalFeatures: string[],
-	provider: OptionsWatcher,
+	provider: Pick<OptionsWatcher, 'analyze'>,
 	keyPath: string,
 	editingOptions?: PreviewWhileEditingOptions,
+	areConfigurableValuesEnabled: boolean = false,
 ): OptionAnalysisData {
 	const featureNames = editingOptions?.features ?? canonicalFeatures;
-	try {
-		const analysis = provider.analyze(keyPath, featureNames, createPreferences(editingOptions));
-		return { keyPath, analysis };
-	} catch (error) {
-		return { keyPath, error: `${error}` };
+	const preferences = createPreferences(editingOptions);
+	if (areConfigurableValuesEnabled) {
+		preferences.enableConfigurableValues();
 	}
+
+	let analysisKeyPath = keyPath;
+	while (true) {
+		try {
+			const analysis = provider.analyze(analysisKeyPath, featureNames, preferences);
+			if (analysisKeyPath === keyPath) {
+				return { keyPath, analysis };
+			}
+			return {
+				keyPath,
+				analysis,
+				message: `The path could not be found, likely because it points to a value in a ConfigurableList. An ancestor was found at \`${analysisKeyPath}\`.`,
+			};
+		} catch (error) {
+			const separator = analysisKeyPath.lastIndexOf('/');
+			if (!areConfigurableValuesEnabled || !isOptionNotFoundError(error) || separator <= 0) {
+				return { keyPath, error: `${error}` };
+			}
+			analysisKeyPath = analysisKeyPath.substring(0, separator);
+		}
+	}
+}
+
+function isOptionNotFoundError(error: unknown): boolean {
+	const message = `${error}`;
+	return message.includes('configuration property') && message.includes('not found');
 }
 
 /**
@@ -33,10 +58,17 @@ export function buildOptifyOptionAnalysis(
 	optifyRoot: string,
 	keyPath: string,
 	editingOptions?: PreviewWhileEditingOptions,
+	areConfigurableValuesEnabled: boolean = false,
 ): OptionAnalysisData {
 	try {
 		const provider = getOptionsProvider(optifyRoot);
-		return buildOptionAnalysis(canonicalFeatures, provider, keyPath, editingOptions);
+		return buildOptionAnalysis(
+			canonicalFeatures,
+			provider,
+			keyPath,
+			editingOptions,
+			areConfigurableValuesEnabled,
+		);
 	} catch (error) {
 		return { keyPath, error: `${error}` };
 	}
