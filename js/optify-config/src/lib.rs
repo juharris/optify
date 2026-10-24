@@ -6,6 +6,7 @@ mod metadata;
 mod policies;
 mod preferences;
 mod provider;
+mod scope;
 mod watcher;
 mod watcher_options;
 

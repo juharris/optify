@@ -13,7 +13,7 @@ use crate::watcher_options::JsWatcherOptions;
 
 #[napi(js_name = "OptionsWatcher")]
 pub struct JsOptionsWatcher {
-  inner: Option<OptionsWatcher>,
+  pub(crate) inner: Option<OptionsWatcher>,
 }
 
 /// Input to a watcher listener.

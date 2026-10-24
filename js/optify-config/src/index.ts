@@ -15,6 +15,7 @@ import {
 	resetCaches,
 	resetWatcherCachesIfModified,
 } from "./caching";
+import { getScopedAllOptions, getScopedOptions } from "./scoped-provider";
 import { TypeSchema } from "./types";
 
 // Re-export types that don't need modifications.
@@ -31,6 +32,7 @@ export {
 // Re-export the native classes directly
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
+export type ScopedProvider = nativeBinding.ScopedProvider;
 
 export { CacheInitOptions };
 export { CacheOptions };
@@ -104,7 +106,45 @@ declare module "../index" {
 		 */
 		getAllOptions(featureNames: Array<string>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): any;
 	}
+
+	interface ScopedProvider {
+		/**
+		 * Gets all options using this scope's features and overrides.
+		 * @param preferences Optional preferences to use instead of the defaults.
+		 * They are not changed: if this scope has overrides, then a copy is used with this scope's overrides.
+		 * @param cacheOptions Optional cache options to enable caching of the result by the provider or watcher.
+		 * Caching is not supported when there are overrides.
+		 */
+		getAllOptions(preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): any;
+		/**
+		 * Gets options for a key using this scope's features and overrides, validated against a schema.
+		 * @param preferences Optional preferences to use instead of the defaults.
+		 * They are not changed: if this scope has overrides, then a copy is used with this scope's overrides.
+		 * @param cacheOptions Optional cache options to enable caching of the deserialized result by the provider or watcher.
+		 * Caching is not supported when there are overrides.
+		 */
+		getOptions<T>(key: string, schema: TypeSchema<T>, preferences?: GetOptionsPreferences | null, cacheOptions?: CacheOptions): T;
+	}
 }
+
+// Extend ScopedProvider prototype with extra methods.
+export const ScopedProvider = nativeBinding.ScopedProvider;
+(ScopedProvider.prototype as any).getAllOptions = function (
+	this: any,
+	preferences?: nativeBinding.GetOptionsPreferences | null,
+	cacheOptions?: CacheOptions | null,
+): any {
+	return getScopedAllOptions(this, preferences, cacheOptions);
+};
+(ScopedProvider.prototype as any).getOptions = function (
+	this: any,
+	key: string,
+	schema: any,
+	preferences?: nativeBinding.GetOptionsPreferences | null,
+	cacheOptions?: CacheOptions | null,
+): any {
+	return getScopedOptions(this, key, schema, preferences, cacheOptions);
+};
 
 // Extend OptionsProvider prototype with extra methods.
 export const OptionsProvider = nativeBinding.OptionsProvider;

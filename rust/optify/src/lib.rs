@@ -11,4 +11,5 @@ pub mod schema;
 pub use policies::{feature_policies::Policies, requester_policy::RequesterPolicy};
 pub use provider::OptionsProvider;
 pub use provider::OptionsWatcher;
+pub use provider::Scope;
 pub use provider::ScopedProvider;
