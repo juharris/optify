@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use optify::{
-    provider::{GetOptionsPreferences, OptionsRegistry},
+    provider::{CacheOptions, GetOptionsPreferences, OptionsRegistry},
     OptionsProvider, ScopedProvider,
 };
 use serde_json::json;
@@ -15,7 +15,11 @@ fn registry() -> &'static OptionsProvider {
 #[test]
 fn gets_options_with_features_and_overrides() {
     let registry = registry();
-    for features in [vec!["a"], vec!["a", "b"], vec!["b", "a"]] {
+    for features in [
+        vec!["feature_A"],
+        vec!["feature_A", "feature_B/initial"],
+        vec!["feature_B/initial", "feature_A"],
+    ] {
         for overrides in [None, Some(json!({"myConfig": {"rootString": "scoped"}}))] {
             let scoped = ScopedProvider::new(registry, &features, overrides.clone());
             let preferences = GetOptionsPreferences {
@@ -41,31 +45,41 @@ fn gets_options_with_features_and_overrides() {
 #[test]
 fn scopes_do_not_affect_each_other_or_the_registry() {
     let registry = registry();
-    let original = registry.get_options("myConfig", &["a"]).unwrap();
+    let original = registry.get_options("myConfig", &["feature_A"]).unwrap();
     let scoped = ScopedProvider::new(
         registry,
-        &["a"],
+        &["feature_A"],
         Some(json!({"myConfig": {"rootString": "scoped"}})),
     );
-    let other = ScopedProvider::new(registry, &["a"], None);
+    let other = ScopedProvider::new(registry, &["feature_A"], None);
     assert_eq!(
         scoped.get_options("myConfig").unwrap()["rootString"],
         "scoped"
     );
     assert_eq!(other.get_options("myConfig").unwrap(), original);
-    assert_eq!(registry.get_options("myConfig", &["a"]).unwrap(), original);
+    assert_eq!(
+        registry.get_options("myConfig", &["feature_A"]).unwrap(),
+        original
+    );
 }
 
 #[test]
 fn serializes_and_restores_scope() {
     let registry = registry();
     for overrides in [None, Some(json!({"myConfig": {"rootString": "scoped"}}))] {
-        let scoped = ScopedProvider::new(registry, &["a", "b"], overrides.clone());
-        let value = scoped.serialize();
-        assert_eq!(
-            value,
-            json!({"features": ["a", "b"], "overrides": overrides})
+        let scoped = ScopedProvider::new(
+            registry,
+            &["feature_A", "feature_B/initial"],
+            overrides.clone(),
         );
+        let value = scoped.serialize();
+        let expected = match &overrides {
+            Some(overrides) => {
+                json!({"features": ["feature_A", "feature_B/initial"], "overrides": overrides})
+            }
+            None => json!({"features": ["feature_A", "feature_B/initial"]}),
+        };
+        assert_eq!(value, expected);
         let restored = ScopedProvider::deserialize(registry, value.clone()).unwrap();
         assert_eq!(restored.serialize(), value);
         assert_eq!(
@@ -106,10 +120,10 @@ fn supports_empty_features_and_overrides_only() {
 #[test]
 fn propagates_registry_errors() {
     let registry = registry();
-    let scoped = ScopedProvider::new(registry, &["a"], None);
+    let scoped = ScopedProvider::new(registry, &["feature_A"], None);
     assert_eq!(
         scoped.get_options("missing"),
-        registry.get_options("missing", &["a"])
+        registry.get_options("missing", &["feature_A"])
     );
     let invalid = ScopedProvider::new(registry, &["unknown feature"], None);
     assert_eq!(
@@ -135,13 +149,84 @@ fn rejects_invalid_serialized_scopes() {
 
 #[test]
 fn deserializes_scope_without_overrides() {
-    let scoped = ScopedProvider::deserialize(registry(), json!({"features": ["a"]})).unwrap();
+    let scoped =
+        ScopedProvider::deserialize(registry(), json!({"features": ["feature_A"]})).unwrap();
     assert_eq!(
         scoped.get_options("myConfig").unwrap(),
-        registry().get_options("myConfig", &["a"]).unwrap()
+        registry().get_options("myConfig", &["feature_A"]).unwrap()
+    );
+    assert_eq!(scoped.serialize(), json!({"features": ["feature_A"]}));
+}
+
+#[test]
+fn supports_preferences_and_cache_options() {
+    let registry = registry();
+    let cache_options = CacheOptions {};
+    let cached = ScopedProvider::new(registry, &["feature_A"], None);
+    assert_eq!(
+        cached
+            .get_options_with_preferences("myConfig", Some(&cache_options), None)
+            .unwrap(),
+        registry.get_options("myConfig", &["feature_A"]).unwrap()
+    );
+    let preferences = GetOptionsPreferences {
+        overrides: Some(json!({"myConfig": {"rootString": "preference override"}})),
+        ..GetOptionsPreferences::default()
+    };
+    assert_eq!(
+        cached
+            .get_options_with_preferences("myConfig", None, Some(&preferences))
+            .unwrap()["rootString"],
+        "preference override"
     );
     assert_eq!(
-        scoped.serialize(),
-        json!({"features": ["a"], "overrides": null})
+        preferences.overrides,
+        Some(json!({"myConfig": {"rootString": "preference override"}}))
     );
+
+    let scoped = ScopedProvider::new(
+        registry,
+        &["feature_A"],
+        Some(json!({"myConfig": {"rootString": "scope override"}})),
+    );
+    let preferences = GetOptionsPreferences {
+        overrides: Some(json!({"myConfig": {"rootString": "preference override"}})),
+        ..GetOptionsPreferences::default()
+    };
+    assert_eq!(
+        scoped
+            .get_options_with_preferences("myConfig", None, Some(&preferences))
+            .unwrap()["rootString"],
+        "scope override"
+    );
+    assert_eq!(
+        preferences.overrides,
+        Some(json!({"myConfig": {"rootString": "preference override"}}))
+    );
+
+    let mut mutable_preferences = GetOptionsPreferences::default();
+    assert_eq!(
+        scoped
+            .get_options_with_mut_preferences("myConfig", None, &mut mutable_preferences)
+            .unwrap()["rootString"],
+        "scope override"
+    );
+    assert_eq!(
+        mutable_preferences.overrides,
+        Some(json!({"myConfig": {"rootString": "scope override"}}))
+    );
+}
+
+#[test]
+fn enables_configurable_values_and_assumes_canonical_features_by_default() {
+    let configurable_registry =
+        OptionsProvider::build("../../tests/test_suites/configurable_values/configs").unwrap();
+    let configurable = ScopedProvider::new(&configurable_registry, &["simple"], None);
+    assert_eq!(
+        configurable.get_options("greeting").unwrap(),
+        json!("Hello, World!")
+    );
+
+    let alias = ScopedProvider::new(registry(), &["a"], None);
+    assert!(alias.get_options("myConfig").is_err());
 }
