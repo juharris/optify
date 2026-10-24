@@ -278,7 +278,7 @@ jobs:
       with:
         bundler-cache: true
         # The version to use to run rb-sys, but the cross-gem step will use a Docker container with its own Ruby version, I think.
-        ruby-version: "3.4.1"
+        ruby-version: "3.4"
         # Don't put the working-directory here because we don't want to install the Ruby project in this context.
 
     # Initialize some Rust resources
