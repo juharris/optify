@@ -69,4 +69,20 @@ impl GetOptionsPreferences {
             constraints: serde_json::from_str(c).expect("constraints should be valid JSON"),
         });
     }
+
+    /// Clones these preferences with the supplied overrides.
+    ///
+    /// Existing overrides are not cloned.
+    #[must_use]
+    pub fn with_overrides(&self, overrides: Option<serde_json::Value>) -> Self {
+        Self {
+            are_configurable_strings_enabled: self.are_configurable_strings_enabled,
+            are_configurable_values_enabled: self.are_configurable_values_enabled,
+            constraints: self.constraints.clone(),
+            overrides,
+            requester: self.requester.clone(),
+            raise_if_policy_denied: self.raise_if_policy_denied,
+            skip_feature_name_conversion: self.skip_feature_name_conversion,
+        }
+    }
 }
