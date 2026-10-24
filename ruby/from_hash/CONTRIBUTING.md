@@ -5,7 +5,7 @@
 Use Ruby 3.4+., for example, run:
 
 ```shell
-chruby 3.4.4
+chruby 3.4.12
 ```
 
 Run:
