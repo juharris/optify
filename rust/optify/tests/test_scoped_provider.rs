@@ -218,6 +218,47 @@ fn supports_preferences_and_cache_options() {
 }
 
 #[test]
+fn caches_get_options_without_using_the_registry_cache() {
+    let registry = OptionsProvider::build("../../tests/test_suites/simple/configs").unwrap();
+    let first = ScopedProvider::new(
+        &registry,
+        &["feature_A"],
+        Some(json!({"myConfig": {"rootString": "first"}})),
+    );
+    let second = ScopedProvider::new(
+        &registry,
+        &["feature_A"],
+        Some(json!({"myConfig": {"rootString": "second"}})),
+    );
+
+    assert_eq!(
+        first.get_options("myConfig").unwrap()["rootString"],
+        "first"
+    );
+    assert_eq!(
+        second.get_options("myConfig").unwrap()["rootString"],
+        "second"
+    );
+
+    let cache_options = CacheOptions {};
+    let preferences = GetOptionsPreferences {
+        are_configurable_values_enabled: true,
+        overrides: Some(json!({"myConfig": {"rootString": "first"}})),
+        skip_feature_name_conversion: true,
+        ..GetOptionsPreferences::default()
+    };
+    assert!(registry
+        .get_options_from_cache(
+            "myConfig",
+            &["feature_A"],
+            Some(&cache_options),
+            Some(&preferences),
+        )
+        .unwrap()
+        .is_none());
+}
+
+#[test]
 fn enables_configurable_values_and_assumes_canonical_features_by_default() {
     let configurable_registry =
         OptionsProvider::build("../../tests/test_suites/configurable_values/configs").unwrap();

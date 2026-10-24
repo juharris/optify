@@ -15,7 +15,7 @@ import {
 	resetCaches,
 	resetWatcherCachesIfModified,
 } from "./caching";
-import { getScopedAllOptions, getScopedOptions } from "./scoped-provider";
+import { getScopedAllOptions, getScopedOptions, initializeScopedOptionsCache } from "./scoped-provider";
 import { TypeSchema } from "./types";
 
 // Re-export types that don't need modifications.
@@ -32,7 +32,6 @@ export {
 // Re-export the native classes directly
 export type OptionsProvider = nativeBinding.OptionsProvider;
 export type OptionsWatcher = nativeBinding.OptionsWatcher;
-export type ScopedProvider = nativeBinding.ScopedProvider;
 
 export { CacheInitOptions };
 export { CacheOptions };
@@ -127,8 +126,22 @@ declare module "../index" {
 	}
 }
 
+// Wrap the native scoped provider so its parsed-result cache is allocated with each instance.
+export class ScopedProvider extends nativeBinding.ScopedProvider {
+	constructor(registry: nativeBinding.OptionsProvider | nativeBinding.OptionsWatcher, features: string[], overrides?: unknown | null) {
+		super(registry, features, overrides);
+		initializeScopedOptionsCache(this);
+	}
+
+	static deserialize(registry: nativeBinding.OptionsProvider | nativeBinding.OptionsWatcher, value: unknown): ScopedProvider {
+		const scoped = nativeBinding.ScopedProvider.deserialize(registry, value);
+		Object.setPrototypeOf(scoped, ScopedProvider.prototype);
+		initializeScopedOptionsCache(scoped);
+		return scoped;
+	}
+}
+
 // Extend ScopedProvider prototype with extra methods.
-export const ScopedProvider = nativeBinding.ScopedProvider;
 (ScopedProvider.prototype as any).getAllOptions = function (
 	this: any,
 	preferences?: nativeBinding.GetOptionsPreferences | null,

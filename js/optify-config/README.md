@@ -96,6 +96,7 @@ const allOptions = scoped.getAllOptions()
 The given preferences are not changed.
 If the scope has overrides, then they replace any overrides in the given preferences.
 When `CacheOptions` are given, the cache of the provider or watcher is used, so the same caching rules apply, including that caching is not supported when there are overrides.
+When called without preferences or `CacheOptions`, `getOptions` caches its parsed result by key in the `ScopedProvider`.
 
 The features and overrides are stored once in the Rust implementation, which does the work of getting options, so they are not copied to JavaScript for each call without a cache.
 

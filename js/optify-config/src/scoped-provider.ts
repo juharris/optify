@@ -8,14 +8,20 @@ import { TypeSchema } from "./types";
 // Only set when a cache is used because the cache of the provider or watcher is keyed by the features and needs preferences.
 const DEFAULT_PREFERENCES_KEY = Symbol("defaultPreferences");
 const FEATURES_KEY = Symbol("features");
+const OPTIONS_CACHE_KEY = Symbol("optionsCache");
 
-interface ScopedProviderInstance extends nativeBinding.ScopedProvider {
+export interface ScopedProviderInstance extends nativeBinding.ScopedProvider {
 	[DEFAULT_PREFERENCES_KEY]?: nativeBinding.GetOptionsPreferences;
 	[FEATURES_KEY]?: string[];
+	[OPTIONS_CACHE_KEY]?: Map<string, unknown>;
 }
 
 function getFeatures(instance: ScopedProviderInstance): string[] {
 	return (instance[FEATURES_KEY] ??= instance._features());
+}
+
+export function initializeScopedOptionsCache(instance: ScopedProviderInstance): void {
+	instance[OPTIONS_CACHE_KEY] = new Map<string, unknown>();
 }
 
 function getPreferences(
@@ -47,6 +53,20 @@ export function getScopedOptions<T>(
 	preferences: nativeBinding.GetOptionsPreferences | null | undefined,
 	cacheOptions: CacheOptions | null | undefined,
 ): T {
+	if (!preferences && !cacheOptions) {
+		const cache = instance[OPTIONS_CACHE_KEY]!;
+		const cachedOptions = cache.get(key);
+		// Parsed option values are expected to be truthy.
+		// A falsy value is safely treated as a cache miss.
+		if (cachedOptions) {
+			return cachedOptions as T;
+		}
+
+		const options = schema.parse(instance._getOptions(key));
+		cache.set(key, options);
+		return options;
+	}
+
 	if (cacheOptions) {
 		return instance._registry().getOptions(key, getFeatures(instance), schema, getPreferences(instance, preferences), cacheOptions);
 	}

@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashMap, sync::RwLock};
 
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -165,6 +165,7 @@ impl Scope {
 /// Constraints are not stored; callers should resolve any constraint-based feature
 /// filtering before creating the scope.
 pub struct ScopedProvider<'a, R: OptionsRegistry + ?Sized> {
+    options_cache: RwLock<HashMap<String, Value>>,
     registry: &'a R,
     scope: Scope,
 }
@@ -176,6 +177,7 @@ impl<'a, R: OptionsRegistry + ?Sized> ScopedProvider<'a, R> {
     #[must_use]
     pub fn new(registry: &'a R, features: &[impl AsRef<str>], overrides: Option<Value>) -> Self {
         Self {
+            options_cache: RwLock::new(HashMap::new()),
             registry,
             scope: Scope::new(
                 features
@@ -188,8 +190,24 @@ impl<'a, R: OptionsRegistry + ?Sized> ScopedProvider<'a, R> {
     }
 
     /// Gets options for a key using this scope's features and overrides.
+    ///
+    /// Results are cached by this scoped provider for this accessor only.
     pub fn get_options(&self, key: &str) -> Result<Value, String> {
-        self.get_options_with_preferences(key, None, None)
+        if let Some(options) = self
+            .options_cache
+            .read()
+            .expect("the scoped options cache should be readable")
+            .get(key)
+        {
+            return Ok(options.clone());
+        }
+
+        let options = self.scope.get_options(self.registry, key, None, None)?;
+        self.options_cache
+            .write()
+            .expect("the scoped options cache lock should be held")
+            .insert(key.to_owned(), options.clone());
+        Ok(options)
     }
 
     /// Gets options for a key using this scope's features, cache options, and preferences.
@@ -234,6 +252,7 @@ impl<'a, R: OptionsRegistry + ?Sized> ScopedProvider<'a, R> {
     /// Feature names are assumed to be canonical and are not converted from aliases.
     pub fn deserialize(registry: &'a R, value: Value) -> Result<Self, String> {
         Ok(Self {
+            options_cache: RwLock::new(HashMap::new()),
             registry,
             scope: Scope::deserialize(value)?,
         })

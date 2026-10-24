@@ -1,4 +1,4 @@
-import { describe, expect, test } from "@jest/globals";
+import { describe, expect, jest, test } from "@jest/globals";
 import path from "path";
 import { CacheOptions, GetOptionsPreferences, OptionsProvider, OptionsWatcher, ScopedProvider, TypeSchema } from "../dist/index";
 
@@ -106,6 +106,18 @@ describe("ScopedProvider", () => {
 			});
 
 			describe("caching", () => {
+				test("caches parsed options by key without using the registry cache", () => {
+					const scoped = new ScopedProvider(registry, ["feature_A"], scopeOverrides);
+					const schema = { parse: jest.fn(() => ({ rootString: "parsed" })) };
+					const getOptions = jest.spyOn(scoped, "_getOptions");
+
+					const first = scoped.getOptions("myConfig", schema);
+					const second = scoped.getOptions("myConfig", schema);
+					expect(second).toBe(first);
+					expect(schema.parse).toHaveBeenCalledTimes(1);
+					expect(getOptions).toHaveBeenCalledTimes(1);
+				});
+
 				test("caches when there are no overrides", () => {
 					const scoped = new ScopedProvider(registry, ["feature_A"]);
 					const cacheOptions = new CacheOptions();
