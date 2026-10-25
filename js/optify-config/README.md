@@ -76,6 +76,40 @@ import { OptionsProvider } from '@optify/config'
 const provider = OptionsProvider.buildFromDirectories(['<configs folder path>', '<another folder path>'])
 ```
 
+### Scoping to features and overrides
+
+A `ScopedProvider` holds a set of features and overrides so that code which gets options doesn't need to know them.
+It works with an `OptionsProvider` or an `OptionsWatcher`.
+The features must be canonical feature names: they are not converted from aliases.
+Configurable values are enabled by default.
+
+```TypeScript
+import { OptionsProvider, ScopedProvider } from '@optify/config'
+
+const provider = OptionsProvider.build('<configs folder path>')
+const scoped = new ScopedProvider(provider, ['feature_A', 'feature_B/initial'], { myConfig: { rootString: 'override' } })
+const config = scoped.getOptions('myConfig', MyConfigSchema)
+const allOptions = scoped.getAllOptions()
+```
+
+`getOptions` and `getAllOptions` also accept optional `GetOptionsPreferences` and `CacheOptions`.
+The given preferences are not changed.
+If the scope has overrides, then they replace any overrides in the given preferences.
+When `CacheOptions` are given, the cache of the provider or watcher is used, so the same caching rules apply, including that caching is not supported when there are overrides.
+When called without preferences or `CacheOptions`, `getOptions` caches its parsed result by key in the `ScopedProvider`.
+
+The features and overrides are stored once in the Rust implementation, which does the work of getting options, so they are not copied to JavaScript for each call without a cache.
+
+Use `serialize` and `ScopedProvider.deserialize` to transfer or persist a scope.
+`overrides` is optional in the serialized value.
+
+```TypeScript
+const restored = ScopedProvider.deserialize(provider, scoped.serialize())
+```
+
+Constraints are not part of a scope.
+Resolve constraint-based filtering with `getFilteredFeatures` before creating the scope.
+
 ### Analyzing where a value comes from
 
 To explain which feature (and import chain) set a value, enable analysis and pass a [JSON pointer](https://datatracker.ietf.org/doc/html/rfc6901) to the value.

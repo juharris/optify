@@ -11,7 +11,7 @@ use crate::preferences::JsGetOptionsPreferences;
 
 #[napi(js_name = "OptionsProvider")]
 pub struct JsOptionsProvider {
-  inner: Option<OptionsProvider>,
+  pub(crate) inner: Option<OptionsProvider>,
 }
 
 #[napi]
