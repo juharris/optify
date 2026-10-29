@@ -351,7 +351,12 @@ impl OptionsProviderBuilder {
     }
 
     fn process_feature_loading_result(&mut self, info: FeatureLoadingResult) -> Result<(), String> {
-        let canonical_feature_name = info.canonical_feature_name;
+        // Our code sets the canonical name after loading from a file.
+        let canonical_feature_name = info
+            .metadata
+            .name
+            .as_ref()
+            .expect("the feature's canonical name must be set");
 
         if self
             .sources
@@ -390,7 +395,8 @@ impl OptionsProviderBuilder {
                 add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
             }
         }
-        self.features.insert(canonical_feature_name, info.metadata);
+        self.features
+            .insert(canonical_feature_name.clone(), info.metadata);
         Ok(())
     }
 
@@ -547,7 +553,6 @@ fn process_config_file_entry(
         };
 
     Ok(LoadingResult::Feature(FeatureLoadingResult {
-        canonical_feature_name,
         conditions: feature_config.conditions,
         configurable_string_files,
         configurable_value_pointers,
@@ -646,6 +651,21 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.process_loading_result(loading_result)?;
         }
 
+        Ok(self)
+    }
+
+    fn add_feature(&mut self, feature: &super::feature::Feature) -> Result<&Self, String> {
+        // TODO pass imports, policies, and source when adding a feature.
+        // We'll support conditions in the feature when we have a nice way to expose the structs for expressions.
+        self.process_feature_loading_result(FeatureLoadingResult {
+            conditions: None,
+            configurable_string_files: Vec::new(),
+            configurable_value_pointers: ConfigurableValuePointers::default(),
+            imports: None,
+            metadata: feature.metadata.clone(),
+            policies: None,
+            source: crate::provider::SourceValue::default(),
+        })?;
         Ok(self)
     }
 

@@ -2,7 +2,7 @@
 
 use optify::{
     builder::{OptionsProviderBuilder, OptionsRegistryBuilder},
-    provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
+    GetOptionsPreferences, OptionsProvider, OptionsRegistry,
 };
 use std::{fs, sync::OnceLock};
 
