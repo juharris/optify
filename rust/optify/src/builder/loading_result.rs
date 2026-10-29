@@ -13,7 +13,6 @@ pub(crate) enum LoadingResult {
 
 /// The result of loading a feature configuration file.
 pub(crate) struct FeatureLoadingResult {
-    pub canonical_feature_name: String,
     pub conditions: Option<ConditionExpression>,
     /// A list of file paths that are explicitly referenced within this feature's `ConfigurableString`s.
     /// This is only populated if the builder enables tracking.

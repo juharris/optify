@@ -53,6 +53,11 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
         Ok(self)
     }
 
+    fn add_feature(&mut self, feature: &super::feature::Feature) -> Result<&Self, String> {
+        // TODO
+        Ok(self)
+    }
+
     fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String> {
         self.builder_options = options;
         Ok(self)
