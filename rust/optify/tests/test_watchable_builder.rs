@@ -1,3 +1,6 @@
+mod common;
+
+use common::feature_from_json;
 use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::{OptionsRegistry, OptionsWatcher, WatcherOptions};
 use std::fs::File;
@@ -172,5 +175,18 @@ fn test_watchable_builder_error_rebuilding_provider() -> Result<(), Box<dyn std:
     let options = provider.get_options("test", &["test"])?;
     assert_eq!(options.as_i64(), Some(43));
 
+    Ok(())
+}
+
+#[test]
+fn test_watcher_builder_add_feature_and_features() -> Result<(), Box<dyn std::error::Error>> {
+    let mut builder = OptionsWatcherBuilder::new();
+    builder.add_feature(feature_from_json("a", 1))?;
+    builder.add_features(vec![feature_from_json("b", 2), feature_from_json("c", 3)])?;
+    let watcher = builder.build()?;
+
+    assert_eq!(watcher.get_options("test", &["a"])?, serde_json::json!(1));
+    assert_eq!(watcher.get_options("test", &["b"])?, serde_json::json!(2));
+    assert_eq!(watcher.get_options("test", &["c"])?, serde_json::json!(3));
     Ok(())
 }

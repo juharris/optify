@@ -11,6 +11,7 @@ use super::OptionsRegistryBuilder;
 #[derive(Clone)]
 pub struct OptionsWatcherBuilder {
     builder_options: BuilderOptions,
+    features: Vec<crate::Feature>,
     watched_directories: Vec<PathBuf>,
     watcher_options: WatcherOptions,
 }
@@ -26,6 +27,7 @@ impl OptionsWatcherBuilder {
     pub fn new() -> Self {
         OptionsWatcherBuilder {
             builder_options: BuilderOptions::default(),
+            features: Vec::new(),
             watched_directories: Vec::new(),
             watcher_options: WatcherOptions::default(),
         }
@@ -53,8 +55,18 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
         Ok(self)
     }
 
-    fn add_feature(&mut self, feature: &super::feature::Feature) -> Result<&Self, String> {
-        // TODO
+    fn add_feature(&mut self, feature: crate::Feature) -> Result<&Self, String> {
+        self.features.push(feature);
+        Ok(self)
+    }
+
+    fn add_features(
+        &mut self,
+        features: impl IntoIterator<Item = crate::Feature>,
+    ) -> Result<&Self, String> {
+        for feature in features {
+            self.add_feature(feature)?;
+        }
         Ok(self)
     }
 
@@ -70,9 +82,10 @@ impl OptionsRegistryBuilder<OptionsWatcher> for OptionsWatcherBuilder {
 
     fn build(&mut self) -> Result<OptionsWatcher, String> {
         OptionsWatcher::new(
+            self.features.clone(),
+            self.builder_options.clone(),
             &self.watched_directories,
             self.watcher_options,
-            self.builder_options.clone(),
         )
     }
 }

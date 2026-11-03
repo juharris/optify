@@ -387,12 +387,12 @@ impl OptionsProviderBuilder {
         }
         add_alias(
             &mut self.aliases,
-            &canonical_feature_name,
-            &canonical_feature_name,
+            canonical_feature_name,
+            canonical_feature_name,
         )?;
         if let Some(aliases) = &info.metadata.aliases {
             for alias in aliases {
-                add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
+                add_alias(&mut self.aliases, alias, canonical_feature_name)?;
             }
         }
         self.features
@@ -654,18 +654,26 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
         Ok(self)
     }
 
-    fn add_feature(&mut self, feature: &super::feature::Feature) -> Result<&Self, String> {
-        // TODO pass imports, policies, and source when adding a feature.
-        // We'll support conditions in the feature when we have a nice way to expose the structs for expressions.
+    fn add_feature(&mut self, feature: crate::Feature) -> Result<&Self, String> {
         self.process_feature_loading_result(FeatureLoadingResult {
-            conditions: None,
+            conditions: feature.conditions,
             configurable_string_files: Vec::new(),
             configurable_value_pointers: ConfigurableValuePointers::default(),
-            imports: None,
-            metadata: feature.metadata.clone(),
-            policies: None,
-            source: crate::provider::SourceValue::default(),
+            imports: feature.imports,
+            metadata: feature.metadata,
+            policies: feature.policies,
+            source: feature.options,
         })?;
+        Ok(self)
+    }
+
+    fn add_features(
+        &mut self,
+        features: impl IntoIterator<Item = crate::Feature>,
+    ) -> Result<&Self, String> {
+        for feature in features {
+            self.add_feature(feature)?;
+        }
         Ok(self)
     }
 
