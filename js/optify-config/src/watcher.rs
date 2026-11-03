@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::analysis::OptionAnalysis;
 use crate::builder_options::JsBuilderOptions;
+use crate::feature::ParsedFeature;
 use crate::metadata::{to_js_options_metadata, JsOptionsMetadata};
 use crate::policies::Policies;
 use crate::preferences::JsGetOptionsPreferences;
@@ -375,6 +376,32 @@ impl JsOptionsWatcherBuilder {
       .inner
       .add_directory(path)
       .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    Ok(())
+  }
+
+  /// Adds a feature configuration.
+  #[napi]
+  pub fn add_feature(
+    &mut self,
+    #[napi(ts_arg_type = "Feature")] feature: ParsedFeature,
+  ) -> napi::Result<()> {
+    self
+      .inner
+      .add_feature(feature.0)
+      .map_err(napi::Error::from_reason)?;
+    Ok(())
+  }
+
+  /// Adds multiple feature configurations.
+  #[napi]
+  pub fn add_features(
+    &mut self,
+    #[napi(ts_arg_type = "Array<Feature>")] features: Vec<ParsedFeature>,
+  ) -> napi::Result<()> {
+    self
+      .inner
+      .add_features(features.into_iter().map(|feature| feature.0))
+      .map_err(napi::Error::from_reason)?;
     Ok(())
   }
 

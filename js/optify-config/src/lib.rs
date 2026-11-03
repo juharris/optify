@@ -2,6 +2,7 @@
 
 mod analysis;
 mod builder_options;
+mod feature;
 mod metadata;
 mod policies;
 mod preferences;
