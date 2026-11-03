@@ -19,15 +19,12 @@ import { getScopedAllOptions, getScopedOptions, initializeScopedOptionsCache } f
 import { TypeSchema } from "./types";
 
 // Re-export types that don't need modifications.
-export {
-	BuilderOptions,
-	GetOptionsPreferences,
-	OptionsMetadata,
-	OptionsProviderBuilder,
-	OptionsWatcherBuilder,
-	OptionsWatcherListenerEvent,
-	WatcherOptions,
-} from "../index";
+export { BuilderOptions, GetOptionsPreferences, OptionsWatcherListenerEvent, WatcherOptions } from "../index";
+
+export type Feature = Omit<nativeBinding.Feature, "metadata"> & {
+	metadata: OptionsMetadata;
+};
+export type OptionsMetadata = nativeBinding.OptionsMetadata;
 
 // Re-export the native classes directly
 export type OptionsProvider = nativeBinding.OptionsProvider;
@@ -45,6 +42,75 @@ export type {
 	RequesterPolicy,
 } from "../index";
 export type { TypeSchema } from "./types";
+
+// An instanceof check can be spoofed by changing another native object's prototype.
+const metadataInstances = new WeakSet<nativeBinding.OptionsMetadata>();
+const nativeMetadataToJson = nativeBinding.OptionsMetadata.prototype.toJson;
+
+function registerMetadata(metadata: nativeBinding.OptionsMetadata): void {
+	metadataInstances.add(metadata);
+}
+
+export const OptionsMetadata = new Proxy(nativeBinding.OptionsMetadata, {
+	construct(target, args, newTarget) {
+		const metadata: nativeBinding.OptionsMetadata = Reflect.construct(target, args, newTarget);
+		registerMetadata(metadata);
+		return metadata;
+	},
+});
+
+export const Feature = {
+	/** Deserializes a feature and its metadata from JSON. */
+	fromJson(json: string): Feature {
+		const feature = nativeBinding._featureFromJson(json);
+		registerMetadata(feature.metadata);
+		return feature;
+	},
+};
+
+function registerMetadataResults(metadata: Record<string, nativeBinding.OptionsMetadata>): Record<string, nativeBinding.OptionsMetadata> {
+	for (const value of Object.values(metadata)) {
+		registerMetadata(value);
+	}
+	return metadata;
+}
+
+const providerFeaturesWithMetadata = nativeBinding.OptionsProvider.prototype._featuresWithMetadata;
+nativeBinding.OptionsProvider.prototype._featuresWithMetadata = function () {
+	return registerMetadataResults(providerFeaturesWithMetadata.call(this));
+};
+const watcherFeaturesWithMetadata = nativeBinding.OptionsWatcher.prototype._featuresWithMetadata;
+nativeBinding.OptionsWatcher.prototype._featuresWithMetadata = function () {
+	return registerMetadataResults(watcherFeaturesWithMetadata.call(this));
+};
+
+function toNativeFeature(feature: Feature): nativeBinding.Feature {
+	const metadata = feature.metadata;
+	if (!metadataInstances.has(metadata)) {
+		throw new TypeError("Feature metadata must be an OptionsMetadata instance");
+	}
+	return { ...feature, metadata: nativeMetadataToJson.call(metadata) };
+}
+
+export class OptionsProviderBuilder extends nativeBinding.OptionsProviderBuilder {
+	addFeature(feature: Feature): void {
+		super.addFeature(toNativeFeature(feature));
+	}
+
+	addFeatures(features: Array<Feature>): void {
+		super.addFeatures(features.map(toNativeFeature));
+	}
+}
+
+export class OptionsWatcherBuilder extends nativeBinding.OptionsWatcherBuilder {
+	addFeature(feature: Feature): void {
+		super.addFeature(toNativeFeature(feature));
+	}
+
+	addFeatures(features: Array<Feature>): void {
+		super.addFeatures(features.map(toNativeFeature));
+	}
+}
 
 // Augment the native class interfaces to include our new method
 declare module "../index" {
