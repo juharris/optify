@@ -129,9 +129,12 @@ impl OptionsWatcher {
                 })?;
         }
 
-        let provider =
-            Self::build_provider(watched_directories, &builder_options, features.clone())
-                .map_err(|e| format!("Failed to build provider: {e}"))?;
+        let provider = Self::build_provider(
+            watched_directories,
+            builder_options.clone(),
+            features.clone(),
+        )
+        .map_err(|e| format!("Failed to build provider: {e}"))?;
         let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
 
         let self_ = Self {
@@ -155,7 +158,7 @@ impl OptionsWatcher {
                 let result = std::panic::catch_unwind(|| {
                     match Self::build_provider(
                         &watched_directories,
-                        &builder_options,
+                        builder_options.clone(),
                         features.clone(),
                     ) {
                         Ok(new_provider) => match current_provider.write() {
@@ -191,11 +194,11 @@ impl OptionsWatcher {
 
     fn build_provider(
         directories: &[impl AsRef<Path>],
-        builder_options: &BuilderOptions,
+        builder_options: BuilderOptions,
         features: Vec<crate::Feature>,
     ) -> Result<OptionsProvider, String> {
         let mut builder = OptionsProviderBuilder::new();
-        builder.with_options(builder_options.clone())?;
+        builder.with_options(builder_options)?;
         builder.add_directories(directories)?;
         builder.add_features(features)?;
         builder.build_and_clear()

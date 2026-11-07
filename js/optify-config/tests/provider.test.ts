@@ -4,6 +4,7 @@ import path from "path";
 import {
 	BuilderOptions,
 	Feature,
+	FeatureMetadata,
 	GetOptionsPreferences,
 	OptionsMetadata,
 	OptionsProvider,
@@ -132,6 +133,24 @@ describe("builder features", () => {
 	];
 
 	for (const { name, create } of builders) {
+		test(`${name} accepts object metadata and features parsed with JSON.parse`, () => {
+			const metadata: FeatureMetadata = { name: "my_feat", aliases: ["object_alias"], details: { source: "object" } };
+			const objectFeature: Feature = { metadata, options: { myConfig: { key: "my_value" } } };
+			const parsed: Feature = JSON.parse(
+				'{"metadata":{"name":"from_json","aliases":["json_alias"]},"options":{"myConfig":{"key":"json_value"}}}',
+			);
+			const builder = create();
+			builder.addFeature(objectFeature);
+			builder.addFeatures([parsed]);
+			builder.addFeature({ metadata: { name: "inline" }, options: { myConfig: { key: "inline_value" } } });
+
+			const provider = builder.build();
+			expect(provider.getAllOptions(["object_alias"])).toEqual({ myConfig: { key: "my_value" } });
+			expect(provider.featuresWithMetadata()["my_feat"].details()).toEqual({ source: "object" });
+			expect(provider.getAllOptions(["json_alias"])).toEqual({ myConfig: { key: "json_value" } });
+			expect(provider.getAllOptions(["inline"])).toEqual({ myConfig: { key: "inline_value" } });
+		});
+
 		test(`${name} adds a feature deserialized from JSON, including metadata`, () => {
 			const json = `{
 				"metadata": {
@@ -146,7 +165,7 @@ describe("builder features", () => {
 				"conditions": { "jsonPointer": "/environment", "equals": "test" },
 				"policies": { "requester": { "allow": ["service_a"] } }
 			}`;
-			const parsed: Feature = Feature.fromJson(json);
+			const parsed = Feature.fromJson(json);
 
 			expect(parsed.metadata).toBeInstanceOf(OptionsMetadata);
 			expect(parsed.metadata.name()).toBe("from_json");
@@ -212,10 +231,6 @@ describe("builder features", () => {
 			const secondBuilder = create();
 			secondBuilder.addFeature({ metadata, options: { reused: true } });
 			expect(secondBuilder.build().getAllOptions(["base_alias"])).toEqual({ reused: true });
-
-			const rawMetadataBuilder = create();
-			rawMetadataBuilder.addFeature({ metadata: provider._featuresWithMetadata()["base"], options: { reused: true } });
-			expect(rawMetadataBuilder.build().getAllOptions(["base_alias"])).toEqual({ reused: true });
 		});
 
 		test(`${name} combines in-memory features with a directory`, () => {
@@ -244,7 +259,7 @@ describe("builder features", () => {
 					metadata: new BuilderOptions(),
 					options: {},
 				}),
-			).toThrow(/OptionsMetadata/);
+			).toThrow(/Feature\.metadata/);
 			const spoofedMetadata = new BuilderOptions();
 			Object.setPrototypeOf(spoofedMetadata, OptionsMetadata.prototype);
 			expect(() =>
@@ -253,7 +268,7 @@ describe("builder features", () => {
 					metadata: spoofedMetadata,
 					options: {},
 				}),
-			).toThrow(/OptionsMetadata/);
+			).toThrow(TypeError);
 			expect(() =>
 				builder.addFeatures([
 					feature("valid", "first"),
@@ -263,14 +278,18 @@ describe("builder features", () => {
 						options: {},
 					},
 				]),
-			).toThrow(/OptionsMetadata/);
+			).toThrow(TypeError);
+			expect(() => builder.addFeature({ metadata: {}, options: {} })).toThrow(/non-empty name/);
 			expect(() =>
-				builder.addFeature({
-					// @ts-expect-error Verify that a plain object is not mistaken for the native class.
-					metadata: { name: "invalid" },
-					options: {},
-				}),
-			).toThrow(/OptionsMetadata/);
+				builder.addFeatures([
+					{ metadata: { name: "valid" }, options: {} },
+					{
+						// @ts-expect-error Verify malformed plain-object metadata is rejected.
+						metadata: { name: "invalid", aliases: 42 },
+						options: {},
+					},
+				]),
+			).toThrow(/Invalid options metadata/);
 			// @ts-expect-error Verify that missing metadata is rejected at runtime.
 			expect(() => builder.addFeature({ options: {} })).toThrow(/metadata/);
 			expect(() =>

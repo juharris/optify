@@ -80,28 +80,39 @@ const provider = OptionsProvider.buildFromDirectories(['<configs folder path>', 
 
 Use `addFeature` and `addFeatures` on an `OptionsProviderBuilder` or `OptionsWatcherBuilder` to add feature configurations without loading them from files.
 The feature shape matches the Rust `Feature` model, with `metadata` and `options` required.
-Create feature metadata with `new OptionsMetadata({...})` and give it a non-empty `name`.
+Feature metadata is a plain object matching the `FeatureMetadata` interface and must have a non-empty `name`.
+An `OptionsMetadata` instance can also be used as feature metadata.
 In-memory features can also specify `imports`, `conditions`, and `policies` in the same format as feature files.
 The watcher retains in-memory features when it rebuilds after a file changes.
 
 ```TypeScript
-import { OptionsMetadata, OptionsProviderBuilder } from '@optify/config'
+import { OptionsProviderBuilder } from '@optify/config'
 
 const builder = new OptionsProviderBuilder()
 builder.addFeature({
-  metadata: new OptionsMetadata({ name: 'feature_A' }),
+  metadata: { name: 'feature_A' },
   options: { myConfig: { rootString: 'root string' } },
 })
 builder.addFeatures([
   {
-    metadata: new OptionsMetadata({ name: 'feature_B' }),
+    metadata: { name: 'feature_B' },
     options: { myConfig: { rootString: 'another value' } },
   },
 ])
 const provider = builder.build()
 ```
 
-Use `Feature.fromJson` to deserialize a feature, including its `OptionsMetadata`, from a JSON string:
+Features can be read directly with `JSON.parse`, including their metadata:
+
+```TypeScript
+import { Feature, OptionsProviderBuilder } from '@optify/config'
+
+const feature: Feature = JSON.parse('{"metadata":{"name":"feature_A"},"options":{"myConfig":{"enabled":true}}}')
+const builder = new OptionsProviderBuilder()
+builder.addFeature(feature)
+```
+
+Use `Feature.fromJson` to validate and deserialize a feature, including its `OptionsMetadata`, from a JSON string:
 
 ```TypeScript
 import { Feature, OptionsProviderBuilder } from '@optify/config'

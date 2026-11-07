@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, afterEach } from "@jest/globals";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { BuilderOptions, CacheOptions, OptionsMetadata, OptionsWatcher, OptionsWatcherBuilder, WatcherOptions } from "../dist/index";
+import { BuilderOptions, CacheOptions, OptionsWatcher, OptionsWatcherBuilder, WatcherOptions } from "../dist/index";
 
 const MODIFICATION_DEBOUNCE_MS = 10;
 const RETRY_DELAY = MODIFICATION_DEBOUNCE_MS * 2 + 100;
@@ -110,7 +110,7 @@ describe("OptionsWatcher", () => {
 			options.setDebounceDurationMs(MODIFICATION_DEBOUNCE_MS);
 			const builder = new OptionsWatcherBuilder();
 			builder.addDirectory(tempDir);
-			builder.addFeature({ metadata: new OptionsMetadata({ name: "in_memory" }), options: { persisted: true } });
+			builder.addFeature({ metadata: { name: "in_memory", aliases: ["memory_alias"] }, options: { persisted: true } });
 			builder.withWatcherOptions(options);
 			let watcher: OptionsWatcher | null = builder.build();
 			const builtTime = watcher.lastModified();
@@ -132,7 +132,7 @@ describe("OptionsWatcher", () => {
 
 				const afterRebuild = watcher!.featuresWithMetadata();
 				expect(afterRebuild).not.toBe(initialFeatures);
-				expect(watcher!.getAllOptions(["in_memory"])).toEqual({ persisted: true });
+				expect(watcher!.getAllOptions(["memory_alias"])).toEqual({ persisted: true });
 
 				const afterRebuild2 = watcher!.featuresWithMetadata();
 				expect(afterRebuild2).toBe(afterRebuild);
