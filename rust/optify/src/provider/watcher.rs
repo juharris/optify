@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{mpsc::channel, Arc, Mutex, RwLock};
 
 use crate::builder::builder_options::BuilderOptions;
-use crate::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
+use crate::builder::{OptionsProviderBuilder, OptionsRegistryBuilder, OptionsWatcherBuilder};
 use crate::policies::Policies;
 use crate::provider::{
     CacheOptions, Features, GetOptionsPreferences, OptionAnalysis, OptionsProvider,
@@ -75,9 +75,10 @@ impl OptionsWatcher {
     }
 
     pub(crate) fn new(
+        features: Vec<crate::Feature>,
+        builder_options: BuilderOptions,
         watched_directories: &[impl AsRef<Path>],
         watcher_options: WatcherOptions,
-        builder_options: BuilderOptions,
     ) -> Result<Self, String> {
         // Set up the watcher before building in case the files change before building.
         let (tx, rx) = channel();
@@ -128,9 +129,10 @@ impl OptionsWatcher {
                 })?;
         }
 
-        let provider = OptionsProvider::build_from_directories_with_options(
+        let provider = Self::build_provider(
             watched_directories,
             builder_options.clone(),
+            features.clone(),
         )
         .map_err(|e| format!("Failed to build provider: {e}"))?;
         let last_modified = Arc::new(Mutex::new(std::time::SystemTime::now()));
@@ -154,9 +156,10 @@ impl OptionsWatcher {
         std::thread::spawn(move || {
             for paths in rx {
                 let result = std::panic::catch_unwind(|| {
-                    match OptionsProvider::build_from_directories_with_options(
+                    match Self::build_provider(
                         &watched_directories,
                         builder_options.clone(),
+                        features.clone(),
                     ) {
                         Ok(new_provider) => match current_provider.write() {
                             Ok(mut provider) => {
@@ -187,6 +190,18 @@ impl OptionsWatcher {
         });
 
         Ok(self_)
+    }
+
+    fn build_provider(
+        directories: &[impl AsRef<Path>],
+        builder_options: BuilderOptions,
+        features: Vec<crate::Feature>,
+    ) -> Result<OptionsProvider, String> {
+        let mut builder = OptionsProviderBuilder::new();
+        builder.with_options(builder_options)?;
+        builder.add_directories(directories)?;
+        builder.add_features(features)?;
+        builder.build_and_clear()
     }
 
     pub fn add_listener(&mut self, listener: OptionsWatcherListener) {

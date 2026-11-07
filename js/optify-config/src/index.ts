@@ -19,15 +19,21 @@ import { getScopedAllOptions, getScopedOptions, initializeScopedOptionsCache } f
 import { TypeSchema } from "./types";
 
 // Re-export types that don't need modifications.
-export {
-	BuilderOptions,
-	GetOptionsPreferences,
-	OptionsMetadata,
-	OptionsProviderBuilder,
-	OptionsWatcherBuilder,
-	OptionsWatcherListenerEvent,
-	WatcherOptions,
-} from "../index";
+export { BuilderOptions, GetOptionsPreferences, OptionsWatcherListenerEvent, WatcherOptions } from "../index";
+
+/** Metadata for an in-memory feature. */
+export interface FeatureMetadata {
+	aliases?: string[] | null;
+	dependents?: string[] | null;
+	details?: unknown;
+	name?: string | null;
+	owners?: string | null;
+	path?: string | null;
+}
+
+export type Feature = Omit<nativeBinding.Feature, "metadata"> & {
+	metadata: FeatureMetadata | OptionsMetadata;
+};
 
 // Re-export the native classes directly
 export type OptionsProvider = nativeBinding.OptionsProvider;
@@ -46,11 +52,88 @@ export type {
 } from "../index";
 export type { TypeSchema } from "./types";
 
+/** Information about a group of options. */
+export class OptionsMetadata {
+	readonly #inner: nativeBinding.OptionsMetadata;
+
+	constructor(metadata?: FeatureMetadata | null) {
+		this.#inner = new nativeBinding.OptionsMetadata(metadata);
+	}
+
+	aliases(): string[] | null {
+		return this.#inner.aliases();
+	}
+
+	/** The canonical names of features that import this one. */
+	dependents(): string[] | null {
+		return this.#inner.dependents();
+	}
+
+	details(): unknown {
+		return this.#inner.details();
+	}
+
+	name(): string | null {
+		return this.#inner.name();
+	}
+
+	owners(): string | null {
+		return this.#inner.owners();
+	}
+
+	path(): string | null {
+		return this.#inner.path();
+	}
+
+	toJson(): FeatureMetadata {
+		return this.#inner.toJson();
+	}
+}
+
+type PublicOptionsMetadata = OptionsMetadata;
+
+export const Feature = {
+	/** Deserializes a feature and its metadata from JSON. */
+	fromJson(json: string): Feature & { metadata: OptionsMetadata } {
+		const feature = nativeBinding._featureFromJson(json);
+		return { ...feature, metadata: new OptionsMetadata(feature.metadata.toJson()) };
+	},
+};
+
+function convertMetadataResults(metadata: Record<string, nativeBinding.OptionsMetadata>): Record<string, OptionsMetadata> {
+	return Object.fromEntries(Object.entries(metadata).map(([name, value]) => [name, new OptionsMetadata(value.toJson())]));
+}
+
+function toNativeFeature(feature: Feature): nativeBinding.Feature {
+	const metadata = feature.metadata;
+	return { ...feature, metadata: metadata instanceof OptionsMetadata ? metadata.toJson() : metadata };
+}
+
+export class OptionsProviderBuilder extends nativeBinding.OptionsProviderBuilder {
+	addFeature(feature: Feature): void {
+		super.addFeature(toNativeFeature(feature));
+	}
+
+	addFeatures(features: Array<Feature>): void {
+		super.addFeatures(features.map(toNativeFeature));
+	}
+}
+
+export class OptionsWatcherBuilder extends nativeBinding.OptionsWatcherBuilder {
+	addFeature(feature: Feature): void {
+		super.addFeature(toNativeFeature(feature));
+	}
+
+	addFeatures(features: Array<Feature>): void {
+		super.addFeatures(features.map(toNativeFeature));
+	}
+}
+
 // Augment the native class interfaces to include our new method
 declare module "../index" {
 	interface OptionsProvider {
 		/** Returns a map of all the canonical feature names to their metadata. */
-		featuresWithMetadata(): Record<string, OptionsMetadata>;
+		featuresWithMetadata(): Record<string, PublicOptionsMetadata>;
 		/**
 		 * Eagerly initializes the cache. Optional — the cache is lazily initialized on first
 		 * `getOptions` call with `cacheOptions` if not called. Use this to configure cache behavior
@@ -79,7 +162,7 @@ declare module "../index" {
 
 	interface OptionsWatcher {
 		/** Returns a map of all the canonical feature names to their metadata. */
-		featuresWithMetadata(): Record<string, OptionsMetadata>;
+		featuresWithMetadata(): Record<string, PublicOptionsMetadata>;
 		/**
 		 * Eagerly initializes the cache. Optional — the cache is lazily initialized on first
 		 * `getOptions` call with `cacheOptions` if not called. Use this to configure cache behavior
@@ -161,13 +244,13 @@ export class ScopedProvider extends nativeBinding.ScopedProvider {
 
 // Extend OptionsProvider prototype with extra methods.
 export const OptionsProvider = nativeBinding.OptionsProvider;
-(OptionsProvider.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
+(OptionsProvider.prototype as any).featuresWithMetadata = function (this: any): Record<string, OptionsMetadata> {
 	const cachedResult = this[FEATURES_WITH_METADATA_CACHE_KEY];
 	if (cachedResult) {
 		return cachedResult;
 	}
 
-	return (this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata());
+	return (this[FEATURES_WITH_METADATA_CACHE_KEY] = convertMetadataResults(this._featuresWithMetadata()));
 };
 (OptionsProvider.prototype as any).init = function (this: any, cacheInitOptions?: CacheInitOptions | null): any {
 	initCache(this, cacheInitOptions);
@@ -194,7 +277,7 @@ export const OptionsProvider = nativeBinding.OptionsProvider;
 
 // Extend OptionsWatcher prototype with extra methods.
 export const OptionsWatcher = nativeBinding.OptionsWatcher;
-(OptionsWatcher.prototype as any).featuresWithMetadata = function (this: any): Record<string, nativeBinding.OptionsMetadata> {
+(OptionsWatcher.prototype as any).featuresWithMetadata = function (this: any): Record<string, OptionsMetadata> {
 	const cachedTime = this[FEATURES_WITH_METADATA_CACHE_TIME_KEY];
 	const lastModifiedTime = this.lastModified();
 	if (cachedTime && lastModifiedTime <= cachedTime) {
@@ -210,7 +293,7 @@ export const OptionsWatcher = nativeBinding.OptionsWatcher;
 		resetCaches(this);
 	}
 	this[FEATURES_WITH_METADATA_CACHE_TIME_KEY] = lastModifiedTime;
-	return (this[FEATURES_WITH_METADATA_CACHE_KEY] = this._featuresWithMetadata());
+	return (this[FEATURES_WITH_METADATA_CACHE_KEY] = convertMetadataResults(this._featuresWithMetadata()));
 };
 (OptionsWatcher.prototype as any).init = function (this: any, cacheInitOptions?: CacheInitOptions | null): any {
 	initCache(this, cacheInitOptions);

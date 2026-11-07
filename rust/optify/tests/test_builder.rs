@@ -5,6 +5,9 @@ use optify::{
     provider::{GetOptionsPreferences, OptionsProvider, OptionsRegistry},
 };
 
+mod common;
+
+use common::feature_from_json;
 use serde_json::json;
 
 #[test]
@@ -353,5 +356,20 @@ fn test_builder_policies_json_valid_combinations_build() -> Result<(), Box<dyn s
         );
     }
 
+    Ok(())
+}
+
+#[test]
+fn test_builder_add_features_by_value_and_iterator() -> Result<(), Box<dyn std::error::Error>> {
+    let mut builder = OptionsProviderBuilder::new();
+    builder.add_features(vec![feature_from_json("a", 1)])?;
+    let borrowed = vec![feature_from_json("b", 2)];
+    builder.add_features(borrowed.iter().cloned())?;
+    builder.add_feature(feature_from_json("c", 3))?;
+    let provider = builder.build()?;
+
+    assert_eq!(provider.get_options("test", &["a"])?, json!(1));
+    assert_eq!(provider.get_options("test", &["b"])?, json!(2));
+    assert_eq!(provider.get_options("test", &["c"])?, json!(3));
     Ok(())
 }

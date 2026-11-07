@@ -76,6 +76,52 @@ import { OptionsProvider } from '@optify/config'
 const provider = OptionsProvider.buildFromDirectories(['<configs folder path>', '<another folder path>'])
 ```
 
+### Adding features in memory
+
+Use `addFeature` and `addFeatures` on an `OptionsProviderBuilder` or `OptionsWatcherBuilder` to add feature configurations without loading them from files.
+The feature shape matches the Rust `Feature` model, with `metadata` and `options` required.
+Feature metadata is a plain object matching the `FeatureMetadata` interface and must have a non-empty `name`.
+An `OptionsMetadata` instance can also be used as feature metadata.
+In-memory features can also specify `imports`, `conditions`, and `policies` in the same format as feature files.
+The watcher retains in-memory features when it rebuilds after a file changes.
+
+```TypeScript
+import { OptionsProviderBuilder } from '@optify/config'
+
+const builder = new OptionsProviderBuilder()
+builder.addFeature({
+  metadata: { name: 'feature_A' },
+  options: { myConfig: { rootString: 'root string' } },
+})
+builder.addFeatures([
+  {
+    metadata: { name: 'feature_B' },
+    options: { myConfig: { rootString: 'another value' } },
+  },
+])
+const provider = builder.build()
+```
+
+Features can be read directly with `JSON.parse`, including their metadata:
+
+```TypeScript
+import { Feature, OptionsProviderBuilder } from '@optify/config'
+
+const feature: Feature = JSON.parse('{"metadata":{"name":"feature_A"},"options":{"myConfig":{"enabled":true}}}')
+const builder = new OptionsProviderBuilder()
+builder.addFeature(feature)
+```
+
+Use `Feature.fromJson` to validate and deserialize a feature, including its `OptionsMetadata`, from a JSON string:
+
+```TypeScript
+import { Feature, OptionsProviderBuilder } from '@optify/config'
+
+const feature = Feature.fromJson('{"metadata":{"name":"feature_A"},"options":{"myConfig":{"enabled":true}}}')
+const builder = new OptionsProviderBuilder()
+builder.addFeature(feature)
+```
+
 ### Scoping to features and overrides
 
 A `ScopedProvider` holds a set of features and overrides so that code which gets options doesn't need to know them.
