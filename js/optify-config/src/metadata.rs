@@ -24,7 +24,7 @@ impl FromNapiValue for JsOptionsMetadata {
 impl JsOptionsMetadata {
   #[napi(
     constructor,
-    ts_args_type = "metadata?: { aliases?: string[]; dependents?: string[]; details?: unknown; name?: string; owners?: string; path?: string } | null"
+    ts_args_type = "metadata?: { aliases?: string[] | null; dependents?: string[] | null; details?: unknown; name?: string | null; owners?: string | null; path?: string | null } | null"
   )]
   pub fn new(metadata: Option<serde_json::Value>) -> napi::Result<Self> {
     let inner = match metadata {

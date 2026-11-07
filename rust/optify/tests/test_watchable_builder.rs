@@ -1,7 +1,7 @@
 mod common;
 
 use common::feature_from_json;
-use optify::builder::{OptionsRegistryBuilder, OptionsWatcherBuilder};
+use optify::builder::{BuilderOptions, OptionsRegistryBuilder, OptionsWatcherBuilder};
 use optify::provider::{OptionsRegistry, OptionsWatcher, WatcherOptions};
 use std::fs::File;
 use std::io::Write;
@@ -21,14 +21,21 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
     let mut file = File::create(&options_file)?;
     file.write_all(b"{\"options\":{\"test\":42}}")?;
 
-    let provider = OptionsWatcher::build_with_options(
-        test_dir,
-        WatcherOptions::new(DEFAULT_DEBOUNCE_DURATION),
-    )?;
+    let mut builder = OptionsWatcherBuilder::new();
+    builder.add_directory(test_dir)?;
+    builder.with_options(BuilderOptions {
+        is_analysis_enabled: true,
+        ..Default::default()
+    })?;
+    builder.with_watcher_options(WatcherOptions::new(DEFAULT_DEBOUNCE_DURATION));
+    let provider = builder.build()?;
     let created_at = provider.last_modified();
 
     let options = provider.get_options("test", &["modifiable_test"])?;
     assert_eq!(options.as_i64(), Some(42));
+    assert!(provider
+        .analyze("/test", &["modifiable_test"], None)
+        .is_ok());
 
     let mut file = File::create(&options_file)?;
     file.write_all(b"{\"options\":{\"test\":43}}")?;
@@ -45,6 +52,9 @@ fn test_watchable_builder_modify_file() -> Result<(), Box<dyn std::error::Error>
 
     let options = provider.get_options("test", &["modifiable_test"])?;
     assert_eq!(options.as_i64(), Some(43));
+    assert!(provider
+        .analyze("/test", &["modifiable_test"], None)
+        .is_ok());
 
     Ok(())
 }
