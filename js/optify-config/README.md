@@ -85,7 +85,7 @@ An `OptionsMetadata` instance can also be used as feature metadata.
 
 Adding features not defined in files is mainly meant for adding features defined in client-side code
 and is not meant to encourage managing features hosted in cloud storage or remote servers.
-As explained in the [ethos] of Optify, cloud configuration leads to many issues and it's best to encourage managing features in files adjacent to code. 
+As explained in the [ethos] of Optify, cloud configuration leads to many issues and it's best to encourage managing features in files adjacent to code.
 
 ```TypeScript
 import { OptionsProviderBuilder } from '@optify/config'
