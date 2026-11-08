@@ -64,7 +64,7 @@ jobs:
     - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: rust/optify
+        workspaces: rust
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
@@ -94,7 +94,7 @@ jobs:
     - name: "🦀[Rust] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: rust/optify
+        workspaces: rust
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ubuntu-latest-rust
@@ -139,9 +139,7 @@ jobs:
     - name: "🦀[Rust CLI] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: |
-          rust/optify
-          rust/optify-cli
+        workspaces: rust
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ${{ matrix.os }}-rust
@@ -174,9 +172,7 @@ jobs:
     - name: "🦀[Rust CLI] Setup cache"
       uses: Swatinem/rust-cache@v2
       with:
-        workspaces: |
-          rust/optify
-          rust/optify-cli
+        workspaces: rust
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ubuntu-latest-rust
