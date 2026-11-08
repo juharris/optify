@@ -211,6 +211,13 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 
+    - name: "🦀[Rust] Setup cache"
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: js/optify-config
+        cache-workspace-crates: true
+        cache-on-failure: true
+        shared-key: ${{ matrix.os }}-js-rust
     - name: "⏣[JS][Rust] Lint"
       # Don't use Clippy because it gives too many errors.
       # It seems like the macros confuse it.
