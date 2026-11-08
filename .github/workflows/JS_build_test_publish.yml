@@ -204,13 +204,13 @@ jobs:
           shared-key: freebsd-rust
       - name: "Build & Test"
         id: build
-        uses: cross-platform-actions/action@v1.0.0
+        uses: cross-platform-actions/action@v1.7.0
         env:
           DEBUG: napi:*
           RUSTUP_IO_THREADS: 1
         with:
           operating_system: freebsd
-          version: '13.5'
+          version: '14.5'
           memory: 8G
           cpu_count: 3
           environment_variables: DEBUG RUSTUP_IO_THREADS

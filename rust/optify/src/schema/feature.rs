@@ -6,6 +6,7 @@ use crate::policies::Policies;
 
 pub(crate) type ConfigurationOptions = serde_json::Value;
 
+/// A deserialized representation of a feature configuration file.
 #[derive(Clone, Debug, Deserialize)]
 #[allow(unused)]
 pub(crate) struct FeatureConfiguration {

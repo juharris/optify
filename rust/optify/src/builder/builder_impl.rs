@@ -351,7 +351,12 @@ impl OptionsProviderBuilder {
     }
 
     fn process_feature_loading_result(&mut self, info: FeatureLoadingResult) -> Result<(), String> {
-        let canonical_feature_name = info.canonical_feature_name;
+        // Our code sets the canonical name after loading from a file.
+        let canonical_feature_name = info
+            .metadata
+            .name
+            .as_ref()
+            .ok_or_else(|| "Feature metadata must have a name".to_string())?;
 
         if self
             .sources
@@ -382,15 +387,16 @@ impl OptionsProviderBuilder {
         }
         add_alias(
             &mut self.aliases,
-            &canonical_feature_name,
-            &canonical_feature_name,
+            canonical_feature_name,
+            canonical_feature_name,
         )?;
         if let Some(aliases) = &info.metadata.aliases {
             for alias in aliases {
-                add_alias(&mut self.aliases, alias, &canonical_feature_name)?;
+                add_alias(&mut self.aliases, alias, canonical_feature_name)?;
             }
         }
-        self.features.insert(canonical_feature_name, info.metadata);
+        self.features
+            .insert(canonical_feature_name.clone(), info.metadata);
         Ok(())
     }
 
@@ -547,7 +553,6 @@ fn process_config_file_entry(
         };
 
     Ok(LoadingResult::Feature(FeatureLoadingResult {
-        canonical_feature_name,
         conditions: feature_config.conditions,
         configurable_string_files,
         configurable_value_pointers,
@@ -646,6 +651,29 @@ impl OptionsRegistryBuilder<OptionsProvider> for OptionsProviderBuilder {
             self.process_loading_result(loading_result)?;
         }
 
+        Ok(self)
+    }
+
+    fn add_feature(&mut self, feature: crate::Feature) -> Result<&Self, String> {
+        self.process_feature_loading_result(FeatureLoadingResult {
+            conditions: feature.conditions,
+            configurable_string_files: Vec::new(),
+            configurable_value_pointers: ConfigurableValuePointers::default(),
+            imports: feature.imports,
+            metadata: feature.metadata,
+            policies: feature.policies,
+            source: feature.options,
+        })?;
+        Ok(self)
+    }
+
+    fn add_features(
+        &mut self,
+        features: impl IntoIterator<Item = crate::Feature>,
+    ) -> Result<&Self, String> {
+        for feature in features {
+            self.add_feature(feature)?;
+        }
         Ok(self)
     }
 

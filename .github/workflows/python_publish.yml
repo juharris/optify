@@ -40,7 +40,9 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
-          - runner: ubuntu-22.04
+          # Native ARM uses the manylinux2014 ARM image instead of the cross
+          # image, whose older linker warns about Rust's GNU property notes.
+          - runner: ubuntu-22.04-arm
             target: aarch64
     steps:
       - uses: actions/checkout@v6

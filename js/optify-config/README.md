@@ -76,6 +76,48 @@ import { OptionsProvider } from '@optify/config'
 const provider = OptionsProvider.buildFromDirectories(['<configs folder path>', '<another folder path>'])
 ```
 
+### Adding features in memory
+
+Use `addFeature` and `addFeatures` on an `OptionsProviderBuilder` or `OptionsWatcherBuilder` to add feature configurations without loading them from files.
+The feature shape matches the `Feature` model, with `metadata` and `options` required.
+Feature metadata is a plain object matching the `FeatureMetadata` interface and must have a `name`.
+An `OptionsMetadata` instance can also be used as feature metadata.
+
+Adding features not defined in files is mainly meant for adding features defined in client-side code
+and is not meant to encourage managing features hosted in cloud storage or remote servers.
+As explained in the [ethos] of Optify, cloud configuration leads to many issues and it's best to encourage managing features in files adjacent to code.
+
+```TypeScript
+import { OptionsProviderBuilder } from '@optify/config'
+
+const builder = new OptionsProviderBuilder()
+builder.addFeature({
+  metadata: { name: 'feature_A' },
+  options: { myConfig: { rootString: 'root string' } },
+})
+
+const feature: Feature = JSON.parse('{"metadata":{"name":"feature_A"},"options":{"myConfig":{"enabled":true}}}')
+builder.addFeatures([
+  feature,
+  {
+    metadata: { name: 'feature_B' },
+    options: { myConfig: { rootString: 'another value' } },
+  },
+])
+const provider = builder.build()
+```
+
+Use `Feature.fromJson` to deserialize a feature, including its `OptionsMetadata`, from a JSON string.
+It validates the JSON structure; feature names are checked by the builder:
+
+```TypeScript
+import { Feature, OptionsProviderBuilder } from '@optify/config'
+
+const feature = Feature.fromJson('{"metadata":{"name":"feature_A"},"options":{"myConfig":{"enabled":true}}}')
+const builder = new OptionsProviderBuilder()
+builder.addFeature(feature)
+```
+
 ### Scoping to features and overrides
 
 A `ScopedProvider` holds a set of features and overrides so that code which gets options doesn't need to know them.
@@ -212,4 +254,5 @@ Some notes:
 See https://napi.rs/docs/introduction/getting-started#deep-dive \
 See https://napi.rs/docs/introduction/simple-package
 
+[ethos]: https://github.com/juharris/optify#ethos
 [homepage]: https://github.com/juharris/optify

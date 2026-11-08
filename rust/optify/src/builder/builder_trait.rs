@@ -1,4 +1,5 @@
 use crate::builder::builder_options::BuilderOptions;
+use crate::builder::feature::Feature;
 use std::path::Path;
 
 use crate::provider::OptionsRegistry;
@@ -10,6 +11,18 @@ pub trait OptionsRegistryBuilder<T: OptionsRegistry> {
 
     /// Adds a directory containing feature configurations.
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String>;
+
+    /// Adds a single feature.
+    /// A missing canonical name is rejected when the feature is processed.
+    fn add_feature(&mut self, feature: Feature) -> Result<&Self, String>;
+
+    /// Adds multiple features, taking ownership so they are not cloned.
+    /// Pass `.iter().cloned()` to keep the originals.
+    /// Features are added in order; an error leaves any previously added features in the builder.
+    fn add_features(
+        &mut self,
+        features: impl IntoIterator<Item = Feature>,
+    ) -> Result<&Self, String>;
 
     /// Sets builder options to configure how schemas are built.
     fn with_options(&mut self, options: BuilderOptions) -> Result<&Self, String>;
