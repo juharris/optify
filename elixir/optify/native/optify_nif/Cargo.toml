@@ -11,5 +11,5 @@ crate-type = ["cdylib"]
 # Can't put a relative path here because then others can't install the hex package.
 # The workspace Cargo.toml patches this to the local crate during development.
 optify = "1.6.0"
-rustler = { version = "0.38.0", features = ["serde"] }
-serde_json = "1.0.149"
+rustler = { version = "0.39.0", features = ["serde"] }
+serde_json = "1.0.154"
