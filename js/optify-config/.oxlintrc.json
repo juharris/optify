@@ -9,5 +9,8 @@
 		"correctness": "error",
 		"suspicious": "error"
 	},
+	"rules": {
+		"no-underscore-dangle": "off"
+	},
 	"ignorePatterns": ["dist/**", "npm/**", "node_modules/**", "target/**"]
 }
