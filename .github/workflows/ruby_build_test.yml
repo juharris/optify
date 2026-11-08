@@ -173,7 +173,7 @@ jobs:
       with:
         workspaces: |
           ruby/optify
-          rust/optify
+          rust
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
@@ -260,7 +260,7 @@ jobs:
       with:
         workspaces: |
           ruby/optify
-          rust/optify
+          rust
         cache-workspace-crates: true
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
@@ -370,7 +370,7 @@ jobs:
       with:
         workspaces: |
           ruby/optify
-          rust/optify
+          rust
         cache-on-failure: true
         shared-key: ruby-${{ runner.os }}-rust
 
