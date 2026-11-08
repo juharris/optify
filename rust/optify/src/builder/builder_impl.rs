@@ -356,7 +356,7 @@ impl OptionsProviderBuilder {
             .metadata
             .name
             .as_ref()
-            .expect("the feature's canonical name must be set");
+            .ok_or_else(|| "Feature metadata must have a name".to_string())?;
 
         if self
             .sources

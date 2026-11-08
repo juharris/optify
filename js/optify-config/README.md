@@ -80,10 +80,8 @@ const provider = OptionsProvider.buildFromDirectories(['<configs folder path>', 
 
 Use `addFeature` and `addFeatures` on an `OptionsProviderBuilder` or `OptionsWatcherBuilder` to add feature configurations without loading them from files.
 The feature shape matches the Rust `Feature` model, with `metadata` and `options` required.
-Feature metadata is a plain object matching the `FeatureMetadata` interface and must have a non-empty `name`.
+Feature metadata is a plain object matching the `FeatureMetadata` interface and must have a `name`.
 An `OptionsMetadata` instance can also be used as feature metadata.
-In-memory features can also specify `imports`, `conditions`, and `policies` in the same format as feature files.
-The watcher retains in-memory features when it rebuilds after a file changes.
 
 ```TypeScript
 import { OptionsProviderBuilder } from '@optify/config'
@@ -112,7 +110,8 @@ const builder = new OptionsProviderBuilder()
 builder.addFeature(feature)
 ```
 
-Use `Feature.fromJson` to validate and deserialize a feature, including its `OptionsMetadata`, from a JSON string:
+Use `Feature.fromJson` to deserialize a feature, including its `OptionsMetadata`, from a JSON string.
+It validates the JSON structure; feature names are checked by the builder:
 
 ```TypeScript
 import { Feature, OptionsProviderBuilder } from '@optify/config'

@@ -21,15 +21,6 @@ pub struct Feature {
 /// A feature converted and validated at the JavaScript boundary.
 pub struct ParsedFeature(pub optify::Feature);
 
-fn validate_metadata(metadata: &optify::schema::metadata::OptionsMetadata) -> napi::Result<()> {
-  if metadata.name.as_deref().is_none_or(str::is_empty) {
-    return Err(napi::Error::from_reason(
-      "Feature metadata must have a non-empty name",
-    ));
-  }
-  Ok(())
-}
-
 /// Deserializes and validates a feature while preserving its JSON condition representation.
 #[napi(
   js_name = "_featureFromJson",
@@ -49,7 +40,6 @@ pub fn feature_from_json(json: String) -> napi::Result<Feature> {
     .cloned();
   let feature: optify::Feature = serde_json::from_value(value)
     .map_err(|error| napi::Error::from_reason(format!("Invalid feature JSON: {error}")))?;
-  validate_metadata(&feature.metadata)?;
 
   Ok(Feature {
     conditions,
@@ -68,7 +58,6 @@ impl FromNapiValue for ParsedFeature {
     value: napi::sys::napi_value,
   ) -> napi::Result<Self> {
     let feature = unsafe { Feature::from_napi_value(env, value) }?;
-    validate_metadata(&feature.metadata.inner)?;
     let conditions = feature
       .conditions
       .map(serde_json::from_value)

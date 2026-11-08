@@ -13,10 +13,12 @@ pub trait OptionsRegistryBuilder<T: OptionsRegistry> {
     fn add_directory(&mut self, directory: impl AsRef<Path>) -> Result<&Self, String>;
 
     /// Adds a single feature.
+    /// A missing canonical name is rejected when the feature is processed.
     fn add_feature(&mut self, feature: Feature) -> Result<&Self, String>;
 
     /// Adds multiple features, taking ownership so they are not cloned.
     /// Pass `.iter().cloned()` to keep the originals.
+    /// Features are added in order; an error leaves any previously added features in the builder.
     fn add_features(
         &mut self,
         features: impl IntoIterator<Item = Feature>,

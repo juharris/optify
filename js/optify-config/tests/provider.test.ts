@@ -251,8 +251,6 @@ describe("builder features", () => {
 
 		test(`${name} rejects invalid feature input before modifying a batch`, () => {
 			const builder = create();
-			expect(() => builder.addFeature({ metadata: new OptionsMetadata(), options: {} })).toThrow(/non-empty name/);
-			expect(() => builder.addFeature({ metadata: new OptionsMetadata({ name: "" }), options: {} })).toThrow(/non-empty name/);
 			expect(() =>
 				builder.addFeature({
 					// @ts-expect-error Verify that a different native class is rejected at runtime.
@@ -279,7 +277,6 @@ describe("builder features", () => {
 					},
 				]),
 			).toThrow(TypeError);
-			expect(() => builder.addFeature({ metadata: {}, options: {} })).toThrow(/non-empty name/);
 			expect(() =>
 				builder.addFeatures([
 					{ metadata: { name: "valid" }, options: {} },
@@ -309,14 +306,68 @@ describe("builder features", () => {
 		});
 	}
 
+	test("provider rejects invalid names when adding features", () => {
+		for (const metadata of [new OptionsMetadata(), {}, { name: null }]) {
+			const builder = new OptionsProviderBuilder();
+			expect(() => builder.addFeature({ metadata, options: {} })).toThrow(/must have a name/);
+			expect(builder.build().features()).toEqual([]);
+		}
+		const builder = new OptionsProviderBuilder();
+		expect(() =>
+			builder.addFeatures([
+				{ metadata: { name: "valid" }, options: {} },
+				{ metadata: {}, options: {} },
+			]),
+		).toThrow(/must have a name/);
+		expect(builder.build().features()).toEqual(["valid"]);
+	});
+
+	test("watcher rejects invalid names when building", () => {
+		for (const metadata of [new OptionsMetadata(), {}, { name: null }]) {
+			const builder = new OptionsWatcherBuilder();
+			builder.addFeature({ metadata, options: {} });
+			expect(() => builder.build()).toThrow(/must have a name/);
+		}
+		const builder = new OptionsWatcherBuilder();
+		builder.addFeatures([
+			{ metadata: { name: "valid" }, options: {} },
+			{ metadata: {}, options: {} },
+		]);
+		expect(() => builder.build()).toThrow(/must have a name/);
+	});
+
+	test("checks deserialized feature names when the builder processes them", () => {
+		for (const metadata of [{}, { name: null }]) {
+			const parsed = Feature.fromJson(JSON.stringify({ metadata, options: {} }));
+			const providerBuilder = new OptionsProviderBuilder();
+			expect(() => providerBuilder.addFeature(parsed)).toThrow(/must have a name/);
+			const watcherBuilder = new OptionsWatcherBuilder();
+			watcherBuilder.addFeature(parsed);
+			expect(() => watcherBuilder.build()).toThrow(/must have a name/);
+		}
+	});
+
+	test("provider and watcher accept empty feature names", () => {
+		for (const Builder of [OptionsProviderBuilder, OptionsWatcherBuilder]) {
+			for (const metadata of [{ name: "" }, new OptionsMetadata({ name: "" })]) {
+				const builder = new Builder();
+				builder.addFeature({ metadata, options: { value: 1 } });
+				const provider = builder.build();
+				expect(provider.features()).toEqual([""]);
+				expect(provider.getAllOptions([""])).toEqual({ value: 1 });
+			}
+			const builder = new Builder();
+			builder.addFeatures([Feature.fromJson('{"metadata":{"name":""},"options":{"value":2}}')]);
+			expect(builder.build().getAllOptions([""])).toEqual({ value: 2 });
+		}
+	});
+
 	test("rejects invalid feature JSON", () => {
 		for (const json of [
 			"{",
 			"null",
 			"{}",
 			'{"metadata": null, "options": {}}',
-			'{"metadata": {}, "options": {}}',
-			'{"metadata": {"name": ""}, "options": {}}',
 			'{"metadata": {"name": "invalid"}}',
 			'{"metadata": {"name": "invalid", "aliases": 42}, "options": {}}',
 			'{"metadata": {"name": "invalid"}, "options": {}, "conditions": {"jsonPointer": "/x", "matches": "["}}',
